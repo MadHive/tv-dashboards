@@ -24,9 +24,25 @@ export interface GridConfig {
   gap: number;
 }
 
+export type WidgetType =
+  | 'big-number'
+  | 'stat-card'
+  | 'gauge'
+  | 'bar-chart'
+  | 'line-chart'
+  | 'table'
+  | 'list'
+  | 'map'
+  | 'sparkline'
+  | 'heatmap'
+  | 'multi-metric-card'
+  | 'stacked-bar-chart'
+  | 'sankey'
+  | 'treemap';
+
 export interface Widget {
   id: string;
-  type: string;
+  type: WidgetType;
   title: string;
   source: string;
   position: WidgetPosition;
