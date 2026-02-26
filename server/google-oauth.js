@@ -107,12 +107,18 @@ export const googleOAuthRoutes = new Elysia({ prefix: '/auth/google' })
         createdAt: Date.now()
       });
 
+      console.log('[OAuth] Session created for:', email, '- Token:', sessionToken.substring(0, 8) + '...');
+      console.log('[OAuth] Active sessions:', sessions.size);
+
+      const cookieValue = `session=${sessionToken}; HttpOnly; Path=/; Max-Age=86400; SameSite=Lax`;
+      console.log('[OAuth] Setting cookie:', cookieValue);
+
       // Redirect to dashboard with session cookie
       return new Response(null, {
         status: 302,
         headers: {
           'Location': '/',
-          'Set-Cookie': `session=${sessionToken}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict`
+          'Set-Cookie': cookieValue
         }
       });
     } catch (error) {
@@ -139,7 +145,7 @@ export const googleOAuthRoutes = new Elysia({ prefix: '/auth/google' })
       status: 302,
       headers: {
         'Location': '/',
-        'Set-Cookie': 'session=; HttpOnly; Path=/; Max-Age=0; SameSite=Strict'
+        'Set-Cookie': 'session=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax'
       }
     });
   }, {
@@ -151,8 +157,12 @@ export const googleOAuthRoutes = new Elysia({ prefix: '/auth/google' })
   })
 
   // Get current user
-  .get('/me', ({ cookie, set }) => {
+  .get('/me', ({ cookie, set, request }) => {
     const sessionToken = cookie.session;
+
+    console.log('[Auth] /me called - sessionToken:', sessionToken ? 'exists' : 'missing');
+    console.log('[Auth] Active sessions:', sessions.size);
+    console.log('[Auth] Cookie header:', request.headers.get('cookie'));
 
     if (!sessionToken || !sessions.has(sessionToken)) {
       set.status = 401;
@@ -167,6 +177,8 @@ export const googleOAuthRoutes = new Elysia({ prefix: '/auth/google' })
       set.status = 401;
       return { error: 'Session expired' };
     }
+
+    console.log('[Auth] User authenticated:', session.email);
 
     return {
       email: session.email,

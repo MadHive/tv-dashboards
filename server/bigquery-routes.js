@@ -11,9 +11,9 @@ import { bigQueryDataSource } from './data-sources/bigquery.js';
  */
 export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
   // List all saved queries
-  .get('/queries', () => {
+  .get('/queries', async () => {
     try {
-      const queries = bigQueryDataSource.listSavedQueries();
+      const queries = await bigQueryDataSource.listSavedQueries();
       return { success: true, queries };
     } catch (error) {
       return {
@@ -30,9 +30,9 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
   })
 
   // Get a specific saved query
-  .get('/queries/:id', ({ params }) => {
+  .get('/queries/:id', async ({ params }) => {
     try {
-      const query = bigQueryDataSource.getSavedQuery(params.id);
+      const query = await bigQueryDataSource.getSavedQuery(params.id);
       if (!query) {
         return new Response(
           JSON.stringify({ success: false, error: 'Query not found' }),
@@ -69,7 +69,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
         );
       }
 
-      const query = bigQueryDataSource.saveQuery(id, {
+      const query = await bigQueryDataSource.saveQuery(id, {
         name,
         description,
         sql,
@@ -105,7 +105,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
   // Update an existing query
   .put('/queries/:id', async ({ params, body }) => {
     try {
-      const existing = bigQueryDataSource.getSavedQuery(params.id);
+      const existing = await bigQueryDataSource.getSavedQuery(params.id);
       if (!existing) {
         return new Response(
           JSON.stringify({ success: false, error: 'Query not found' }),
@@ -113,7 +113,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
         );
       }
 
-      const query = bigQueryDataSource.saveQuery(params.id, {
+      const query = await bigQueryDataSource.saveQuery(params.id, {
         ...existing,
         ...body,
         updatedAt: new Date().toISOString()
@@ -135,9 +135,9 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
   })
 
   // Delete a query
-  .delete('/queries/:id', ({ params }) => {
+  .delete('/queries/:id', async ({ params }) => {
     try {
-      const deleted = bigQueryDataSource.deleteSavedQuery(params.id);
+      const deleted = await bigQueryDataSource.deleteSavedQuery(params.id);
       if (!deleted) {
         return new Response(
           JSON.stringify({ success: false, error: 'Query not found' }),

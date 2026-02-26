@@ -249,11 +249,36 @@
 
     // ---- editor controls ----
     setupEditorControls() {
+      // Track authenticated state
+      let isAuthenticated = false;
+
+      // Listen for auth state changes
+      document.addEventListener('authStateChanged', (e) => {
+        isAuthenticated = !!e.detail.user;
+        this.updateEditorButtonVisibility(isAuthenticated);
+      });
+
       // Editor toggle button
       const toggleBtn = document.getElementById('editor-toggle');
       if (toggleBtn) {
         toggleBtn.addEventListener('click', () => {
+          if (!isAuthenticated) {
+            alert('Please sign in to use the editor');
+            return;
+          }
           if (this.editor) this.editor.toggle();
+        });
+      }
+
+      // Query editor toggle button
+      const queryEditorBtn = document.getElementById('query-editor-toggle');
+      if (queryEditorBtn) {
+        queryEditorBtn.addEventListener('click', () => {
+          if (!isAuthenticated) {
+            alert('Please sign in to use the query editor');
+            return;
+          }
+          if (window.queryEditor) window.queryEditor.open();
         });
       }
 
@@ -286,6 +311,19 @@
           actionBar.style.display = e.detail.isActive ? 'flex' : 'none';
         }
       });
+    }
+
+    updateEditorButtonVisibility(isAuthenticated) {
+      const toggleBtn = document.getElementById('editor-toggle');
+      const queryEditorBtn = document.getElementById('query-editor-toggle');
+
+      // Show editor buttons only when authenticated
+      if (toggleBtn) {
+        toggleBtn.style.display = isAuthenticated ? 'block' : 'none';
+      }
+      if (queryEditorBtn) {
+        queryEditorBtn.style.display = isAuthenticated ? 'block' : 'none';
+      }
     }
   }
 

@@ -4,6 +4,7 @@
 
 import { Elysia } from 'elysia';
 import { staticPlugin } from '@elysiajs/static';
+import { cookie } from '@elysiajs/cookie';
 import { readFileSync } from 'fs';
 import { load } from 'js-yaml';
 import { join, dirname } from 'path';
@@ -12,6 +13,7 @@ import { getMetrics as mockGetMetrics } from './mock-data.js';
 import { proxyRoutes } from './api-proxy.js';
 import { numericsRoutes, anyboardRoutes } from './tv-apps.js';
 import { bigQueryRoutes } from './bigquery-routes.js';
+import { queryRoutes } from './query-routes.js';
 import { googleOAuthRoutes } from './google-oauth.js';
 import {
   loadConfig as loadConfigFromFile,
@@ -91,6 +93,7 @@ const publicDir = join(__dirname, '..', 'public');
 const indexHtml = readFileSync(join(publicDir, 'index.html'), 'utf8');
 
 const app = new Elysia()
+  .use(cookie())
   .use(staticPlugin({ assets: publicDir, prefix: '/' }))
   .get('/', () => new Response(indexHtml, { headers: { 'content-type': 'text/html; charset=utf-8' } }))
 
@@ -348,6 +351,7 @@ const app = new Elysia()
   .use(numericsRoutes)
   .use(anyboardRoutes)
   .use(bigQueryRoutes)
+  .use(queryRoutes)
   .use(googleOAuthRoutes)
   .listen({ port: PORT, hostname: HOST });
 

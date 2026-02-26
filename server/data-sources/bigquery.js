@@ -18,7 +18,7 @@ export class BigQueryDataSource extends DataSource {
     this.queryCache = new Map();
     this.projectId = config.projectId || process.env.GCP_PROJECT_ID || 'mad-master';
     this.credentials = config.credentials || process.env.GOOGLE_APPLICATION_CREDENTIALS;
-    this.savedQueries = new Map(); // Stores saved custom queries
+    // Note: Saved queries now managed by query-manager.js
   }
 
   /**
@@ -97,47 +97,33 @@ export class BigQueryDataSource extends DataSource {
   }
 
   /**
-   * Save a custom query for reuse
-   * @param {string} queryId - Unique identifier for the query
-   * @param {object} queryDef - Query definition
+   * DEPRECATED: Saved queries are now managed by query-manager.js
+   * These methods maintained for backward compatibility with bigquery-routes.js
    */
-  saveQuery(queryId, queryDef) {
+  async saveQuery(queryId, queryDef) {
+    const { saveQuery } = await import('../query-manager.js');
     const query = {
       id: queryId,
-      name: queryDef.name,
-      description: queryDef.description,
-      sql: queryDef.sql,
-      params: queryDef.params || {},
-      transform: queryDef.transform || null,
-      widgetTypes: queryDef.widgetTypes || ['big-number'],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      ...queryDef
     };
-
-    this.savedQueries.set(queryId, query);
-    console.log(`[bigquery] Saved query: ${queryId}`);
-    return query;
+    const result = await saveQuery('bigquery', query);
+    return result.query;
   }
 
-  /**
-   * Get a saved query
-   */
-  getSavedQuery(queryId) {
-    return this.savedQueries.get(queryId);
+  async getSavedQuery(queryId) {
+    const { getQuery } = await import('../query-manager.js');
+    return await getQuery('bigquery', queryId);
   }
 
-  /**
-   * List all saved queries
-   */
-  listSavedQueries() {
-    return Array.from(this.savedQueries.values());
+  async listSavedQueries() {
+    const { listQueries } = await import('../query-manager.js');
+    return await listQueries('bigquery');
   }
 
-  /**
-   * Delete a saved query
-   */
-  deleteSavedQuery(queryId) {
-    return this.savedQueries.delete(queryId);
+  async deleteSavedQuery(queryId) {
+    const { deleteQuery } = await import('../query-manager.js');
+    const result = await deleteQuery('bigquery', queryId);
+    return result.success;
   }
 
   /**
@@ -149,7 +135,10 @@ export class BigQueryDataSource extends DataSource {
 
       // Check if widget has a saved query reference
       if (widgetConfig.queryId) {
-        const savedQuery = this.getSavedQuery(widgetConfig.queryId);
+        // Load query from query-manager
+        const { getQuery } = await import('../query-manager.js');
+        const savedQuery = await getQuery('bigquery', widgetConfig.queryId);
+
         if (!savedQuery) {
           throw new Error(`Saved query not found: ${widgetConfig.queryId}`);
         }
@@ -157,7 +146,7 @@ export class BigQueryDataSource extends DataSource {
         // Execute saved query
         rows = await this.executeQuery(
           savedQuery.sql,
-          savedQuery.params,
+          savedQuery.params || {},
           true
         );
 
@@ -483,8 +472,11 @@ export class BigQueryDataSource extends DataSource {
   /**
    * Get available metrics (returns saved queries)
    */
-  getAvailableMetrics() {
-    return this.listSavedQueries().map(q => ({
+  async getAvailableMetrics() {
+    const { listQueries } = await import('../query-manager.js');
+    const queries = await listQueries('bigquery');
+
+    return queries.map(q => ({
       id: q.id,
       name: q.name,
       description: q.description,

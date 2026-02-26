@@ -13,6 +13,7 @@
     "build": "echo 'No build step required for vanilla JS' && exit 0"
   },
   "dependencies": {
+    "@elysiajs/cookie": "^0.8.0",
     "@elysiajs/static": "^1.2",
     "@google-cloud/bigquery": "^8.1.1",
     "@google-cloud/monitoring": "^5.3.1",

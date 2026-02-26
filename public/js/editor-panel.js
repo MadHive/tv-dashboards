@@ -22,6 +22,7 @@ window.PropertyPanel = (function () {
 
   const DATA_SOURCES = [
     'gcp',
+    'bigquery',
     'aws',
     'datadog',
     'elasticsearch',
@@ -86,6 +87,17 @@ window.PropertyPanel = (function () {
                 <select id="prop-source">
                   ${DATA_SOURCES.map(src => `<option value="${src}">${src.toUpperCase()}</option>`).join('')}
                 </select>
+              </div>
+
+              <div class="form-group" id="prop-query-group" style="display: none;">
+                <label for="prop-query">Saved Query</label>
+                <select id="prop-query">
+                  <option value="">-- None (use default metrics) --</option>
+                </select>
+                <button type="button" class="btn-link" id="btn-open-query-editor">
+                  + Create New Query
+                </button>
+                <small class="help-text">Select a saved query to use as data source</small>
               </div>
 
               <div class="form-group" id="prop-project-group">
@@ -186,11 +198,29 @@ window.PropertyPanel = (function () {
         this.updateTypeSpecificOptions(e.target.value);
       });
 
-      // Source change - show/hide project field
-      document.getElementById('prop-source').addEventListener('change', (e) => {
+      // Source change - show/hide project field and load queries
+      document.getElementById('prop-source').addEventListener('change', async (e) => {
+        const source = e.target.value;
         const projectGroup = document.getElementById('prop-project-group');
+        const queryGroup = document.getElementById('prop-query-group');
+
         // Only GCP needs project field
-        projectGroup.style.display = e.target.value === 'gcp' ? 'block' : 'none';
+        projectGroup.style.display = source === 'gcp' ? 'block' : 'none';
+
+        // Show query selector for sources that support queries
+        if (source === 'bigquery' || source === 'gcp') {
+          queryGroup.style.display = 'block';
+          await this.loadQueriesForSource(source);
+        } else {
+          queryGroup.style.display = 'none';
+        }
+      });
+
+      // Open query editor button
+      document.getElementById('btn-open-query-editor').addEventListener('click', () => {
+        if (window.queryEditor) {
+          window.queryEditor.open();
+        }
       });
 
       // Live preview on input
@@ -202,12 +232,36 @@ window.PropertyPanel = (function () {
       });
     }
 
-    show(widgetConfig, widgetElement) {
+    async loadQueriesForSource(source) {
+      const querySelect = document.getElementById('prop-query');
+
+      try {
+        const response = await fetch(`/api/queries/${source}`);
+        const data = await response.json();
+
+        // Clear existing options
+        querySelect.innerHTML = '<option value="">-- None (use default metrics) --</option>';
+
+        // Populate with queries
+        if (data.success && data.queries) {
+          data.queries.forEach(q => {
+            const option = document.createElement('option');
+            option.value = q.id;
+            option.textContent = `${q.name}${q.description ? ' — ' + q.description : ''}`;
+            querySelect.appendChild(option);
+          });
+        }
+      } catch (error) {
+        console.error('[PropertyPanel] Failed to load queries:', error);
+      }
+    }
+
+    async show(widgetConfig, widgetElement) {
       this.currentWidget = widgetConfig;
       this.currentElement = widgetElement;
 
       // Populate form with widget config
-      this.populateForm(widgetConfig);
+      await this.populateForm(widgetConfig);
 
       // Show panel
       this.panel.style.display = 'flex';
@@ -222,12 +276,29 @@ window.PropertyPanel = (function () {
       this.currentElement = null;
     }
 
-    populateForm(config) {
+    async populateForm(config) {
       document.getElementById('prop-id').value = config.id || '';
       document.getElementById('prop-type').value = config.type || 'big-number';
       document.getElementById('prop-title').value = config.title || '';
       document.getElementById('prop-source').value = config.source || 'gcp';
       document.getElementById('prop-project').value = config.project || '';
+
+      // Load queries for this source if applicable
+      const source = config.source || 'gcp';
+      const queryGroup = document.getElementById('prop-query-group');
+      const querySelect = document.getElementById('prop-query');
+
+      if (source === 'bigquery' || source === 'gcp') {
+        queryGroup.style.display = 'block';
+        await this.loadQueriesForSource(source);
+
+        // Set selected query if one exists
+        if (config.queryId) {
+          querySelect.value = config.queryId;
+        }
+      } else {
+        queryGroup.style.display = 'none';
+      }
 
       // Position
       const pos = config.position || {};
@@ -281,6 +352,7 @@ window.PropertyPanel = (function () {
     getFormValues() {
       const type = document.getElementById('prop-type').value;
       const source = document.getElementById('prop-source').value;
+      const queryId = document.getElementById('prop-query').value;
 
       const values = {
         type,
@@ -293,6 +365,11 @@ window.PropertyPanel = (function () {
           rowSpan: parseInt(document.getElementById('prop-rowspan').value)
         }
       };
+
+      // Add query ID if selected
+      if (queryId) {
+        values.queryId = queryId;
+      }
 
       // Add project if GCP
       if (source === 'gcp') {

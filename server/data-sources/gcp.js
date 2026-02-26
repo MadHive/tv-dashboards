@@ -43,6 +43,11 @@ export class GCPDataSource extends DataSource {
     }
 
     try {
+      // Check if widget uses a saved query
+      if (widgetConfig.queryId) {
+        return await this.executeQuery(widgetConfig);
+      }
+
       // For backward compatibility, fetch entire dashboard metrics
       const dashboardId = widgetConfig.dashboardId || 'platform-overview';
       const allMetrics = await this.gcpMetrics.getMetrics(dashboardId);
@@ -57,6 +62,44 @@ export class GCPDataSource extends DataSource {
         data: widgetData,
         widgetId: widgetId,
         dashboardId: dashboardId
+      };
+    } catch (error) {
+      return this.handleError(error, widgetConfig.type);
+    }
+  }
+
+  /**
+   * Execute a saved query from query-manager
+   */
+  async executeQuery(widgetConfig) {
+    try {
+      // Load saved query
+      const { getQuery } = await import('../query-manager.js');
+      const savedQuery = await getQuery('gcp', widgetConfig.queryId);
+
+      if (!savedQuery) {
+        throw new Error(`Saved query not found: ${widgetConfig.queryId}`);
+      }
+
+      // Execute GCP monitoring query
+      const timeSeries = await this.gcpMetrics.query(
+        savedQuery.project || 'mad-master',
+        savedQuery.metricType,
+        savedQuery.filters || {},
+        savedQuery.timeWindow || 10,
+        savedQuery.aggregation
+      );
+
+      // Transform data for widget type
+      const transformed = this.transformData(timeSeries, widgetConfig.type);
+
+      return {
+        timestamp: new Date().toISOString(),
+        source: 'gcp',
+        data: transformed,
+        widgetId: widgetConfig.id,
+        queryId: widgetConfig.queryId,
+        metricType: savedQuery.metricType
       };
     } catch (error) {
       return this.handleError(error, widgetConfig.type);
@@ -107,9 +150,69 @@ export class GCPDataSource extends DataSource {
   /**
    * Transform raw data to widget format
    */
-  transformData(raw, widgetType) {
-    // GCP data is already in the correct format
-    return raw;
+  transformData(timeSeries, widgetType) {
+    // If data is already transformed (from dashboard), return as-is
+    if (!Array.isArray(timeSeries) || timeSeries.length === 0) {
+      return timeSeries || this.getEmptyData(widgetType);
+    }
+
+    // Check if this looks like GCP time series data
+    const isTimeSeries = timeSeries[0]?.points !== undefined;
+    if (!isTimeSeries) {
+      return timeSeries; // Already transformed
+    }
+
+    // Import helper functions for transformation
+    const transformers = {
+      'big-number': (ts) => {
+        const { latest } = require('../gcp-metrics.js');
+        return {
+          value: latest(ts),
+          unit: '',
+          trend: null
+        };
+      },
+      'stat-card': (ts) => {
+        const { latest, spark } = require('../gcp-metrics.js');
+        return {
+          value: latest(ts),
+          sparkline: spark(ts, 20),
+          unit: ''
+        };
+      },
+      'gauge': (ts) => {
+        const { latest } = require('../gcp-metrics.js');
+        return {
+          value: latest(ts),
+          min: 0,
+          max: 100,
+          unit: '%'
+        };
+      },
+      'line-chart': (ts) => {
+        const { spark } = require('../gcp-metrics.js');
+        return {
+          series: [{
+            label: 'Value',
+            data: spark(ts, 30)
+          }],
+          timestamps: []
+        };
+      }
+    };
+
+    const transformer = transformers[widgetType];
+    if (transformer) {
+      try {
+        return transformer(timeSeries);
+      } catch (error) {
+        console.error('[gcp] Transform error:', error.message);
+        return this.getEmptyData(widgetType);
+      }
+    }
+
+    // Default: return raw time series
+    return timeSeries;
   }
 
   /**
