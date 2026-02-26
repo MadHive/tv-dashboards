@@ -13,10 +13,11 @@
     "build": "echo 'No build step required for vanilla JS' && exit 0"
   },
   "dependencies": {
-    "elysia": "^1.2",
     "@elysiajs/static": "^1.2",
+    "@google-cloud/bigquery": "^8.1.1",
     "@google-cloud/monitoring": "^5.3.1",
-    "@google-cloud/bigquery": "^7.9.0",
+    "elysia": "^1.2",
+    "google-auth-library": "^10.6.1",
     "js-yaml": "^4.1.0"
   }
 }
