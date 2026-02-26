@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MadHive Platform Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/dashboard.css?v=11">
+  <link rel="stylesheet" href="/css/editor.css?v=1">
+</head>
+<body>
+
+  <!-- ===== top bar ===== -->
+  <header id="top-bar">
+    <div class="top-left">
+      <span class="logo-text">MADHIVE</span>
+      <span class="logo-sub">PLATFORM</span>
+    </div>
+    <div class="top-center">
+      <span id="page-icon"></span>
+      <span id="page-title"></span>
+      <span id="page-subtitle"></span>
+    </div>
+    <div class="top-right">
+      <span id="data-source" class="data-source">GCP Cloud Monitoring</span>
+      <span class="separator">|</span>
+      <span id="last-refresh" class="last-refresh"><span class="refresh-dot"></span><span id="refresh-label">—</span></span>
+      <span class="separator">|</span>
+      <span id="clock"></span>
+    </div>
+  </header>
+
+  <!-- ===== dashboard pages rendered here ===== -->
+  <main id="dashboard-container"></main>
+
+  <!-- ===== editor UI ===== -->
+  <button id="editor-toggle" title="Toggle Editor (Ctrl+E)">Edit Mode</button>
+
+  <div class="editor-action-bar" style="display: none;">
+    <button id="editor-save" class="primary">Save Changes</button>
+    <button id="editor-discard">Discard</button>
+    <button id="editor-exit">Exit Editor</button>
+  </div>
+
+  <!-- ===== bottom navigation ===== -->
+  <nav id="bottom-bar">
+    <div id="nav-dots"></div>
+    <div id="rotation-track">
+      <div id="rotation-progress"></div>
+    </div>
+  </nav>
+
+  <script src="/js/us-states.js?v=11"></script>
+  <script src="/js/charts.js?v=11"></script>
+  <script src="/js/widgets.js?v=11"></script>
+  <script src="/js/editor-utils.js?v=2"></script>
+  <script src="/js/editor-drag.js?v=2"></script>
+  <script src="/js/editor-resize.js?v=2"></script>
+  <script src="/js/widget-templates.js?v=2"></script>
+  <script src="/js/editor-palette.js?v=2"></script>
+  <script src="/js/editor-panel.js?v=2"></script>
+  <script src="/js/editor.js?v=2"></script>
+  <script src="/js/app.js?v=11"></script>
+</body>
+</html>
