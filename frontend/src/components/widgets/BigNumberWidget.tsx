@@ -118,8 +118,11 @@ export default function BigNumberWidget({
       style={{
         gridColumn: `span ${widget.position.colSpan}`,
         gridRow: `span ${widget.position.rowSpan}`,
+        background: widget.gradient
+          ? 'linear-gradient(135deg, rgba(255, 155, 211, 0.1) 0%, rgba(253, 164, 212, 0.05) 100%), var(--madhive-card)'
+          : undefined,
       }}
-      className="bg-slate-800 border border-slate-700 rounded-lg p-4 flex flex-col hover:border-slate-600 transition-colors"
+      className="bg-slate-800 border border-slate-700 rounded-lg p-4 flex flex-col hover:border-slate-600 transition-colors relative overflow-hidden"
     >
       <h3 className="text-sm font-medium text-slate-400 mb-3">{widget.title}</h3>
 
@@ -164,6 +167,13 @@ export default function BigNumberWidget({
       <div className="text-xs text-slate-500 mt-2">
         Updated {new Date(data.timestamp).toLocaleTimeString()}
       </div>
+
+      {widget.gradient && (
+        <div
+          className="absolute inset-0 opacity-30 pointer-events-none"
+          style={{ background: 'var(--gradient-glow)' }}
+        />
+      )}
     </div>
   );
 }
