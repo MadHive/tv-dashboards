@@ -1,0 +1,8 @@
+# Default owners for the repository
+# Replace with your team's GitHub handles
+
+* @madhive/APP_NAME-team
+
+# Workflow and CI/CD changes require platform team review
+.github/ @madhive/platform-team
+Dockerfile @madhive/platform-team
