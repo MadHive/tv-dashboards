@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(kill:*)",
+      "Bash(bun run start)",
+      "Bash(/home/tech/dev-dashboards/public/css/editor.css:*)",
+      "Bash(pkill:*)",
+      "Bash(lsof:*)",
+      "Bash(bun run:*)",
+      "Bash(ls:*)",
+      "Bash(/home/tech/dev-dashboards/TESTING.md:*)",
+      "Bash(__NEW_LINE_f4e5601746bb057e__ cat /home/tech/dev-dashboards/TESTING.md)",
+      "Bash(/home/tech/dev-dashboards/PHASE5_COMPLETE.md:*)",
+      "Bash(__NEW_LINE_85d19f3ddced2df1__ cat /home/tech/dev-dashboards/PHASE5_COMPLETE.md)",
+      "Bash(/home/tech/dev-dashboards/COMPLETE_SUMMARY.md:*)",
+      "Bash(__NEW_LINE_7d8161d4f0f4e3ff__ cat /home/tech/dev-dashboards/COMPLETE_SUMMARY.md)",
+      "Bash(gh:*)",
+      "Bash(sudo dd:*)",
+      "Bash(env:*)"
+    ]
+  }
+}
