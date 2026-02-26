@@ -9,6 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/dashboard.css?v=11">
   <link rel="stylesheet" href="/css/editor.css?v=1">
+  <link rel="stylesheet" href="/css/query-editor.css?v=1">
+  <link rel="stylesheet" href="/css/auth-ui.css?v=1">
 </head>
 <body>
 
@@ -37,6 +39,7 @@
 
   <!-- ===== editor UI ===== -->
   <button id="editor-toggle" title="Toggle Editor (Ctrl+E)">Edit Mode</button>
+  <button id="query-editor-toggle" title="BigQuery Editor" style="position: fixed; top: 20px; right: 280px; z-index: 10000; padding: 12px 24px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: 2px solid rgba(16, 185, 129, 0.3); border-radius: 8px; font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;" onclick="window.queryEditor?.open()">Query Editor</button>
 
   <div class="editor-action-bar" style="display: none;">
     <button id="editor-save" class="primary">Save Changes</button>
@@ -62,6 +65,8 @@
   <script src="/js/editor-palette.js?v=2"></script>
   <script src="/js/editor-panel.js?v=2"></script>
   <script src="/js/editor.js?v=2"></script>
+  <script src="/js/query-editor.js?v=1"></script>
+  <script src="/js/auth-ui.js?v=1"></script>
   <script src="/js/app.js?v=11"></script>
 </body>
 </html>

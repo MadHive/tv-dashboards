@@ -11,6 +11,8 @@ import { fileURLToPath } from 'url';
 import { getMetrics as mockGetMetrics } from './mock-data.js';
 import { proxyRoutes } from './api-proxy.js';
 import { numericsRoutes, anyboardRoutes } from './tv-apps.js';
+import { bigQueryRoutes } from './bigquery-routes.js';
+import { googleOAuthRoutes } from './google-oauth.js';
 import {
   loadConfig as loadConfigFromFile,
   saveConfig,
@@ -345,6 +347,8 @@ const app = new Elysia()
   .use(proxyRoutes)
   .use(numericsRoutes)
   .use(anyboardRoutes)
+  .use(bigQueryRoutes)
+  .use(googleOAuthRoutes)
   .listen({ port: PORT, hostname: HOST });
 
 console.log(`\n  Dashboard server running at http://${HOST}:${PORT}`);
