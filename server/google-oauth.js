@@ -34,10 +34,12 @@ function generateSessionToken() {
  */
 export const googleOAuthRoutes = new Elysia({ prefix: '/auth/google' })
   // Initiate OAuth flow
-  .get('/login', ({ set }) => {
+  .get('/login', () => {
     if (!CLIENT_ID || !CLIENT_SECRET) {
-      set.status = 500;
-      return { error: 'OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.' };
+      return new Response(
+        JSON.stringify({ error: 'OAuth not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.' }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
     }
 
     const oauth2Client = getOAuthClient();
@@ -53,7 +55,10 @@ export const googleOAuthRoutes = new Elysia({ prefix: '/auth/google' })
     });
 
     // Redirect to Google's OAuth consent screen
-    set.redirect = authUrl;
+    return new Response(null, {
+      status: 302,
+      headers: { 'Location': authUrl }
+    });
   }, {
     detail: {
       tags: ['Authentication'],
@@ -102,13 +107,14 @@ export const googleOAuthRoutes = new Elysia({ prefix: '/auth/google' })
         createdAt: Date.now()
       });
 
-      // Set session cookie
-      set.headers = {
-        'Set-Cookie': `session=${sessionToken}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict`
-      };
-
-      // Redirect to dashboard
-      set.redirect = '/';
+      // Redirect to dashboard with session cookie
+      return new Response(null, {
+        status: 302,
+        headers: {
+          'Location': '/',
+          'Set-Cookie': `session=${sessionToken}; HttpOnly; Path=/; Max-Age=86400; SameSite=Strict`
+        }
+      });
     } catch (error) {
       console.error('[OAuth] Callback error:', error);
       set.status = 500;
@@ -123,17 +129,19 @@ export const googleOAuthRoutes = new Elysia({ prefix: '/auth/google' })
   })
 
   // Logout
-  .get('/logout', ({ set, cookie }) => {
+  .get('/logout', ({ cookie }) => {
     const sessionToken = cookie.session;
     if (sessionToken) {
       sessions.delete(sessionToken);
     }
 
-    set.headers = {
-      'Set-Cookie': 'session=; HttpOnly; Path=/; Max-Age=0; SameSite=Strict'
-    };
-
-    set.redirect = '/';
+    return new Response(null, {
+      status: 302,
+      headers: {
+        'Location': '/',
+        'Set-Cookie': 'session=; HttpOnly; Path=/; Max-Age=0; SameSite=Strict'
+      }
+    });
   }, {
     detail: {
       tags: ['Authentication'],

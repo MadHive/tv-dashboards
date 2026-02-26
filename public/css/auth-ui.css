@@ -5,8 +5,8 @@
 .auth-button {
   position: fixed;
   top: 20px;
-  right: 120px;
-  z-index: 9999;
+  right: 180px;
+  z-index: 10001;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -19,6 +19,7 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
+  pointer-events: auto !important;
   transition: all 0.3s ease;
   backdrop-filter: blur(8px);
 }
