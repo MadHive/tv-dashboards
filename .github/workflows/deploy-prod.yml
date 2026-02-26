@@ -2,15 +2,15 @@ name: Deploy Production
 
 on:
   repository_dispatch:
-    types: [DISPATCH_EVENT_DEPLOY]
+    types: [tv-dashboards-deploy-production]
 
 env:
-  GCP_PROJECT_ID: GCP_PROJECT_ID
-  GCP_REGION: GCP_REGION
-  GCP_ARTIFACT_REGISTRY: GCP_ARTIFACT_REGISTRY
-  CLOUD_RUN_SERVICE: CLOUD_RUN_SERVICE_PROD
-  PROD_URL: PROD_URL
-  APP_NAME: APP_NAME
+  mad-master: mad-master
+  us-east1: us-east1
+  us-east1-docker.pkg.dev/mad-master/images: us-east1-docker.pkg.dev/mad-master/images
+  CLOUD_RUN_SERVICE: tv-dashboards
+  https://tv-dashboards.madhive.dev: https://tv-dashboards.madhive.dev
+  tv-dashboards: tv-dashboards
 
 permissions:
   contents: read
@@ -32,11 +32,11 @@ jobs:
 
       - name: Deploy to Cloud Run (prod)
         run: |
-          IMAGE="${{ env.GCP_ARTIFACT_REGISTRY }}/${{ env.APP_NAME }}:${{ github.event.client_payload.image_tag }}"
+          IMAGE="${{ env.us-east1-docker.pkg.dev/mad-master/images }}/${{ env.tv-dashboards }}:${{ github.event.client_payload.image_tag }}"
           gcloud run deploy "${{ env.CLOUD_RUN_SERVICE }}" \
             --image "$IMAGE" \
-            --region "${{ env.GCP_REGION }}" \
-            --project "${{ env.GCP_PROJECT_ID }}" \
+            --region "${{ env.us-east1 }}" \
+            --project "${{ env.mad-master }}" \
             --platform managed \
             --min-instances 1 \
             --session-affinity \
@@ -46,7 +46,7 @@ jobs:
         run: |
           echo "Waiting for service to be ready..."
           sleep 15
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ env.PROD_URL }}/health" || true)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ env.https://tv-dashboards.madhive.dev }}/health" || true)
           if [ "$STATUS" = "200" ]; then
             echo "Health check passed"
           else
@@ -62,12 +62,12 @@ jobs:
         id: rollback_payload
         run: |
           PAYLOAD=$(echo -n '{
-            "service": "${{ env.APP_NAME }}",
+            "service": "${{ env.tv-dashboards }}",
             "repository": "${{ github.repository }}",
             "image_tag": "${{ github.event.client_payload.image_tag }}",
             "sha": "${{ github.event.client_payload.sha }}"
           }' | base64 -w 0 2>/dev/null || echo -n '{
-            "service": "${{ env.APP_NAME }}",
+            "service": "${{ env.tv-dashboards }}",
             "repository": "${{ github.repository }}",
             "image_tag": "${{ github.event.client_payload.image_tag }}",
             "sha": "${{ github.event.client_payload.sha }}"
@@ -86,7 +86,7 @@ jobs:
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "🎉 Deployed to Production — ${{ env.APP_NAME }}",
+                    "text": "🎉 Deployed to Production — ${{ env.tv-dashboards }}",
                     "emoji": true
                   }
                 },
@@ -105,7 +105,7 @@ jobs:
                     {
                       "type": "button",
                       "text": { "type": "plain_text", "text": "Open Production", "emoji": true },
-                      "url": "${{ env.PROD_URL }}"
+                      "url": "${{ env.https://tv-dashboards.madhive.dev }}"
                     },
                     {
                       "type": "button",
@@ -137,7 +137,7 @@ jobs:
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "❌ Production Deploy Failed — ${{ env.APP_NAME }}",
+                    "text": "❌ Production Deploy Failed — ${{ env.tv-dashboards }}",
                     "emoji": true
                   }
                 },

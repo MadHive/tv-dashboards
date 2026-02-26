@@ -9,12 +9,12 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  GCP_PROJECT_ID: GCP_PROJECT_ID
-  GCP_REGION: GCP_REGION
-  GCP_ARTIFACT_REGISTRY: GCP_ARTIFACT_REGISTRY
-  CLOUD_RUN_SERVICE: CLOUD_RUN_SERVICE_DEV
-  DEV_URL: DEV_URL
-  APP_NAME: APP_NAME
+  mad-master: mad-master
+  us-east1: us-east1
+  us-east1-docker.pkg.dev/mad-master/images: us-east1-docker.pkg.dev/mad-master/images
+  CLOUD_RUN_SERVICE: tv-dashboards-dev
+  https://tv-dashboards-dev.madhive.dev: https://tv-dashboards-dev.madhive.dev
+  tv-dashboards: tv-dashboards
 
 permissions:
   contents: write
@@ -114,11 +114,11 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Configure Docker
-        run: gcloud auth configure-docker "${{ env.GCP_REGION }}-docker.pkg.dev" --quiet
+        run: gcloud auth configure-docker "${{ env.us-east1 }}-docker.pkg.dev" --quiet
 
       - name: Build and push Docker image
         run: |
-          IMAGE_BASE="${{ env.GCP_ARTIFACT_REGISTRY }}/${{ env.APP_NAME }}"
+          IMAGE_BASE="${{ env.us-east1-docker.pkg.dev/mad-master/images }}/${{ env.tv-dashboards }}"
           IMAGE_VERSIONED="${IMAGE_BASE}:${{ needs.test-and-version.outputs.tag }}"
           IMAGE_LATEST="${IMAGE_BASE}:latest"
 
@@ -142,11 +142,11 @@ jobs:
 
       - name: Deploy to Cloud Run (dev)
         run: |
-          IMAGE="${{ env.GCP_ARTIFACT_REGISTRY }}/${{ env.APP_NAME }}:${{ needs.test-and-version.outputs.tag }}"
+          IMAGE="${{ env.us-east1-docker.pkg.dev/mad-master/images }}/${{ env.tv-dashboards }}:${{ needs.test-and-version.outputs.tag }}"
           gcloud run deploy "${{ env.CLOUD_RUN_SERVICE }}" \
             --image "$IMAGE" \
-            --region "${{ env.GCP_REGION }}" \
-            --project "${{ env.GCP_PROJECT_ID }}" \
+            --region "${{ env.us-east1 }}" \
+            --project "${{ env.mad-master }}" \
             --platform managed \
             --quiet
 
@@ -154,7 +154,7 @@ jobs:
         run: |
           echo "Waiting for service to be ready..."
           sleep 10
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ env.DEV_URL }}/health" || true)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ env.https://tv-dashboards-dev.madhive.dev }}/health" || true)
           if [ "$STATUS" = "200" ]; then
             echo "Health check passed"
           else
@@ -220,7 +220,7 @@ jobs:
             "run_id": "${{ github.run_id }}",
             "jira_tickets": "${{ needs.extract-jira-tickets.outputs.tickets }}",
             "repository": "${{ github.repository }}",
-            "service": "${{ env.APP_NAME }}",
+            "service": "${{ env.tv-dashboards }}",
             "expiry": "'"${EXPIRY}"'"
           }' | base64 -w 0 2>/dev/null || echo -n '{
             "image_tag": "${{ needs.test-and-version.outputs.tag }}",
@@ -228,7 +228,7 @@ jobs:
             "run_id": "${{ github.run_id }}",
             "jira_tickets": "${{ needs.extract-jira-tickets.outputs.tickets }}",
             "repository": "${{ github.repository }}",
-            "service": "${{ env.APP_NAME }}",
+            "service": "${{ env.tv-dashboards }}",
             "expiry": "'"${EXPIRY}"'"
           }' | base64)
           echo "payload=${PAYLOAD}" >> "$GITHUB_OUTPUT"
@@ -245,7 +245,7 @@ jobs:
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "🚀 Ready for Production — ${{ env.APP_NAME }}",
+                    "text": "🚀 Ready for Production — ${{ env.tv-dashboards }}",
                     "emoji": true
                   }
                 },
@@ -302,7 +302,7 @@ jobs:
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "❌ Release Failed — ${{ env.APP_NAME }}",
+                    "text": "❌ Release Failed — ${{ env.tv-dashboards }}",
                     "emoji": true
                   }
                 },

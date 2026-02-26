@@ -332,6 +332,16 @@ const app = new Elysia()
     }
   })
 
+  // Health check endpoint for Cloud Run
+  .get('/health', () => {
+    return {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      version: '2.0.0',
+      service: 'tv-dashboards'
+    };
+  })
+
   .use(proxyRoutes)
   .use(numericsRoutes)
   .use(anyboardRoutes)

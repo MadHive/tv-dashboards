@@ -11,12 +11,12 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GCP_PROJECT_ID: GCP_PROJECT_ID
-  GCP_REGION: GCP_REGION
-  GCP_ARTIFACT_REGISTRY: GCP_ARTIFACT_REGISTRY
-  CLOUD_RUN_SERVICE: CLOUD_RUN_SERVICE_DEV
-  DEV_URL: DEV_URL
-  APP_NAME: APP_NAME
+  mad-master: mad-master
+  us-east1: us-east1
+  us-east1-docker.pkg.dev/mad-master/images: us-east1-docker.pkg.dev/mad-master/images
+  CLOUD_RUN_SERVICE: tv-dashboards-dev
+  https://tv-dashboards-dev.madhive.dev: https://tv-dashboards-dev.madhive.dev
+  tv-dashboards: tv-dashboards
 
 permissions:
   contents: read
@@ -64,7 +64,7 @@ jobs:
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "🔨 Build Started — ${{ env.APP_NAME }}",
+                    "text": "🔨 Build Started — ${{ env.tv-dashboards }}",
                     "emoji": true
                   }
                 },
@@ -97,21 +97,21 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Configure Docker
-        run: gcloud auth configure-docker "${{ env.GCP_REGION }}-docker.pkg.dev" --quiet
+        run: gcloud auth configure-docker "${{ env.us-east1 }}-docker.pkg.dev" --quiet
 
       - name: Build and push Docker image
         run: |
-          IMAGE="${{ env.GCP_ARTIFACT_REGISTRY }}/${{ env.APP_NAME }}:${{ needs.check-branch.outputs.image_tag }}"
+          IMAGE="${{ env.us-east1-docker.pkg.dev/mad-master/images }}/${{ env.tv-dashboards }}:${{ needs.check-branch.outputs.image_tag }}"
           docker build -t "$IMAGE" .
           docker push "$IMAGE"
 
       - name: Deploy to Cloud Run (dev)
         run: |
-          IMAGE="${{ env.GCP_ARTIFACT_REGISTRY }}/${{ env.APP_NAME }}:${{ needs.check-branch.outputs.image_tag }}"
+          IMAGE="${{ env.us-east1-docker.pkg.dev/mad-master/images }}/${{ env.tv-dashboards }}:${{ needs.check-branch.outputs.image_tag }}"
           gcloud run deploy "${{ env.CLOUD_RUN_SERVICE }}" \
             --image "$IMAGE" \
-            --region "${{ env.GCP_REGION }}" \
-            --project "${{ env.GCP_PROJECT_ID }}" \
+            --region "${{ env.us-east1 }}" \
+            --project "${{ env.mad-master }}" \
             --platform managed \
             --quiet
 
@@ -119,7 +119,7 @@ jobs:
         run: |
           echo "Waiting for service to be ready..."
           sleep 10
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ env.DEV_URL }}/health" || true)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ env.https://tv-dashboards-dev.madhive.dev }}/health" || true)
           if [ "$STATUS" = "200" ]; then
             echo "Health check passed"
           else
@@ -138,7 +138,7 @@ jobs:
             -H "Authorization: Basic $(echo -n '${{ secrets.JIRA_EMAIL }}:${{ secrets.JIRA_API_TOKEN }}' | base64)" \
             -H "Content-Type: application/json" \
             -d '{
-              "body": "Deployed to dev: ${{ env.DEV_URL }}\nImage: `${{ needs.check-branch.outputs.image_tag }}`\nWorkflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+              "body": "Deployed to dev: ${{ env.https://tv-dashboards-dev.madhive.dev }}\nImage: `${{ needs.check-branch.outputs.image_tag }}`\nWorkflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             }' \
             "https://${{ secrets.JIRA_DOMAIN }}/rest/api/2/issue/${{ needs.check-branch.outputs.jira_ticket }}/comment"
 
@@ -159,7 +159,7 @@ jobs:
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "✅ Deployed to Dev — ${{ env.APP_NAME }}",
+                    "text": "✅ Deployed to Dev — ${{ env.tv-dashboards }}",
                     "emoji": true
                   }
                 },
@@ -178,7 +178,7 @@ jobs:
                     {
                       "type": "button",
                       "text": { "type": "plain_text", "text": "Open Dev", "emoji": true },
-                      "url": "${{ env.DEV_URL }}"
+                      "url": "${{ env.https://tv-dashboards-dev.madhive.dev }}"
                     },
                     {
                       "type": "button",
@@ -208,7 +208,7 @@ jobs:
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "❌ Feature Deploy Failed — ${{ env.APP_NAME }}",
+                    "text": "❌ Feature Deploy Failed — ${{ env.tv-dashboards }}",
                     "emoji": true
                   }
                 },
