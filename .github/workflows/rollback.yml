@@ -2,14 +2,14 @@ name: Rollback
 
 on:
   repository_dispatch:
-    types: [DISPATCH_EVENT_ROLLBACK]
+    types: [tv-dashboards-rollback]
 
 env:
-  GCP_PROJECT_ID: GCP_PROJECT_ID
-  GCP_REGION: GCP_REGION
-  CLOUD_RUN_SERVICE: CLOUD_RUN_SERVICE_PROD
-  PROD_URL: PROD_URL
-  APP_NAME: APP_NAME
+  mad-master: mad-master
+  us-east1: us-east1
+  CLOUD_RUN_SERVICE: tv-dashboards
+  https://tv-dashboards.madhive.dev: https://tv-dashboards.madhive.dev
+  tv-dashboards: tv-dashboards
 
 permissions:
   contents: read
@@ -38,8 +38,8 @@ jobs:
           # List revisions sorted by creation time
           REVISIONS=$(gcloud run revisions list \
             --service "${{ env.CLOUD_RUN_SERVICE }}" \
-            --region "${{ env.GCP_REGION }}" \
-            --project "${{ env.GCP_PROJECT_ID }}" \
+            --region "${{ env.us-east1 }}" \
+            --project "${{ env.mad-master }}" \
             --format "value(REVISION)" \
             --sort-by "~creationTimestamp" \
             --limit 2)
@@ -58,15 +58,15 @@ jobs:
 
           # Route 100% traffic to previous revision
           gcloud run services update-traffic "${{ env.CLOUD_RUN_SERVICE }}" \
-            --region "${{ env.GCP_REGION }}" \
-            --project "${{ env.GCP_PROJECT_ID }}" \
+            --region "${{ env.us-east1 }}" \
+            --project "${{ env.mad-master }}" \
             --to-revisions "${PREVIOUS}=100"
 
       - name: Health check
         run: |
           echo "Waiting for rollback to propagate..."
           sleep 10
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ env.PROD_URL }}/health" || true)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "${{ env.https://tv-dashboards.madhive.dev }}/health" || true)
           if [ "$STATUS" = "200" ]; then
             echo "Health check passed after rollback"
           else
@@ -90,7 +90,7 @@ jobs:
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "⏪ Rollback Complete — ${{ env.APP_NAME }}",
+                    "text": "⏪ Rollback Complete — ${{ env.tv-dashboards }}",
                     "emoji": true
                   }
                 },
@@ -109,7 +109,7 @@ jobs:
                     {
                       "type": "button",
                       "text": { "type": "plain_text", "text": "Open Production", "emoji": true },
-                      "url": "${{ env.PROD_URL }}"
+                      "url": "${{ env.https://tv-dashboards.madhive.dev }}"
                     },
                     {
                       "type": "button",
@@ -139,7 +139,7 @@ jobs:
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "❌ Rollback Failed — ${{ env.APP_NAME }}",
+                    "text": "❌ Rollback Failed — ${{ env.tv-dashboards }}",
                     "emoji": true
                   }
                 },
@@ -147,7 +147,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "⚠️ *Manual intervention required.* The automatic rollback for `${{ env.APP_NAME }}` failed. Please check the Cloud Run console and roll back manually."
+                    "text": "⚠️ *Manual intervention required.* The automatic rollback for `${{ env.tv-dashboards }}` failed. Please check the Cloud Run console and roll back manually."
                   }
                 },
                 {
@@ -161,7 +161,7 @@ jobs:
                     {
                       "type": "button",
                       "text": { "type": "plain_text", "text": "Cloud Run Console", "emoji": true },
-                      "url": "https://console.cloud.google.com/run/detail/${{ env.GCP_REGION }}/${{ env.CLOUD_RUN_SERVICE }}/revisions?project=${{ env.GCP_PROJECT_ID }}"
+                      "url": "https://console.cloud.google.com/run/detail/${{ env.us-east1 }}/${{ env.CLOUD_RUN_SERVICE }}/revisions?project=${{ env.mad-master }}"
                     }
                   ]
                 }

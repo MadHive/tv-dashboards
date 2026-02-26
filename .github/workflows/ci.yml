@@ -52,7 +52,7 @@ jobs:
                   "type": "header",
                   "text": {
                     "type": "plain_text",
-                    "text": "❌ CI Failed — APP_NAME",
+                    "text": "❌ CI Failed — tv-dashboards",
                     "emoji": true
                   }
                 },
