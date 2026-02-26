@@ -5,7 +5,7 @@
 .auth-button {
   position: fixed;
   top: 20px;
-  right: 180px;
+  right: 200px;
   z-index: 10001;
   display: flex;
   align-items: center;
