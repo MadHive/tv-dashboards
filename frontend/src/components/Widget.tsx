@@ -7,6 +7,12 @@ import BarChartWidget from './widgets/BarChartWidget';
 import TableWidget from './widgets/TableWidget';
 import ListWidget from './widgets/ListWidget';
 import MapWidget from './widgets/MapWidget';
+import SparklineWidget from './widgets/SparklineWidget';
+import HeatmapWidget from './widgets/HeatmapWidget';
+import MultiMetricCardWidget from './widgets/MultiMetricCardWidget';
+import StackedBarChartWidget from './widgets/StackedBarChartWidget';
+import SankeyWidget from './widgets/SankeyWidget';
+import TreemapWidget from './widgets/TreemapWidget';
 
 interface WidgetProps {
   widget: WidgetType;
@@ -41,6 +47,24 @@ export default function Widget({ widget }: WidgetProps) {
 
     case 'map':
       return <MapWidget widget={widget} />;
+
+    case 'sparkline':
+      return <SparklineWidget widget={widget} />;
+
+    case 'heatmap':
+      return <HeatmapWidget widget={widget} />;
+
+    case 'multi-metric-card':
+      return <MultiMetricCardWidget widget={widget} />;
+
+    case 'stacked-bar-chart':
+      return <StackedBarChartWidget widget={widget} />;
+
+    case 'sankey':
+      return <SankeyWidget widget={widget} />;
+
+    case 'treemap':
+      return <TreemapWidget widget={widget} />;
 
     // Fallback for unimplemented widget types
     default:

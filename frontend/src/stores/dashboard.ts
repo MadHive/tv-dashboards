@@ -34,6 +34,12 @@ const IMPLEMENTED_WIDGET_TYPES = new Set([
   'table',
   'list',
   'map',
+  'sparkline',
+  'heatmap',
+  'multi-metric-card',
+  'stacked-bar-chart',
+  'sankey',
+  'treemap',
 ]);
 
 // Check if a dashboard has ALL widgets unimplemented (should be skipped)
