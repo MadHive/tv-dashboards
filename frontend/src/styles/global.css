@@ -1,0 +1,198 @@
+/* Import Inter font from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* MadHive Brand Colors */
+:root {
+  --madhive-purple-dark: #200847;
+  --madhive-purple: #291036;
+  --madhive-pink: #FF9BD3;
+  --madhive-pink-soft: #FDA4D4;
+  --madhive-chalk: #F4DFFF;
+  --madhive-cream: #F3F2EB;
+  --madhive-bg: #0F0820; /* Darker background for TV */
+  --madhive-card: #1A0F2E; /* Card background */
+  --madhive-border: #3D1F5C; /* Border color */
+
+  /* Extended palette */
+  --madhive-purple-deepest: #0F0820;
+  --madhive-purple-deep: #1A0F2E;
+  --madhive-purple-medium: #3D1F5C;
+  --madhive-pink-bright: #FF7AC6;
+  --madhive-pink-pale: #FFD4EC;
+  --madhive-chalk-bright: #FFFFFF;
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #FF9BD3 0%, #FDA4D4 100%);
+  --gradient-accent: linear-gradient(135deg, #291036 0%, #3D1F5C 100%);
+  --gradient-glow: radial-gradient(circle, rgba(255,155,211,0.2) 0%, transparent 70%);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(32, 8, 71, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(32, 8, 71, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(32, 8, 71, 0.5);
+  --shadow-glow: 0 0 20px rgba(255, 155, 211, 0.3);
+}
+
+/* 43" 4K TV - 10-Foot Viewing Distance */
+html {
+  font-size: 20px; /* Moderate increase for TV viewing */
+}
+
+/* Scale for 4K displays */
+@media (min-width: 3840px) {
+  html {
+    font-size: 22px; /* Balanced for 10-foot 4K viewing */
+  }
+}
+
+/* MadHive Brand Styling */
+body {
+  background: var(--madhive-bg);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Custom scrollbar - MadHive colors */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--madhive-pink) var(--madhive-purple-dark);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--madhive-purple-dark);
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--madhive-pink);
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--madhive-pink-soft);
+}
+
+/* MadHive Widget Styling Override */
+.bg-slate-950 {
+  background-color: var(--madhive-bg) !important;
+}
+
+.bg-slate-900 {
+  background-color: var(--madhive-purple-dark) !important;
+}
+
+.bg-slate-800 {
+  background-color: var(--madhive-card) !important;
+}
+
+.border-slate-700 {
+  border-color: var(--madhive-border) !important;
+}
+
+.border-slate-800 {
+  border-color: var(--madhive-purple) !important;
+}
+
+.text-slate-400 {
+  color: var(--madhive-chalk) !important;
+}
+
+.text-slate-200 {
+  color: #E5D9F2 !important;
+}
+
+/* Accent colors - use MadHive pink */
+.text-blue-500,
+.text-blue-400 {
+  color: var(--madhive-pink) !important;
+}
+
+.bg-blue-500 {
+  background-color: var(--madhive-pink) !important;
+}
+
+.border-blue-500 {
+  border-color: var(--madhive-pink) !important;
+}
+
+/* Success/Warning/Error - keep but adjust to match brand */
+.text-emerald-400 {
+  color: #A7F3D0 !important;
+}
+
+.text-yellow-500 {
+  color: #FDE68A !important;
+}
+
+.text-red-500,
+.text-red-400 {
+  color: #FCA5A5 !important;
+}
+
+/* Hover states */
+.hover\:bg-slate-700:hover {
+  background-color: var(--madhive-purple) !important;
+}
+
+.hover\:bg-slate-600:hover {
+  background-color: #3D1F5C !important;
+}
+
+.hover\:border-slate-600:hover {
+  border-color: var(--madhive-pink-soft) !important;
+}
+
+/* Rounded corners - MadHive style */
+.rounded-lg {
+  border-radius: 12px !important;
+}
+
+/* Animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
+}
+
+/* TV Optimizations - Moderate scaling for 10-foot viewing */
+@media (min-width: 1920px) {
+  /* Widget titles - slightly larger */
+  h3.text-sm {
+    font-size: 1.25rem !important;
+    font-weight: 600 !important;
+  }
+
+  /* Big numbers - prominent on TV */
+  .text-5xl {
+    font-size: 4.5rem !important;
+    font-weight: 700 !important;
+    line-height: 1.1 !important;
+  }
+
+  .text-6xl {
+    font-size: 5rem !important;
+    font-weight: 700 !important;
+    line-height: 1.1 !important;
+  }
+
+  /* Comfortable padding */
+  .p-4 {
+    padding: 1.5rem !important;
+  }
+}
