@@ -31,8 +31,8 @@ import {
 } from './template-manager.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const PORT = parseInt(process.env.PORT || '3000', 10);
-const HOST = process.env.HOST || '0.0.0.0';
+const PORT = parseInt(process.env.PORT || '80', 10);
+const HOST = process.env.HOST || 'tv.madhive.local';
 const LIVE = process.env.USE_REAL_DATA === 'true';
 
 // Use config manager for loading (with caching)

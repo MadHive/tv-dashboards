@@ -1,0 +1,77 @@
+name: PR Merged
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  notify-jira:
+    name: Update Jira
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Extract Jira ticket
+        id: jira
+        run: |
+          BRANCH="${{ github.event.pull_request.head.ref }}"
+          TITLE="${{ github.event.pull_request.title }}"
+
+          # Try to extract from branch name first
+          TICKET=$(echo "$BRANCH" | grep -oE '[A-Z]+-[0-9]+' | head -1 || true)
+
+          # If not in branch, try PR title
+          if [ -z "$TICKET" ]; then
+            TICKET=$(echo "$TITLE" | grep -oE '[A-Z]+-[0-9]+' | head -1 || true)
+          fi
+
+          echo "ticket=${TICKET}" >> "$GITHUB_OUTPUT"
+          echo "Jira ticket: ${TICKET:-none found}"
+
+      - name: Comment on Jira ticket
+        if: steps.jira.outputs.ticket != ''
+        run: |
+          curl -s -X POST \
+            -H "Authorization: Basic $(echo -n '${{ secrets.JIRA_EMAIL }}:${{ secrets.JIRA_API_TOKEN }}' | base64)" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "body": "PR merged to main: ${{ github.event.pull_request.html_url }}\nTitle: ${{ github.event.pull_request.title }}\nAuthor: ${{ github.event.pull_request.user.login }}"
+            }' \
+            "https://${{ secrets.JIRA_DOMAIN }}/rest/api/2/issue/${{ steps.jira.outputs.ticket }}/comment"
+
+  notify-slack:
+    name: Notify Slack
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    steps:
+      - name: Send Slack notification
+        uses: slackapi/slack-github-action@v2.0.0
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "🎉 PR Merged — tv-dashboards",
+                    "emoji": true
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    { "type": "mrkdwn", "text": "*PR:*\n<${{ github.event.pull_request.html_url }}|#${{ github.event.pull_request.number }} ${{ github.event.pull_request.title }}>" },
+                    { "type": "mrkdwn", "text": "*Author:*\n${{ github.event.pull_request.user.login }}" },
+                    { "type": "mrkdwn", "text": "*Branch:*\n`${{ github.event.pull_request.head.ref }}`" },
+                    { "type": "mrkdwn", "text": "*Merged by:*\n${{ github.event.pull_request.merged_by.login }}" }
+                  ]
+                }
+              ]
+            }

@@ -149,10 +149,11 @@ export class VulnTrackDataSource extends DataSource {
     switch (widgetType) {
       case 'security-scorecard': {
         // Calculate security score
-        const total = s.total || 0;
-        const critical = s.critical || 0;
-        const high = s.high || 0;
-        const medium = s.medium || 0;
+        const total = s.openFindings || s.total || 0;
+        const critical = s.criticalOpen || s.critical || 0;
+        const high = s.highOpen || s.high || 0;
+        const medium = s.mediumOpen || s.medium || 0;
+        const low = s.lowOpen || s.low || 0;
 
         // Score formula: 100 - weighted severity impact
         const score = Math.max(0, 100 - (critical * 10 + high * 3 + medium * 1));
@@ -173,7 +174,7 @@ export class VulnTrackDataSource extends DataSource {
           critical: critical,
           high: high,
           medium: medium,
-          low: s.low || 0,
+          low: low,
           bySource: bySource,
           history: (dash.history || []).map(h => h.total || 0),
           trend: total < (dash.history?.[dash.history.length - 2]?.total || total) ? 'down' : 'up'
@@ -183,19 +184,19 @@ export class VulnTrackDataSource extends DataSource {
       case 'big-number':
       case 'stat-card':
         return {
-          value: s.total || 0,
-          critical: s.critical || 0,
-          high: s.high || 0,
-          trend: s.total < (dash.history?.[dash.history.length - 2]?.total || s.total) ? 'down' : 'up'
+          value: s.openFindings || s.total || 0,
+          critical: s.criticalOpen || s.critical || 0,
+          high: s.highOpen || s.high || 0,
+          trend: (s.openFindings || s.total || 0) < (dash.history?.[dash.history.length - 2]?.total || (s.openFindings || s.total || 0)) ? 'down' : 'up'
         };
 
       case 'bar-chart': {
         return {
           values: [
-            { label: 'Critical', value: s.critical || 0, color: '#EF4444' },
-            { label: 'High', value: s.high || 0, color: '#F59E0B' },
-            { label: 'Medium', value: s.medium || 0, color: '#FBBF24' },
-            { label: 'Low', value: s.low || 0, color: '#10B981' }
+            { label: 'Critical', value: s.criticalOpen || s.critical || 0, color: '#EF4444' },
+            { label: 'High', value: s.highOpen || s.high || 0, color: '#F59E0B' },
+            { label: 'Medium', value: s.mediumOpen || s.medium || 0, color: '#FBBF24' },
+            { label: 'Low', value: s.lowOpen || s.low || 0, color: '#10B981' }
           ]
         };
       }

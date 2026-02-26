@@ -54,7 +54,7 @@ bun install
 bun run start
 ```
 
-Server runs at: **http://localhost:3000**
+Server runs at: **http://tv.madhive.local** (port 80)
 
 ### Environment Variables
 
@@ -68,7 +68,7 @@ export VULNTRACK_API_KEY=your-api-key
 ## Using the WYSIWYG Editor
 
 ### Enter Edit Mode
-1. Open dashboard in browser: `http://localhost:3000`
+1. Open dashboard in browser: `http://tv.madhive.local`
 2. Press `Ctrl+E` (or click "Edit Mode" button)
 3. Grid overlay appears with widget palette
 
