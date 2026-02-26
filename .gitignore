@@ -49,6 +49,9 @@ temp/
 *.swo
 *~
 
+# Git worktrees
+.worktrees/
+
 # Backups (keep config backups but exclude others)
 *.backup.*
 !config/*.backup.*
