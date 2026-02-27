@@ -195,7 +195,7 @@ export function DataExplorer() {
                   key={query.id}
                   onClick={() => handleRunQuery(query)}
                   disabled={executing}
-                  className={`w-full px-6 py-5 border rounded-lg text-left transition-colors disabled:opacity-50 ${
+                  className={`w-full px-6 py-5 border rounded-lg text-left transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-madhive-pink focus:ring-offset-2 focus:ring-offset-madhive-purple-deepest ${
                     selectedQuery?.id === query.id
                       ? 'bg-madhive-pink border-madhive-pink text-madhive-purple-deepest'
                       : 'bg-madhive-purple-dark hover:bg-madhive-purple-medium border-madhive-purple-medium text-madhive-chalk'
