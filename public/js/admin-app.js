@@ -54,6 +54,15 @@ class AdminApp {
       this.bulkDeleteSelected();
     });
 
+    // Import button
+    document.getElementById('import-dashboard-btn').addEventListener('click', () => {
+      document.getElementById('import-file-input').click();
+    });
+
+    document.getElementById('import-file-input').addEventListener('change', (e) => {
+      this.importDashboard(e.target.files[0]);
+    });
+
     // Listen for checkbox changes
     document.addEventListener('change', (e) => {
       if (e.target.classList.contains('dashboard-checkbox')) {
@@ -166,6 +175,7 @@ class AdminApp {
     actions.appendChild(createActionBtn('Edit Widgets', 'edit-widgets'));
     actions.appendChild(createActionBtn('Edit', 'edit'));
     actions.appendChild(createActionBtn('Duplicate', 'duplicate'));
+    actions.appendChild(createActionBtn('Export', 'export'));
     actions.appendChild(createActionBtn('Delete', 'delete'));
 
     item.appendChild(left);
@@ -185,6 +195,9 @@ class AdminApp {
         break;
       case 'duplicate':
         this.duplicateDashboard(id);
+        break;
+      case 'export':
+        this.exportDashboard(id);
         break;
       case 'delete':
         this.deleteDashboard(id);
@@ -448,6 +461,61 @@ class AdminApp {
     } catch (error) {
       this.showToast('Failed to save order', 'error');
     }
+  }
+
+  async exportDashboard(id) {
+    try {
+      const dashboard = await this.api.getDashboard(id);
+      const dataStr = JSON.stringify(dashboard, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(dataBlob);
+      link.download = `${id}.json`;
+      link.click();
+
+      this.showToast('Dashboard exported');
+    } catch (error) {
+      this.showToast('Export failed', 'error');
+    }
+  }
+
+  async importDashboard(file) {
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const dashboard = JSON.parse(text);
+
+      // Check for ID conflict
+      if (this.dashboards.some(d => d.id === dashboard.id)) {
+        const overwrite = confirm(
+          `Dashboard "${dashboard.id}" already exists.\n\n` +
+          `Overwrite it?`
+        );
+
+        if (overwrite) {
+          await this.api.updateDashboard(dashboard.id, dashboard);
+          this.showToast('Dashboard updated successfully');
+        } else {
+          // Generate new ID
+          dashboard.id = `${dashboard.id}-imported`;
+          dashboard.name = `${dashboard.name} (Imported)`;
+          await this.api.createDashboard(dashboard);
+          this.showToast('Dashboard imported with new ID');
+        }
+      } else {
+        await this.api.createDashboard(dashboard);
+        this.showToast('Dashboard imported successfully');
+      }
+
+      await this.loadDashboards();
+    } catch (error) {
+      this.showToast('Import failed: ' + error.message, 'error');
+    }
+
+    // Reset file input
+    document.getElementById('import-file-input').value = '';
   }
 }
 
