@@ -424,6 +424,225 @@ window.Widgets = (function () {
   }
 
   // ===========================================================================
+  // NEW WIDGETS FOR VISUAL SHOWCASE
+  // ===========================================================================
+
+  function sparkline(container, config) {
+    const canvas = el('canvas', 'sparkline-canvas');
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    container.appendChild(canvas);
+
+    return {
+      update(data) {
+        if (!data) return;
+        C.sparklineChart(canvas, data, config);
+      }
+    };
+  }
+
+  function multiMetricCard(container, config) {
+    const wrap = el('div', 'multi-metric-wrap');
+    wrap.style.display = 'grid';
+    wrap.style.gap = '12px';
+    wrap.style.padding = '16px';
+    container.appendChild(wrap);
+
+    let metricEls = [];
+
+    return {
+      update(data) {
+        if (!data || !data.metrics) return;
+
+        const count = data.metrics.length;
+        if (count <= 2) wrap.style.gridTemplateColumns = '1fr 1fr';
+        else wrap.style.gridTemplateColumns = 'repeat(2, 1fr)';
+
+        if (metricEls.length !== count) {
+          while (wrap.firstChild) {
+            wrap.removeChild(wrap.firstChild);
+          }
+
+          metricEls = data.metrics.map(() => {
+            const item = el('div', 'metric-item');
+            const label = el('div', 'metric-label');
+            const row = el('div', 'metric-row');
+            const value = el('span', 'metric-value');
+            const unit = el('span', 'metric-unit');
+            const trend = el('span', 'metric-trend');
+
+            row.append(value, unit, trend);
+            item.append(label, row);
+            wrap.appendChild(item);
+
+            return { label, value, unit, trend };
+          });
+        }
+
+        data.metrics.forEach((m, i) => {
+          metricEls[i].label.textContent = m.label;
+          metricEls[i].value.textContent = fmtNum(m.value);
+          metricEls[i].unit.textContent = m.unit || '';
+          metricEls[i].trend.textContent = trendArrow(m.trend || 'stable');
+          metricEls[i].trend.className = 'metric-trend ' + (m.trend || 'stable');
+        });
+      }
+    };
+  }
+
+  function lineChart(container, config) {
+    const canvas = el('canvas', 'line-chart-canvas');
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    container.appendChild(canvas);
+
+    return {
+      update(data) {
+        if (!data) return;
+        C.lineChart(canvas, data, config);
+      }
+    };
+  }
+
+  function heatmap(container, config) {
+    const canvas = el('canvas', 'heatmap-canvas');
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    container.appendChild(canvas);
+
+    return {
+      update(data) {
+        if (!data) return;
+        C.heatmap(canvas, data, config);
+      }
+    };
+  }
+
+  function stackedBarChart(container, config) {
+    const canvas = el('canvas', 'stacked-bar-canvas');
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    container.appendChild(canvas);
+
+    return {
+      update(data) {
+        if (!data) return;
+        C.stackedBar(canvas, data, config);
+      }
+    };
+  }
+
+  function sankey(container, config) {
+    const canvas = el('canvas', 'sankey-canvas');
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    container.appendChild(canvas);
+
+    return {
+      update(data) {
+        if (!data) return;
+        C.sankey(canvas, data, config);
+      }
+    };
+  }
+
+  function table(container, config) {
+    const wrap = el('div', 'table-wrap');
+    const tableEl = el('table', 'data-table');
+    wrap.appendChild(tableEl);
+    container.appendChild(wrap);
+
+    let sortColumn = null;
+    let sortDir = 'asc';
+
+    const widget = {
+      update(data) {
+        if (!data || !data.columns || !data.rows) return;
+
+        while (tableEl.firstChild) {
+          tableEl.removeChild(tableEl.firstChild);
+        }
+
+        // Header
+        const thead = el('thead');
+        const headerRow = el('tr');
+        data.columns.forEach(col => {
+          const th = el('th', 'sortable', col.label);
+          th.style.textAlign = col.align || 'left';
+          th.onclick = () => {
+            if (sortColumn === col.key) {
+              sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+            } else {
+              sortColumn = col.key;
+              sortDir = 'asc';
+            }
+            widget.update(data);
+          };
+          if (sortColumn === col.key) {
+            th.textContent += sortDir === 'asc' ? ' ▲' : ' ▼';
+          }
+          headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+        tableEl.appendChild(thead);
+
+        // Body
+        const tbody = el('tbody');
+        let rows = [...data.rows];
+
+        if (sortColumn) {
+          rows.sort((a, b) => {
+            const aVal = a[sortColumn];
+            const bVal = b[sortColumn];
+            const mult = sortDir === 'asc' ? 1 : -1;
+            if (typeof aVal === 'number') return (aVal - bVal) * mult;
+            return String(aVal).localeCompare(String(bVal)) * mult;
+          });
+        }
+
+        rows.forEach((row, i) => {
+          const tr = el('tr');
+          if (i % 2 === 1) tr.classList.add('alt');
+
+          data.columns.forEach(col => {
+            const td = el('td');
+            td.style.textAlign = col.align || 'left';
+
+            const val = row[col.key];
+            if (col.format === 'number') {
+              td.textContent = fmtNum(val);
+            } else if (col.format === 'badge') {
+              const badge = el('span', `badge badge-${val}`, val);
+              td.appendChild(badge);
+            } else {
+              td.textContent = val;
+            }
+
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        tableEl.appendChild(tbody);
+      }
+    };
+    return widget;
+  }
+
+  function treemap(container, config) {
+    const canvas = el('canvas', 'treemap-canvas');
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    container.appendChild(canvas);
+
+    return {
+      update(data) {
+        if (!data) return;
+        C.treemap(canvas, data, config);
+      }
+    };
+  }
+
+  // ===========================================================================
   // Factory
   // ===========================================================================
   function create(type, container, config) {
@@ -440,6 +659,14 @@ window.Widgets = (function () {
       case 'pipeline-flow':  return pipelineFlow(container, config);
       case 'usa-map':        return usaMapWidget(container, config);
       case 'security-scorecard': return securityScorecard(container, config);
+      case 'sparkline':      return sparkline(container, config);
+      case 'multi-metric-card': return multiMetricCard(container, config);
+      case 'line-chart':     return lineChart(container, config);
+      case 'heatmap':        return heatmap(container, config);
+      case 'stacked-bar-chart': return stackedBarChart(container, config);
+      case 'sankey':         return sankey(container, config);
+      case 'table':          return table(container, config);
+      case 'treemap':        return treemap(container, config);
       default:
         console.warn('[widgets] unknown type:', type);
         container.textContent = 'Unknown widget: ' + type;

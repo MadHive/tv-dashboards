@@ -2074,5 +2074,551 @@ window.Charts = (function () {
     ctx.fillRect(0, scanY2 - 3, w, 6);
   }
 
-  return { sparkline, gauge, pipeline, usaMap, securityScorecard, thresholdColor, formatNum, setup };
+  // ===========================================================================
+  // NEW CHART RENDERERS FOR MISSING WIDGETS
+  // ===========================================================================
+
+  function sparklineChart(canvas, data, config) {
+    if (!data || !data.values || data.values.length === 0) return;
+
+    const { ctx, w, h } = setup(canvas);
+    const values = data.values;
+    const max = Math.max(...values);
+    const min = Math.min(...values);
+    const range = max - min || 1;
+
+    // Calculate points
+    const step = w / (values.length - 1);
+    const points = values.map((v, i) => ({
+      x: i * step,
+      y: h - ((v - min) / range) * h
+    }));
+
+    // Draw gradient fill
+    const gradient = ctx.createLinearGradient(0, 0, 0, h);
+    gradient.addColorStop(0, hexToRgba(BRAND.pink, 0.3));
+    gradient.addColorStop(1, hexToRgba(BRAND.pink, 0));
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, h);
+    points.forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.lineTo(points[points.length - 1].x, h);
+    ctx.closePath();
+    ctx.fill();
+
+    // Draw line with glow
+    ctx.shadowColor = hexToRgba(BRAND.pink, 0.3);
+    ctx.shadowBlur = 4;
+    ctx.strokeStyle = BRAND.pink;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    points.forEach(p => ctx.lineTo(p.x, p.y));
+    ctx.stroke();
+  }
+
+  function lineChart(canvas, data, config) {
+    if (!data || !data.series || data.series.length === 0) return;
+
+    const { ctx, w, h } = setup(canvas);
+
+    // Margins for axes
+    const marginLeft = 50;
+    const marginRight = 20;
+    const marginTop = 20;
+    const marginBottom = 40;
+    const plotW = w - marginLeft - marginRight;
+    const plotH = h - marginTop - marginBottom;
+
+    // Find global min/max across all series
+    const allValues = data.series.flatMap(s => s.values);
+    const maxVal = Math.max(...allValues);
+    const minVal = Math.min(...allValues);
+    const range = maxVal - minVal || 1;
+
+    const pointCount = data.series[0].values.length;
+    const stepX = plotW / (pointCount - 1);
+
+    // Draw gridlines
+    ctx.strokeStyle = hexToRgba(BRAND.border, 0.3);
+    ctx.lineWidth = 1;
+    const gridLines = 5;
+    for (let i = 0; i <= gridLines; i++) {
+      const y = marginTop + (plotH / gridLines) * i;
+      ctx.beginPath();
+      ctx.moveTo(marginLeft, y);
+      ctx.lineTo(marginLeft + plotW, y);
+      ctx.stroke();
+
+      // Y-axis labels
+      const val = maxVal - (range / gridLines) * i;
+      ctx.fillStyle = BRAND.text2;
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(formatNum(val), marginLeft - 8, y + 4);
+    }
+
+    // Draw X-axis labels
+    if (data.labels) {
+      ctx.fillStyle = BRAND.text2;
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'center';
+      const labelStep = Math.ceil(data.labels.length / 6);
+      data.labels.forEach((label, i) => {
+        if (i % labelStep === 0) {
+          const x = marginLeft + i * stepX;
+          ctx.fillText(label, x, h - 10);
+        }
+      });
+    }
+
+    // Draw each series
+    data.series.forEach((series) => {
+      const color = series.color || BRAND.pink;
+
+      // Calculate points
+      const points = series.values.map((val, i) => ({
+        x: marginLeft + i * stepX,
+        y: marginTop + plotH - ((val - minVal) / range) * plotH
+      }));
+
+      // Draw line
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.shadowColor = hexToRgba(color, 0.3);
+      ctx.shadowBlur = 4;
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+
+      // Bezier curves for smoothness
+      for (let i = 0; i < points.length - 1; i++) {
+        const cp1x = points[i].x + stepX / 3;
+        const cp1y = points[i].y;
+        const cp2x = points[i + 1].x - stepX / 3;
+        const cp2y = points[i + 1].y;
+        ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, points[i + 1].x, points[i + 1].y);
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Draw points
+      points.forEach(p => {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    });
+
+    // Draw legend
+    let legendY = marginTop;
+    data.series.forEach((series) => {
+      ctx.fillStyle = series.color || BRAND.pink;
+      ctx.fillRect(marginLeft + plotW + 10, legendY, 12, 12);
+      ctx.fillStyle = BRAND.text1;
+      ctx.font = '12px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(series.name, marginLeft + plotW + 26, legendY + 10);
+      legendY += 20;
+    });
+  }
+
+  function heatmap(canvas, data, config) {
+    if (!data || !data.values || !data.rows || !data.columns) return;
+
+    const { ctx, w, h } = setup(canvas);
+
+    const rows = data.rows.length;
+    const cols = data.columns.length;
+    const marginLeft = 60;
+    const marginTop = 40;
+    const marginRight = 80;
+    const cellW = (w - marginLeft - marginRight) / cols;
+    const cellH = (h - marginTop - 20) / rows;
+
+    // Find min/max for color scale
+    const allVals = data.values.flat();
+    const minVal = Math.min(...allVals);
+    const maxVal = Math.max(...allVals);
+    const range = maxVal - minVal || 1;
+
+    // Color interpolation
+    function interpolateColor(c1, c2, t) {
+      const r1 = parseInt(c1.slice(1, 3), 16);
+      const g1 = parseInt(c1.slice(3, 5), 16);
+      const b1 = parseInt(c1.slice(5, 7), 16);
+      const r2 = parseInt(c2.slice(1, 3), 16);
+      const g2 = parseInt(c2.slice(3, 5), 16);
+      const b2 = parseInt(c2.slice(5, 7), 16);
+      const r = Math.round(r1 + (r2 - r1) * t);
+      const g = Math.round(g1 + (g2 - g1) * t);
+      const b = Math.round(b1 + (b2 - b1) * t);
+      return `rgb(${r},${g},${b})`;
+    }
+
+    function getColor(val) {
+      const t = (val - minVal) / range;
+      if (t < 0.5) {
+        return interpolateColor('#67E8F9', '#FBBF24', t * 2);
+      } else {
+        return interpolateColor('#FBBF24', '#FB7185', (t - 0.5) * 2);
+      }
+    }
+
+    // Draw cells
+    data.values.forEach((row, ri) => {
+      row.forEach((val, ci) => {
+        const x = marginLeft + ci * cellW;
+        const y = marginTop + ri * cellH;
+
+        ctx.fillStyle = getColor(val);
+        ctx.fillRect(x, y, cellW - 1, cellH - 1);
+
+        // Draw value if cell is large enough
+        if (cellW > 40 && cellH > 30) {
+          ctx.fillStyle = BRAND.deep;
+          ctx.font = 'bold 12px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(formatNum(val), x + cellW / 2, y + cellH / 2);
+        }
+      });
+    });
+
+    // Draw row labels
+    ctx.fillStyle = BRAND.text1;
+    ctx.font = '12px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    data.rows.forEach((label, i) => {
+      ctx.fillText(label, marginLeft - 8, marginTop + i * cellH + cellH / 2);
+    });
+
+    // Draw column labels
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    data.columns.forEach((label, i) => {
+      ctx.fillText(label, marginLeft + i * cellW + cellW / 2, marginTop - 8);
+    });
+
+    // Draw legend
+    const legendX = w - marginRight + 20;
+    const legendH = h - marginTop - 40;
+    const legendW = 20;
+    const steps = 20;
+
+    for (let i = 0; i < steps; i++) {
+      const t = i / steps;
+      const val = minVal + range * t;
+      const y = marginTop + legendH - (i / steps) * legendH;
+      ctx.fillStyle = getColor(val);
+      ctx.fillRect(legendX, y, legendW, legendH / steps);
+    }
+
+    // Legend labels
+    ctx.fillStyle = BRAND.text2;
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(formatNum(maxVal), legendX + legendW + 6, marginTop);
+    ctx.fillText(formatNum(minVal), legendX + legendW + 6, marginTop + legendH);
+  }
+
+  function stackedBar(canvas, data, config) {
+    if (!data || !data.categories || !data.segments) return;
+
+    const { ctx, w, h } = setup(canvas);
+
+    const marginLeft = 100;
+    const marginRight = 100;
+    const marginTop = 20;
+    const marginBottom = 40;
+    const plotH = h - marginTop - marginBottom;
+    const plotW = w - marginLeft - marginRight;
+
+    const categories = data.categories;
+    const barHeight = plotH / categories.length * 0.7;
+    const barGap = plotH / categories.length * 0.3;
+
+    // Calculate totals for X-axis scaling
+    const totals = categories.map((_, catIdx) =>
+      data.segments.reduce((sum, seg) => sum + seg.values[catIdx], 0)
+    );
+    const maxTotal = Math.max(...totals);
+
+    // Draw each category
+    categories.forEach((category, catIdx) => {
+      const y = marginTop + catIdx * (barHeight + barGap);
+
+      // Draw category label
+      ctx.fillStyle = BRAND.text1;
+      ctx.font = '13px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(category, marginLeft - 12, y + barHeight / 2);
+
+      // Draw stacked segments
+      let xOffset = 0;
+      data.segments.forEach(segment => {
+        const value = segment.values[catIdx];
+        const segWidth = (value / maxTotal) * plotW;
+
+        ctx.fillStyle = segment.color || BRAND.pink;
+        ctx.fillRect(marginLeft + xOffset, y, segWidth, barHeight);
+
+        xOffset += segWidth;
+      });
+
+      // Draw total value at end
+      ctx.fillStyle = BRAND.text2;
+      ctx.font = '12px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(formatNum(totals[catIdx]), marginLeft + xOffset + 6, y + barHeight / 2);
+    });
+
+    // Draw X-axis gridlines
+    ctx.strokeStyle = hexToRgba(BRAND.border, 0.3);
+    ctx.lineWidth = 1;
+    const gridSteps = 5;
+    for (let i = 0; i <= gridSteps; i++) {
+      const x = marginLeft + (plotW / gridSteps) * i;
+      ctx.beginPath();
+      ctx.moveTo(x, marginTop);
+      ctx.lineTo(x, marginTop + plotH);
+      ctx.stroke();
+
+      const val = (maxTotal / gridSteps) * i;
+      ctx.fillStyle = BRAND.text2;
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(formatNum(val), x, h - 10);
+    }
+
+    // Draw legend
+    let legendY = marginTop;
+    data.segments.forEach(segment => {
+      const legendX = marginLeft + plotW + 20;
+      ctx.fillStyle = segment.color;
+      ctx.fillRect(legendX, legendY, 14, 14);
+      ctx.fillStyle = BRAND.text1;
+      ctx.font = '12px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(segment.name, legendX + 20, legendY + 11);
+      legendY += 22;
+    });
+  }
+
+  function sankey(canvas, data, config) {
+    if (!data || !data.nodes || !data.links) return;
+
+    const { ctx, w, h } = setup(canvas);
+
+    const marginLeft = 40;
+    const marginRight = 40;
+    const marginTop = 40;
+    const marginBottom = 20;
+    const plotW = w - marginLeft - marginRight;
+    const plotH = h - marginTop - marginBottom;
+
+    const nodeMap = new Map();
+    const nodeWidth = 20;
+
+    // Calculate node depths (column positions)
+    data.nodes.forEach(node => {
+      const inLinks = data.links.filter(l => l.target === node.id);
+      const depth = inLinks.length === 0 ? 0 :
+        Math.max(...inLinks.map(l => {
+          const source = data.nodes.find(n => n.id === l.source);
+          return (nodeMap.get(source.id)?.depth || 0) + 1;
+        }));
+      nodeMap.set(node.id, { ...node, depth, y: 0, height: 0 });
+    });
+
+    const maxDepth = Math.max(...Array.from(nodeMap.values()).map(n => n.depth));
+    const colWidth = plotW / (maxDepth + 1);
+
+    // Calculate node heights based on flow values
+    const nodeValues = new Map();
+    data.nodes.forEach(node => {
+      const inFlow = data.links.filter(l => l.target === node.id)
+        .reduce((sum, l) => sum + l.value, 0);
+      const outFlow = data.links.filter(l => l.source === node.id)
+        .reduce((sum, l) => sum + l.value, 0);
+      const value = Math.max(inFlow, outFlow);
+      nodeValues.set(node.id, value);
+    });
+
+    const maxValue = Math.max(...Array.from(nodeValues.values()));
+    const heightScale = plotH * 0.8 / maxValue;
+
+    // Position nodes
+    const columns = Array.from({ length: maxDepth + 1 }, () => []);
+    nodeMap.forEach((node, id) => {
+      node.height = nodeValues.get(id) * heightScale;
+      columns[node.depth].push(node);
+    });
+
+    columns.forEach((col, depth) => {
+      const totalHeight = col.reduce((sum, n) => sum + n.height, 0);
+      const gap = (plotH - totalHeight) / (col.length + 1);
+      let y = marginTop + gap;
+      col.forEach(node => {
+        node.x = marginLeft + depth * colWidth;
+        node.y = y;
+        y += node.height + gap;
+      });
+    });
+
+    // Draw links
+    data.links.forEach(link => {
+      const source = nodeMap.get(link.source);
+      const target = nodeMap.get(link.target);
+      if (!source || !target) return;
+
+      const linkHeight = link.value * heightScale;
+      const x1 = source.x + nodeWidth;
+      const y1 = source.y + source.height / 2;
+      const x2 = target.x;
+      const y2 = target.y + target.height / 2;
+
+      const cpDist = (x2 - x1) / 2;
+
+      const gradient = ctx.createLinearGradient(x1, 0, x2, 0);
+      gradient.addColorStop(0, hexToRgba(BRAND.pink, 0.4));
+      gradient.addColorStop(1, hexToRgba(BRAND.cyan, 0.4));
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1 - linkHeight / 2);
+      ctx.bezierCurveTo(
+        x1 + cpDist, y1 - linkHeight / 2,
+        x2 - cpDist, y2 - linkHeight / 2,
+        x2, y2 - linkHeight / 2
+      );
+      ctx.lineTo(x2, y2 + linkHeight / 2);
+      ctx.bezierCurveTo(
+        x2 - cpDist, y2 + linkHeight / 2,
+        x1 + cpDist, y1 + linkHeight / 2,
+        x1, y1 + linkHeight / 2
+      );
+      ctx.closePath();
+      ctx.fill();
+    });
+
+    // Draw nodes
+    nodeMap.forEach(node => {
+      ctx.fillStyle = BRAND.violet;
+      ctx.fillRect(node.x, node.y, nodeWidth, node.height);
+
+      // Label
+      ctx.fillStyle = BRAND.text1;
+      ctx.font = '12px sans-serif';
+      ctx.textAlign = node.depth === 0 ? 'right' : 'left';
+      ctx.textBaseline = 'middle';
+      const labelX = node.depth === 0 ? node.x - 6 : node.x + nodeWidth + 6;
+      ctx.fillText(node.label, labelX, node.y + node.height / 2);
+    });
+  }
+
+  function treemap(canvas, data, config) {
+    if (!data || !data.children) return;
+
+    const { ctx, w, h } = setup(canvas);
+    const margin = 4;
+
+    // Squarified treemap layout
+    function layoutRectangles(children, x, y, width, height) {
+      if (children.length === 0) return [];
+
+      const rects = [];
+      const sorted = [...children].sort((a, b) => b.value - a.value);
+      const totalVal = sorted.reduce((sum, c) => sum + c.value, 0);
+
+      let currentX = x;
+      let currentY = y;
+      let remainingWidth = width;
+      let remainingHeight = height;
+
+      sorted.forEach(() => {
+        const child = sorted.shift();
+        const ratio = child.value / totalVal;
+        const area = ratio * (width * height);
+
+        let rectW, rectH;
+        if (remainingWidth > remainingHeight) {
+          rectW = area / remainingHeight;
+          rectH = remainingHeight;
+          rects.push({
+            x: currentX,
+            y: currentY,
+            w: rectW,
+            h: rectH,
+            data: child
+          });
+          currentX += rectW;
+          remainingWidth -= rectW;
+        } else {
+          rectW = remainingWidth;
+          rectH = area / remainingWidth;
+          rects.push({
+            x: currentX,
+            y: currentY,
+            w: rectW,
+            h: rectH,
+            data: child
+          });
+          currentY += rectH;
+          remainingHeight -= rectH;
+        }
+      });
+
+      return rects;
+    }
+
+    const rects = layoutRectangles(data.children, margin, margin, w - margin * 2, h - margin * 2);
+
+    // Draw rectangles
+    rects.forEach(rect => {
+      ctx.fillStyle = rect.data.color || BRAND.pink;
+      ctx.fillRect(rect.x, rect.y, rect.w - margin, rect.h - margin);
+
+      // Border
+      ctx.strokeStyle = BRAND.deep;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(rect.x, rect.y, rect.w - margin, rect.h - margin);
+
+      // Label
+      if (rect.w > 60 && rect.h > 40) {
+        ctx.fillStyle = BRAND.deep;
+        ctx.font = 'bold 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const text = rect.data.name;
+        const value = formatNum(rect.data.value);
+
+        ctx.fillText(text, rect.x + rect.w / 2, rect.y + rect.h / 2 - 8);
+        ctx.font = '11px sans-serif';
+        ctx.fillText(value, rect.x + rect.w / 2, rect.y + rect.h / 2 + 8);
+      }
+    });
+  }
+
+  return {
+    sparkline,
+    gauge,
+    pipeline,
+    usaMap,
+    securityScorecard,
+    thresholdColor,
+    formatNum,
+    setup,
+    sparklineChart,
+    lineChart,
+    heatmap,
+    stackedBar,
+    sankey,
+    treemap
+  };
 })();
