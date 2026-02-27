@@ -4,6 +4,7 @@ import { WizardProgress } from '@/components/ui/WizardProgress';
 import { Step1Purpose } from '@/components/wizard/Step1Purpose';
 import { Step2DataSources } from '@/components/wizard/Step2DataSources';
 import { Step3MetricPicker } from '@/components/wizard/Step3MetricPicker';
+import { Step4VisualStyle } from '@/components/wizard/Step4VisualStyle';
 import { createInitialState, WizardState } from '@/lib/wizardState';
 
 export function DashboardWizard() {
@@ -59,6 +60,29 @@ export function DashboardWizard() {
               }}
               onBack={() => {
                 setWizardState({ ...wizardState, currentStep: 2 });
+              }}
+            />
+          )}
+
+          {wizardState.currentStep === 4 && (
+            <Step4VisualStyle
+              layoutType={wizardState.layoutType}
+              animationIntensity={wizardState.animationIntensity}
+              colorScheme={wizardState.colorScheme}
+              onUpdateLayout={(layout) => {
+                setWizardState({ ...wizardState, layoutType: layout });
+              }}
+              onUpdateAnimation={(intensity) => {
+                setWizardState({ ...wizardState, animationIntensity: intensity });
+              }}
+              onUpdateColorScheme={(scheme) => {
+                setWizardState({ ...wizardState, colorScheme: scheme });
+              }}
+              onNext={() => {
+                setWizardState({ ...wizardState, currentStep: 5 });
+              }}
+              onBack={() => {
+                setWizardState({ ...wizardState, currentStep: 3 });
               }}
             />
           )}
