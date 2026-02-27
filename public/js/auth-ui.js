@@ -59,21 +59,42 @@ window.AuthUI = (function () {
     updateAuthButton() {
       if (!this.authButton) return;
 
+      // Clear existing content
+      while (this.authButton.firstChild) {
+        this.authButton.removeChild(this.authButton.firstChild);
+      }
+
       if (this.currentUser) {
         // Show user avatar/name
-        this.authButton.innerHTML = `
-          <img src="${this.currentUser.picture}" alt="${this.currentUser.name}" class="auth-avatar">
-          <span class="auth-name">${this.currentUser.name}</span>
-        `;
-        this.authButton.title = `Logged in as ${this.currentUser.email}`;
+        const avatar = document.createElement('img');
+        avatar.className = 'auth-avatar';
+        avatar.src = sanitizeURL(this.currentUser.picture);
+        avatar.alt = this.currentUser.name || 'User';
+        this.authButton.appendChild(avatar);
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'auth-name';
+        nameSpan.textContent = this.currentUser.name || 'User';
+        this.authButton.appendChild(nameSpan);
+
+        this.authButton.title = `Logged in as ${this.currentUser.email || ''}`;
       } else {
         // Show login button
-        this.authButton.innerHTML = `
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
-          </svg>
-          <span>Sign In</span>
-        `;
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('width', '16');
+        svg.setAttribute('height', '16');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('fill', 'currentColor');
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z');
+        svg.appendChild(path);
+        this.authButton.appendChild(svg);
+
+        const span = document.createElement('span');
+        span.textContent = 'Sign In';
+        this.authButton.appendChild(span);
+
         this.authButton.title = 'Sign in with Google';
       }
 

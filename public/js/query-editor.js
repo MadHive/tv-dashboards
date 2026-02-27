@@ -150,22 +150,51 @@ window.QueryEditor = (function () {
       const container = document.getElementById('saved-queries-list');
       if (!container) return;
 
+      // Clear existing content
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+
       if (this.savedQueries.length === 0) {
-        container.innerHTML = '<p class="text-muted">No saved queries</p>';
+        const emptyMsg = document.createElement('p');
+        emptyMsg.className = 'text-muted';
+        emptyMsg.textContent = 'No saved queries';
+        container.appendChild(emptyMsg);
         return;
       }
 
-      container.innerHTML = this.savedQueries.map(q => `
-        <div class="query-list-item" onclick="window.queryEditor.loadQuery('${q.id}')">
-          <div class="query-list-name">${q.name}</div>
-          <div class="query-list-desc">${q.description || ''}</div>
-          <div class="query-list-actions">
-            <button class="btn-icon" onclick="event.stopPropagation(); window.queryEditor.deleteQuery('${q.id}')" title="Delete">
-              🗑️
-            </button>
-          </div>
-        </div>
-      `).join('');
+      // Build DOM elements safely
+      this.savedQueries.forEach(q => {
+        const item = document.createElement('div');
+        item.className = 'query-list-item';
+        item.onclick = () => window.queryEditor.loadQuery(q.id);
+
+        const name = document.createElement('div');
+        name.className = 'query-list-name';
+        name.textContent = q.name;
+        item.appendChild(name);
+
+        const desc = document.createElement('div');
+        desc.className = 'query-list-desc';
+        desc.textContent = q.description || '';
+        item.appendChild(desc);
+
+        const actions = document.createElement('div');
+        actions.className = 'query-list-actions';
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn-icon';
+        deleteBtn.title = 'Delete';
+        deleteBtn.textContent = '🗑️';
+        deleteBtn.onclick = (e) => {
+          e.stopPropagation();
+          window.queryEditor.deleteQuery(q.id);
+        };
+        actions.appendChild(deleteBtn);
+
+        item.appendChild(actions);
+        container.appendChild(item);
+      });
     }
 
     async loadDatasets() {
@@ -175,8 +204,25 @@ window.QueryEditor = (function () {
         if (data.success) {
           this.datasets = data.datasets;
           const select = document.getElementById('schema-datasets');
-          select.innerHTML = '<option value="">Select a dataset...</option>' +
-            this.datasets.map(ds => `<option value="${ds.id}">${ds.name || ds.id}</option>`).join('');
+
+          // Clear existing options
+          while (select.firstChild) {
+            select.removeChild(select.firstChild);
+          }
+
+          // Add default option
+          const defaultOption = document.createElement('option');
+          defaultOption.value = '';
+          defaultOption.textContent = 'Select a dataset...';
+          select.appendChild(defaultOption);
+
+          // Add dataset options safely
+          this.datasets.forEach(ds => {
+            const option = document.createElement('option');
+            option.value = ds.id;
+            option.textContent = ds.name || ds.id;
+            select.appendChild(option);
+          });
         }
       } catch (error) {
         console.error('[QueryEditor] Failed to load datasets:', error);
@@ -184,19 +230,34 @@ window.QueryEditor = (function () {
     }
 
     async loadTables(datasetId) {
-      if (!datasetId) {
-        document.getElementById('schema-tables').innerHTML = '<option value="">Select a table...</option>';
-        return;
+      const select = document.getElementById('schema-tables');
+
+      // Clear existing options
+      while (select.firstChild) {
+        select.removeChild(select.firstChild);
       }
+
+      // Add default option
+      const defaultOption = document.createElement('option');
+      defaultOption.value = '';
+      defaultOption.textContent = 'Select a table...';
+      select.appendChild(defaultOption);
+
+      if (!datasetId) return;
 
       try {
         const response = await fetch(`/api/bigquery/datasets/${datasetId}/tables`);
         const data = await response.json();
         if (data.success) {
           this.tables = data.tables;
-          const select = document.getElementById('schema-tables');
-          select.innerHTML = '<option value="">Select a table...</option>' +
-            this.tables.map(t => `<option value="${t.id}">${t.name || t.id} (${t.numRows} rows)</option>`).join('');
+
+          // Add table options safely
+          this.tables.forEach(t => {
+            const option = document.createElement('option');
+            option.value = t.id;
+            option.textContent = `${t.name || t.id} (${t.numRows} rows)`;
+            select.appendChild(option);
+          });
         }
       } catch (error) {
         console.error('[QueryEditor] Failed to load tables:', error);
