@@ -341,7 +341,7 @@ export function DataExplorer() {
                   <button
                     onClick={() => handleRunQuery(selectedQuery)}
                     disabled={executing}
-                    className="px-6 py-3 bg-madhive-pink text-madhive-purple-deepest text-tv-lg font-semibold rounded-lg hover:bg-madhive-pink/80 transition-colors disabled:opacity-50"
+                    className="px-6 py-3 bg-madhive-pink text-madhive-purple-deepest text-tv-lg font-semibold rounded-lg hover:bg-madhive-pink/80 transition-colors disabled:bg-madhive-purple-medium disabled:text-madhive-chalk/50 disabled:cursor-not-allowed"
                   >
                     Run Again
                   </button>
