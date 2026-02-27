@@ -175,8 +175,25 @@ window.QueryEditor = (function () {
         if (data.success) {
           this.datasets = data.datasets;
           const select = document.getElementById('schema-datasets');
-          select.innerHTML = '<option value="">Select a dataset...</option>' +
-            this.datasets.map(ds => `<option value="${ds.id}">${ds.name || ds.id}</option>`).join('');
+
+          // Clear existing options
+          while (select.firstChild) {
+            select.removeChild(select.firstChild);
+          }
+
+          // Add default option
+          const defaultOption = document.createElement('option');
+          defaultOption.value = '';
+          defaultOption.textContent = 'Select a dataset...';
+          select.appendChild(defaultOption);
+
+          // Add dataset options safely
+          this.datasets.forEach(ds => {
+            const option = document.createElement('option');
+            option.value = ds.id;
+            option.textContent = ds.name || ds.id;
+            select.appendChild(option);
+          });
         }
       } catch (error) {
         console.error('[QueryEditor] Failed to load datasets:', error);
@@ -184,19 +201,34 @@ window.QueryEditor = (function () {
     }
 
     async loadTables(datasetId) {
-      if (!datasetId) {
-        document.getElementById('schema-tables').innerHTML = '<option value="">Select a table...</option>';
-        return;
+      const select = document.getElementById('schema-tables');
+
+      // Clear existing options
+      while (select.firstChild) {
+        select.removeChild(select.firstChild);
       }
+
+      // Add default option
+      const defaultOption = document.createElement('option');
+      defaultOption.value = '';
+      defaultOption.textContent = 'Select a table...';
+      select.appendChild(defaultOption);
+
+      if (!datasetId) return;
 
       try {
         const response = await fetch(`/api/bigquery/datasets/${datasetId}/tables`);
         const data = await response.json();
         if (data.success) {
           this.tables = data.tables;
-          const select = document.getElementById('schema-tables');
-          select.innerHTML = '<option value="">Select a table...</option>' +
-            this.tables.map(t => `<option value="${t.id}">${t.name || t.id} (${t.numRows} rows)</option>`).join('');
+
+          // Add table options safely
+          this.tables.forEach(t => {
+            const option = document.createElement('option');
+            option.value = t.id;
+            option.textContent = `${t.name || t.id} (${t.numRows} rows)`;
+            select.appendChild(option);
+          });
         }
       } catch (error) {
         console.error('[QueryEditor] Failed to load tables:', error);
