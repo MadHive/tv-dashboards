@@ -107,10 +107,15 @@ class ApiClient {
     return this.request<Schema>(`/${dataSource}/schema`);
   }
 
-  async executeQuery(dataSource: string, sql: string): Promise<QueryResult> {
+  async executeQuery(
+    dataSource: string,
+    sql: string,
+    options?: { signal?: AbortSignal }
+  ): Promise<QueryResult> {
     return this.request<QueryResult>(`/${dataSource}/execute`, {
       method: 'POST',
       body: JSON.stringify({ sql }),
+      signal: options?.signal,
     });
   }
 }
