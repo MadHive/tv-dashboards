@@ -90,8 +90,8 @@ export async function getData(dashboardId) {
   return mockGetMetrics(dashboardId);
 }
 
-// Serve Astro build output instead of vanilla JS
-const publicDir = join(__dirname, '..', 'public-astro');
+// Serve vanilla JS (public/) - Astro migration incomplete
+const publicDir = join(__dirname, '..', 'public');
 const indexHtml = readFileSync(join(publicDir, 'index.html'), 'utf8');
 
 // Simple in-memory cache to speed up widget loading (10 second cache)
