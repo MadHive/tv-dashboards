@@ -167,7 +167,7 @@ export function DataExplorer() {
               Refresh
             </button>
           </div>
-          <p className="text-tv-xl text-madhive-chalk/80">
+          <p className="text-tv-xl text-madhive-chalk/90">
             Browse and visualize available data sources
           </p>
         </div>
@@ -270,7 +270,7 @@ export function DataExplorer() {
                   <div className="text-tv-xl font-semibold text-madhive-pink mb-2">
                     {results.rowCount} rows returned
                   </div>
-                  <div className="text-tv-base text-madhive-chalk/80">
+                  <div className="text-tv-base text-madhive-chalk/90">
                     Query executed successfully
                   </div>
                   {cacheAge && (
