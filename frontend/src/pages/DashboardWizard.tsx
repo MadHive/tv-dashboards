@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { WizardProgress } from '@/components/ui/WizardProgress';
 import { Step1Purpose } from '@/components/wizard/Step1Purpose';
+import { Step2DataSources } from '@/components/wizard/Step2DataSources';
 import { createInitialState, WizardState } from '@/lib/wizardState';
 
 export function DashboardWizard() {
@@ -29,6 +30,18 @@ export function DashboardWizard() {
               value={wizardState.dashboardPurpose}
               onSelect={(purpose) => {
                 setWizardState({ ...wizardState, dashboardPurpose: purpose, currentStep: 2 });
+              }}
+            />
+          )}
+
+          {wizardState.currentStep === 2 && (
+            <Step2DataSources
+              value={wizardState.selectedDataSources}
+              onUpdate={(sources) => {
+                setWizardState({ ...wizardState, selectedDataSources: sources });
+              }}
+              onNext={() => {
+                setWizardState({ ...wizardState, currentStep: 3 });
               }}
             />
           )}
