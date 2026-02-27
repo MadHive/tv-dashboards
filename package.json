@@ -7,10 +7,11 @@
   "scripts": {
     "start": "bun run server/index.js",
     "dev": "bun --watch server/index.js",
-    "lint": "echo 'No linter configured - skipping' && exit 0",
-    "typecheck": "echo 'No TypeScript - skipping typecheck' && exit 0",
-    "test": "bun run test-phase3.js && bun run test-phase4.js && bun run test-phase5.js",
-    "build": "echo 'No build step required for vanilla JS' && exit 0"
+    "lint": "cd frontend && bun run lint",
+    "typecheck": "cd frontend && bun run typecheck",
+    "test": "cd frontend && bun run test",
+    "build": "cd frontend && bun run build",
+    "test:integration": "bun run test-phase3.js && bun run test-phase4.js && bun run test-phase5.js"
   },
   "dependencies": {
     "@elysiajs/cookie": "^0.8.0",
