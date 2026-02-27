@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { QueryBuilder } from '@/pages/QueryBuilder';
 import { WizardProgressTest } from '@/pages/WizardProgressTest';
+import { DashboardWizard } from '@/pages/DashboardWizard';
 
 function HomePage() {
   return (
@@ -35,6 +36,17 @@ function HomePage() {
               Test the wizard progress indicator component
             </p>
           </Link>
+          <Link
+            to="/app/dashboard/wizard"
+            className="block p-6 bg-madhive-purple-dark/50 backdrop-blur-sm rounded-lg border border-madhive-purple-medium hover:border-madhive-pink transition-colors"
+          >
+            <h2 className="text-tv-xl font-semibold text-madhive-pink mb-2">
+              Dashboard Creation Wizard
+            </h2>
+            <p className="text-tv-base text-madhive-chalk/80">
+              Create a beautiful TV dashboard in 6 easy steps
+            </p>
+          </Link>
         </div>
       </div>
     </div>
@@ -48,6 +60,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/app/query-builder" element={<QueryBuilder />} />
         <Route path="/app/wizard-progress-test" element={<WizardProgressTest />} />
+        <Route path="/app/dashboard/wizard" element={<DashboardWizard />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
