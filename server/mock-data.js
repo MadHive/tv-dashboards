@@ -360,6 +360,7 @@ export function getMetrics(id) {
     case 'data-infra':         return dataInfra();
     case 'api-services':       return apiServices();
     case 'security-posture':   return securityPosture();
+    case 'visual-showcase':    return visualShowcase();
     default: return {};
   }
 }
@@ -650,6 +651,133 @@ function securityPosture() {
       bySource: { ...v.bySource },
       byStatus: { ...v.byStatus },
       topRiskTeams: v.topRiskTeams.map(t => ({ ...t })),
+    },
+  };
+}
+
+function visualShowcase() {
+  // Generate 24 hours of timestamps
+  const now = Date.now();
+  const hourLabels = Array.from({ length: 24 }, (_, i) => {
+    const t = new Date(now - (23 - i) * 3600000);
+    return t.getHours() + ':00';
+  });
+
+  return {
+    // Existing widget types
+    'showcase-bignumber': {
+      value: 128543,
+      previous: 124230,
+      trend: 'up',
+    },
+    'showcase-statcard': {
+      value: 3847,
+      detail: 'active now',
+      trend: 'up',
+      sparkline: hist(3500, 20, 400),
+    },
+    'showcase-gauge': {
+      value: 87,
+      max: 100,
+      threshold: 75,
+    },
+    'showcase-bar': {
+      labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+      values: [420, 580, 650, 720],
+      color: '#FDA4D4',
+    },
+    // New widget types
+    'showcase-sparkline': {
+      values: hist(100, 20, 30),
+    },
+    'showcase-multimetric': {
+      metrics: [
+        { label: 'CPU Usage', value: 67, unit: '%', trend: 'up', change: '+3%' },
+        { label: 'Memory', value: 8.4, unit: 'GB', trend: 'stable', change: '0%' },
+        { label: 'Requests/sec', value: 1247, unit: '', trend: 'up', change: '+12%' },
+        { label: 'Avg Latency', value: 23, unit: 'ms', trend: 'down', change: '-8%' },
+      ],
+    },
+    'showcase-line': {
+      labels: hourLabels,
+      series: [
+        {
+          name: 'Bid Requests',
+          values: Array.from({ length: 24 }, () => Math.round(8000 + Math.random() * 4000)),
+          color: '#FDA4D4',
+        },
+        {
+          name: 'Impressions',
+          values: Array.from({ length: 24 }, () => Math.round(6000 + Math.random() * 3000)),
+          color: '#67E8F9',
+        },
+      ],
+    },
+    'showcase-heatmap': {
+      rows: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      columns: ['00-06', '06-12', '12-18', '18-24'],
+      values: [
+        [0.3, 0.2, 0.6, 0.8],
+        [0.4, 0.3, 0.7, 0.9],
+        [0.3, 0.4, 0.8, 0.95],
+        [0.35, 0.4, 0.75, 0.9],
+        [0.4, 0.45, 0.7, 0.85],
+        [0.5, 0.7, 0.9, 0.95],
+        [0.6, 0.8, 0.85, 0.7],
+      ],
+    },
+    'showcase-stackedbar': {
+      categories: ['Product A', 'Product B', 'Product C', 'Product D'],
+      segments: [
+        { name: 'East', values: [450, 320, 580, 290], color: '#FDA4D4' },
+        { name: 'West', values: [380, 420, 340, 410], color: '#67E8F9' },
+        { name: 'Central', values: [290, 350, 400, 380], color: '#4ADE80' },
+      ],
+    },
+    'showcase-sankey': {
+      nodes: [
+        { id: 'visitors', label: 'Visitors' },
+        { id: 'signups', label: 'Sign Ups' },
+        { id: 'trials', label: 'Trials' },
+        { id: 'paid', label: 'Paid' },
+        { id: 'churned', label: 'Churned' },
+      ],
+      links: [
+        { source: 'visitors', target: 'signups', value: 5000 },
+        { source: 'signups', target: 'trials', value: 3000 },
+        { source: 'trials', target: 'paid', value: 1200 },
+        { source: 'trials', target: 'churned', value: 1800 },
+        { source: 'paid', target: 'churned', value: 200 },
+      ],
+    },
+    'showcase-table': {
+      columns: [
+        { key: 'service', label: 'Service', type: 'text' },
+        { key: 'status', label: 'Status', type: 'badge' },
+        { key: 'requests', label: 'Requests/s', type: 'number' },
+        { key: 'latency', label: 'Latency (ms)', type: 'number' },
+        { key: 'errors', label: 'Error Rate', type: 'number' },
+      ],
+      rows: [
+        { service: 'madserver', status: 'healthy', requests: 2847, latency: 12, errors: 0.02 },
+        { service: 'mozart', status: 'healthy', requests: 1923, latency: 18, errors: 0.01 },
+        { service: 'authorization', status: 'healthy', requests: 3421, latency: 8, errors: 0.00 },
+        { service: 'edge', status: 'degraded', requests: 1547, latency: 45, errors: 0.12 },
+        { service: 'billing', status: 'healthy', requests: 892, latency: 15, errors: 0.03 },
+        { service: 'campaignmanager', status: 'healthy', requests: 1234, latency: 22, errors: 0.01 },
+        { service: 'hermes', status: 'healthy', requests: 2156, latency: 11, errors: 0.00 },
+        { service: 'adbook', status: 'healthy', requests: 1678, latency: 19, errors: 0.02 },
+      ],
+    },
+    'showcase-treemap': {
+      name: 'Resources',
+      children: [
+        { name: 'Compute', value: 450, category: 'infrastructure' },
+        { name: 'Storage', value: 320, category: 'infrastructure' },
+        { name: 'Network', value: 180, category: 'infrastructure' },
+        { name: 'Database', value: 280, category: 'data' },
+        { name: 'Cache', value: 120, category: 'data' },
+      ],
     },
   };
 }
