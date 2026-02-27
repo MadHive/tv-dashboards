@@ -34,6 +34,7 @@ import {
   exportDashboard,
   importDashboard
 } from './template-manager.js';
+import DashboardManager from './dashboard-manager.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT || '80', 10);
@@ -110,6 +111,9 @@ function setCachedData(key, data) {
   widgetCache.set(key, { data, timestamp: Date.now() });
 }
 
+// Dashboard manager instance
+const dashboardManager = new DashboardManager('./config/dashboards.yaml');
+
 const app = new Elysia()
   .use(cors())
   .use(cookie())
@@ -133,6 +137,18 @@ const app = new Elysia()
       'Expires': '0'
     }
   }))
+
+  .get('/admin', () => {
+    const adminHtml = readFileSync(join(publicDir, 'admin.html'), 'utf8');
+    return new Response(adminHtml, {
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
+  })
 
   // Config endpoints
   .get('/api/config', () => loadConfig())
@@ -202,6 +218,31 @@ const app = new Elysia()
     }
   })
 
+  // Dashboard management endpoints
+  .get('/api/dashboards', async () => {
+    try {
+      const dashboards = await dashboardManager.listDashboards();
+      return dashboards;
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
+  .get('/api/dashboards/:id', async ({ params }) => {
+    try {
+      const dashboard = await dashboardManager.getDashboard(params.id);
+      return dashboard;
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 404, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
   .put('/api/dashboards/:id', async ({ params, body }) => {
     try {
       const result = await updateDashboard(params.id, body);
@@ -233,6 +274,32 @@ const app = new Elysia()
       const result = await deleteDashboard(params.id);
       invalidateConfigCache();
       return result;
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 400, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
+  .post('/api/dashboards/:id/duplicate', async ({ params }) => {
+    try {
+      const dashboard = await dashboardManager.duplicateDashboard(params.id);
+      invalidateConfigCache();
+      return dashboard;
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 400, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
+  .post('/api/dashboards/reorder', async ({ body }) => {
+    try {
+      const dashboards = await dashboardManager.reorderDashboards(body.order);
+      invalidateConfigCache();
+      return dashboards;
     } catch (error) {
       return new Response(
         JSON.stringify({ success: false, error: error.message }),

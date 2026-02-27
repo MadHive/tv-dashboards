@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Admin | MadHive TV Dashboards</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <div class="admin-container">
+    <header class="admin-header">
+      <div class="admin-header-left">
+        <h1>Dashboard Management</h1>
+        <p class="admin-subtitle">Manage TV dashboard pages</p>
+      </div>
+      <div class="admin-header-right">
+        <input type="file" id="import-file-input" accept=".json" style="display: none;">
+        <a href="/" class="btn btn-secondary">Back to Dashboards</a>
+        <button id="import-dashboard-btn" class="btn btn-secondary">Import Dashboard</button>
+        <button id="create-dashboard-btn" class="btn btn-primary">Create Dashboard</button>
+      </div>
+    </header>
+
+    <div class="admin-toolbar">
+      <div class="search-filter">
+        <input type="text" id="search-input" placeholder="Search dashboards..." class="search-input">
+        <select id="filter-icon" class="filter-select">
+          <option value="">All Icons</option>
+          <option value="bolt">⚡ Bolt</option>
+          <option value="grid">▦ Grid</option>
+          <option value="map">🗺️ Map</option>
+          <option value="data">📊 Data</option>
+          <option value="flow">🔄 Flow</option>
+          <option value="shield">🛡️ Shield</option>
+          <option value="palette">🎨 Palette</option>
+        </select>
+        <select id="sort-by" class="filter-select">
+          <option value="order">Order</option>
+          <option value="name">Name</option>
+          <option value="widgets">Widget Count</option>
+        </select>
+      </div>
+      <div class="bulk-actions" style="display: none;">
+        <button id="bulk-delete-btn" class="btn btn-danger">Delete Selected</button>
+        <button id="bulk-export-btn" class="btn btn-secondary">Export Selected</button>
+      </div>
+    </div>
+
+    <div class="dashboard-list" id="dashboard-list">
+      <!-- Dashboard items will be rendered here -->
+      <div style="text-align: center; padding: 60px; color: #6b7280;">
+        <p style="font-size: 18px; margin-bottom: 8px;">Loading dashboards...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div id="dashboard-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-title">Create Dashboard</h2>
+        <button class="modal-close" id="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="dashboard-form">
+          <!-- Form fields will be added by JavaScript -->
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="modal-cancel">Cancel</button>
+        <button class="btn btn-primary" id="modal-save">Save Dashboard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notifications -->
+  <div id="toast-container"></div>
+
+  <script type="module" src="/js/admin-app.js"></script>
+</body>
+</html>
