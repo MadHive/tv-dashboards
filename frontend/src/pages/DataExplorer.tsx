@@ -289,6 +289,21 @@ export function DataExplorer() {
                   )}
                 </div>
 
+                {/* Empty State */}
+                {results.rowCount === 0 && (
+                  <div
+                    className="p-8 bg-madhive-purple-dark/50 border border-madhive-purple-medium rounded-lg text-center"
+                    role="status"
+                  >
+                    <div className="text-tv-xl font-semibold text-madhive-chalk/70 mb-2">
+                      Query returned 0 rows
+                    </div>
+                    <div className="text-tv-base text-madhive-chalk/60">
+                      This query executed successfully but returned no data.
+                    </div>
+                  </div>
+                )}
+
                 {/* Data Table Preview */}
                 {results.rows && results.rows.length > 0 && (
                   <div className="overflow-x-auto">
