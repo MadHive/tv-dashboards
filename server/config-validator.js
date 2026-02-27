@@ -14,7 +14,15 @@ const VALID_WIDGET_TYPES = [
   'service-heatmap',
   'pipeline-flow',
   'usa-map',
-  'security-scorecard'
+  'security-scorecard',
+  'sparkline',
+  'multi-metric-card',
+  'line-chart',
+  'heatmap',
+  'stacked-bar-chart',
+  'sankey',
+  'table',
+  'treemap'
 ];
 
 const VALID_DATA_SOURCES = [

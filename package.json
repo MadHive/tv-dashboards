@@ -9,9 +9,14 @@
     "dev": "bun --watch server/index.js",
     "lint": "echo 'No linter configured - skipping' && exit 0",
     "typecheck": "echo 'No TypeScript typecheck - vanilla JS project' && exit 0",
-    "test": "echo 'No tests configured - skipping' && exit 0",
-    "build": "echo 'No build step required for vanilla JS' && exit 0",
-    "test:integration": "bun run test-phase3.js && bun run test-phase4.js && bun run test-phase5.js"
+    "test": "bun test",
+    "test:unit": "bun test tests/unit",
+    "test:integration": "bun test tests/integration",
+    "test:e2e": "bun test tests/e2e",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage",
+    "test:legacy": "bun run test-phase3.js && bun run test-phase4.js && bun run test-phase5.js",
+    "build": "echo 'No build step required for vanilla JS' && exit 0"
   },
   "dependencies": {
     "@elysiajs/cookie": "^0.8.0",
