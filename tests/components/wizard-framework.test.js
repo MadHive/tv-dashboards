@@ -49,4 +49,71 @@ describe('WizardFramework', () => {
     expect(w.currentStepIndex).toBe(2);
     expect(w.currentStep.id).toBe('step3');
   });
+
+  it('should prevent infinite loop when all remaining steps are skipped', () => {
+    const w = new WizardFramework({
+      steps: [
+        { id: 'step1', title: 'Step 1', validate: () => true },
+        { id: 'step2', title: 'Step 2', skip: () => true, validate: () => true },
+        { id: 'step3', title: 'Step 3', skip: () => true, validate: () => true }
+      ]
+    });
+
+    w.next(); // Try to move from step1 to step2 (which should be skipped)
+    // Should end up at the last step instead of looping infinitely
+    expect(w.currentStepIndex).toBe(2);
+    expect(w.currentStep.id).toBe('step3');
+  });
+
+  it('should throw error when no steps provided', () => {
+    expect(() => {
+      new WizardFramework({ steps: [] });
+    }).toThrow('Wizard requires at least one step');
+  });
+
+  it('should handle validation errors gracefully', () => {
+    const w = new WizardFramework({
+      steps: [
+        {
+          id: 'step1',
+          title: 'Step 1',
+          validate: () => { throw new Error('Validation failed'); }
+        },
+        { id: 'step2', title: 'Step 2' }
+      ]
+    });
+
+    // Should return false when validation throws
+    expect(w.canGoNext()).toBe(false);
+    expect(w.next()).toBe(false);
+    expect(w.currentStepIndex).toBe(0);
+  });
+
+  it('should handle onComplete callback errors', () => {
+    const w = new WizardFramework({
+      steps: [
+        { id: 'step1', title: 'Step 1', validate: () => true }
+      ],
+      onComplete: () => { throw new Error('Complete error'); }
+    });
+
+    // Should not throw when complete callback errors
+    expect(() => w.complete()).not.toThrow();
+  });
+
+  it('should have a destroy method for cleanup', () => {
+    // Set up some data to verify cleanup
+    wizard.data.test = 'value';
+    wizard.container = { textContent: '' }; // Mock container
+    wizard.contentElement = {}; // Mock element
+
+    expect(wizard.container).not.toBeNull();
+    expect(wizard.contentElement).not.toBeNull();
+
+    wizard.destroy();
+
+    expect(wizard.container).toBeNull();
+    expect(wizard.contentElement).toBeNull();
+    expect(Object.keys(wizard.data).length).toBe(0);
+  });
 });

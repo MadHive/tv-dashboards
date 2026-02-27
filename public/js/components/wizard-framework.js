@@ -5,12 +5,18 @@
  */
 export class WizardFramework {
   constructor(config) {
-    this.steps = config.steps || [];
+    // Validate steps
+    if (!config.steps || config.steps.length === 0) {
+      throw new Error('Wizard requires at least one step');
+    }
+
+    this.steps = config.steps;
     this.onComplete = config.onComplete || (() => {});
     this.onCancel = config.onCancel || (() => {});
     this.currentStepIndex = 0;
     this.data = {};
     this.container = null;
+    this.contentElement = null;
   }
 
   get currentStep() {
@@ -28,7 +34,13 @@ export class WizardFramework {
   canGoNext() {
     if (!this.currentStep) return false;
     if (!this.currentStep.validate) return true;
-    return this.currentStep.validate(this.data);
+
+    try {
+      return this.currentStep.validate(this.data);
+    } catch (error) {
+      console.error('Validation error:', error);
+      return false;
+    }
   }
 
   next() {
@@ -42,9 +54,15 @@ export class WizardFramework {
 
     // Skip steps if skip function returns true
     while (this.currentStepIndex < this.steps.length &&
+           this.currentStep &&
            this.currentStep.skip &&
            this.currentStep.skip(this.data)) {
       this.currentStepIndex++;
+    }
+
+    // Prevent skipping past the end
+    if (this.currentStepIndex >= this.steps.length) {
+      this.currentStepIndex = this.steps.length - 1;
     }
 
     return true;
@@ -66,25 +84,42 @@ export class WizardFramework {
   }
 
   complete() {
-    this.onComplete(this.data);
+    try {
+      this.onComplete(this.data);
+    } catch (error) {
+      console.error('Complete callback error:', error);
+    }
   }
 
   cancel() {
-    this.onCancel();
+    try {
+      this.onCancel();
+    } catch (error) {
+      console.error('Cancel callback error:', error);
+    }
+  }
+
+  destroy() {
+    if (this.container) {
+      this.container.textContent = '';
+      this.container = null;
+    }
+    this.contentElement = null;
+    this.data = {};
   }
 
   // UI Rendering
   render(container) {
     this.container = container;
     container.textContent = '';
-    container.className = 'wizard-container';
+    container.classList.add('wizard-container');
 
     const progress = this.createProgressIndicator();
     container.appendChild(progress);
 
     const content = document.createElement('div');
     content.className = 'wizard-content';
-    content.id = 'wizard-content';
+    this.contentElement = content; // Store reference
     container.appendChild(content);
 
     const nav = this.createNavigationButtons();
@@ -150,7 +185,8 @@ export class WizardFramework {
     nextBtn.disabled = !this.canGoNext();
     nextBtn.onclick = () => {
       if (this.next()) {
-        if (!this.isLastStep || this.currentStepIndex < this.steps.length) {
+        // Only re-render if we're still in the wizard (not completed)
+        if (this.currentStepIndex < this.steps.length) {
           this.render(this.container);
         }
       }
@@ -161,21 +197,28 @@ export class WizardFramework {
   }
 
   renderStep() {
-    const content = document.getElementById('wizard-content');
-    if (!content) return;
+    if (!this.contentElement) return;
 
-    content.textContent = '';
+    this.contentElement.textContent = '';
 
     const step = this.currentStep;
     if (!step) return;
 
     if (step.component) {
-      const component = new step.component(this.data);
-      component.render(content);
+      try {
+        const component = new step.component(this.data);
+        component.render(this.contentElement);
+      } catch (error) {
+        console.error('Error rendering step component:', error);
+        const errorEl = document.createElement('div');
+        errorEl.className = 'wizard-error';
+        errorEl.textContent = 'Error loading step';
+        this.contentElement.appendChild(errorEl);
+      }
     } else {
       const title = document.createElement('h2');
       title.textContent = step.title;
-      content.appendChild(title);
+      this.contentElement.appendChild(title);
     }
   }
 }
