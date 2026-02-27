@@ -96,6 +96,9 @@ export async function getData(dashboardId) {
 const publicDir = join(__dirname, '..', 'public');
 const indexHtml = readFileSync(join(publicDir, 'index.html'), 'utf8');
 
+// Serve React frontend (frontend/dist/)
+const frontendDistDir = join(__dirname, '..', 'frontend', 'dist');
+
 // Simple in-memory cache to speed up widget loading (10 second cache)
 const widgetCache = new Map();
 const CACHE_DURATION = 10000;
@@ -129,6 +132,7 @@ const app = new Elysia()
     }
     return response;
   })
+  .use(staticPlugin({ assets: frontendDistDir, prefix: '/assets' }))
   .use(staticPlugin({ assets: publicDir, prefix: '/' }))
   .get('/', () => new Response(indexHtml, {
     headers: {
@@ -556,6 +560,20 @@ const app = new Elysia()
   .use(bigQueryRoutes)
   .use(queryRoutes)
   .use(googleOAuthRoutes)
+
+  // Serve React frontend for /app/* routes
+  .get('/app*', () => {
+    const reactIndexHtml = readFileSync(join(__dirname, '..', 'frontend', 'dist', 'index.html'), 'utf8');
+    return new Response(reactIndexHtml, {
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
+  })
+
   .listen({ port: PORT, hostname: HOST });
 
 console.log(`\n  Dashboard server running at http://${HOST}:${PORT}`);
