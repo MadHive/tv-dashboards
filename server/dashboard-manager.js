@@ -75,6 +75,34 @@ export default class DashboardManager {
     return { ...newDashboard };
   }
 
+  async updateDashboard(id, updates) {
+    if (!this.config) {
+      await this.loadConfig();
+    }
+
+    const index = this.config.dashboards.findIndex(d => d.id === id);
+    if (index === -1) {
+      throw new Error(`Dashboard not found: ${id}`);
+    }
+
+    // Check for ID conflict if ID is being changed
+    if (updates.id && updates.id !== id) {
+      if (this.config.dashboards.some(d => d.id === updates.id)) {
+        throw new Error(`Dashboard ID already exists: ${updates.id}`);
+      }
+    }
+
+    // Merge updates
+    this.config.dashboards[index] = {
+      ...this.config.dashboards[index],
+      ...updates
+    };
+
+    await this.saveConfig();
+
+    return { ...this.config.dashboards[index] };
+  }
+
   async saveConfig() {
     const yamlContent = YAML.dump(this.config);
     await writeFile(this.configPath, yamlContent, 'utf-8');

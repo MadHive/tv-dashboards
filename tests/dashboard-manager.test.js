@@ -67,4 +67,27 @@ describe('DashboardManager', () => {
     const dashboard = { id: 'platform-overview', name: 'Duplicate', icon: 'bolt', grid: { columns: 2, rows: 2, gap: 14 } };
     await expect(manager.createDashboard(dashboard)).rejects.toThrow('Dashboard ID already exists');
   });
+
+  it('should update existing dashboard', async () => {
+    const updates = {
+      name: 'Updated Name',
+      subtitle: 'Updated Subtitle'
+    };
+
+    const updated = await manager.updateDashboard('platform-overview', updates);
+    expect(updated.name).toBe('Updated Name');
+    expect(updated.subtitle).toBe('Updated Subtitle');
+
+    const dashboard = await manager.getDashboard('platform-overview');
+    expect(dashboard.name).toBe('Updated Name');
+  });
+
+  it('should throw error when updating non-existent dashboard', async () => {
+    await expect(manager.updateDashboard('non-existent', { name: 'Test' })).rejects.toThrow('Dashboard not found');
+  });
+
+  it('should not allow changing ID to existing ID', async () => {
+    const created = await manager.createDashboard({ name: 'Test 1', icon: 'bolt', grid: { columns: 2, rows: 2, gap: 14 } });
+    await expect(manager.updateDashboard(created.id, { id: 'platform-overview' })).rejects.toThrow('Dashboard ID already exists');
+  });
 });
