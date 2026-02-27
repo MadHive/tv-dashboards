@@ -9,7 +9,7 @@
     "astro": "astro",
     "lint": "echo 'No linter configured - skipping' && exit 0",
     "typecheck": "echo 'TypeScript check via build step - skipping' && exit 0",
-    "test": "vitest",
+    "test": "bunx vitest run",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage"
