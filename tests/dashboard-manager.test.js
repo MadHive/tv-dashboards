@@ -18,4 +18,16 @@ describe('DashboardManager', () => {
     expect(Array.isArray(dashboards)).toBe(true);
     expect(dashboards.length).toBeGreaterThan(0);
   });
+
+  it('should get dashboard by ID', async () => {
+    const dashboard = await manager.getDashboard('platform-overview');
+    expect(dashboard).toBeDefined();
+    expect(dashboard.id).toBe('platform-overview');
+    expect(dashboard.name).toBe('Platform Overview');
+    expect(dashboard.widgets).toBeDefined();
+  });
+
+  it('should throw error for non-existent dashboard', async () => {
+    await expect(manager.getDashboard('non-existent')).rejects.toThrow('Dashboard not found');
+  });
 });

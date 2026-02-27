@@ -27,4 +27,15 @@ export default class DashboardManager {
       grid: dashboard.grid
     }));
   }
+
+  async getDashboard(id) {
+    if (!this.config) {
+      await this.loadConfig();
+    }
+    const dashboard = this.config.dashboards.find(d => d.id === id);
+    if (!dashboard) {
+      throw new Error(`Dashboard not found: ${id}`);
+    }
+    return { ...dashboard };
+  }
 }
