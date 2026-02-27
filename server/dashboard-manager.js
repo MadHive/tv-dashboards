@@ -148,6 +148,31 @@ export default class DashboardManager {
     return duplicate;
   }
 
+  async reorderDashboards(orderedIds) {
+    if (!this.config) {
+      await this.loadConfig();
+    }
+
+    // Validate all IDs exist
+    const currentIds = new Set(this.config.dashboards.map(d => d.id));
+    const providedIds = new Set(orderedIds);
+
+    if (currentIds.size !== providedIds.size ||
+        ![...currentIds].every(id => providedIds.has(id))) {
+      throw new Error('Invalid dashboard order: IDs do not match');
+    }
+
+    // Reorder dashboards
+    const reordered = orderedIds.map(id =>
+      this.config.dashboards.find(d => d.id === id)
+    );
+
+    this.config.dashboards = reordered;
+    await this.saveConfig();
+
+    return this.listDashboards();
+  }
+
   async saveConfig() {
     const yamlContent = YAML.dump(this.config);
     await writeFile(this.configPath, yamlContent, 'utf-8');

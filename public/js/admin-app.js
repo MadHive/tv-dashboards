@@ -101,6 +101,9 @@ class AdminApp {
       const item = this.createDashboardItem(dashboard);
       listContainer.appendChild(item);
     });
+
+    // Set up drag-and-drop for reordering
+    this.setupDragDrop();
   }
 
   createDashboardItem(dashboard) {
@@ -379,6 +382,71 @@ class AdminApp {
       await this.loadDashboards();
     } catch (error) {
       this.showToast(error.message, 'error');
+    }
+  }
+
+  setupDragDrop() {
+    const items = document.querySelectorAll('.dashboard-item');
+
+    items.forEach(item => {
+      item.draggable = true;
+
+      item.addEventListener('dragstart', (e) => {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', item.dataset.id);
+        item.classList.add('dragging');
+      });
+
+      item.addEventListener('dragend', () => {
+        item.classList.remove('dragging');
+      });
+
+      item.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+
+        const afterElement = this.getDragAfterElement(item.parentElement, e.clientY);
+        const dragging = document.querySelector('.dragging');
+
+        if (afterElement == null) {
+          item.parentElement.appendChild(dragging);
+        } else {
+          item.parentElement.insertBefore(dragging, afterElement);
+        }
+      });
+
+      item.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        await this.saveNewOrder();
+      });
+    });
+  }
+
+  getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.dashboard-item:not(.dragging)')];
+
+    return draggableElements.reduce((closest, child) => {
+      const box = child.getBoundingClientRect();
+      const offset = y - box.top - box.height / 2;
+
+      if (offset < 0 && offset > closest.offset) {
+        return { offset: offset, element: child };
+      } else {
+        return closest;
+      }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+  }
+
+  async saveNewOrder() {
+    const items = document.querySelectorAll('.dashboard-item');
+    const newOrder = Array.from(items).map(item => item.dataset.id);
+
+    try {
+      await this.api.reorderDashboards(newOrder);
+      this.showToast('Dashboard order saved');
+      await this.loadDashboards();
+    } catch (error) {
+      this.showToast('Failed to save order', 'error');
     }
   }
 }

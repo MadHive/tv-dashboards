@@ -133,4 +133,21 @@ describe('DashboardManager', () => {
     expect(duplicated2.id).toBe('platform-overview-copy-2');
     expect(duplicated2.name).toBe('Platform Overview (Copy 2)');
   });
+
+  it('should reorder dashboards', async () => {
+    const dashboards = await manager.listDashboards();
+    const originalOrder = dashboards.map(d => d.id);
+
+    // Move first dashboard to last position
+    const newOrder = [...originalOrder.slice(1), originalOrder[0]];
+
+    await manager.reorderDashboards(newOrder);
+
+    const reordered = await manager.listDashboards();
+    expect(reordered.map(d => d.id)).toEqual(newOrder);
+  });
+
+  it('should reject invalid reorder (missing IDs)', async () => {
+    await expect(manager.reorderDashboards(['platform-overview'])).rejects.toThrow('Invalid dashboard order');
+  });
 });
