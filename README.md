@@ -6,20 +6,28 @@ A real-time dashboard system with a powerful WYSIWYG editor for visualizing plat
 
 ### 📊 Dashboard System
 - **11 Pre-built Dashboards** - Platform overview, services health, campaign delivery, data processing, and more
-- **12 Widget Types** - Big numbers, gauges, charts, maps, heatmaps, and specialized visualizations
+- **20 Widget Types** - Big numbers, gauges, sparklines, charts, tables, maps, heatmaps, sankey diagrams, treemaps, and specialized visualizations
 - **Live Data** - Real-time metrics from GCP, VulnTrack, and other data sources
 - **Auto-Rotation** - Configurable dashboard rotation for TV displays
 - **Responsive Design** - Optimized for large displays and TV screens
 
-### ✨ WYSIWYG Editor (NEW!)
+### ✨ WYSIWYG Editor
 - **Visual Dashboard Editing** - No YAML editing required
 - **Drag & Drop** - Intuitive widget positioning with grid snapping
 - **Widget Resize** - Visual resizing with 8 handles (corners + edges)
-- **Widget Palette** - 12 widget types with drag-from-palette creation
+- **Widget Palette** - 20 widget types with drag-from-palette creation
 - **Property Panel** - Easy configuration of all widget properties
 - **Auto-Backup** - Automatic timestamped backups (keeps last 10)
 - **Templates** - 30+ pre-configured widget templates
 - **Export/Import** - Share dashboards as JSON files
+
+### 🔍 Data Explorer (React Frontend)
+- **Visual Query Builder** - Build BigQuery SQL queries with no-code interface
+- **Saved Queries** - Save and reuse queries across dashboards
+- **Query Execution** - Test and preview query results
+- **WCAG 2.1 AA Compliant** - Full keyboard navigation and screen reader support
+- **Performance Optimized** - Query caching, debounced search, code splitting
+- **Accessible** - Focus rings, ARIA labels, and contrast compliance
 
 ### 🔌 Data Sources
 - **GCP** - Google Cloud Platform (Cloud Run, BigQuery, Pub/Sub)
@@ -100,7 +108,9 @@ export VULNTRACK_API_KEY=your-api-key
 ## Architecture
 
 ### Frontend
-- **Vanilla JavaScript** - No frameworks, lightweight and fast
+- **Dual System** - Vanilla JS (main dashboards) + React (Data Explorer)
+- **Vanilla JavaScript** - No frameworks, lightweight and fast for TV displays
+- **React + TypeScript** - Modern stack for admin tools and data exploration
 - **CSS Grid** - Flexible dashboard layouts
 - **Canvas API** - Complex visualizations (maps, charts)
 - **Modular Design** - Clean separation of concerns
@@ -208,14 +218,18 @@ dev-dashboards/
 
 ### Run Tests
 ```bash
-# Phase 3: Configuration Persistence
-bun run test-phase3.js
+# Run all tests (271 tests across 19 files)
+bun test
 
-# Phase 4: Data Source Plugins
-bun run test-phase4.js
+# Run specific test suites
+bun test tests/unit/          # Unit tests
+bun test tests/integration/   # Integration tests
 
-# Phase 5: Widget Palette & Templates
-bun run test-phase5.js
+# Run with coverage
+bun test --coverage
+
+# Legacy phase tests (if needed)
+bun run test:legacy
 ```
 
 ### Add New Data Source
