@@ -42,12 +42,16 @@
 
 /* Grid Overlay */
 .editor-grid-overlay {
-  position: absolute;
-  inset: 0;
+  position: fixed;
+  top: 100px;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: grid;
   pointer-events: none;
   z-index: 9998;
   opacity: 0.6;
+  background: transparent;
 }
 
 .grid-cell {
@@ -71,6 +75,10 @@
 body.editor-active .widget.editable {
   position: relative;
   transition: all 0.2s ease;
+  z-index: 9999; /* Above grid overlay */
+  cursor: pointer; /* Ensure clickable appearance */
+  visibility: visible !important;
+  display: block !important;
 }
 
 body.editor-active .widget.editable:hover {
@@ -318,6 +326,18 @@ body.editor-active .widget.selected::after {
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(168, 85, 247, 0.3);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #DC2626 0%, #EF4444 100%);
+  color: white;
+  border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #B91C1C 0%, #DC2626 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
 }
 
 .btn-link {

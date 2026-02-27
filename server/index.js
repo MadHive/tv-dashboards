@@ -5,6 +5,7 @@
 import { Elysia } from 'elysia';
 import { staticPlugin } from '@elysiajs/static';
 import { cookie } from '@elysiajs/cookie';
+import { cors } from '@elysiajs/cors';
 import { readFileSync } from 'fs';
 import { load } from 'js-yaml';
 import { join, dirname } from 'path';
@@ -89,18 +90,102 @@ export async function getData(dashboardId) {
   return mockGetMetrics(dashboardId);
 }
 
-const publicDir = join(__dirname, '..', 'public');
+// Serve Astro build output instead of vanilla JS
+const publicDir = join(__dirname, '..', 'public-astro');
 const indexHtml = readFileSync(join(publicDir, 'index.html'), 'utf8');
 
+// Simple in-memory cache to speed up widget loading (10 second cache)
+const widgetCache = new Map();
+const CACHE_DURATION = 10000;
+
+function getCachedData(key) {
+  const cached = widgetCache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
+  }
+  return null;
+}
+
+function setCachedData(key, data) {
+  widgetCache.set(key, { data, timestamp: Date.now() });
+}
+
 const app = new Elysia()
+  .use(cors())
   .use(cookie())
+  .onAfterHandle(({ request, response }) => {
+    // Add no-cache headers for HTML files to prevent browser caching issues
+    if (request.url.endsWith('.html') || request.url.endsWith('/')) {
+      if (response instanceof Response) {
+        response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        response.headers.set('Pragma', 'no-cache');
+        response.headers.set('Expires', '0');
+      }
+    }
+    return response;
+  })
   .use(staticPlugin({ assets: publicDir, prefix: '/' }))
-  .get('/', () => new Response(indexHtml, { headers: { 'content-type': 'text/html; charset=utf-8' } }))
+  .get('/', () => new Response(indexHtml, {
+    headers: {
+      'content-type': 'text/html; charset=utf-8',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
+  }))
 
   // Config endpoints
   .get('/api/config', () => loadConfig())
   .get('/api/metrics/:dashboardId', async ({ params }) => {
     return getData(params.dashboardId);
+  })
+
+  // Single widget data endpoint
+  .get('/api/data/:widgetId', async ({ params }) => {
+    const config = loadConfig();
+    const { widgetId } = params;
+
+    // Check cache first
+    const cached = getCachedData(widgetId);
+    if (cached) {
+      return cached;
+    }
+
+    // Find which dashboard contains this widget
+    for (const dashboard of config.dashboards) {
+      const widget = dashboard.widgets.find(w => w.id === widgetId);
+      if (widget) {
+        try {
+          // Get all metrics for this dashboard
+          const dashboardData = await getData(dashboard.id);
+
+          console.log(`[api/data] Widget ${widgetId} found in dashboard ${dashboard.id}, has data:`, !!dashboardData?.[widgetId]);
+
+          // Return just this widget's data
+          if (dashboardData && dashboardData[widgetId]) {
+            const widgetData = {
+              ...dashboardData[widgetId],
+              timestamp: new Date().toISOString(),
+            };
+            // Cache the result
+            setCachedData(widgetId, widgetData);
+            return widgetData;
+          }
+
+          // Widget found but no data - try next dashboard
+          continue;
+        } catch (error) {
+          console.error(`[api/data] Error fetching data for widget ${widgetId} from dashboard ${dashboard.id}:`, error.message);
+          continue;
+        }
+      }
+    }
+
+    console.log(`[api/data] Widget ${widgetId} NOT FOUND in any dashboard`);
+    return new Response(
+      JSON.stringify({ error: 'Widget not found' }),
+      { status: 404, headers: { 'content-type': 'application/json' } }
+    );
   })
 
   // Dashboard management endpoints

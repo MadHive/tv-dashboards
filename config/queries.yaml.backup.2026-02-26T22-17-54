@@ -86,7 +86,7 @@ bigquery:
     sql: SELECT COUNT(*) as value
     widgetTypes:
       - big-number
-    updatedAt: '2026-02-26T22:17:54.513Z'
+    updatedAt: '2026-02-26T17:40:38.376Z'
     createdAt: '2026-02-26T17:39:15.033Z'
 gcp:
   - id: cloudrun-requests

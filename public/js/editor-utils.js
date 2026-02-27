@@ -8,8 +8,11 @@ window.EditorUtils = (function () {
   /**
    * Get grid configuration for current dashboard
    */
-  function getGridConfig(dashboardApp) {
-    const currentDash = dashboardApp.config.dashboards[dashboardApp.currentPage];
+  function getGridConfig(dashboardAppOrEditor) {
+    // Accept either dashboardApp or editorApp
+    const dashboardApp = dashboardAppOrEditor.dashboardApp || dashboardAppOrEditor;
+    const config = dashboardAppOrEditor.modifiedConfig || dashboardApp.config;
+    const currentDash = config.dashboards[dashboardApp.currentPage];
     return currentDash ? currentDash.grid : { columns: 4, rows: 2, gap: 14 };
   }
 
@@ -25,9 +28,9 @@ window.EditorUtils = (function () {
   /**
    * Calculate grid cell size based on page bounds and grid config
    */
-  function getCellSize(dashboardApp) {
+  function getCellSize(dashboardAppOrEditor) {
     const bounds = getPageBounds();
-    const grid = getGridConfig(dashboardApp);
+    const grid = getGridConfig(dashboardAppOrEditor);
     if (!bounds || !grid) return null;
 
     const padding = 20; // Dashboard page padding
@@ -43,10 +46,10 @@ window.EditorUtils = (function () {
   /**
    * Convert mouse coordinates to grid cell position
    */
-  function mouseToGridCell(mouseX, mouseY, dashboardApp) {
+  function mouseToGridCell(mouseX, mouseY, dashboardAppOrEditor) {
     const bounds = getPageBounds();
-    const cellSize = getCellSize(dashboardApp);
-    const grid = getGridConfig(dashboardApp);
+    const cellSize = getCellSize(dashboardAppOrEditor);
+    const grid = getGridConfig(dashboardAppOrEditor);
     if (!bounds || !cellSize || !grid) return null;
 
     const padding = 20;
@@ -89,9 +92,9 @@ window.EditorUtils = (function () {
   /**
    * Get pixel position of a grid cell
    */
-  function gridCellToPixels(col, row, dashboardApp) {
+  function gridCellToPixels(col, row, dashboardAppOrEditor) {
     const bounds = getPageBounds();
-    const cellSize = getCellSize(dashboardApp);
+    const cellSize = getCellSize(dashboardAppOrEditor);
     if (!bounds || !cellSize) return null;
 
     const padding = 20;
@@ -104,8 +107,11 @@ window.EditorUtils = (function () {
   /**
    * Check if a position would cause a collision with existing widgets
    */
-  function checkCollision(col, row, colSpan, rowSpan, excludeWidgetId, dashboardApp) {
-    const currentDash = dashboardApp.config.dashboards[dashboardApp.currentPage];
+  function checkCollision(col, row, colSpan, rowSpan, excludeWidgetId, dashboardAppOrEditor) {
+    // Accept either dashboardApp or editorApp
+    const dashboardApp = dashboardAppOrEditor.dashboardApp || dashboardAppOrEditor;
+    const config = dashboardAppOrEditor.modifiedConfig || dashboardApp.config;
+    const currentDash = config.dashboards[dashboardApp.currentPage];
     if (!currentDash) return false;
 
     // Get all widget positions except the one being moved
@@ -133,8 +139,8 @@ window.EditorUtils = (function () {
   /**
    * Check if position is within grid bounds
    */
-  function isWithinBounds(col, row, colSpan, rowSpan, dashboardApp) {
-    const grid = getGridConfig(dashboardApp);
+  function isWithinBounds(col, row, colSpan, rowSpan, dashboardAppOrEditor) {
+    const grid = getGridConfig(dashboardAppOrEditor);
     if (!grid) return false;
 
     return col >= 1 &&
@@ -146,13 +152,13 @@ window.EditorUtils = (function () {
   /**
    * Find nearest valid position (avoid collisions, stay in bounds)
    */
-  function findNearestValidPosition(targetCol, targetRow, colSpan, rowSpan, excludeWidgetId, dashboardApp) {
-    const grid = getGridConfig(dashboardApp);
+  function findNearestValidPosition(targetCol, targetRow, colSpan, rowSpan, excludeWidgetId, dashboardAppOrEditor) {
+    const grid = getGridConfig(dashboardAppOrEditor);
     if (!grid) return { col: 1, row: 1 };
 
     // Try the target position first
-    if (isWithinBounds(targetCol, targetRow, colSpan, rowSpan, dashboardApp) &&
-        !checkCollision(targetCol, targetRow, colSpan, rowSpan, excludeWidgetId, dashboardApp)) {
+    if (isWithinBounds(targetCol, targetRow, colSpan, rowSpan, dashboardAppOrEditor) &&
+        !checkCollision(targetCol, targetRow, colSpan, rowSpan, excludeWidgetId, dashboardAppOrEditor)) {
       return { col: targetCol, row: targetRow };
     }
 
@@ -164,8 +170,8 @@ window.EditorUtils = (function () {
           const col = targetCol + dCol;
           const row = targetRow + dRow;
 
-          if (isWithinBounds(col, row, colSpan, rowSpan, dashboardApp) &&
-              !checkCollision(col, row, colSpan, rowSpan, excludeWidgetId, dashboardApp)) {
+          if (isWithinBounds(col, row, colSpan, rowSpan, dashboardAppOrEditor) &&
+              !checkCollision(col, row, colSpan, rowSpan, excludeWidgetId, dashboardAppOrEditor)) {
             return { col, row };
           }
         }
@@ -179,16 +185,19 @@ window.EditorUtils = (function () {
   /**
    * Get all widgets in current dashboard
    */
-  function getAllWidgets(dashboardApp) {
-    const currentDash = dashboardApp.config.dashboards[dashboardApp.currentPage];
+  function getAllWidgets(dashboardAppOrEditor) {
+    // Accept either dashboardApp or editorApp
+    const dashboardApp = dashboardAppOrEditor.dashboardApp || dashboardAppOrEditor;
+    const config = dashboardAppOrEditor.modifiedConfig || dashboardApp.config;
+    const currentDash = config.dashboards[dashboardApp.currentPage];
     return currentDash ? currentDash.widgets : [];
   }
 
   /**
    * Get widget config by ID
    */
-  function getWidgetConfig(widgetId, dashboardApp) {
-    const widgets = getAllWidgets(dashboardApp);
+  function getWidgetConfig(widgetId, dashboardAppOrEditor) {
+    const widgets = getAllWidgets(dashboardAppOrEditor);
     return widgets.find(w => w.id === widgetId);
   }
 

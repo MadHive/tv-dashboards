@@ -1,0 +1,31 @@
+[registry] Initializing data source registry...
+[registry] Registered data source: gcp
+[registry] Registered data source: mock
+[registry] Registered data source: vulntrack
+[registry] Registered data source: aws
+[registry] Registered data source: datadog
+[registry] Registered data source: elasticsearch
+[registry] Registered data source: salesforce
+[registry] Registered data source: hotjar
+[registry] Registered data source: fullstory
+[registry] Registered data source: zendesk
+[registry] Registered data source: bigquery
+[aws] AWS SDK not yet implemented - using mock data
+[bigquery] Initialized for project: mad-master
+
+  Dashboard server running at http://0.0.0.0:3000
+  Config loaded from config/dashboards.yaml
+  Data mode: LIVE (GCP)
+  Numerics widgets: http://0.0.0.0:3000/api/numerics/<widget>
+  AnyBoard config:  http://0.0.0.0:3000/api/anyboard/config.json
+
+[mock] Connected successfully
+[datadog] Connection test failed
+[elasticsearch] Connection test failed
+[salesforce] Connection test failed
+[hotjar] Connection test failed
+[fullstory] Connection test failed
+[zendesk] Connection test failed
+[gcp] GCP data source initialized
+[vulntrack] Connected successfully
+[registry] Registered 11 data sources

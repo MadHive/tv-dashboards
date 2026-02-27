@@ -39,11 +39,15 @@ window.WidgetDragController = (function () {
 
       // Mouse down on widget starts drag
       const onMouseDown = (e) => {
-        // Only drag from widget background or title, not from content
+        // Skip if clicking on interactive elements (buttons, inputs, etc.)
         const target = e.target;
-        if (target.closest('.widget-content') && !target.classList.contains('widget')) {
-          return; // Don't drag when clicking inside widget content
+        if (target.tagName === 'BUTTON' || target.tagName === 'INPUT' ||
+            target.tagName === 'SELECT' || target.tagName === 'TEXTAREA' ||
+            target.closest('.resize-handle')) {
+          return;
         }
+
+        console.log('[Drag] Mouse down on widget:', widgetConfig.id);
 
         // Prevent text selection during drag
         e.preventDefault();
@@ -75,6 +79,7 @@ window.WidgetDragController = (function () {
      * Start dragging a widget
      */
     startDrag(widgetElement, widgetConfig, event) {
+      console.log('[Drag] Starting drag for widget:', widgetConfig.id);
       this.isDragging = true;
       this.draggedWidget = widgetConfig;
       this.draggedElement = widgetElement;
@@ -291,7 +296,7 @@ window.WidgetDragController = (function () {
       if (!this.paletteWidgetType) return;
 
       // Get grid cell from mouse position
-      const cell = Utils.mouseToGridCell(event.clientX, event.clientY);
+      const cell = Utils.mouseToGridCell(event.clientX, event.clientY, this.editorApp);
       if (!cell) return;
 
       // Check if widget fits at this position
@@ -315,7 +320,7 @@ window.WidgetDragController = (function () {
       if (!this.paletteWidgetType) return;
 
       // Get drop position
-      const cell = Utils.mouseToGridCell(event.clientX, event.clientY);
+      const cell = Utils.mouseToGridCell(event.clientX, event.clientY, this.editorApp);
       if (!cell) {
         this.editorApp.showNotification('Invalid drop location', 'error');
         return;
@@ -341,13 +346,25 @@ window.WidgetDragController = (function () {
      */
     checkPalettePlacement(position, size) {
       // Check bounds
-      const currentDash = this.editorApp.modifiedConfig.dashboards[this.editorApp.dashboardApp.currentPage];
-      const isWithinBounds = Utils.isWithinBounds(position, size, currentDash.grid);
+      const isWithinBounds = Utils.isWithinBounds(
+        position.col,
+        position.row,
+        size.colSpan,
+        size.rowSpan,
+        this.editorApp.dashboardApp
+      );
 
       if (!isWithinBounds) return false;
 
       // Check collisions with existing widgets
-      const hasCollision = Utils.checkCollision(position, size, currentDash.widgets, null);
+      const hasCollision = Utils.checkCollision(
+        position.col,
+        position.row,
+        size.colSpan,
+        size.rowSpan,
+        null,
+        this.editorApp.dashboardApp
+      );
 
       return !hasCollision;
     }

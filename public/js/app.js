@@ -226,6 +226,13 @@
     // ---- keyboard navigation ----
     bindKeys() {
       document.addEventListener('keydown', e => {
+        // Ctrl+Q or Cmd+Q to open Query Editor
+        if ((e.ctrlKey || e.metaKey) && e.key === 'q') {
+          e.preventDefault();
+          if (window.queryEditor) window.queryEditor.open();
+          return;
+        }
+
         switch (e.key) {
           case 'ArrowRight':
           case 'ArrowDown':

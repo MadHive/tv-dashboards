@@ -11,9 +11,12 @@ export default function DashboardGrid() {
 
   const { grid, widgets } = currentDashboard;
 
+  // Defensive: handle missing or malformed widgets array
+  const safeWidgets = Array.isArray(widgets) ? widgets : [];
+
   return (
     <main className="pt-16 pb-16 px-6 h-screen overflow-auto">
-      {widgets.length === 0 ? (
+      {safeWidgets.length === 0 ? (
         <div className="h-full flex items-center justify-center">
           <div className="text-center text-slate-400">
             <div className="text-6xl mb-4">📊</div>
@@ -32,7 +35,7 @@ export default function DashboardGrid() {
             height: 'calc(100vh - 128px)', // Account for top and bottom nav
           }}
         >
-          {widgets.map((widget) => (
+          {safeWidgets.map((widget) => (
             <Widget key={widget.id} widget={widget} />
           ))}
         </div>

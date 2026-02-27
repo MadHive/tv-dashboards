@@ -43,7 +43,7 @@ bigquery:
     sql: SELECT COUNT(*) as value FROM test_table
     widgetTypes:
       - big-number
-    updatedAt: '2026-02-26T22:17:54.499Z'
+    updatedAt: '2026-02-26T17:39:15.018Z'
     createdAt: '2026-02-26T17:39:15.018Z'
   - id: update-test
     name: Updated Name
@@ -51,42 +51,42 @@ bigquery:
     widgetTypes:
       - big-number
       - stat-card
-    updatedAt: '2026-02-26T22:17:54.502Z'
+    updatedAt: '2026-02-26T17:39:15.025Z'
     createdAt: '2026-02-26T17:39:15.024Z'
   - id: retrieve-test
     name: Retrieve Test
     sql: SELECT * FROM test
     widgetTypes:
       - big-number
-    updatedAt: '2026-02-26T22:17:54.504Z'
+    updatedAt: '2026-02-26T17:39:15.026Z'
     createdAt: '2026-02-26T17:39:15.026Z'
   - id: list-test-1
     name: List Test 1
     sql: SELECT 1
     widgetTypes:
       - big-number
-    updatedAt: '2026-02-26T22:17:54.505Z'
+    updatedAt: '2026-02-26T17:39:15.028Z'
     createdAt: '2026-02-26T17:39:15.028Z'
   - id: list-test-2
     name: List Test 2
     sql: SELECT 2
     widgetTypes:
       - stat-card
-    updatedAt: '2026-02-26T22:17:54.506Z'
+    updatedAt: '2026-02-26T17:39:15.028Z'
     createdAt: '2026-02-26T17:39:15.028Z'
   - id: backup-test
     name: Backup Test
     sql: SELECT 1
     widgetTypes:
       - big-number
-    updatedAt: '2026-02-26T22:17:54.512Z'
+    updatedAt: '2026-02-26T17:39:15.032Z'
     createdAt: '2026-02-26T17:39:15.032Z'
   - id: persist-test
     name: Persistence Test
     sql: SELECT COUNT(*) as value
     widgetTypes:
       - big-number
-    updatedAt: '2026-02-26T22:17:54.513Z'
+    updatedAt: '2026-02-26T17:39:15.033Z'
     createdAt: '2026-02-26T17:39:15.033Z'
 gcp:
   - id: cloudrun-requests
@@ -151,5 +151,13 @@ gcp:
     widgetTypes:
       - big-number
       - line-chart
-    updatedAt: '2026-02-26T22:17:54.501Z'
+    updatedAt: '2026-02-26T17:39:15.022Z'
     createdAt: '2026-02-26T17:39:15.022Z'
+  - id: shared-id
+    name: GCP Version
+    metricType: run.googleapis.com/request_count
+    project: mad-master
+    widgetTypes:
+      - big-number
+    updatedAt: '2026-02-26T17:40:21.469Z'
+    createdAt: '2026-02-26T17:40:21.469Z'

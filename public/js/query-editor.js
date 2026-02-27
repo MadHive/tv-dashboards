@@ -67,7 +67,7 @@ window.QueryEditor = (function () {
 
                   <div class="form-group">
                     <label for="query-sql">SQL Query</label>
-                    <textarea id="query-sql" rows="12" placeholder="SELECT * FROM \\`project.dataset.table\\` LIMIT 100" spellcheck="false"></textarea>
+                    <textarea id="query-sql" rows="12" placeholder="SELECT * FROM project.dataset.table LIMIT 100" spellcheck="false"></textarea>
                   </div>
 
                   <div class="form-group">

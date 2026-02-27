@@ -164,6 +164,7 @@ window.PropertyPanel = (function () {
         </div>
 
         <div class="property-panel-footer">
+          <button id="prop-delete" class="btn btn-danger" style="margin-right: auto;">Delete Widget</button>
           <button id="prop-save" class="btn btn-primary">Save Changes</button>
           <button id="prop-cancel" class="btn btn-secondary">Cancel</button>
         </div>
@@ -191,6 +192,12 @@ window.PropertyPanel = (function () {
       document.getElementById('prop-cancel').addEventListener('click', (e) => {
         e.preventDefault();
         this.cancel();
+      });
+
+      // Delete button
+      document.getElementById('prop-delete').addEventListener('click', (e) => {
+        e.preventDefault();
+        this.deleteWidget();
       });
 
       // Type change - update visible options
@@ -454,6 +461,21 @@ window.PropertyPanel = (function () {
       this.currentElement.style.gridColumn = `${pos.col} / span ${pos.colSpan || 1}`;
       this.currentElement.style.gridRow = `${pos.row} / span ${pos.rowSpan || 1}`;
 
+      this.hide();
+    }
+
+    deleteWidget() {
+      if (!this.currentWidget) return;
+
+      const confirmDelete = confirm(`Delete widget "${this.currentWidget.title || this.currentWidget.id}"?`);
+      if (!confirmDelete) return;
+
+      console.log('[PropertyPanel] Deleting widget:', this.currentWidget.id);
+
+      // Call editor to delete the widget
+      this.editorApp.deleteWidget(this.currentWidget.id);
+
+      // Hide panel
       this.hide();
     }
   }
