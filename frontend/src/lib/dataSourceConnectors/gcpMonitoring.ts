@@ -11,9 +11,10 @@ export interface GCPMetric {
   id: string;
   name: string;
   description: string;
-  category: 'performance' | 'errors' | 'resources';
+  category: 'performance' | 'errors' | 'resources' | 'deployments';
   service: string;
   metricType: string;
+  suggestedWidget: 'big-number' | 'gauge' | 'trend' | 'status';
   unit?: string;
   aggregation?: string[];
 }
@@ -22,6 +23,7 @@ export interface GCPMetricsByCategory {
   performance: GCPMetric[];
   errors: GCPMetric[];
   resources: GCPMetric[];
+  deployments: GCPMetric[];
 }
 
 export interface GCPConnectionTest {
@@ -42,6 +44,7 @@ export const GCP_METRICS_CATALOG: GCPMetric[] = [
     category: 'performance',
     service: 'Cloud Run',
     metricType: 'run.googleapis.com/request_latencies',
+    suggestedWidget: 'trend',
     unit: 'ms',
     aggregation: ['ALIGN_DELTA', 'ALIGN_MEAN', 'ALIGN_PERCENTILE_95']
   },
@@ -52,6 +55,7 @@ export const GCP_METRICS_CATALOG: GCPMetric[] = [
     category: 'performance',
     service: 'Cloud Run',
     metricType: 'run.googleapis.com/request_count',
+    suggestedWidget: 'big-number',
     unit: 'requests',
     aggregation: ['ALIGN_RATE', 'ALIGN_DELTA']
   },
@@ -62,6 +66,7 @@ export const GCP_METRICS_CATALOG: GCPMetric[] = [
     category: 'resources',
     service: 'Cloud Run',
     metricType: 'run.googleapis.com/container/cpu/utilizations',
+    suggestedWidget: 'gauge',
     unit: 'percent',
     aggregation: ['ALIGN_MEAN', 'ALIGN_MAX']
   },
@@ -72,6 +77,7 @@ export const GCP_METRICS_CATALOG: GCPMetric[] = [
     category: 'resources',
     service: 'Cloud Run',
     metricType: 'run.googleapis.com/container/memory/utilizations',
+    suggestedWidget: 'gauge',
     unit: 'percent',
     aggregation: ['ALIGN_MEAN', 'ALIGN_MAX']
   },
@@ -84,6 +90,7 @@ export const GCP_METRICS_CATALOG: GCPMetric[] = [
     category: 'resources',
     service: 'Compute Engine',
     metricType: 'compute.googleapis.com/instance/cpu/utilization',
+    suggestedWidget: 'gauge',
     unit: 'percent',
     aggregation: ['ALIGN_MEAN', 'ALIGN_MAX']
   },
@@ -94,6 +101,7 @@ export const GCP_METRICS_CATALOG: GCPMetric[] = [
     category: 'performance',
     service: 'Compute Engine',
     metricType: 'compute.googleapis.com/instance/disk/read_ops_count',
+    suggestedWidget: 'trend',
     unit: 'operations',
     aggregation: ['ALIGN_RATE', 'ALIGN_DELTA']
   },
@@ -106,6 +114,7 @@ export const GCP_METRICS_CATALOG: GCPMetric[] = [
     category: 'performance',
     service: 'BigQuery',
     metricType: 'bigquery.googleapis.com/query/count',
+    suggestedWidget: 'big-number',
     unit: 'queries',
     aggregation: ['ALIGN_RATE', 'ALIGN_DELTA']
   },
@@ -116,6 +125,7 @@ export const GCP_METRICS_CATALOG: GCPMetric[] = [
     category: 'resources',
     service: 'BigQuery',
     metricType: 'bigquery.googleapis.com/slots/allocated',
+    suggestedWidget: 'gauge',
     unit: 'slots',
     aggregation: ['ALIGN_MEAN', 'ALIGN_MAX']
   },
@@ -128,6 +138,7 @@ export const GCP_METRICS_CATALOG: GCPMetric[] = [
     category: 'performance',
     service: 'Pub/Sub',
     metricType: 'pubsub.googleapis.com/topic/send_message_operation_count',
+    suggestedWidget: 'trend',
     unit: 'ms',
     aggregation: ['ALIGN_DELTA', 'ALIGN_MEAN']
   },
@@ -138,6 +149,7 @@ export const GCP_METRICS_CATALOG: GCPMetric[] = [
     category: 'resources',
     service: 'Pub/Sub',
     metricType: 'pubsub.googleapis.com/subscription/num_unacked_messages_by_region',
+    suggestedWidget: 'big-number',
     unit: 'messages',
     aggregation: ['ALIGN_MEAN', 'ALIGN_MAX']
   },
@@ -150,6 +162,7 @@ export const GCP_METRICS_CATALOG: GCPMetric[] = [
     category: 'errors',
     service: 'Cloud Run',
     metricType: 'run.googleapis.com/request_count',
+    suggestedWidget: 'status',
     unit: 'errors',
     aggregation: ['ALIGN_RATE', 'ALIGN_DELTA']
   },
@@ -160,8 +173,33 @@ export const GCP_METRICS_CATALOG: GCPMetric[] = [
     category: 'errors',
     service: 'Pub/Sub',
     metricType: 'pubsub.googleapis.com/subscription/dead_letter_message_count',
+    suggestedWidget: 'status',
     unit: 'messages',
     aggregation: ['ALIGN_RATE', 'ALIGN_DELTA']
+  },
+
+  // Deployment Metrics
+  {
+    id: 'cloudrun_revision_count',
+    name: 'Active Revisions',
+    description: 'Number of active Cloud Run revisions',
+    category: 'deployments',
+    service: 'Cloud Run',
+    metricType: 'run.googleapis.com/revision/count',
+    suggestedWidget: 'big-number',
+    unit: 'revisions',
+    aggregation: ['ALIGN_MEAN']
+  },
+  {
+    id: 'cloudrun_deployment_status',
+    name: 'Deployment Status',
+    description: 'Current status of Cloud Run deployments',
+    category: 'deployments',
+    service: 'Cloud Run',
+    metricType: 'run.googleapis.com/revision/ready',
+    suggestedWidget: 'status',
+    unit: 'status',
+    aggregation: ['ALIGN_MEAN']
   }
 ];
 
@@ -175,7 +213,8 @@ export async function discoverGCPMetrics(): Promise<GCPMetricsByCategory> {
   const metricsByCategory: GCPMetricsByCategory = {
     performance: [],
     errors: [],
-    resources: []
+    resources: [],
+    deployments: []
   };
 
   // Organize metrics by category

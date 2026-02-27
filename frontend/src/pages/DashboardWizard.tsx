@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { WizardProgress } from '@/components/ui/WizardProgress';
 import { Step1Purpose } from '@/components/wizard/Step1Purpose';
 import { Step2DataSources } from '@/components/wizard/Step2DataSources';
+import { Step3MetricPicker } from '@/components/wizard/Step3MetricPicker';
 import { createInitialState, WizardState } from '@/lib/wizardState';
 
 export function DashboardWizard() {
@@ -42,6 +43,22 @@ export function DashboardWizard() {
               }}
               onNext={() => {
                 setWizardState({ ...wizardState, currentStep: 3 });
+              }}
+            />
+          )}
+
+          {wizardState.currentStep === 3 && (
+            <Step3MetricPicker
+              dataSources={wizardState.selectedDataSources}
+              selectedMetrics={wizardState.selectedMetrics}
+              onUpdate={(metrics) => {
+                setWizardState({ ...wizardState, selectedMetrics: metrics });
+              }}
+              onNext={() => {
+                setWizardState({ ...wizardState, currentStep: 4 });
+              }}
+              onBack={() => {
+                setWizardState({ ...wizardState, currentStep: 2 });
               }}
             />
           )}
