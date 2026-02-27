@@ -328,9 +328,14 @@ class AdminApp {
     window.location.href = `/?page=${dashboardIndex}&edit=true`;
   }
 
-  duplicateDashboard(id) {
-    console.log('Duplicate dashboard:', id);
-    this.showToast('Duplicate functionality will be implemented later', 'success');
+  async duplicateDashboard(id) {
+    try {
+      const duplicated = await this.api.duplicateDashboard(id);
+      this.showToast(`Created "${duplicated.name}"`);
+      await this.loadDashboards();
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
   }
 
   async deleteDashboard(id) {

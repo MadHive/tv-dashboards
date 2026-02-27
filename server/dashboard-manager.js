@@ -123,6 +123,31 @@ export default class DashboardManager {
     return { success: true, id };
   }
 
+  async duplicateDashboard(id) {
+    const original = await this.getDashboard(id);
+
+    // Generate new ID
+    let newId = `${id}-copy`;
+    let counter = 1;
+    while (this.config.dashboards.some(d => d.id === newId)) {
+      counter++;
+      newId = `${id}-copy-${counter}`;
+    }
+
+    // Create duplicate
+    const duplicate = {
+      ...original,
+      id: newId,
+      name: `${original.name} (Copy${counter > 1 ? ' ' + counter : ''})`,
+      widgets: JSON.parse(JSON.stringify(original.widgets)) // Deep clone widgets
+    };
+
+    this.config.dashboards.push(duplicate);
+    await this.saveConfig();
+
+    return duplicate;
+  }
+
   async saveConfig() {
     const yamlContent = YAML.dump(this.config);
     await writeFile(this.configPath, yamlContent, 'utf-8');

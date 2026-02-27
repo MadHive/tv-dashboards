@@ -116,4 +116,21 @@ describe('DashboardManager', () => {
 
     await expect(manager.deleteDashboard('only-one')).rejects.toThrow('Cannot delete the last dashboard');
   });
+
+  it('should duplicate dashboard with new ID', async () => {
+    const duplicated = await manager.duplicateDashboard('platform-overview');
+    expect(duplicated.id).toBe('platform-overview-copy');
+    expect(duplicated.name).toBe('Platform Overview (Copy)');
+    expect(duplicated.widgets.length).toBeGreaterThan(0);
+
+    const dashboards = await manager.listDashboards();
+    expect(dashboards.some(d => d.id === duplicated.id)).toBe(true);
+  });
+
+  it('should handle duplicate of duplicate (copy-2)', async () => {
+    await manager.duplicateDashboard('platform-overview');
+    const duplicated2 = await manager.duplicateDashboard('platform-overview');
+    expect(duplicated2.id).toBe('platform-overview-copy-2');
+    expect(duplicated2.name).toBe('Platform Overview (Copy 2)');
+  });
 });

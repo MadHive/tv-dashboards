@@ -282,6 +282,19 @@ const app = new Elysia()
     }
   })
 
+  .post('/api/dashboards/:id/duplicate', async ({ params }) => {
+    try {
+      const dashboard = await dashboardManager.duplicateDashboard(params.id);
+      invalidateConfigCache();
+      return dashboard;
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 400, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
   // Backup management endpoints
   .get('/api/backups', () => {
     try {
