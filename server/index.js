@@ -155,6 +155,18 @@ const app = new Elysia()
     });
   })
 
+  .get('/wizard-demo', async () => {
+    const file = Bun.file(join(publicDir, 'wizard-demo.html'));
+    return new Response(file, {
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
+  })
+
   // Config endpoints
   .get('/api/config', () => loadConfig())
   .get('/api/metrics/:dashboardId', async ({ params }) => {

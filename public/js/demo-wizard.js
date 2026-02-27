@@ -212,11 +212,15 @@ const wizard = new WizardFramework({
     resultData.textContent = 'Creating dashboard...';
 
     try {
+      // Generate a unique ID from the name
+      const id = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
       // Create dashboard via API
       const response = await fetch('/api/dashboards', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          id: id,
           name: data.name,
           subtitle: data.subtitle || '',
           icon: data.icon,
@@ -225,7 +229,21 @@ const wizard = new WizardFramework({
             rows: parseInt(data.rows) || 2,
             gap: parseInt(data.gap) || 14
           },
-          widgets: [] // Start with empty dashboard
+          widgets: [
+            {
+              id: `${id}-placeholder`,
+              type: 'big-number',
+              title: 'Getting Started',
+              position: { col: 1, row: 1, width: 1, height: 1 },
+              source: 'mock',
+              config: {
+                label: 'Dashboard Created',
+                value: '✓',
+                unit: '',
+                trend: 'neutral'
+              }
+            }
+          ]
         })
       });
 
