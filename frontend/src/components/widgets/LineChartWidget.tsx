@@ -99,6 +99,17 @@ export function LineChartWidget({ config }: LineChartWidgetProps) {
     );
   }
 
+  // Empty data state
+  if (!lineChartData || !lineChartData.labels || lineChartData.labels.length === 0) {
+    return (
+      <Card className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <p className="text-madhive-chalk/60 text-tv-base">No data available</p>
+        </div>
+      </Card>
+    );
+  }
+
   // Transform data to Recharts format
   // From: { labels: ['A', 'B'], datasets: [{ label: 'X', data: [1, 2] }] }
   // To: [{ name: 'A', X: 1 }, { name: 'B', X: 2 }]
