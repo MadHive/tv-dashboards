@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { QueryBuilder } from '@/pages/QueryBuilder';
+import { DataExplorer } from '@/pages/DataExplorer';
 
 // Placeholder home page - will be replaced with actual dashboard viewer
 function HomePage() {
@@ -29,14 +29,14 @@ function HomePage() {
             </ul>
           </div>
           <a
-            href="/app/query-builder"
+            href="/app/data"
             className="block p-6 bg-madhive-pink/10 hover:bg-madhive-pink/20 backdrop-blur-sm rounded-lg border border-madhive-pink transition-colors"
           >
             <h2 className="text-tv-xl font-semibold text-madhive-pink mb-2">
-              → Visual Query Builder
+              → Data Explorer
             </h2>
             <p className="text-tv-base text-madhive-chalk/80">
-              Build BigQuery queries with a no-code interface
+              Browse and visualize available data sources
             </p>
           </a>
         </div>
@@ -51,7 +51,7 @@ function App() {
       <BrowserRouter basename="/app">
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/query-builder" element={<QueryBuilder />} />
+          <Route path="/data" element={<DataExplorer />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
