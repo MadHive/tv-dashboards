@@ -17,10 +17,10 @@ export function WizardProgress({
   ]
 }: WizardProgressProps) {
   return (
-    <div className="w-full max-w-4xl mx-auto mb-12">
-      <div className="flex items-center justify-between">
+    <nav aria-label="Progress" className="w-full max-w-4xl mx-auto mb-12">
+      <ol className="flex items-center justify-between">
         {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
-          <div key={step} className="flex items-center flex-1">
+          <li key={step} className="flex items-center flex-1">
             {/* Step Circle */}
             <div className="flex flex-col items-center flex-shrink-0">
               <div
@@ -35,9 +35,12 @@ export function WizardProgress({
                       : 'bg-madhive-purple-dark text-madhive-chalk/40 border-2 border-madhive-purple-medium'
                   }
                 `}
+                aria-current={step === currentStep ? 'step' : undefined}
+                aria-label={`Step ${step}: ${stepLabels[step - 1] || `Step ${step}`}`}
+                role="status"
               >
                 {step < currentStep ? (
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                   </svg>
                 ) : (
@@ -50,7 +53,7 @@ export function WizardProgress({
                   ${step <= currentStep ? 'text-madhive-pink' : 'text-madhive-chalk/40'}
                 `}
               >
-                {stepLabels[step - 1]}
+                {stepLabels[step - 1] || `Step ${step}`}
               </div>
             </div>
 
@@ -63,9 +66,9 @@ export function WizardProgress({
                 `}
               />
             )}
-          </div>
+          </li>
         ))}
-      </div>
-    </div>
+      </ol>
+    </nav>
   );
 }
