@@ -679,3 +679,92 @@ dashboards:
         title: ""
         source: vulntrack
         position: { col: 1, row: 1 }
+
+  # ──────────────────────────────────────────────
+  # Page 12: Visual Showcase (All Widget Types)
+  # ──────────────────────────────────────────────
+  - id: visual-showcase
+    name: "Visual Showcase"
+    subtitle: "All 14 Widget Types"
+    icon: "palette"
+    grid: { columns: 4, rows: 4, gap: 14 }
+    widgets:
+      # Row 1: Enhanced widgets
+      - id: showcase-bignumber
+        type: big-number
+        title: "Total Users"
+        source: mock
+        position: { col: 1, row: 1, colSpan: 1, rowSpan: 1 }
+        gradient: true
+
+      - id: showcase-statcard
+        type: stat-card
+        title: "Active Sessions"
+        source: mock
+        position: { col: 2, row: 1, colSpan: 1, rowSpan: 1 }
+
+      - id: showcase-gauge
+        type: gauge
+        title: "System Health"
+        source: mock
+        position: { col: 3, row: 1, colSpan: 1, rowSpan: 1 }
+        min: 0
+        max: 100
+        unit: "%"
+
+      - id: showcase-sparkline
+        type: sparkline
+        title: "Quick Trend"
+        source: mock
+        position: { col: 4, row: 1, colSpan: 1, rowSpan: 1 }
+
+      # Row 2: Multi-metric and charts
+      - id: showcase-multimetric
+        type: multi-metric-card
+        title: "Key Metrics"
+        source: mock
+        position: { col: 1, row: 2, colSpan: 2, rowSpan: 1 }
+
+      - id: showcase-bar
+        type: bar-chart
+        title: "Revenue by Region"
+        source: mock
+        position: { col: 3, row: 2, colSpan: 2, rowSpan: 1 }
+
+      # Row 3: Advanced visualizations
+      - id: showcase-line
+        type: line-chart
+        title: "Traffic Over Time"
+        source: mock
+        position: { col: 1, row: 3, colSpan: 2, rowSpan: 1 }
+
+      - id: showcase-heatmap
+        type: heatmap
+        title: "Activity Heatmap"
+        source: mock
+        position: { col: 3, row: 3, colSpan: 2, rowSpan: 1 }
+
+      # Row 4: New widget types
+      - id: showcase-stackedbar
+        type: stacked-bar-chart
+        title: "Conversion Funnel"
+        source: mock
+        position: { col: 1, row: 4, colSpan: 1, rowSpan: 1 }
+
+      - id: showcase-sankey
+        type: sankey
+        title: "User Flow"
+        source: mock
+        position: { col: 2, row: 4, colSpan: 1, rowSpan: 1 }
+
+      - id: showcase-table
+        type: table
+        title: "Recent Transactions"
+        source: mock
+        position: { col: 3, row: 4, colSpan: 1, rowSpan: 1 }
+
+      - id: showcase-treemap
+        type: treemap
+        title: "Resource Usage"
+        source: mock
+        position: { col: 4, row: 4, colSpan: 1, rowSpan: 1 }
