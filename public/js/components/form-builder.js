@@ -7,56 +7,80 @@ export class FormBuilder {
   constructor(schema) {
     this.schema = schema;
     this.data = {};
-    this.errors = {};
     this.container = null;
     this.eventListeners = [];
   }
 
+  /**
+   * Validate a single field value against field rules
+   * @private
+   */
+  _validateFieldValue(field, value) {
+    // Check required - use strict comparison to allow 0 and false
+    if (field.required && (value === '' || value === null || value === undefined)) {
+      return `${field.label} is required`;
+    }
+
+    // Skip further validation if no value and not required
+    if (!field.required && (value === '' || value === null || value === undefined)) {
+      return null;
+    }
+
+    // Email validation
+    if (field.type === 'email' && value) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) {
+        return 'Invalid email address';
+      }
+    }
+
+    // Number validation (type and range)
+    if (field.type === 'number' && value !== '') {
+      const numValue = Number(value);
+      if (isNaN(numValue)) {
+        return 'Must be a number';
+      }
+      if (field.min !== undefined && numValue < field.min) {
+        return `Must be at least ${field.min}`;
+      }
+      if (field.max !== undefined && numValue > field.max) {
+        return `Must be at most ${field.max}`;
+      }
+    }
+
+    // Custom validator
+    if (field.validate && value) {
+      try {
+        const error = field.validate(value);
+        if (error) return error;
+      } catch (err) {
+        console.error('Custom validation error:', err);
+        return 'Validation failed';
+      }
+    }
+
+    return null;
+  }
+
   validate(data) {
     const errors = {};
-    let valid = true;
 
     this.schema.fields.forEach(field => {
-      const value = data[field.id];
+      let value = data[field.id];
 
-      if (field.required && !value) {
-        errors[field.id] = `${field.label} is required`;
-        valid = false;
-        return;
+      // Trim string values before validation
+      if (typeof value === 'string') {
+        value = value.trim();
       }
 
-      if (!value && !field.required) return;
+      const error = this._validateFieldValue(field, value);
 
-      if (field.type === 'email' && value) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(value)) {
-          errors[field.id] = 'Invalid email address';
-          valid = false;
-        }
-      }
-
-      if (field.type === 'number' && value) {
-        if (isNaN(value)) {
-          errors[field.id] = 'Must be a number';
-          valid = false;
-        }
-      }
-
-      if (field.validate && value) {
-        try {
-          const customError = field.validate(value);
-          if (customError) {
-            errors[field.id] = customError;
-            valid = false;
-          }
-        } catch (error) {
-          errors[field.id] = 'Validation error occurred';
-          valid = false;
-          console.error('Custom validator error:', error);
-        }
+      if (error) {
+        errors[field.id] = error;
       }
     });
 
+    const valid = Object.keys(errors).length === 0;
     return { valid, errors, data };
   }
 
@@ -164,8 +188,13 @@ export class FormBuilder {
     }
 
     const handleChange = () => {
-      this.data[field.id] = input.value;
-      this.validateField(field, input.value);
+      // Trim string values before storing
+      let value = input.value;
+      if (typeof value === 'string') {
+        value = value.trim();
+      }
+      this.data[field.id] = value;
+      this.validateField(field, value);
     };
 
     input.addEventListener('change', handleChange);
@@ -176,37 +205,14 @@ export class FormBuilder {
 
   validateField(field, value) {
     const errorEl = document.getElementById(`${field.id}-error`);
-    if (!errorEl) return;
+    if (!errorEl) return true;
 
-    if (field.required && !value) {
-      errorEl.textContent = `${field.label} is required`;
+    const error = this._validateFieldValue(field, value);
+
+    if (error) {
+      errorEl.textContent = error;
       errorEl.style.display = 'block';
       return false;
-    }
-
-    if (field.type === 'email' && value) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(value)) {
-        errorEl.textContent = 'Invalid email address';
-        errorEl.style.display = 'block';
-        return false;
-      }
-    }
-
-    if (field.validate && value) {
-      try {
-        const error = field.validate(value);
-        if (error) {
-          errorEl.textContent = error;
-          errorEl.style.display = 'block';
-          return false;
-        }
-      } catch (e) {
-        errorEl.textContent = 'Validation error occurred';
-        errorEl.style.display = 'block';
-        console.error('Custom validator error:', e);
-        return false;
-      }
     }
 
     errorEl.textContent = '';
@@ -246,7 +252,6 @@ export class FormBuilder {
 
   reset() {
     this.data = {};
-    this.errors = {};
 
     // Clear all inputs and errors if form is rendered
     this.schema.fields.forEach(field => {
@@ -279,6 +284,5 @@ export class FormBuilder {
 
     // Clear data
     this.data = {};
-    this.errors = {};
   }
 }
