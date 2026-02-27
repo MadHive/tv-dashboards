@@ -138,6 +138,18 @@ const app = new Elysia()
     }
   }))
 
+  .get('/admin', () => {
+    const adminHtml = readFileSync(join(publicDir, 'admin.html'), 'utf8');
+    return new Response(adminHtml, {
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
+  })
+
   // Config endpoints
   .get('/api/config', () => loadConfig())
   .get('/api/metrics/:dashboardId', async ({ params }) => {
