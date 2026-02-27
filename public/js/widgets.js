@@ -555,7 +555,7 @@ window.Widgets = (function () {
     let sortColumn = null;
     let sortDir = 'asc';
 
-    return {
+    const widget = {
       update(data) {
         if (!data || !data.columns || !data.rows) return;
 
@@ -576,7 +576,7 @@ window.Widgets = (function () {
               sortColumn = col.key;
               sortDir = 'asc';
             }
-            this.update(data);
+            widget.update(data);
           };
           if (sortColumn === col.key) {
             th.textContent += sortDir === 'asc' ? ' ▲' : ' ▼';
@@ -625,6 +625,7 @@ window.Widgets = (function () {
         tableEl.appendChild(tbody);
       }
     };
+    return widget;
   }
 
   function treemap(container, config) {
