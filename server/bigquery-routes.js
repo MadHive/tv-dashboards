@@ -236,6 +236,70 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
     })
   })
 
+  // Get complete schema (datasets + tables + columns)
+  .get('/schema', async () => {
+    try {
+      const datasets = await bigQueryDataSource.listDatasets();
+
+      // For each dataset, get tables with columns
+      const datasetsWithTables = await Promise.all(
+        datasets.map(async (dataset) => {
+          try {
+            const tables = await bigQueryDataSource.listTables(dataset.id);
+
+            // For each table, get columns (limited to first 10 tables to avoid timeout)
+            const tablesWithColumns = await Promise.all(
+              tables.slice(0, 10).map(async (table) => {
+                try {
+                  const schema = await bigQueryDataSource.getTableSchema(dataset.id, table.id);
+                  return {
+                    id: table.id,
+                    name: table.name,
+                    columns: schema?.fields || []
+                  };
+                } catch (error) {
+                  console.error(`[bigquery] Failed to get schema for ${dataset.id}.${table.id}:`, error.message);
+                  return {
+                    id: table.id,
+                    name: table.name,
+                    columns: []
+                  };
+                }
+              })
+            );
+
+            return {
+              id: dataset.id,
+              name: dataset.name,
+              tables: tablesWithColumns
+            };
+          } catch (error) {
+            console.error(`[bigquery] Failed to list tables for ${dataset.id}:`, error.message);
+            return {
+              id: dataset.id,
+              name: dataset.name,
+              tables: []
+            };
+          }
+        })
+      );
+
+      // Return in format matching TypeScript Schema interface
+      return { datasets: datasetsWithTables };
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  }, {
+    detail: {
+      tags: ['BigQuery'],
+      summary: 'Get schema',
+      description: 'Get complete BigQuery schema (datasets, tables, and columns)'
+    }
+  })
+
   // List datasets
   .get('/datasets', async () => {
     try {
