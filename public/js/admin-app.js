@@ -3,6 +3,7 @@
 // ===========================================================================
 
 import { AdminAPI } from './admin-api.js';
+import { DashboardForm } from './admin-components.js';
 
 class AdminApp {
   constructor() {
@@ -260,8 +261,33 @@ class AdminApp {
   }
 
   openCreateModal() {
-    console.log('Create modal - to be implemented in next task');
-    this.showToast('Create modal will be implemented next', 'success');
+    this.currentForm = new DashboardForm();
+    this.openModal('Create Dashboard', this.currentForm);
+  }
+
+  async editDashboard(id) {
+    try {
+      const dashboard = await this.api.getDashboard(id);
+      this.currentForm = new DashboardForm(dashboard);
+      this.openModal('Edit Dashboard', this.currentForm);
+    } catch (error) {
+      this.showToast('Failed to load dashboard', 'error');
+    }
+  }
+
+  openModal(title, form) {
+    const modal = document.getElementById('dashboard-modal');
+    const modalTitle = document.getElementById('modal-title');
+    const formContainer = document.getElementById('dashboard-form');
+
+    modalTitle.textContent = title;
+    form.render(formContainer);
+
+    modal.style.display = 'flex';
+
+    // Set up save button
+    const saveBtn = document.getElementById('modal-save');
+    saveBtn.onclick = () => this.saveCurrentDashboard();
   }
 
   closeModal() {
@@ -270,17 +296,36 @@ class AdminApp {
     this.currentForm = null;
   }
 
+  async saveCurrentDashboard() {
+    const validation = this.currentForm.validate();
+
+    if (!validation.valid) {
+      this.currentForm.showErrors(validation.errors);
+      return;
+    }
+
+    try {
+      if (this.currentForm.isEdit) {
+        await this.api.updateDashboard(this.currentForm.dashboard.id, validation.data);
+        this.showToast('Dashboard updated successfully');
+      } else {
+        await this.api.createDashboard(validation.data);
+        this.showToast('Dashboard created successfully');
+      }
+
+      this.closeModal();
+      await this.loadDashboards();
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
   editWidgets(id) {
     const dashboardIndex = this.dashboards.findIndex(d => d.id === id);
     if (dashboardIndex === -1) return;
 
     // Navigate to main dashboard with this page active and editor open
     window.location.href = `/?page=${dashboardIndex}&edit=true`;
-  }
-
-  editDashboard(id) {
-    console.log('Edit dashboard:', id);
-    this.showToast('Edit functionality will be implemented next', 'success');
   }
 
   duplicateDashboard(id) {
