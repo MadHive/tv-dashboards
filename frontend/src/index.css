@@ -14,6 +14,7 @@
 
   html {
     @apply antialiased;
+    font-size: 20px; /* Root font size for TV scaling: 4.5rem = 90px */
   }
 }
 
