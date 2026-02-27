@@ -19,6 +19,7 @@
     "build": "echo 'No build step required for vanilla JS' && exit 0"
   },
   "dependencies": {
+    "@aws-sdk/client-cloudwatch": "^3.1000.0",
     "@elysiajs/cookie": "^0.8.0",
     "@elysiajs/cors": "^1.4.1",
     "@elysiajs/static": "^1.2",
