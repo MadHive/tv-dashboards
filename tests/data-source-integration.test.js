@@ -211,7 +211,8 @@ describe('GCP Data Source Integration', () => {
   });
 
   describe('executeQuery', () => {
-    it('should use queryId to fetch GCP metrics', async () => {
+    // Skip this test in CI - it requires real GCP credentials
+    it.skipIf(process.env.CI === 'true')('should use queryId to fetch GCP metrics', async () => {
       const widgetConfig = {
         id: 'test-gcp-widget',
         type: 'big-number',
