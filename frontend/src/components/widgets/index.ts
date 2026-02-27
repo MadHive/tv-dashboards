@@ -1,4 +1,9 @@
 export { BigNumberWidget } from './BigNumberWidget';
+export { StatCardWidget } from './StatCardWidget';
+export { GaugeWidget } from './GaugeWidget';
+export { BarChartWidget } from './BarChartWidget';
+export { LineChartWidget } from './LineChartWidget';
+export { TableWidget } from './TableWidget';
 export { SparklineWidget } from './SparklineWidget';
 export { MultiMetricCardWidget } from './MultiMetricCardWidget';
 export { StackedBarChartWidget } from './StackedBarChartWidget';
