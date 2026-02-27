@@ -5,6 +5,8 @@ import { Step1Purpose } from '@/components/wizard/Step1Purpose';
 import { Step2DataSources } from '@/components/wizard/Step2DataSources';
 import { Step3MetricPicker } from '@/components/wizard/Step3MetricPicker';
 import { Step4VisualStyle } from '@/components/wizard/Step4VisualStyle';
+import { Step5Preview } from '@/components/wizard/Step5Preview';
+import { Step6Deploy } from '@/components/wizard/Step6Deploy';
 import { createInitialState, WizardState } from '@/lib/wizardState';
 
 export function DashboardWizard() {
@@ -83,6 +85,37 @@ export function DashboardWizard() {
               }}
               onBack={() => {
                 setWizardState({ ...wizardState, currentStep: 3 });
+              }}
+            />
+          )}
+
+          {wizardState.currentStep === 5 && (
+            <Step5Preview
+              onNext={() => {
+                setWizardState({ ...wizardState, currentStep: 6 });
+              }}
+              onBack={() => {
+                setWizardState({ ...wizardState, currentStep: 4 });
+              }}
+            />
+          )}
+
+          {wizardState.currentStep === 6 && (
+            <Step6Deploy
+              dashboardName={wizardState.dashboardName}
+              refreshInterval={wizardState.refreshInterval}
+              onUpdateName={(name) => {
+                setWizardState({ ...wizardState, dashboardName: name });
+              }}
+              onUpdateInterval={(interval) => {
+                setWizardState({ ...wizardState, refreshInterval: interval });
+              }}
+              onDeploy={() => {
+                console.log('Dashboard deployed:', wizardState);
+                // TODO: Save to backend in later task
+              }}
+              onBack={() => {
+                setWizardState({ ...wizardState, currentStep: 5 });
               }}
             />
           )}
