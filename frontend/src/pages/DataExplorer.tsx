@@ -3,6 +3,8 @@ import { api } from '@/lib/api';
 import type { Query, QueryResult } from '@/types/dashboard';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
+import { useDebounce } from '@/hooks/useDebounce';
+import { QueryCache, formatCacheAge } from '@/lib/queryCache';
 
 export function DataExplorer() {
   const [queries, setQueries] = useState<Query[]>([]);
@@ -13,14 +15,32 @@ export function DataExplorer() {
   const [executing, setExecuting] = useState(false);
   const [results, setResults] = useState<QueryResult | null>(null);
   const [search, setSearch] = useState('');
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [cacheAge, setCacheAge] = useState<number | null>(null);
+
+  // Debounce search input to reduce filtering overhead
+  const debouncedSearch = useDebounce(search, 300);
 
   // Load all saved queries
   useEffect(() => {
     const loadQueries = async () => {
       try {
         setLoading(true);
+
+        // Try cache first
+        const cached = QueryCache.get<Query[]>('queries');
+        if (cached) {
+          setQueries(cached);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch from API
         const allQueries = await api.getQueries();
         setQueries(allQueries);
+
+        // Cache for 5 minutes
+        QueryCache.set('queries', allQueries, 5 * 60 * 1000);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load queries');
       } finally {
@@ -34,24 +54,58 @@ export function DataExplorer() {
   const handleRunQuery = async (query: Query) => {
     if (!query.sql) return;
 
+    const cacheKey = `result:${query.dataSource}:${query.id}`;
+
+    // Check cache first
+    const cached = QueryCache.get<QueryResult>(cacheKey);
+    const age = QueryCache.getAge(cacheKey);
+
+    if (cached && age) {
+      setSelectedQuery(query);
+      setResults(cached);
+      setCacheAge(age);
+      return;
+    }
+
+    // Cancel any existing query
+    if (abortController) {
+      abortController.abort();
+    }
+
+    const controller = new AbortController();
+    setAbortController(controller);
+
     try {
       setExecuting(true);
       setResults(null);
+      setCacheAge(null);
       setSelectedQuery(query);
 
-      const result = await api.executeQuery(query.dataSource, query.sql);
+      const result = await api.executeQuery(
+        query.dataSource,
+        query.sql,
+        { signal: controller.signal }
+      );
+
       setResults(result);
-    } catch (err) {
+
+      // Cache result for 5 minutes
+      QueryCache.set(cacheKey, result, 5 * 60 * 1000);
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return;
+      }
       alert(`Query failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setExecuting(false);
+      setAbortController(null);
     }
   };
 
   const filteredQueries = queries.filter((q) =>
-    search
-      ? q.name.toLowerCase().includes(search.toLowerCase()) ||
-        q.description?.toLowerCase().includes(search.toLowerCase())
+    debouncedSearch
+      ? q.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+        q.description?.toLowerCase().includes(debouncedSearch.toLowerCase())
       : true
   );
 
@@ -98,10 +152,22 @@ export function DataExplorer() {
           >
             ← Back to Home
           </a>
-          <h1 className="text-tv-huge font-display font-bold text-madhive-pink mb-4">
-            Data Explorer
-          </h1>
-          <p className="text-tv-xl text-madhive-chalk/80">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-tv-huge font-display font-bold text-madhive-pink">
+              Data Explorer
+            </h1>
+            <button
+              onClick={() => {
+                QueryCache.clear('queries');
+                window.location.reload();
+              }}
+              className="px-4 py-2 bg-madhive-purple-dark border-2 border-madhive-purple-medium text-madhive-chalk text-tv-sm rounded-lg hover:bg-madhive-purple-medium transition-colors"
+              aria-label="Refresh query list"
+            >
+              Refresh
+            </button>
+          </div>
+          <p className="text-tv-xl text-madhive-chalk/90">
             Browse and visualize available data sources
           </p>
         </div>
@@ -129,7 +195,7 @@ export function DataExplorer() {
                   key={query.id}
                   onClick={() => handleRunQuery(query)}
                   disabled={executing}
-                  className={`w-full px-6 py-5 border rounded-lg text-left transition-colors disabled:opacity-50 ${
+                  className={`w-full px-6 py-5 border rounded-lg text-left transition-colors disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-madhive-pink focus:ring-offset-2 focus:ring-offset-madhive-purple-deepest ${
                     selectedQuery?.id === query.id
                       ? 'bg-madhive-pink border-madhive-pink text-madhive-purple-deepest'
                       : 'bg-madhive-purple-dark hover:bg-madhive-purple-medium border-madhive-purple-medium text-madhive-chalk'
@@ -204,10 +270,39 @@ export function DataExplorer() {
                   <div className="text-tv-xl font-semibold text-madhive-pink mb-2">
                     {results.rowCount} rows returned
                   </div>
-                  <div className="text-tv-base text-madhive-chalk/80">
+                  <div className="text-tv-base text-madhive-chalk/90">
                     Query executed successfully
                   </div>
+                  {cacheAge && (
+                    <div className="text-tv-sm text-madhive-chalk/60 mt-2">
+                      Cached results from {formatCacheAge(cacheAge)}
+                      <button
+                        onClick={() => {
+                          QueryCache.clear(`result:${selectedQuery?.dataSource}:${selectedQuery?.id}`);
+                          selectedQuery && handleRunQuery(selectedQuery);
+                        }}
+                        className="ml-3 text-madhive-pink hover:text-madhive-pink/80"
+                      >
+                        Refresh
+                      </button>
+                    </div>
+                  )}
                 </div>
+
+                {/* Empty State */}
+                {results.rowCount === 0 && (
+                  <div
+                    className="p-8 bg-madhive-purple-dark/50 border border-madhive-purple-medium rounded-lg text-center"
+                    role="status"
+                  >
+                    <div className="text-tv-xl font-semibold text-madhive-chalk/70 mb-2">
+                      Query returned 0 rows
+                    </div>
+                    <div className="text-tv-base text-madhive-chalk/60">
+                      This query executed successfully but returned no data.
+                    </div>
+                  </div>
+                )}
 
                 {/* Data Table Preview */}
                 {results.rows && results.rows.length > 0 && (
@@ -261,7 +356,7 @@ export function DataExplorer() {
                   <button
                     onClick={() => handleRunQuery(selectedQuery)}
                     disabled={executing}
-                    className="px-6 py-3 bg-madhive-pink text-madhive-purple-deepest text-tv-lg font-semibold rounded-lg hover:bg-madhive-pink/80 transition-colors disabled:opacity-50"
+                    className="px-6 py-3 bg-madhive-pink text-madhive-purple-deepest text-tv-lg font-semibold rounded-lg hover:bg-madhive-pink/80 transition-colors disabled:bg-madhive-purple-medium disabled:text-madhive-chalk/50 disabled:cursor-not-allowed"
                   >
                     Run Again
                   </button>
