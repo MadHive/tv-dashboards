@@ -34,6 +34,7 @@ import {
   exportDashboard,
   importDashboard
 } from './template-manager.js';
+import DashboardManager from './dashboard-manager.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT || '80', 10);
@@ -109,6 +110,9 @@ function getCachedData(key) {
 function setCachedData(key, data) {
   widgetCache.set(key, { data, timestamp: Date.now() });
 }
+
+// Dashboard manager instance
+const dashboardManager = new DashboardManager('./config/dashboards.yaml');
 
 const app = new Elysia()
   .use(cors())
@@ -198,6 +202,31 @@ const app = new Elysia()
       return new Response(
         JSON.stringify({ success: false, error: error.message }),
         { status: 400, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
+  // Dashboard management endpoints
+  .get('/api/dashboards', async () => {
+    try {
+      const dashboards = await dashboardManager.listDashboards();
+      return dashboards;
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
+  .get('/api/dashboards/:id', async ({ params }) => {
+    try {
+      const dashboard = await dashboardManager.getDashboard(params.id);
+      return dashboard;
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 404, headers: { 'content-type': 'application/json' } }
       );
     }
   })
