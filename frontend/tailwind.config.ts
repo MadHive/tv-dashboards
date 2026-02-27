@@ -11,6 +11,7 @@ export default {
           'purple-dark': '#200847',
           purple: '#291036',
           'purple-medium': '#3D1F5C',
+          'purple-light': '#5C3B7A',
           'pink-bright': '#FF7AC6',
           pink: '#FF9BD3',
           'pink-soft': '#FDA4D4',
