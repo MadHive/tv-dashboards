@@ -1,0 +1,81 @@
+.live-preview {
+  width: 100%;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f9fafb;
+}
+
+.preview-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.preview-mode {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  padding: 4px 8px;
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+.preview-size {
+  font-size: 11px;
+  font-weight: 600;
+  color: #3b82f6;
+  padding: 4px 8px;
+  background: #eff6ff;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.preview-dashboard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  min-height: 300px;
+}
+
+.preview-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 16px;
+}
+
+.preview-placeholder {
+  font-size: 14px;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* Size variants */
+.live-preview-mobile {
+  max-width: 375px;
+}
+
+.live-preview-tablet {
+  max-width: 768px;
+}
+
+.live-preview-desktop {
+  max-width: 1200px;
+}
+
+.live-preview-tv {
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+}
