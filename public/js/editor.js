@@ -314,7 +314,7 @@ window.EditorApp = (function () {
         // Mark as modified
         this.markAsModified();
 
-        // TODO: Apply changes to DOM for live preview
+        // Apply changes to DOM for live preview
         this.applyWidgetChanges(widgetId, updates);
       }
     }
