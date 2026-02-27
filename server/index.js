@@ -132,7 +132,7 @@ const app = new Elysia()
     }
     return response;
   })
-  .use(staticPlugin({ assets: frontendDistDir, prefix: '/assets' }))
+  .use(staticPlugin({ assets: join(frontendDistDir, 'assets'), prefix: '/app/assets' }))
   .use(staticPlugin({ assets: publicDir, prefix: '/' }))
   .get('/', () => new Response(indexHtml, {
     headers: {
