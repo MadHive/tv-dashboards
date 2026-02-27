@@ -27,5 +27,6 @@
 [fullstory] Connection test failed
 [zendesk] Connection test failed
 [gcp] GCP data source initialized
-[vulntrack] Connected successfully
+[vulntrack] Connection test failed: The operation timed out.
+[vulntrack] Connection test failed
 [registry] Registered 11 data sources
