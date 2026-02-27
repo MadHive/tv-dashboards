@@ -184,9 +184,10 @@ export class WizardFramework {
     nextBtn.textContent = this.isLastStep ? 'Complete' : 'Next';
     nextBtn.disabled = !this.canGoNext();
     nextBtn.onclick = () => {
+      const wasLastStep = this.isLastStep;
       if (this.next()) {
-        // Only re-render if we're still in the wizard (not completed)
-        if (this.currentStepIndex < this.steps.length) {
+        // Only re-render if we didn't just complete the wizard
+        if (!wasLastStep) {
           this.render(this.container);
         }
       }
