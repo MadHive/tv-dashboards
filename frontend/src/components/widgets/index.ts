@@ -8,3 +8,7 @@ export { SparklineWidget } from './SparklineWidget';
 export { MultiMetricCardWidget } from './MultiMetricCardWidget';
 export { StackedBarChartWidget } from './StackedBarChartWidget';
 export { ListWidget } from './ListWidget';
+export { HeatmapWidget } from './HeatmapWidget';
+export { MapWidget } from './MapWidget';
+export { SankeyWidget } from './SankeyWidget';
+export { TreemapWidget } from './TreemapWidget';
