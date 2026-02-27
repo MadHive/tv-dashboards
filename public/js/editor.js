@@ -64,14 +64,11 @@ window.EditorApp = (function () {
     }
 
     enter() {
-      console.log('[Editor] Entering edit mode');
       this.isActive = true;
 
       // Debug: Check if widgets exist
       const activePage = document.querySelector('.dashboard-page.active');
       const widgets = activePage ? activePage.querySelectorAll('.widget') : [];
-      console.log('[Editor] Active page:', activePage);
-      console.log('[Editor] Widgets found:', widgets.length);
 
       // Add editor-active class to body
       document.body.classList.add('editor-active');
@@ -88,8 +85,6 @@ window.EditorApp = (function () {
 
       // Clone current config for modification tracking (MUST BE FIRST!)
       this.modifiedConfig = JSON.parse(JSON.stringify(this.dashboardApp.config));
-      console.log('[Editor] Modified config created, current page:', this.dashboardApp.currentPage);
-      console.log('[Editor] Widgets in modified config:', this.modifiedConfig.dashboards[this.dashboardApp.currentPage]?.widgets?.length || 0);
 
       // Show grid overlay
       this.updateGridOverlay();
@@ -115,8 +110,6 @@ window.EditorApp = (function () {
       if (!this.palette && window.WidgetPalette) {
         this.palette = new window.WidgetPalette(this);
       }
-      console.log('[Editor] Modified config created, current page:', this.dashboardApp.currentPage);
-      console.log('[Editor] Widgets in modified config:', this.modifiedConfig.dashboards[this.dashboardApp.currentPage]?.widgets?.length || 0);
 
       // Show editor toggle button as "active"
       const toggleBtn = document.getElementById('editor-toggle');
@@ -130,7 +123,6 @@ window.EditorApp = (function () {
     }
 
     exit() {
-      console.log('[Editor] Exiting edit mode');
 
       // Check for unsaved changes
       if (this.hasUnsavedChanges()) {
@@ -206,12 +198,10 @@ window.EditorApp = (function () {
     attachWidgetHandlers() {
       const activePage = document.querySelector('.dashboard-page.active');
       if (!activePage) {
-        console.log('[Editor] No active page found in attachWidgetHandlers');
         return;
       }
 
       const widgets = activePage.querySelectorAll('.widget');
-      console.log('[Editor] attachWidgetHandlers - Found', widgets.length, 'widgets');
       widgets.forEach(widget => {
         widget.classList.add('editable');
         widget.style.cursor = 'move';
@@ -280,7 +270,6 @@ window.EditorApp = (function () {
       const currentDash = this.modifiedConfig.dashboards[this.dashboardApp.currentPage];
       this.selectedWidget = currentDash.widgets.find(w => w.id === widgetId);
 
-      console.log('[Editor] Selected widget:', widgetId, this.selectedWidget);
 
       // Attach resize handles
       if (this.resizeController && this.selectedWidget) {
@@ -321,7 +310,6 @@ window.EditorApp = (function () {
 
       if (widget) {
         Object.assign(widget, updates);
-        console.log('[Editor] Updated widget config:', widgetId, updates);
 
         // Mark as modified
         this.markAsModified();
@@ -355,7 +343,6 @@ window.EditorApp = (function () {
     }
 
     deleteWidget(widgetId) {
-      console.log('[Editor] Deleting widget:', widgetId);
 
       const currentDash = this.modifiedConfig.dashboards[this.dashboardApp.currentPage];
       const widgetIndex = currentDash.widgets.findIndex(w => w.id === widgetId);
@@ -384,7 +371,6 @@ window.EditorApp = (function () {
     }
 
     async saveChanges() {
-      console.log('[Editor] Saving changes...');
 
       try {
         const currentDash = this.modifiedConfig.dashboards[this.dashboardApp.currentPage];

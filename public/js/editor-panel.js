@@ -470,7 +470,6 @@ window.PropertyPanel = (function () {
       const confirmDelete = confirm(`Delete widget "${this.currentWidget.title || this.currentWidget.id}"?`);
       if (!confirmDelete) return;
 
-      console.log('[PropertyPanel] Deleting widget:', this.currentWidget.id);
 
       // Call editor to delete the widget
       this.editorApp.deleteWidget(this.currentWidget.id);
