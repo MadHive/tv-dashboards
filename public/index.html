@@ -9,6 +9,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/dashboard.css?v=11">
   <link rel="stylesheet" href="/css/editor.css?v=1">
+  <link rel="stylesheet" href="/css/query-editor.css?v=1">
+  <!-- OAuth disabled for now -->
+  <!-- <link rel="stylesheet" href="/css/auth-ui.css?v=1"> -->
 </head>
 <body>
 
@@ -35,8 +38,9 @@
   <!-- ===== dashboard pages rendered here ===== -->
   <main id="dashboard-container"></main>
 
-  <!-- ===== editor UI ===== -->
-  <button id="editor-toggle" title="Toggle Editor (Ctrl+E)">Edit Mode</button>
+  <!-- ===== editor UI - removed buttons, use keyboard shortcuts instead ===== -->
+  <!-- Ctrl+E = Toggle Edit Mode -->
+  <!-- Ctrl+Q = Open Query Editor -->
 
   <div class="editor-action-bar" style="display: none;">
     <button id="editor-save" class="primary">Save Changes</button>
@@ -62,6 +66,8 @@
   <script src="/js/editor-palette.js?v=2"></script>
   <script src="/js/editor-panel.js?v=2"></script>
   <script src="/js/editor.js?v=2"></script>
+  <script src="/js/query-editor.js?v=1"></script>
+  <!-- <script src="/js/auth-ui.js?v=1"></script> -->
   <script src="/js/app.js?v=11"></script>
 </body>
 </html>

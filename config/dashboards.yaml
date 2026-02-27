@@ -26,14 +26,14 @@ dashboards:
         title: "Impressions Delivered"
         source: gcp
         project: mad-master
-        position: { col: 3, row: 1 }
+        position: { col: 3, row: 1, colSpan: 1, rowSpan: 1 }
 
       - id: bid-qps
         type: gauge
         title: "Bid QPS"
         source: gcp
         project: mad-master
-        position: { col: 4, row: 1 }
+        position: { col: 4, row: 1, colSpan: 1, rowSpan: 1 }
         unit: "/s"
         min: 0
         max: 5000000
@@ -43,7 +43,7 @@ dashboards:
         title: "Platform Uptime"
         source: gcp
         project: mad-master
-        position: { col: 1, row: 2 }
+        position: { col: 1, row: 2, colSpan: 1, rowSpan: 1 }
         unit: "%"
         min: 0
         max: 100
@@ -53,7 +53,7 @@ dashboards:
         title: "Events Processed"
         source: gcp
         project: mad-master
-        position: { col: 2, row: 2 }
+        position: { col: 2, row: 2, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: kafka-throughput
@@ -61,7 +61,7 @@ dashboards:
         title: "Kafka Writes"
         source: gcp
         project: mad-master
-        position: { col: 3, row: 2 }
+        position: { col: 3, row: 2, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: storage-volume
@@ -69,7 +69,7 @@ dashboards:
         title: "Storage Volume"
         source: gcp
         project: mad-data
-        position: { col: 4, row: 2 }
+        position: { col: 4, row: 2, colSpan: 1, rowSpan: 1 }
 
   # ──────────────────────────────────────────────
   # Page 2: Services Health
@@ -85,7 +85,7 @@ dashboards:
         title: "Fleet Health"
         source: gcp
         project: mad-master
-        position: { col: 1, row: 1 }
+        position: { col: 1, row: 1, colSpan: 1, rowSpan: 1 }
         unit: "%"
         min: 0
         max: 100
@@ -95,7 +95,7 @@ dashboards:
         title: "Requests Served"
         source: gcp
         project: mad-master
-        position: { col: 2, row: 1 }
+        position: { col: 2, row: 1, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: response-time
@@ -103,7 +103,7 @@ dashboards:
         title: "Median Latency (Cloud Run)"
         source: gcp
         project: mad-master
-        position: { col: 3, row: 1 }
+        position: { col: 3, row: 1, colSpan: 1, rowSpan: 1 }
         unit: "ms"
         min: 0
         max: 500
@@ -113,14 +113,14 @@ dashboards:
         title: "Top Services by Traffic"
         source: gcp
         project: mad-master
-        position: { col: 1, row: 2, colSpan: 2 }
+        position: { col: 1, row: 2, colSpan: 2, rowSpan: 1 }
 
       - id: fastest-services
         type: bar-chart
         title: "Fastest Response Times"
         source: gcp
         project: mad-master
-        position: { col: 3, row: 2 }
+        position: { col: 3, row: 2, colSpan: 1, rowSpan: 1 }
 
   # ──────────────────────────────────────────────
   # Page 3: Campaign Delivery Map
@@ -135,7 +135,7 @@ dashboards:
         type: usa-map
         title: ""
         source: gcp
-        position: { col: 1, row: 1 }
+        position: { col: 1, row: 1, colSpan: 1, rowSpan: 1 }
 
   # ──────────────────────────────────────────────
   # Page 4: Data Processing
@@ -151,7 +151,7 @@ dashboards:
         title: "Analytics Queries"
         source: gcp
         project: mad-data
-        position: { col: 1, row: 1 }
+        position: { col: 1, row: 1, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: compute-utilization
@@ -159,7 +159,7 @@ dashboards:
         title: "Compute Utilization"
         source: gcp
         project: mad-data
-        position: { col: 2, row: 1 }
+        position: { col: 2, row: 1, colSpan: 1, rowSpan: 1 }
         unit: "slots"
         min: 0
         max: 2000
@@ -169,14 +169,14 @@ dashboards:
         title: "Storage Volume"
         source: gcp
         project: mad-data
-        position: { col: 3, row: 1 }
+        position: { col: 3, row: 1, colSpan: 1, rowSpan: 1 }
 
       - id: messages-queued
         type: big-number
         title: "Messages Queued"
         source: gcp
         project: mad-data
-        position: { col: 1, row: 2 }
+        position: { col: 1, row: 2, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: ingestion-topics
@@ -208,21 +208,21 @@ dashboards:
         title: "Bid Rate (200s)"
         source: gcp
         project: mad-master
-        position: { col: 3, row: 1 }
+        position: { col: 3, row: 1, colSpan: 1, rowSpan: 1 }
 
       - id: error-rate
         type: stat-card
         title: "Error Rate"
         source: gcp
         project: mad-master
-        position: { col: 4, row: 1 }
+        position: { col: 4, row: 1, colSpan: 1, rowSpan: 1 }
 
       - id: timeout-rate
         type: gauge
         title: "Timeout Rate"
         source: gcp
         project: mad-master
-        position: { col: 1, row: 2 }
+        position: { col: 1, row: 2, colSpan: 1, rowSpan: 1 }
         unit: "%"
         min: 0
         max: 1
@@ -232,7 +232,7 @@ dashboards:
         title: "Response Latency"
         source: gcp
         project: mad-master
-        position: { col: 2, row: 2 }
+        position: { col: 2, row: 2, colSpan: 1, rowSpan: 1 }
         unit: "ms"
         min: 0
         max: 200
@@ -242,14 +242,14 @@ dashboards:
         title: "No-Bid Rate (204s)"
         source: gcp
         project: mad-master
-        position: { col: 3, row: 2 }
+        position: { col: 3, row: 2, colSpan: 1, rowSpan: 1 }
 
       - id: budget-pacing
         type: stat-card
         title: "Load Shedding"
         source: gcp
         project: mad-master
-        position: { col: 4, row: 2 }
+        position: { col: 4, row: 2, colSpan: 1, rowSpan: 1 }
 
       - id: qps-by-region
         type: bar-chart
@@ -278,7 +278,7 @@ dashboards:
         type: pipeline-flow
         title: "End-to-End Data Flow"
         source: gcp
-        position: { col: 1, row: 1 }
+        position: { col: 1, row: 1, colSpan: 1, rowSpan: 1 }
         stages:
           - id: ingest
             name: Ingest
@@ -314,7 +314,7 @@ dashboards:
         title: "Bidder Nodes"
         source: gcp
         project: mad-master
-        position: { col: 1, row: 1 }
+        position: { col: 1, row: 1, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: roger-nodes
@@ -322,7 +322,7 @@ dashboards:
         title: "Roger Nodes"
         source: gcp
         project: mad-master
-        position: { col: 2, row: 1 }
+        position: { col: 2, row: 1, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: memcache-nodes
@@ -330,7 +330,7 @@ dashboards:
         title: "Memcache Nodes"
         source: gcp
         project: mad-master
-        position: { col: 3, row: 1 }
+        position: { col: 3, row: 1, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: core-cluster-size
@@ -338,14 +338,14 @@ dashboards:
         title: "Core Cluster Nodes"
         source: gcp
         project: mad-master
-        position: { col: 4, row: 1 }
+        position: { col: 4, row: 1, colSpan: 1, rowSpan: 1 }
 
       - id: bidder-cpu
         type: gauge
         title: "Bidder CPU P95"
         source: gcp
         project: mad-master
-        position: { col: 1, row: 2 }
+        position: { col: 1, row: 2, colSpan: 1, rowSpan: 1 }
         unit: "%"
         min: 0
         max: 100
@@ -355,7 +355,7 @@ dashboards:
         title: "Bidder Memory P95"
         source: gcp
         project: mad-master
-        position: { col: 2, row: 2 }
+        position: { col: 2, row: 2, colSpan: 1, rowSpan: 1 }
         unit: "%"
         min: 0
         max: 100
@@ -365,14 +365,14 @@ dashboards:
         title: "Container Restarts"
         source: gcp
         project: mad-master
-        position: { col: 3, row: 2 }
+        position: { col: 3, row: 2, colSpan: 1, rowSpan: 1 }
 
       - id: bidder-error-rate
         type: gauge
         title: "Bidder Error Rate"
         source: gcp
         project: mad-master
-        position: { col: 4, row: 2 }
+        position: { col: 4, row: 2, colSpan: 1, rowSpan: 1 }
         unit: "/s"
         min: 0
         max: 1000
@@ -382,7 +382,7 @@ dashboards:
         title: "Pipe Bytes Written"
         source: gcp
         project: mad-master
-        position: { col: 1, row: 3 }
+        position: { col: 1, row: 3, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: bidder-nodes-by-zone
@@ -397,7 +397,7 @@ dashboards:
         title: "LB 503s Rate"
         source: gcp
         project: mad-master
-        position: { col: 4, row: 3 }
+        position: { col: 4, row: 3, colSpan: 1, rowSpan: 1 }
 
   # ──────────────────────────────────────────────
   # Page 8: Campaign & Pacing
@@ -414,7 +414,7 @@ dashboards:
         title: "Active Campaigns"
         source: gcp
         project: mad-master
-        position: { col: 1, row: 1 }
+        position: { col: 1, row: 1, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: global-win-rate
@@ -422,7 +422,7 @@ dashboards:
         title: "Global Win Rate"
         source: gcp
         project: mad-master
-        position: { col: 2, row: 1 }
+        position: { col: 2, row: 1, colSpan: 1, rowSpan: 1 }
         unit: "%"
         min: 0
         max: 100
@@ -432,14 +432,14 @@ dashboards:
         title: "Campaign Metadata"
         source: gcp
         project: mad-master
-        position: { col: 3, row: 1 }
+        position: { col: 3, row: 1, colSpan: 1, rowSpan: 1 }
 
       - id: pacing-p50
         type: gauge
         title: "Pacing Ratio P50"
         source: gcp
         project: mad-master
-        position: { col: 1, row: 2 }
+        position: { col: 1, row: 2, colSpan: 1, rowSpan: 1 }
         unit: ""
         min: 0
         max: 2
@@ -449,7 +449,7 @@ dashboards:
         title: "Roger Messages"
         source: gcp
         project: mad-master
-        position: { col: 2, row: 2 }
+        position: { col: 2, row: 2, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: ebrake-p50
@@ -457,14 +457,14 @@ dashboards:
         title: "Emergency Brake"
         source: gcp
         project: mad-master
-        position: { col: 3, row: 2 }
+        position: { col: 3, row: 2, colSpan: 1, rowSpan: 1 }
 
       - id: roger-send-latency
         type: gauge
         title: "Send Latency P95"
         source: gcp
         project: mad-master
-        position: { col: 1, row: 3 }
+        position: { col: 1, row: 3, colSpan: 1, rowSpan: 1 }
         unit: "ms"
         min: 0
         max: 200
@@ -474,7 +474,7 @@ dashboards:
         title: "Impressions Rated"
         source: gcp
         project: mad-master
-        position: { col: 2, row: 3 }
+        position: { col: 2, row: 3, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: active-campaigns-count
@@ -482,7 +482,7 @@ dashboards:
         title: "Active Campaigns"
         source: gcp
         project: mad-master
-        position: { col: 3, row: 3 }
+        position: { col: 3, row: 3, colSpan: 1, rowSpan: 1 }
 
   # ──────────────────────────────────────────────
   # Page 9: Data Infrastructure
@@ -499,7 +499,7 @@ dashboards:
         title: "Kafka Requests"
         source: gcp
         project: mad-master
-        position: { col: 1, row: 1 }
+        position: { col: 1, row: 1, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: kafka-lag
@@ -507,14 +507,14 @@ dashboards:
         title: "Consumer Lag"
         source: gcp
         project: mad-master
-        position: { col: 2, row: 1 }
+        position: { col: 2, row: 1, colSpan: 1, rowSpan: 1 }
 
       - id: kafka-latency
         type: gauge
         title: "Kafka Latency P95"
         source: gcp
         project: mad-master
-        position: { col: 3, row: 1 }
+        position: { col: 3, row: 1, colSpan: 1, rowSpan: 1 }
         unit: "ms"
         min: 0
         max: 600
@@ -524,14 +524,14 @@ dashboards:
         title: "Write Error Rate"
         source: gcp
         project: mad-master
-        position: { col: 4, row: 1 }
+        position: { col: 4, row: 1, colSpan: 1, rowSpan: 1 }
 
       - id: bigtable-reads
         type: big-number
         title: "Bigtable Read RPS"
         source: gcp
         project: mad-master
-        position: { col: 1, row: 2 }
+        position: { col: 1, row: 2, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: bigtable-requests
@@ -539,7 +539,7 @@ dashboards:
         title: "Bigtable Requests"
         source: gcp
         project: mad-master
-        position: { col: 2, row: 2 }
+        position: { col: 2, row: 2, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: bigtable-latency
@@ -547,7 +547,7 @@ dashboards:
         title: "Bigtable P95 Latency"
         source: gcp
         project: mad-master
-        position: { col: 3, row: 2 }
+        position: { col: 3, row: 2, colSpan: 1, rowSpan: 1 }
         unit: "ms"
         min: 0
         max: 100
@@ -557,7 +557,7 @@ dashboards:
         title: "Bigtable CPU Load"
         source: gcp
         project: mad-master
-        position: { col: 4, row: 2 }
+        position: { col: 4, row: 2, colSpan: 1, rowSpan: 1 }
         unit: "%"
         min: 0
         max: 100
@@ -567,14 +567,14 @@ dashboards:
         title: "Events Backlog"
         source: gcp
         project: mad-master
-        position: { col: 1, row: 3 }
+        position: { col: 1, row: 3, colSpan: 1, rowSpan: 1 }
 
       - id: pubsub-wins-unacked
         type: stat-card
         title: "Wins Backlog"
         source: gcp
         project: mad-master
-        position: { col: 2, row: 3 }
+        position: { col: 2, row: 3, colSpan: 1, rowSpan: 1 }
 
       - id: bigtable-tables
         type: bar-chart
@@ -598,7 +598,7 @@ dashboards:
         title: "Mozart Requests"
         source: gcp
         project: mad-master
-        position: { col: 1, row: 1 }
+        position: { col: 1, row: 1, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: mozart-impressions
@@ -606,7 +606,7 @@ dashboards:
         title: "Mozart Impressions"
         source: gcp
         project: mad-master
-        position: { col: 2, row: 1 }
+        position: { col: 2, row: 1, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: mozart-errors
@@ -614,14 +614,14 @@ dashboards:
         title: "Mozart Errors"
         source: gcp
         project: mad-master
-        position: { col: 3, row: 1 }
+        position: { col: 3, row: 1, colSpan: 1, rowSpan: 1 }
 
       - id: planner-impressions
         type: big-number
         title: "Planner Impressions"
         source: gcp
         project: mad-master
-        position: { col: 1, row: 2 }
+        position: { col: 1, row: 2, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: planner-reach
@@ -629,7 +629,7 @@ dashboards:
         title: "Planner Reach"
         source: gcp
         project: mad-master
-        position: { col: 2, row: 2 }
+        position: { col: 2, row: 2, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: madserver-sql
@@ -637,7 +637,7 @@ dashboards:
         title: "SQL Latency P95"
         source: gcp
         project: mad-master
-        position: { col: 3, row: 2 }
+        position: { col: 3, row: 2, colSpan: 1, rowSpan: 1 }
         unit: "ms"
         min: 0
         max: 500
@@ -647,7 +647,7 @@ dashboards:
         title: "Segments Processed"
         source: gcp
         project: mad-master
-        position: { col: 1, row: 3 }
+        position: { col: 1, row: 3, colSpan: 1, rowSpan: 1 }
         sparkline: true
 
       - id: gary2-backlog
@@ -655,14 +655,14 @@ dashboards:
         title: "Gary2 Backlog"
         source: gcp
         project: mad-master
-        position: { col: 2, row: 3 }
+        position: { col: 2, row: 3, colSpan: 1, rowSpan: 1 }
 
       - id: madserver-calls
         type: bar-chart
         title: "API Calls by Client"
         source: gcp
         project: mad-master
-        position: { col: 3, row: 3 }
+        position: { col: 3, row: 3, colSpan: 1, rowSpan: 1 }
 
   # ──────────────────────────────────────────────
   # Page 11: Security Posture
@@ -678,4 +678,93 @@ dashboards:
         type: security-scorecard
         title: ""
         source: vulntrack
-        position: { col: 1, row: 1 }
+        position: { col: 1, row: 1, colSpan: 1, rowSpan: 1 }
+
+  # ──────────────────────────────────────────────
+  # Page 12: Visual Showcase (All Widget Types)
+  # ──────────────────────────────────────────────
+  - id: visual-showcase
+    name: "Visual Showcase"
+    subtitle: "All 14 Widget Types"
+    icon: "palette"
+    grid: { columns: 4, rows: 4, gap: 14 }
+    widgets:
+      # Row 1: Enhanced widgets
+      - id: showcase-bignumber
+        type: big-number
+        title: "Total Users"
+        source: mock
+        position: { col: 1, row: 1, colSpan: 1, rowSpan: 1 }
+        gradient: true
+
+      - id: showcase-statcard
+        type: stat-card
+        title: "Active Sessions"
+        source: mock
+        position: { col: 2, row: 1, colSpan: 1, rowSpan: 1 }
+
+      - id: showcase-gauge
+        type: gauge
+        title: "System Health"
+        source: mock
+        position: { col: 3, row: 1, colSpan: 1, rowSpan: 1 }
+        min: 0
+        max: 100
+        unit: "%"
+
+      - id: showcase-sparkline
+        type: sparkline
+        title: "Quick Trend"
+        source: mock
+        position: { col: 4, row: 1, colSpan: 1, rowSpan: 1 }
+
+      # Row 2: Multi-metric and charts
+      - id: showcase-multimetric
+        type: multi-metric-card
+        title: "Key Metrics"
+        source: mock
+        position: { col: 1, row: 2, colSpan: 2, rowSpan: 1 }
+
+      - id: showcase-bar
+        type: bar-chart
+        title: "Revenue by Region"
+        source: mock
+        position: { col: 3, row: 2, colSpan: 2, rowSpan: 1 }
+
+      # Row 3: Advanced visualizations
+      - id: showcase-line
+        type: line-chart
+        title: "Traffic Over Time"
+        source: mock
+        position: { col: 1, row: 3, colSpan: 2, rowSpan: 1 }
+
+      - id: showcase-heatmap
+        type: heatmap
+        title: "Activity Heatmap"
+        source: mock
+        position: { col: 3, row: 3, colSpan: 2, rowSpan: 1 }
+
+      # Row 4: New widget types
+      - id: showcase-stackedbar
+        type: stacked-bar-chart
+        title: "Conversion Funnel"
+        source: mock
+        position: { col: 1, row: 4, colSpan: 1, rowSpan: 1 }
+
+      - id: showcase-sankey
+        type: sankey
+        title: "User Flow"
+        source: mock
+        position: { col: 2, row: 4, colSpan: 1, rowSpan: 1 }
+
+      - id: showcase-table
+        type: table
+        title: "Recent Transactions"
+        source: mock
+        position: { col: 3, row: 4, colSpan: 1, rowSpan: 1 }
+
+      - id: showcase-treemap
+        type: treemap
+        title: "Resource Usage"
+        source: mock
+        position: { col: 4, row: 4, colSpan: 1, rowSpan: 1 }

@@ -1,0 +1,163 @@
+bigquery:
+  - id: example-count
+    name: Example Row Count
+    description: Simple count query for testing
+    sql: SELECT COUNT(*) as value FROM `mad-master.dataset.table`
+    widgetTypes:
+      - big-number
+      - stat-card
+    createdAt: '2026-02-26T12:00:00Z'
+    updatedAt: '2026-02-26T12:00:00Z'
+  - id: active-users-30d
+    name: Active Users (30 Days)
+    description: Count of unique active users in the last 30 days
+    sql: |
+      SELECT COUNT(DISTINCT user_id) as value
+      FROM `mad-master.analytics.user_activity`
+      WHERE activity_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+    widgetTypes:
+      - big-number
+      - stat-card
+    createdAt: '2026-02-26T17:30:00Z'
+    updatedAt: '2026-02-26T17:30:00Z'
+  - id: revenue-trend
+    name: Daily Revenue Trend
+    description: Revenue by day for the last 30 days
+    sql: |
+      SELECT
+        FORMAT_DATE('%Y-%m-%d', revenue_date) as timestamp,
+        SUM(amount) as value,
+        'Revenue' as series
+      FROM `mad-master.analytics.revenue`
+      WHERE revenue_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+      GROUP BY revenue_date
+      ORDER BY revenue_date
+    widgetTypes:
+      - line-chart
+      - bar-chart
+    createdAt: '2026-02-26T17:30:00Z'
+    updatedAt: '2026-02-26T17:30:00Z'
+  - id: test-bq-query
+    name: Test BigQuery Query
+    description: A test query
+    sql: SELECT COUNT(*) as value FROM test_table
+    widgetTypes:
+      - big-number
+    updatedAt: '2026-02-26T17:39:15.018Z'
+    createdAt: '2026-02-26T17:39:15.018Z'
+  - id: update-test
+    name: Updated Name
+    sql: SELECT 2
+    widgetTypes:
+      - big-number
+      - stat-card
+    updatedAt: '2026-02-26T17:39:15.025Z'
+    createdAt: '2026-02-26T17:39:15.024Z'
+  - id: retrieve-test
+    name: Retrieve Test
+    sql: SELECT * FROM test
+    widgetTypes:
+      - big-number
+    updatedAt: '2026-02-26T17:39:15.026Z'
+    createdAt: '2026-02-26T17:39:15.026Z'
+  - id: list-test-1
+    name: List Test 1
+    sql: SELECT 1
+    widgetTypes:
+      - big-number
+    updatedAt: '2026-02-26T17:39:15.028Z'
+    createdAt: '2026-02-26T17:39:15.028Z'
+  - id: list-test-2
+    name: List Test 2
+    sql: SELECT 2
+    widgetTypes:
+      - stat-card
+    updatedAt: '2026-02-26T17:39:15.028Z'
+    createdAt: '2026-02-26T17:39:15.028Z'
+  - id: backup-test
+    name: Backup Test
+    sql: SELECT 1
+    widgetTypes:
+      - big-number
+    updatedAt: '2026-02-26T17:39:15.032Z'
+    createdAt: '2026-02-26T17:39:15.032Z'
+  - id: persist-test
+    name: Persistence Test
+    sql: SELECT COUNT(*) as value
+    widgetTypes:
+      - big-number
+    updatedAt: '2026-02-26T17:39:15.033Z'
+    createdAt: '2026-02-26T17:39:15.033Z'
+gcp:
+  - id: cloudrun-requests
+    name: Cloud Run Request Count
+    description: Total requests to Cloud Run services
+    metricType: run.googleapis.com/request_count
+    project: mad-master
+    timeWindow: 10
+    aggregation:
+      alignmentPeriod: 60s
+      perSeriesAligner: ALIGN_RATE
+    widgetTypes:
+      - big-number
+      - line-chart
+    createdAt: '2026-02-26T12:00:00Z'
+    updatedAt: '2026-02-26T12:00:00Z'
+  - id: cloudrun-latency
+    name: Cloud Run Request Latency
+    description: Average request latency for Cloud Run services
+    metricType: run.googleapis.com/request_latencies
+    project: mad-master
+    timeWindow: 15
+    aggregation:
+      alignmentPeriod: 120s
+      perSeriesAligner: ALIGN_MEAN
+    widgetTypes:
+      - gauge
+      - stat-card
+    createdAt: '2026-02-26T17:30:00Z'
+    updatedAt: '2026-02-26T17:30:00Z'
+  - id: cloudrun-container-cpu
+    name: Cloud Run Container CPU
+    description: CPU utilization for Cloud Run containers
+    metricType: run.googleapis.com/container/cpu/utilizations
+    project: mad-master
+    timeWindow: 20
+    aggregation:
+      alignmentPeriod: 60s
+      perSeriesAligner: ALIGN_MEAN
+    widgetTypes:
+      - gauge
+      - line-chart
+    createdAt: '2026-02-26T17:30:00Z'
+    updatedAt: '2026-02-26T17:30:00Z'
+  - id: pubsub-undelivered
+    name: Pub/Sub Undelivered Messages
+    description: Number of undelivered messages in Pub/Sub
+    metricType: pubsub.googleapis.com/subscription/num_undelivered_messages
+    project: mad-master
+    timeWindow: 10
+    widgetTypes:
+      - big-number
+      - gauge
+    createdAt: '2026-02-26T17:30:00Z'
+    updatedAt: '2026-02-26T17:30:00Z'
+  - id: test-gcp-query
+    name: Test GCP Query
+    description: A test GCP metric query
+    metricType: run.googleapis.com/request_count
+    project: mad-master
+    timeWindow: 10
+    widgetTypes:
+      - big-number
+      - line-chart
+    updatedAt: '2026-02-26T17:39:15.022Z'
+    createdAt: '2026-02-26T17:39:15.022Z'
+  - id: shared-id
+    name: GCP Version
+    metricType: run.googleapis.com/request_count
+    project: mad-master
+    widgetTypes:
+      - big-number
+    updatedAt: '2026-02-26T17:40:16.197Z'
+    createdAt: '2026-02-26T17:40:16.197Z'

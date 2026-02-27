@@ -12,6 +12,7 @@ import { salesforceDataSource } from './data-sources/salesforce.js';
 import { hotJarDataSource } from './data-sources/hotjar.js';
 import { fullStoryDataSource } from './data-sources/fullstory.js';
 import { zendeskDataSource } from './data-sources/zendesk.js';
+import { bigQueryDataSource } from './data-sources/bigquery.js';
 
 /**
  * Central registry for managing data source plugins
@@ -41,6 +42,7 @@ class DataSourceRegistry {
     this.register(hotJarDataSource);
     this.register(fullStoryDataSource);
     this.register(zendeskDataSource);
+    this.register(bigQueryDataSource);
 
     // Initialize all sources
     const initPromises = Array.from(this.sources.values()).map(source =>

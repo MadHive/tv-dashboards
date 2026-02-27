@@ -67,6 +67,12 @@ window.EditorApp = (function () {
       console.log('[Editor] Entering edit mode');
       this.isActive = true;
 
+      // Debug: Check if widgets exist
+      const activePage = document.querySelector('.dashboard-page.active');
+      const widgets = activePage ? activePage.querySelectorAll('.widget') : [];
+      console.log('[Editor] Active page:', activePage);
+      console.log('[Editor] Widgets found:', widgets.length);
+
       // Add editor-active class to body
       document.body.classList.add('editor-active');
 
@@ -80,11 +86,16 @@ window.EditorApp = (function () {
         this.dashboardApp.refreshTimer = null;
       }
 
+      // Clone current config for modification tracking (MUST BE FIRST!)
+      this.modifiedConfig = JSON.parse(JSON.stringify(this.dashboardApp.config));
+      console.log('[Editor] Modified config created, current page:', this.dashboardApp.currentPage);
+      console.log('[Editor] Widgets in modified config:', this.modifiedConfig.dashboards[this.dashboardApp.currentPage]?.widgets?.length || 0);
+
       // Show grid overlay
       this.updateGridOverlay();
       this.gridOverlay.style.display = 'block';
 
-      // Make widgets selectable
+      // Make widgets selectable (requires modifiedConfig to exist)
       this.attachWidgetHandlers();
 
       // Initialize property panel (lazy load)
@@ -104,9 +115,8 @@ window.EditorApp = (function () {
       if (!this.palette && window.WidgetPalette) {
         this.palette = new window.WidgetPalette(this);
       }
-
-      // Clone current config for modification tracking
-      this.modifiedConfig = JSON.parse(JSON.stringify(this.dashboardApp.config));
+      console.log('[Editor] Modified config created, current page:', this.dashboardApp.currentPage);
+      console.log('[Editor] Widgets in modified config:', this.modifiedConfig.dashboards[this.dashboardApp.currentPage]?.widgets?.length || 0);
 
       // Show editor toggle button as "active"
       const toggleBtn = document.getElementById('editor-toggle');
@@ -195,15 +205,19 @@ window.EditorApp = (function () {
 
     attachWidgetHandlers() {
       const activePage = document.querySelector('.dashboard-page.active');
-      if (!activePage) return;
+      if (!activePage) {
+        console.log('[Editor] No active page found in attachWidgetHandlers');
+        return;
+      }
 
       const widgets = activePage.querySelectorAll('.widget');
+      console.log('[Editor] attachWidgetHandlers - Found', widgets.length, 'widgets');
       widgets.forEach(widget => {
         widget.classList.add('editable');
         widget.style.cursor = 'move';
 
         const widgetId = widget.dataset.widgetId;
-        const widgetConfig = this.dashboardApp.config.dashboards[this.dashboardApp.currentPage].widgets.find(w => w.id === widgetId);
+        const widgetConfig = this.modifiedConfig.dashboards[this.dashboardApp.currentPage].widgets.find(w => w.id === widgetId);
 
         if (widgetConfig && this.dragController) {
           // Attach drag handlers
@@ -263,7 +277,7 @@ window.EditorApp = (function () {
 
       // Find widget config
       const widgetId = this.getWidgetIdFromElement(widgetElement);
-      const currentDash = this.dashboardApp.config.dashboards[this.dashboardApp.currentPage];
+      const currentDash = this.modifiedConfig.dashboards[this.dashboardApp.currentPage];
       this.selectedWidget = currentDash.widgets.find(w => w.id === widgetId);
 
       console.log('[Editor] Selected widget:', widgetId, this.selectedWidget);
@@ -318,15 +332,19 @@ window.EditorApp = (function () {
     }
 
     applyWidgetChanges(widgetId, updates) {
+      // Find the widget element by ID (not just selectedWidgetElement)
+      const widgetElement = document.querySelector(`[data-widget-id="${widgetId}"]`);
+      if (!widgetElement) return;
+
       // Apply changes to the DOM for live preview
-      if (updates.title && this.selectedWidgetElement) {
-        const titleEl = this.selectedWidgetElement.querySelector('.widget-title');
+      if (updates.title) {
+        const titleEl = widgetElement.querySelector('.widget-title');
         if (titleEl) titleEl.textContent = updates.title;
       }
 
       // Position changes require grid updates
       if (updates.position) {
-        this.updateWidgetPosition(this.selectedWidgetElement, updates.position);
+        this.updateWidgetPosition(widgetElement, updates.position);
       }
     }
 
@@ -334,6 +352,35 @@ window.EditorApp = (function () {
       const { col, row, colSpan, rowSpan } = position;
       element.style.gridColumn = `${col} / span ${colSpan || 1}`;
       element.style.gridRow = `${row} / span ${rowSpan || 1}`;
+    }
+
+    deleteWidget(widgetId) {
+      console.log('[Editor] Deleting widget:', widgetId);
+
+      const currentDash = this.modifiedConfig.dashboards[this.dashboardApp.currentPage];
+      const widgetIndex = currentDash.widgets.findIndex(w => w.id === widgetId);
+
+      if (widgetIndex === -1) {
+        console.error('[Editor] Widget not found:', widgetId);
+        return;
+      }
+
+      // Remove from config
+      currentDash.widgets.splice(widgetIndex, 1);
+
+      // Mark as modified
+      this.markAsModified();
+
+      // Remove from DOM
+      const widgetElement = document.querySelector(`[data-widget-id="${widgetId}"]`);
+      if (widgetElement) {
+        widgetElement.remove();
+      }
+
+      // Deselect
+      this.deselectWidget();
+
+      this.showNotification('Widget deleted', 'success');
     }
 
     async saveChanges() {

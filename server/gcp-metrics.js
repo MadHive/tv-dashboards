@@ -20,7 +20,7 @@ function interval(minutes) {
   };
 }
 
-async function query(project, metricType, extra, minutes, aggregation) {
+export async function query(project, metricType, extra, minutes, aggregation) {
   let filter = `metric.type = "${metricType}"`;
   if (extra) filter += ` AND ${extra}`;
   try {
@@ -39,7 +39,7 @@ async function query(project, metricType, extra, minutes, aggregation) {
   }
 }
 
-function latest(ts) {
+export function latest(ts) {
   if (!ts?.length) return null;
   const p = ts[0].points;
   if (!p?.length) return null;
@@ -47,7 +47,7 @@ function latest(ts) {
   return Number(v.doubleValue || v.int64Value || v.distributionValue?.mean || 0);
 }
 
-function sumAll(ts) {
+export function sumAll(ts) {
   if (!ts?.length) return 0;
   return ts.reduce((s, t) => {
     const p = t.points;
@@ -57,7 +57,7 @@ function sumAll(ts) {
   }, 0);
 }
 
-function spark(ts, max) {
+export function spark(ts, max) {
   if (!ts?.length) return [];
   return (ts[0].points || []).slice(0, max || 30).reverse()
     .map(p => Number(p.value.doubleValue || p.value.int64Value || 0));

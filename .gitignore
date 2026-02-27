@@ -10,6 +10,7 @@ coverage/
 # Production
 build/
 dist/
+public-astro/
 
 # Environment
 .env
@@ -49,6 +50,9 @@ temp/
 *.swo
 *~
 
+# Git worktrees
+.worktrees/
+
 # Backups (keep config backups but exclude others)
 *.backup.*
 !config/*.backup.*
@@ -59,3 +63,4 @@ temp/
 # OS
 .DS_Store
 Thumbs.db
+google-service-account-key.json

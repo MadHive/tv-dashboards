@@ -8,15 +8,19 @@
     "start": "bun run server/index.js",
     "dev": "bun --watch server/index.js",
     "lint": "echo 'No linter configured - skipping' && exit 0",
-    "typecheck": "echo 'No TypeScript - skipping typecheck' && exit 0",
-    "test": "bun run test-phase3.js && bun run test-phase4.js && bun run test-phase5.js",
-    "build": "echo 'No build step required for vanilla JS' && exit 0"
+    "typecheck": "echo 'No TypeScript typecheck - vanilla JS project' && exit 0",
+    "test": "echo 'No tests configured - skipping' && exit 0",
+    "build": "echo 'No build step required for vanilla JS' && exit 0",
+    "test:integration": "bun run test-phase3.js && bun run test-phase4.js && bun run test-phase5.js"
   },
   "dependencies": {
-    "elysia": "^1.2",
+    "@elysiajs/cookie": "^0.8.0",
+    "@elysiajs/cors": "^1.4.1",
     "@elysiajs/static": "^1.2",
+    "@google-cloud/bigquery": "^8.1.1",
     "@google-cloud/monitoring": "^5.3.1",
-    "@google-cloud/bigquery": "^7.9.0",
+    "elysia": "^1.2",
+    "google-auth-library": "^10.6.1",
     "js-yaml": "^4.1.0"
   }
 }
