@@ -35,6 +35,7 @@ import {
   importDashboard
 } from './template-manager.js';
 import DashboardManager from './dashboard-manager.js';
+import { getSchema, getAllSchemas, validateConnection } from './data-source-schemas.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT || '80', 10);
@@ -391,6 +392,56 @@ const app = new Elysia()
     try {
       const connected = await dataSourceRegistry.testConnection(params.name);
       return { success: true, connected };
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
+  // Data source schema endpoints (detailed field definitions)
+  .get('/api/data-sources/schemas/detailed', () => {
+    try {
+      const schemas = getAllSchemas();
+      return { success: true, schemas };
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
+  .get('/api/data-sources/schemas/detailed/:sourceId', ({ params }) => {
+    try {
+      const schema = getSchema(params.sourceId);
+      if (!schema) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Schema not found' }),
+          { status: 404, headers: { 'content-type': 'application/json' } }
+        );
+      }
+      return { success: true, schema };
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
+  .post('/api/data-sources/validate', ({ body }) => {
+    try {
+      const { sourceId, data } = body;
+      if (!sourceId || !data) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'sourceId and data are required' }),
+          { status: 400, headers: { 'content-type': 'application/json' } }
+        );
+      }
+      const result = validateConnection(sourceId, data);
+      return { success: true, ...result };
     } catch (error) {
       return new Response(
         JSON.stringify({ success: false, error: error.message }),

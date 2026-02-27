@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Component Integration Demo - Wizard + Form + Preview</title>
+
+  <!-- Component CSS -->
+  <link rel="stylesheet" href="/css/components/wizard.css">
+  <link rel="stylesheet" href="/css/components/form-builder.css">
+  <link rel="stylesheet" href="/css/components/live-preview.css">
+
+  <!-- Base styles for demo -->
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #f3f4f6;
+      padding: 40px 20px;
+    }
+
+    .demo-container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      padding: 40px;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1f2937;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 32px;
+    }
+
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: #2563eb;
+    }
+
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: #d1d5db;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .result {
+      margin-top: 32px;
+      padding: 20px;
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .result.show {
+      display: block;
+    }
+
+    .result h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #166534;
+      margin-bottom: 12px;
+    }
+
+    .result pre {
+      background: #fff;
+      padding: 16px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 13px;
+      color: #1f2937;
+    }
+
+    .info-item {
+      font-size: 14px;
+      color: #374051;
+      margin-bottom: 8px;
+    }
+
+    .info-label {
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-container">
+    <h1>Component Integration Demo</h1>
+    <p class="subtitle">Wizard Framework + Form Builder + Live Preview working together</p>
+
+    <div id="wizard-mount"></div>
+
+    <div id="result" class="result">
+      <h3>Dashboard Configuration Created!</h3>
+      <pre id="result-data"></pre>
+    </div>
+  </div>
+
+  <script type="module">
+    import { WizardFramework } from '/js/components/wizard-framework.js';
+    import { FormBuilder } from '/js/components/form-builder.js';
+    import { LivePreview } from '/js/components/live-preview.js';
+
+    // Step 1: Dashboard Basic Info Form
+    class DashboardInfoStep {
+      constructor(data) {
+        this.data = data;
+        this.form = new FormBuilder({
+          fields: [
+            {
+              id: 'name',
+              type: 'text',
+              label: 'Dashboard Name',
+              required: true,
+              placeholder: 'e.g., Platform Overview',
+              help: 'A descriptive name for your dashboard'
+            },
+            {
+              id: 'subtitle',
+              type: 'text',
+              label: 'Subtitle',
+              placeholder: 'e.g., Real-Time Activity',
+              help: 'Optional subtitle to display below the name'
+            },
+            {
+              id: 'icon',
+              type: 'select',
+              label: 'Icon',
+              required: true,
+              options: [
+                { value: 'bolt', label: '⚡ Bolt' },
+                { value: 'grid', label: '▦ Grid' },
+                { value: 'data', label: '📊 Data' },
+                { value: 'shield', label: '🛡️ Shield' }
+              ]
+            }
+          ]
+        });
+      }
+
+      render(container) {
+        this.form.render(container);
+
+        // Pre-fill with existing data
+        if (this.data.name) {
+          this.form.setData(this.data);
+        }
+      }
+    }
+
+    // Step 2: Grid Configuration Form
+    class GridConfigStep {
+      constructor(data) {
+        this.data = data;
+        this.form = new FormBuilder({
+          fields: [
+            {
+              id: 'columns',
+              type: 'number',
+              label: 'Columns',
+              required: true,
+              min: 1,
+              max: 6,
+              placeholder: '3',
+              help: 'Number of columns in the dashboard grid (1-6)'
+            },
+            {
+              id: 'rows',
+              type: 'number',
+              label: 'Rows',
+              required: true,
+              min: 1,
+              max: 6,
+              placeholder: '2',
+              help: 'Number of rows in the dashboard grid (1-6)'
+            },
+            {
+              id: 'gap',
+              type: 'number',
+              label: 'Gap (pixels)',
+              min: 0,
+              max: 30,
+              placeholder: '14',
+              help: 'Spacing between grid items in pixels'
+            }
+          ]
+        });
+      }
+
+      render(container) {
+        this.form.render(container);
+
+        // Pre-fill with existing data or defaults
+        const gridData = {
+          columns: this.data.columns || 3,
+          rows: this.data.rows || 2,
+          gap: this.data.gap || 14
+        };
+        this.form.setData(gridData);
+      }
+    }
+
+    // Step 3: Preview
+    class PreviewStep {
+      constructor(data) {
+        this.data = data;
+        this.preview = new LivePreview({
+          mode: 'sample',
+          size: 'desktop',
+          dashboardId: data.name || 'New Dashboard'
+        });
+      }
+
+      render(container) {
+        const title = document.createElement('h2');
+        title.textContent = 'Dashboard Preview';
+        title.style.marginBottom = '20px';
+        title.style.fontSize = '18px';
+        title.style.fontWeight = '600';
+        container.appendChild(title);
+
+        const info = document.createElement('div');
+        info.style.marginBottom = '20px';
+        info.style.padding = '16px';
+        info.style.background = '#f9fafb';
+        info.style.borderRadius = '8px';
+
+        // Create info items using safe DOM methods
+        const nameP = document.createElement('p');
+        nameP.className = 'info-item';
+        const nameLabel = document.createElement('span');
+        nameLabel.className = 'info-label';
+        nameLabel.textContent = 'Name: ';
+        nameP.appendChild(nameLabel);
+        nameP.appendChild(document.createTextNode(this.data.name));
+        info.appendChild(nameP);
+
+        const subtitleP = document.createElement('p');
+        subtitleP.className = 'info-item';
+        const subtitleLabel = document.createElement('span');
+        subtitleLabel.className = 'info-label';
+        subtitleLabel.textContent = 'Subtitle: ';
+        subtitleP.appendChild(subtitleLabel);
+        subtitleP.appendChild(document.createTextNode(this.data.subtitle || 'None'));
+        info.appendChild(subtitleP);
+
+        const iconP = document.createElement('p');
+        iconP.className = 'info-item';
+        const iconLabel = document.createElement('span');
+        iconLabel.className = 'info-label';
+        iconLabel.textContent = 'Icon: ';
+        iconP.appendChild(iconLabel);
+        iconP.appendChild(document.createTextNode(this.data.icon));
+        info.appendChild(iconP);
+
+        const gridP = document.createElement('p');
+        gridP.className = 'info-item';
+        gridP.style.marginBottom = '0';
+        const gridLabel = document.createElement('span');
+        gridLabel.className = 'info-label';
+        gridLabel.textContent = 'Grid: ';
+        gridP.appendChild(gridLabel);
+        gridP.appendChild(document.createTextNode(`${this.data.columns}×${this.data.rows} with ${this.data.gap}px gap`));
+        info.appendChild(gridP);
+
+        container.appendChild(info);
+
+        const previewContainer = document.createElement('div');
+        this.preview.render(previewContainer);
+        container.appendChild(previewContainer);
+      }
+    }
+
+    // Create wizard
+    const wizard = new WizardFramework({
+      steps: [
+        {
+          id: 'info',
+          title: 'Dashboard Info',
+          component: DashboardInfoStep,
+          validate: (data) => {
+            return data.name && data.icon;
+          }
+        },
+        {
+          id: 'grid',
+          title: 'Grid Layout',
+          component: GridConfigStep,
+          validate: (data) => {
+            return data.columns >= 1 && data.rows >= 1;
+          }
+        },
+        {
+          id: 'preview',
+          title: 'Preview',
+          component: PreviewStep,
+          validate: () => true
+        }
+      ],
+      onComplete: (data) => {
+        document.getElementById('result-data').textContent = JSON.stringify(data, null, 2);
+        document.getElementById('result').classList.add('show');
+
+        // Hide wizard
+        document.getElementById('wizard-mount').style.display = 'none';
+      },
+      onCancel: () => {
+        if (confirm('Are you sure you want to cancel?')) {
+          wizard.destroy();
+          const wizardMount = document.getElementById('wizard-mount');
+          const message = document.createElement('p');
+          message.textContent = 'Wizard cancelled. Refresh to start over.';
+          message.style.textAlign = 'center';
+          message.style.color = '#6b7280';
+          message.style.padding = '40px';
+          wizardMount.innerHTML = '';
+          wizardMount.appendChild(message);
+        }
+      }
+    });
+
+    // Render wizard
+    const wizardMount = document.getElementById('wizard-mount');
+    wizard.render(wizardMount);
+  </script>
+</body>
+</html>
