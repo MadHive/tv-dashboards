@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import DashboardManager from '../server/dashboard-manager.js';
 import { writeFile, readFile } from 'fs/promises';
+import YAML from 'js-yaml';
 
 describe('DashboardManager', () => {
   let manager;
@@ -89,5 +90,30 @@ describe('DashboardManager', () => {
   it('should not allow changing ID to existing ID', async () => {
     const created = await manager.createDashboard({ name: 'Test 1', icon: 'bolt', grid: { columns: 2, rows: 2, gap: 14 } });
     await expect(manager.updateDashboard(created.id, { id: 'platform-overview' })).rejects.toThrow('Dashboard ID already exists');
+  });
+
+  it('should delete dashboard', async () => {
+    const created = await manager.createDashboard({ name: 'To Delete', icon: 'bolt', grid: { columns: 2, rows: 2, gap: 14 } });
+
+    await manager.deleteDashboard(created.id);
+
+    const dashboards = await manager.listDashboards();
+    expect(dashboards.some(d => d.id === created.id)).toBe(false);
+  });
+
+  it('should throw error when deleting non-existent dashboard', async () => {
+    await expect(manager.deleteDashboard('non-existent')).rejects.toThrow('Dashboard not found');
+  });
+
+  it('should prevent deleting last dashboard', async () => {
+    // First, create a test config with only one dashboard
+    const testConfig = {
+      global: { rotation_interval: 30, refresh_interval: 8, title: 'TEST' },
+      dashboards: [{ id: 'only-one', name: 'Only One', icon: 'bolt', grid: { columns: 2, rows: 2, gap: 14 }, widgets: [] }]
+    };
+    await writeFile('./config/dashboards.yaml', YAML.dump(testConfig));
+    manager = new DashboardManager('./config/dashboards.yaml');
+
+    await expect(manager.deleteDashboard('only-one')).rejects.toThrow('Cannot delete the last dashboard');
   });
 });

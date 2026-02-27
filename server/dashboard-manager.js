@@ -103,6 +103,26 @@ export default class DashboardManager {
     return { ...this.config.dashboards[index] };
   }
 
+  async deleteDashboard(id) {
+    if (!this.config) {
+      await this.loadConfig();
+    }
+
+    if (this.config.dashboards.length === 1) {
+      throw new Error('Cannot delete the last dashboard');
+    }
+
+    const index = this.config.dashboards.findIndex(d => d.id === id);
+    if (index === -1) {
+      throw new Error(`Dashboard not found: ${id}`);
+    }
+
+    this.config.dashboards.splice(index, 1);
+    await this.saveConfig();
+
+    return { success: true, id };
+  }
+
   async saveConfig() {
     const yamlContent = YAML.dump(this.config);
     await writeFile(this.configPath, yamlContent, 'utf-8');
