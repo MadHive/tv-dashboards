@@ -201,10 +201,56 @@ const wizard = new WizardFramework({
       validate: () => true
     }
   ],
-  onComplete: (data) => {
-    document.getElementById('result-data').textContent = JSON.stringify(data, null, 2);
-    document.getElementById('result').classList.add('show');
+  onComplete: async (data) => {
+    // Hide wizard
     document.getElementById('wizard-mount').style.display = 'none';
+
+    // Show loading state
+    const resultDiv = document.getElementById('result');
+    const resultData = document.getElementById('result-data');
+    resultDiv.classList.add('show');
+    resultData.textContent = 'Creating dashboard...';
+
+    try {
+      // Create dashboard via API
+      const response = await fetch('/api/dashboards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.name,
+          subtitle: data.subtitle || '',
+          icon: data.icon,
+          grid: {
+            columns: parseInt(data.columns) || 3,
+            rows: parseInt(data.rows) || 2,
+            gap: parseInt(data.gap) || 14
+          },
+          widgets: [] // Start with empty dashboard
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to create dashboard: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      // Show success message
+      resultDiv.style.background = '#f0fdf4';
+      resultDiv.style.borderColor = '#86efac';
+      resultData.textContent = `✅ Dashboard "${data.name}" created successfully!\n\nRedirecting to admin page...`;
+
+      // Redirect to admin page after 2 seconds
+      setTimeout(() => {
+        window.location.href = '/admin';
+      }, 2000);
+
+    } catch (error) {
+      console.error('Error creating dashboard:', error);
+      resultDiv.style.background = '#fef2f2';
+      resultDiv.style.borderColor = '#fca5a5';
+      resultData.textContent = `❌ Error: ${error.message}\n\nPlease try again.`;
+    }
   },
   onCancel: () => {
     if (confirm('Are you sure you want to cancel?')) {
