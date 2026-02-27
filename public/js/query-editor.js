@@ -150,22 +150,51 @@ window.QueryEditor = (function () {
       const container = document.getElementById('saved-queries-list');
       if (!container) return;
 
+      // Clear existing content
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+
       if (this.savedQueries.length === 0) {
-        container.innerHTML = '<p class="text-muted">No saved queries</p>';
+        const emptyMsg = document.createElement('p');
+        emptyMsg.className = 'text-muted';
+        emptyMsg.textContent = 'No saved queries';
+        container.appendChild(emptyMsg);
         return;
       }
 
-      container.innerHTML = this.savedQueries.map(q => `
-        <div class="query-list-item" onclick="window.queryEditor.loadQuery('${q.id}')">
-          <div class="query-list-name">${q.name}</div>
-          <div class="query-list-desc">${q.description || ''}</div>
-          <div class="query-list-actions">
-            <button class="btn-icon" onclick="event.stopPropagation(); window.queryEditor.deleteQuery('${q.id}')" title="Delete">
-              🗑️
-            </button>
-          </div>
-        </div>
-      `).join('');
+      // Build DOM elements safely
+      this.savedQueries.forEach(q => {
+        const item = document.createElement('div');
+        item.className = 'query-list-item';
+        item.onclick = () => window.queryEditor.loadQuery(q.id);
+
+        const name = document.createElement('div');
+        name.className = 'query-list-name';
+        name.textContent = q.name;
+        item.appendChild(name);
+
+        const desc = document.createElement('div');
+        desc.className = 'query-list-desc';
+        desc.textContent = q.description || '';
+        item.appendChild(desc);
+
+        const actions = document.createElement('div');
+        actions.className = 'query-list-actions';
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn-icon';
+        deleteBtn.title = 'Delete';
+        deleteBtn.textContent = '🗑️';
+        deleteBtn.onclick = (e) => {
+          e.stopPropagation();
+          window.queryEditor.deleteQuery(q.id);
+        };
+        actions.appendChild(deleteBtn);
+
+        item.appendChild(actions);
+        container.appendChild(item);
+      });
     }
 
     async loadDatasets() {
