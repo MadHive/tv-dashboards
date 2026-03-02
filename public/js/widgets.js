@@ -41,6 +41,10 @@ window.Widgets = (function () {
     row.append(valEl, unitEl, trendEl);
     wrap.appendChild(row);
 
+    // Time period indicator
+    const periodEl = el('div', 'big-number-period', '');
+    wrap.appendChild(periodEl);
+
     let sparkCanvas = null;
     if (config.sparkline) {
       sparkCanvas = el('canvas', 'big-number-sparkline');
@@ -63,6 +67,12 @@ window.Widgets = (function () {
             ? C.thresholdColor(data.value, config.thresholds, config.invert)
             : '#00E5FF';
           C.sparkline(sparkCanvas, data.sparkline, color);
+        }
+        // Update time period
+        if (data.timePeriod) {
+          periodEl.textContent = data.timePeriod;
+        } else {
+          periodEl.textContent = '';
         }
       },
     };
@@ -108,7 +118,14 @@ window.Widgets = (function () {
           trendEl.textContent = trendArrow(data.trend);
           trendEl.className = 'stat-card-trend ' + data.trend;
         }
-        if (data.detail) detEl.textContent = data.detail;
+        // Show timePeriod in detail if available
+        if (data.detail) {
+          detEl.textContent = data.detail;
+        } else if (data.timePeriod) {
+          detEl.textContent = data.timePeriod;
+        } else {
+          detEl.textContent = '';
+        }
       },
     };
   }
