@@ -12,6 +12,10 @@
  * - Apply button to confirm theme selection
  */
 export class TVPreview {
+  // Animation and size constants
+  static ANIMATION_DURATION = 300;
+  static TV_SIZES = ['55', '65', '85'];
+
   /**
    * Create a TVPreview
    * @param {object} config - Configuration object
@@ -78,12 +82,12 @@ export class TVPreview {
       this.escHandler = null;
     }
 
-    // Remove modal from DOM after animation completes (300ms)
-    setTimeout(() => {
+    // Remove modal from DOM after animation completes
+    this.modal.addEventListener('transitionend', () => {
       if (this.modal && this.modal.parentElement) {
         this.modal.remove();
       }
-    }, 300);
+    }, { once: true });
   }
 
   /**
@@ -127,8 +131,7 @@ export class TVPreview {
     const sizeSelector = document.createElement('div');
     sizeSelector.className = 'tv-size-selector';
 
-    const sizes = ['55', '65', '85'];
-    for (const size of sizes) {
+    for (const size of TVPreview.TV_SIZES) {
       const btn = document.createElement('button');
       btn.className = 'tv-size-btn';
       btn.dataset.size = size;
@@ -424,6 +427,14 @@ export class TVPreview {
 
     // Update button states
     const buttons = this.modal.querySelectorAll('.tv-size-btn');
+    const viewport = this.modal.querySelector('.tv-preview-viewport');
+
+    // Add null checks
+    if (!viewport || buttons.length === 0) {
+      console.warn('TVPreview: viewport or buttons not found');
+      return;
+    }
+
     for (const btn of buttons) {
       if (btn.dataset.size === size) {
         btn.classList.add('active');
@@ -433,16 +444,13 @@ export class TVPreview {
     }
 
     // Update viewport size class
-    const viewport = this.modal.querySelector('.tv-preview-viewport');
-    if (viewport) {
-      viewport.className = `tv-preview-viewport size-${size}`;
+    viewport.className = `tv-preview-viewport size-${size}`;
 
-      // Reapply background color (classes might reset styles)
-      if (this.theme.colors && this.theme.colors.background) {
-        const bgColor = this.validateColor(this.theme.colors.background);
-        if (bgColor) {
-          viewport.style.backgroundColor = bgColor;
-        }
+    // Reapply background color (classes might reset styles)
+    if (this.theme.colors && this.theme.colors.background) {
+      const bgColor = this.validateColor(this.theme.colors.background);
+      if (bgColor) {
+        viewport.style.backgroundColor = bgColor;
       }
     }
   }
