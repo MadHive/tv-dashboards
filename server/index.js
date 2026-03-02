@@ -41,11 +41,15 @@ import { themeManager } from './theme-manager.js';
 import { metricsCollector } from './metrics.js';
 import { smartRateLimit, addCacheHeaders, cachePresets } from './rate-limiter.js';
 import { getConfig, updateConfig, toggleEnabled, getAuditLog, exportConfigs } from './data-source-config.js';
+import { initDatabase } from './db.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT || '80', 10);
 const HOST = process.env.HOST || 'tv.madhive.local';
 const LIVE = process.env.USE_REAL_DATA === 'true';
+
+// Initialize database for data source configuration management
+initDatabase();
 
 // Use config manager for loading (with caching)
 let cachedConfig = null;
