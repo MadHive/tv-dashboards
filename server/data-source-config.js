@@ -6,6 +6,17 @@ import { getDatabase } from './db.js';
 import logger from './logger.js';
 
 /**
+ * Default limit for audit log queries
+ */
+const DEFAULT_AUDIT_LOG_LIMIT = 50;
+
+/**
+ * Valid source name pattern for validation
+ * Allows alphanumeric characters, hyphens, and underscores (1-64 characters)
+ */
+const SOURCE_NAME_PATTERN = /^[a-zA-Z0-9_-]{1,64}$/;
+
+/**
  * Sensitive field patterns to reject (security validation)
  * These patterns match common field names that should not be stored in plain text
  */
@@ -18,6 +29,28 @@ const SENSITIVE_PATTERNS = [
   /apikey/i,        // apikey (compound word)
   /accesskey/i,     // accesskey (compound word)
 ];
+
+/**
+ * Validate source name format
+ * @param {string} sourceName - Data source name to validate
+ * @throws {Error} If source name is invalid
+ */
+function validateSourceName(sourceName) {
+  if (!sourceName || typeof sourceName !== 'string') {
+    throw new Error(
+      'Invalid source name: must be a non-empty string. ' +
+      'Example: GCP_PROJECT_ID=your-project or AWS_REGION=us-east-1'
+    );
+  }
+
+  if (!SOURCE_NAME_PATTERN.test(sourceName)) {
+    throw new Error(
+      `Invalid source name: "${sourceName}". ` +
+      'Must be 1-64 characters (alphanumeric, hyphens, underscores only). ' +
+      'Example: "gcp", "aws", "datadog-prod"'
+    );
+  }
+}
 
 /**
  * Recursively validate config object for sensitive fields
@@ -39,7 +72,8 @@ function validateNoSensitiveFields(config, path = '') {
         throw new Error(
           `Sensitive field detected: "${currentPath}". ` +
           `Fields matching ${pattern} are not allowed in configuration. ` +
-          `Sensitive values must be stored in environment variables or secret management systems.`
+          `Sensitive values must be stored in environment variables or secret management systems. ` +
+          `Example: GCP_API_KEY=your-key or AWS_SECRET_ACCESS_KEY=your-secret`
         );
       }
     }
@@ -90,6 +124,10 @@ function logAudit(sourceName, action, changes, userEmail) {
 
 /**
  * Get configuration for a data source
+ *
+ * Note: Uses parameterized queries via Bun's db.query() which automatically
+ * escapes parameters to prevent SQL injection attacks.
+ *
  * @param {string} sourceName - Data source name
  * @returns {Object|null} Configuration object with { enabled, config, updatedAt, updatedBy } or null if not found
  */
@@ -121,41 +159,54 @@ export function getConfig(sourceName) {
 
 /**
  * Update configuration for a data source
+ *
+ * Uses UPSERT pattern (INSERT ... ON CONFLICT ... DO UPDATE) to eliminate race
+ * conditions between SELECT-then-INSERT/UPDATE operations. All operations are
+ * wrapped in a transaction to ensure atomicity with audit logging.
+ *
+ * Note: Uses parameterized queries via Bun's db.query() which automatically
+ * escapes parameters to prevent SQL injection attacks.
+ *
  * @param {string} sourceName - Data source name
  * @param {Object} config - Configuration object (must not contain sensitive fields)
  * @param {string} userEmail - Email of user making the change
- * @throws {Error} If config contains sensitive fields
+ * @returns {void}
+ * @throws {Error} If config contains sensitive fields or validation fails
  */
 export function updateConfig(sourceName, config, userEmail) {
+  // Validate inputs BEFORE starting transaction
+  validateSourceName(sourceName);
+  validateNoSensitiveFields(config);
+
+  const db = getDatabase();
+  const timestamp = new Date().toISOString();
+  const configJson = JSON.stringify(config);
+
   try {
-    // Validate no sensitive fields
-    validateNoSensitiveFields(config);
+    // Begin transaction for atomicity
+    db.exec('BEGIN IMMEDIATE');
 
-    const db = getDatabase();
-    const timestamp = new Date().toISOString();
-    const configJson = JSON.stringify(config);
-
-    // Check if config already exists
+    // Check if this is create or update (for audit logging)
     const existing = db.query(
       'SELECT source_name FROM data_source_configs WHERE source_name = ?'
     ).get(sourceName);
-
     const action = existing ? 'update' : 'create';
 
-    if (existing) {
-      // Update existing config
-      db.query(
-        'UPDATE data_source_configs SET config_json = ?, updated_at = ?, updated_by = ? WHERE source_name = ?'
-      ).run(configJson, timestamp, userEmail, sourceName);
-    } else {
-      // Insert new config
-      db.query(
-        'INSERT INTO data_source_configs (source_name, enabled, config_json, updated_at, updated_by) VALUES (?, ?, ?, ?, ?)'
-      ).run(sourceName, 1, configJson, timestamp, userEmail);
-    }
+    // UPSERT: Insert or update atomically (eliminates race condition)
+    db.query(`
+      INSERT INTO data_source_configs (source_name, enabled, config_json, updated_at, updated_by)
+      VALUES (?, 1, ?, ?, ?)
+      ON CONFLICT(source_name) DO UPDATE SET
+        config_json = excluded.config_json,
+        updated_at = excluded.updated_at,
+        updated_by = excluded.updated_by
+    `).run(sourceName, configJson, timestamp, userEmail);
 
-    // Log audit trail
+    // Log audit trail (part of transaction)
     logAudit(sourceName, action, { config }, userEmail);
+
+    // Commit transaction
+    db.exec('COMMIT');
 
     logger.info({
       dataSource: sourceName,
@@ -163,6 +214,15 @@ export function updateConfig(sourceName, config, userEmail) {
       userEmail,
     }, 'Configuration updated successfully');
   } catch (error) {
+    // Rollback transaction on error
+    try {
+      db.exec('ROLLBACK');
+    } catch (rollbackError) {
+      logger.error({
+        error: rollbackError.message,
+      }, 'Failed to rollback transaction');
+    }
+
     logger.error({
       error: error.message,
       dataSource: sourceName,
@@ -173,14 +233,33 @@ export function updateConfig(sourceName, config, userEmail) {
 
 /**
  * Toggle enabled status for a data source
+ *
+ * All operations are wrapped in a transaction to ensure atomicity with audit logging.
+ *
+ * Note: Uses parameterized queries via Bun's db.query() which automatically
+ * escapes parameters to prevent SQL injection attacks.
+ *
  * @param {string} sourceName - Data source name
  * @param {boolean} enabled - Whether to enable or disable
  * @param {string} userEmail - Email of user making the change
- * @throws {Error} If data source does not exist
+ * @returns {void}
+ * @throws {Error} If data source does not exist or validation fails
  */
 export function toggleEnabled(sourceName, enabled, userEmail) {
+  // Validate inputs BEFORE starting transaction
+  validateSourceName(sourceName);
+
+  if (typeof enabled !== 'boolean') {
+    throw new Error(
+      `Invalid enabled value: must be boolean (true/false), got ${typeof enabled}`
+    );
+  }
+
+  const db = getDatabase();
+
   try {
-    const db = getDatabase();
+    // Begin transaction for atomicity
+    db.exec('BEGIN IMMEDIATE');
 
     // Check if config exists
     const existing = db.query(
@@ -188,7 +267,10 @@ export function toggleEnabled(sourceName, enabled, userEmail) {
     ).get(sourceName);
 
     if (!existing) {
-      throw new Error(`Data source "${sourceName}" does not exist`);
+      throw new Error(
+        `Data source "${sourceName}" does not exist. ` +
+        'Create a configuration first using updateConfig()'
+      );
     }
 
     const timestamp = new Date().toISOString();
@@ -200,8 +282,11 @@ export function toggleEnabled(sourceName, enabled, userEmail) {
       'UPDATE data_source_configs SET enabled = ?, updated_at = ?, updated_by = ? WHERE source_name = ?'
     ).run(enabledValue, timestamp, userEmail, sourceName);
 
-    // Log audit trail
+    // Log audit trail (part of transaction)
     logAudit(sourceName, action, { enabled }, userEmail);
+
+    // Commit transaction
+    db.exec('COMMIT');
 
     logger.info({
       dataSource: sourceName,
@@ -209,6 +294,15 @@ export function toggleEnabled(sourceName, enabled, userEmail) {
       userEmail,
     }, `Data source ${action}d successfully`);
   } catch (error) {
+    // Rollback transaction on error
+    try {
+      db.exec('ROLLBACK');
+    } catch (rollbackError) {
+      logger.error({
+        error: rollbackError.message,
+      }, 'Failed to rollback transaction');
+    }
+
     logger.error({
       error: error.message,
       dataSource: sourceName,
@@ -219,16 +313,28 @@ export function toggleEnabled(sourceName, enabled, userEmail) {
 
 /**
  * Get audit log for a data source
+ *
+ * Note: Uses parameterized queries via Bun's db.query() which automatically
+ * escapes parameters to prevent SQL injection attacks.
+ *
  * @param {string} sourceName - Data source name
  * @param {number} limit - Maximum number of entries to return (default: 50)
  * @returns {Array} Audit log entries in descending timestamp order
  */
-export function getAuditLog(sourceName, limit = 50) {
+export function getAuditLog(sourceName, limit = DEFAULT_AUDIT_LOG_LIMIT) {
   try {
+    // Validate limit is positive integer
+    const validatedLimit = parseInt(limit, 10);
+    if (isNaN(validatedLimit) || validatedLimit <= 0) {
+      throw new Error(
+        `Invalid limit: must be a positive integer, got ${limit}`
+      );
+    }
+
     const db = getDatabase();
     const rows = db.query(
       'SELECT id, source_name, action, changes_json, user_email, timestamp FROM config_audit_log WHERE source_name = ? ORDER BY timestamp DESC LIMIT ?'
-    ).all(sourceName, limit);
+    ).all(sourceName, validatedLimit);
 
     return rows.map(row => ({
       id: row.id,
@@ -249,6 +355,10 @@ export function getAuditLog(sourceName, limit = 50) {
 
 /**
  * Export all data source configurations
+ *
+ * Note: Uses parameterized queries via Bun's db.query() which automatically
+ * escapes parameters to prevent SQL injection attacks.
+ *
  * @returns {Object} Object with source names as keys and config objects as values
  */
 export function exportConfigs() {

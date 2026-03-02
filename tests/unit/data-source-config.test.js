@@ -94,6 +94,50 @@ describe('Data Source Configuration', () => {
     });
   });
 
+  describe('updateConfig - Input Validation', () => {
+    it('should reject empty source name', () => {
+      expect(() => {
+        updateConfig('', { region: 'us-east1' }, 'test@example.com');
+      }).toThrow(/invalid source name/i);
+    });
+
+    it('should reject source name with special characters', () => {
+      expect(() => {
+        updateConfig('gcp@prod', { region: 'us-east1' }, 'test@example.com');
+      }).toThrow(/invalid source name/i);
+    });
+
+    it('should reject source name with spaces', () => {
+      expect(() => {
+        updateConfig('gcp prod', { region: 'us-east1' }, 'test@example.com');
+      }).toThrow(/invalid source name/i);
+    });
+
+    it('should reject source name longer than 64 characters', () => {
+      expect(() => {
+        updateConfig('a'.repeat(65), { region: 'us-east1' }, 'test@example.com');
+      }).toThrow(/invalid source name/i);
+    });
+
+    it('should accept valid source name with hyphens', () => {
+      expect(() => {
+        updateConfig('gcp-prod', { region: 'us-east1' }, 'test@example.com');
+      }).not.toThrow();
+    });
+
+    it('should accept valid source name with underscores', () => {
+      expect(() => {
+        updateConfig('gcp_prod', { region: 'us-east1' }, 'test@example.com');
+      }).not.toThrow();
+    });
+
+    it('should accept valid source name with numbers', () => {
+      expect(() => {
+        updateConfig('gcp123', { region: 'us-east1' }, 'test@example.com');
+      }).not.toThrow();
+    });
+  });
+
   describe('updateConfig - Sensitive Field Validation', () => {
     it('should reject config with apiKey field', () => {
       expect(() => {
@@ -282,6 +326,28 @@ describe('Data Source Configuration', () => {
     });
   });
 
+  describe('toggleEnabled - Input Validation', () => {
+    it('should reject invalid source name', () => {
+      expect(() => {
+        toggleEnabled('invalid@source', true, 'test@example.com');
+      }).toThrow(/invalid source name/i);
+    });
+
+    it('should reject non-boolean enabled value', () => {
+      updateConfig('gcp', { region: 'us-east1' }, 'test@example.com');
+      expect(() => {
+        toggleEnabled('gcp', 'true', 'test@example.com');
+      }).toThrow(/invalid enabled value.*boolean/i);
+    });
+
+    it('should reject non-boolean number as enabled value', () => {
+      updateConfig('gcp', { region: 'us-east1' }, 'test@example.com');
+      expect(() => {
+        toggleEnabled('gcp', 1, 'test@example.com');
+      }).toThrow(/invalid enabled value.*boolean/i);
+    });
+  });
+
   describe('toggleEnabled', () => {
     it('should enable a data source', () => {
       updateConfig('gcp', { region: 'us-east1' }, 'test@example.com');
@@ -346,6 +412,32 @@ describe('Data Source Configuration', () => {
       expect(() => {
         toggleEnabled('non-existent', true, 'test@example.com');
       }).toThrow();
+    });
+  });
+
+  describe('getAuditLog - Input Validation', () => {
+    it('should reject negative limit', () => {
+      expect(() => {
+        getAuditLog('gcp', -1);
+      }).toThrow(/invalid limit.*positive integer/i);
+    });
+
+    it('should reject zero limit', () => {
+      expect(() => {
+        getAuditLog('gcp', 0);
+      }).toThrow(/invalid limit.*positive integer/i);
+    });
+
+    it('should reject non-numeric limit', () => {
+      expect(() => {
+        getAuditLog('gcp', 'invalid');
+      }).toThrow(/invalid limit.*positive integer/i);
+    });
+
+    it('should accept string numeric limit', () => {
+      expect(() => {
+        getAuditLog('gcp', '10');
+      }).not.toThrow();
     });
   });
 
