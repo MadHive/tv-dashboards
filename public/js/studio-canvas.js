@@ -43,6 +43,8 @@ window.StudioCanvas = (function () {
       card.style.transition = 'outline 0.1s';
       card.style.overflow = 'hidden';
 
+      addResizeHandles(card, wc, dash);
+
       // Title
       const title = document.createElement('div');
       title.className = 'widget-title';
@@ -86,8 +88,11 @@ window.StudioCanvas = (function () {
         }
       });
 
+      enableDrag(card, wc);
       page.appendChild(card);
     });
+
+    enableDropZone(page, dash);
 
     // Click on empty canvas area (page background) -> deselect, show dashboard props
     page.addEventListener('click', function () {
@@ -99,6 +104,136 @@ window.StudioCanvas = (function () {
     });
 
     canvas.appendChild(page);
+  }
+
+  function enableDrag(card, wc) {
+    card.setAttribute('draggable', 'true');
+    card.addEventListener('dragstart', function (e) {
+      card.style.opacity = '0.5';
+      e.dataTransfer.setData('widgetId', wc.id);
+    });
+    card.addEventListener('dragend', function () {
+      card.style.opacity = '1';
+    });
+  }
+
+  function enableDropZone(page, dash) {
+    page.addEventListener('dragover', function (e) {
+      e.preventDefault();
+    });
+    page.addEventListener('drop', function (e) {
+      e.preventDefault();
+      const widgetId = e.dataTransfer.getData('widgetId');
+      const wc = dash.widgets.find(function (w) { return w.id === widgetId; });
+      if (!wc) return;
+
+      const rect = page.getBoundingClientRect();
+      const relX = e.clientX - rect.left;
+      const relY = e.clientY - rect.top;
+      const colWidth = rect.width / dash.grid.columns;
+      const rowHeight = rect.height / dash.grid.rows;
+
+      const col = Math.max(1, Math.min(dash.grid.columns, Math.ceil(relX / colWidth)));
+      const row = Math.max(1, Math.min(dash.grid.rows, Math.ceil(relY / rowHeight)));
+
+      wc.position.col = col;
+      wc.position.row = row;
+
+      app.markDirty();
+      app.renderCanvas();
+      app.showWidgetProps(widgetId);
+    });
+  }
+
+  function addResizeHandles(card, wc, dash) {
+    // Right handle → resize colSpan
+    const rightHandle = document.createElement('div');
+    rightHandle.style.cssText = [
+      'position:absolute', 'right:-4px', 'top:20%', 'height:60%', 'width:8px',
+      'cursor:ew-resize', 'background:rgba(0,212,255,0.6)', 'border-radius:4px',
+      'opacity:0', 'transition:opacity 0.15s', 'z-index:10'
+    ].join(';');
+
+    // Bottom handle → resize rowSpan
+    const bottomHandle = document.createElement('div');
+    bottomHandle.style.cssText = [
+      'position:absolute', 'bottom:-4px', 'left:20%', 'width:60%', 'height:8px',
+      'cursor:ns-resize', 'background:rgba(0,212,255,0.6)', 'border-radius:4px',
+      'opacity:0', 'transition:opacity 0.15s', 'z-index:10'
+    ].join(';');
+
+    card.appendChild(rightHandle);
+    card.appendChild(bottomHandle);
+
+    // Show/hide handles on hover
+    card.addEventListener('mouseenter', function () {
+      rightHandle.style.opacity = '1';
+      bottomHandle.style.opacity = '1';
+    });
+    card.addEventListener('mouseleave', function () {
+      rightHandle.style.opacity = '0';
+      bottomHandle.style.opacity = '0';
+    });
+
+    // Right handle: resize colSpan
+    rightHandle.addEventListener('mousedown', function (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      const page = card.closest('.dashboard-page');
+      const rect = page.getBoundingClientRect();
+      const colWidth = rect.width / dash.grid.columns;
+      const startX = e.clientX;
+      const startSpan = wc.position.colSpan || 1;
+      const maxSpan = dash.grid.columns - wc.position.col + 1;
+
+      function onMove(e) {
+        const delta = e.clientX - startX;
+        const spanDelta = Math.round(delta / colWidth);
+        wc.position.colSpan = Math.max(1, Math.min(maxSpan, startSpan + spanDelta));
+        card.style.gridColumn = wc.position.col + ' / span ' + wc.position.colSpan;
+      }
+
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        app.markDirty();
+        app.renderCanvas();
+        app.showWidgetProps(wc.id);
+      }
+
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+
+    // Bottom handle: resize rowSpan
+    bottomHandle.addEventListener('mousedown', function (e) {
+      e.stopPropagation();
+      e.preventDefault();
+      const page = card.closest('.dashboard-page');
+      const rect = page.getBoundingClientRect();
+      const rowHeight = rect.height / dash.grid.rows;
+      const startY = e.clientY;
+      const startSpan = wc.position.rowSpan || 1;
+      const maxSpan = dash.grid.rows - wc.position.row + 1;
+
+      function onMove(e) {
+        const delta = e.clientY - startY;
+        const spanDelta = Math.round(delta / rowHeight);
+        wc.position.rowSpan = Math.max(1, Math.min(maxSpan, startSpan + spanDelta));
+        card.style.gridRow = wc.position.row + ' / span ' + wc.position.rowSpan;
+      }
+
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        app.markDirty();
+        app.renderCanvas();
+        app.showWidgetProps(wc.id);
+      }
+
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
   }
 
   return { render: render };
