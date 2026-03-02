@@ -3,6 +3,7 @@
 // ===========================================================================
 
 import { DataSource } from './base.js';
+import logger from '../logger.js';
 
 export class ZendeskDataSource extends DataSource {
   constructor(config = {}) {
@@ -13,7 +14,7 @@ export class ZendeskDataSource extends DataSource {
   }
 
   async fetchMetrics(widgetConfig) {
-    console.warn('[zendesk] Using mock data - Zendesk API not yet implemented');
+    logger.warn('[zendesk] Using mock data - Zendesk API not yet implemented');
     return {
       timestamp: new Date().toISOString(),
       source: 'zendesk',

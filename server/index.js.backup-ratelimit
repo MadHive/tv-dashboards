@@ -9,7 +9,6 @@ import { cors } from '@elysiajs/cors';
 import { readFileSync } from 'fs';
 import { load } from 'js-yaml';
 import { join, dirname } from 'path';
-import logger from './logger.js';
 import { fileURLToPath } from 'url';
 import { getMetrics as mockGetMetrics } from './mock-data.js';
 import { proxyRoutes } from './api-proxy.js';
@@ -38,7 +37,7 @@ import {
 import DashboardManager from './dashboard-manager.js';
 import { getSchema, getAllSchemas, validateConnection } from './data-source-schemas.js';
 import { metricsCollector } from './metrics.js';
-import { smartRateLimit, addCacheHeaders, cachePresets } from './rate-limiter.js';
+import { apiRateLimit, dataRateLimit, authRateLimit, addCacheHeaders, cachePresets } from './rate-limiter.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT || '80', 10);
@@ -77,7 +76,7 @@ export async function getData(dashboardId) {
       return await dataSourceRegistry.fetchDashboardMetrics(dashboardId, dashboard);
     }
   } catch (err) {
-    logger.warn({ error: err.message }, 'Failed to use data source registry, falling back to legacy');
+    console.warn('[metrics] Failed to use registry, falling back to legacy:', err.message);
   }
 
   // Legacy behavior for backward compatibility
@@ -89,7 +88,7 @@ export async function getData(dashboardId) {
       );
       return await Promise.race([liveData.getMetrics(dashboardId), timeout]);
     } catch (err) {
-      logger.error({ error: err.message }, 'Live data failed, falling back to mock');
+      console.error('[metrics] Live data failed, falling back to mock:', err.message);
     }
   }
   return mockGetMetrics(dashboardId);
@@ -135,37 +134,23 @@ const app = new Elysia()
   .onAfterHandle(({ request, response, store }) => {
     // Calculate response time
     const duration = Date.now() - (store.requestStartTime || Date.now());
-    const url = new URL(request.url);
-    const pathname = url.pathname;
 
-    // Add headers to Response objects
+    // Add X-Response-Time header
     if (response instanceof Response) {
       response.headers.set('X-Response-Time', `${duration}ms`);
 
-      // Apply cache headers based on path
-      // HTML files: no cache
-      if (pathname.endsWith('.html') || pathname === '/') {
+      // Add no-cache headers for HTML files to prevent browser caching issues
+      if (request.url.endsWith('.html') || request.url.endsWith('/')) {
         response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
         response.headers.set('Pragma', 'no-cache');
         response.headers.set('Expires', '0');
       }
-      // Static assets: 1 hour cache, immutable
-      else if (pathname.startsWith('/app/assets/') || pathname.startsWith('/css/') || pathname.startsWith('/js/')) {
-        response.headers.set('Cache-Control', 'public, max-age=3600, immutable');
-      }
-      // Dashboard config: 1 minute cache with revalidation
-      else if (pathname === '/api/config') {
-        response.headers.set('Cache-Control', 'max-age=60, must-revalidate');
-      }
-      // Other API endpoints: no cache
-      else if (pathname.startsWith('/api/')) {
-        response.headers.set('Cache-Control', 'no-cache');
-      }
     }
 
     // Record metrics
+    const url = new URL(request.url);
     const statusCode = response instanceof Response ? response.status : 200;
-    metricsCollector.recordRequest(pathname, duration, statusCode);
+    metricsCollector.recordRequest(url.pathname, duration, statusCode);
 
     return response;
   })
@@ -229,7 +214,7 @@ const app = new Elysia()
           // Get all metrics for this dashboard
           const dashboardData = await getData(dashboard.id);
 
-          logger.warn({ widgetId }, 'Widget not found in any dashboard');
+          console.log(`[api/data] Widget ${widgetId} found in dashboard ${dashboard.id}, has data:`, !!dashboardData?.[widgetId]);
 
           // Return just this widget's data
           if (dashboardData && dashboardData[widgetId]) {
@@ -245,13 +230,13 @@ const app = new Elysia()
           // Widget found but no data - try next dashboard
           continue;
         } catch (error) {
-          logger.error({ widgetId, dashboardId: dashboard.id, error: error.message }, 'Error fetching widget data');
+          console.error(`[api/data] Error fetching data for widget ${widgetId} from dashboard ${dashboard.id}:`, error.message);
           continue;
         }
       }
     }
 
-    logger.warn({ widgetId }, 'Widget not found in any dashboard');
+    console.log(`[api/data] Widget ${widgetId} NOT FOUND in any dashboard`);
     return new Response(
       JSON.stringify({ error: 'Widget not found' }),
       { status: 404, headers: { 'content-type': 'application/json' } }
@@ -618,8 +603,6 @@ const app = new Elysia()
     }
   })
 
-  // Apply rate limiting
-  .use(smartRateLimit)
   .use(proxyRoutes)
   .use(numericsRoutes)
   .use(anyboardRoutes)
@@ -642,8 +625,8 @@ const app = new Elysia()
 
   .listen({ port: PORT, hostname: HOST });
 
-logger.info(`Dashboard server running at http://${HOST}:${PORT}`);
-logger.info('Config loaded from config/dashboards.yaml');
-logger.info({ dataMode: LIVE ? 'LIVE' : 'MOCK' }, 'Data mode configured');
-logger.info(`Numerics widgets: http://${HOST}:${PORT}/api/numerics/<widget>`);
-logger.info(`AnyBoard config: http://${HOST}:${PORT}/api/anyboard/config.json`);
+console.log(`\n  Dashboard server running at http://${HOST}:${PORT}`);
+console.log(`  Config loaded from config/dashboards.yaml`);
+console.log(`  Data mode: ${LIVE ? 'LIVE (GCP)' : 'MOCK'}`);
+console.log(`  Numerics widgets: http://${HOST}:${PORT}/api/numerics/<widget>`);
+console.log(`  AnyBoard config:  http://${HOST}:${PORT}/api/anyboard/config.json\n`);

@@ -4,6 +4,8 @@
 
 import { DataSource } from './base.js';
 import { CloudWatchClient, GetMetricDataCommand, ListMetricsCommand } from '@aws-sdk/client-cloudwatch';
+import { metricsCollector } from '../metrics.js';
+import logger from '../logger.js';
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -32,7 +34,7 @@ export class AWSDataSource extends DataSource {
     try {
       // Check if credentials are available
       if (!this.accessKeyId || !this.secretAccessKey) {
-        console.warn('[aws] No AWS credentials found - data source will use mock data');
+        logger.warn('No AWS credentials found - data source will use mock data');
         this.isConnected = false;
         return;
       }
@@ -46,9 +48,9 @@ export class AWSDataSource extends DataSource {
       });
 
       this.isConnected = true;
-      console.log(`[aws] CloudWatch client initialized for region: ${this.region}`);
+      logger.info({ region: this.region }, 'CloudWatch client initialized');
     } catch (error) {
-      console.error('[aws] Failed to initialize:', error.message);
+      logger.error({ error: error.message }, 'AWS data source failed to initialize');
       this.lastError = error;
       this.isConnected = false;
     }
@@ -67,7 +69,7 @@ export class AWSDataSource extends DataSource {
   async fetchMetrics(widgetConfig) {
     try {
       if (!this.cloudWatchClient) {
-        console.warn('[aws] CloudWatch client not initialized - using mock data');
+        logger.warn('CloudWatch client not initialized - using mock data');
         return {
           timestamp: new Date().toISOString(),
           source: 'aws',
@@ -91,7 +93,8 @@ export class AWSDataSource extends DataSource {
       if (this.metricCache.has(cacheKey)) {
         const cached = this.metricCache.get(cacheKey);
         if (Date.now() - cached.timestamp < CACHE_TTL) {
-          console.log('[aws] Cache hit for metric:', metric);
+          logger.debug({ metric }, 'Cache hit for AWS metric');
+          metricsCollector.recordCacheHit();
           return {
             timestamp: new Date().toISOString(),
             source: 'aws',
@@ -101,6 +104,8 @@ export class AWSDataSource extends DataSource {
           };
         }
       }
+
+      metricsCollector.recordCacheMiss();
 
       // Build metric data query
       const endTime = new Date();
@@ -126,13 +131,18 @@ export class AWSDataSource extends DataSource {
         EndTime: endTime
       });
 
+      const queryStart = Date.now();
       const response = await this.cloudWatchClient.send(command);
+      const queryDuration = Date.now() - queryStart;
+
+      metricsCollector.recordDataSourceQuery('aws', queryDuration, false);
 
       // Cache the result
       this.metricCache.set(cacheKey, {
         data: response.MetricDataResults,
         timestamp: Date.now()
       });
+      metricsCollector.recordCacheSet();
 
       return {
         timestamp: new Date().toISOString(),
@@ -141,7 +151,8 @@ export class AWSDataSource extends DataSource {
         widgetId: widgetConfig.id
       };
     } catch (error) {
-      console.error('[aws] Fetch metrics error:', error.message);
+      logger.error({ error: error.message }, 'AWS fetch metrics error');
+      metricsCollector.recordError('aws');
       return this.handleError(error, widgetConfig.type);
     }
   }
@@ -161,10 +172,10 @@ export class AWSDataSource extends DataSource {
       });
 
       await this.cloudWatchClient.send(command);
-      console.log('[aws] Connection test successful');
+      logger.info('AWS connection test successful');
       return true;
     } catch (error) {
-      console.error('[aws] Connection test failed:', error.message);
+      logger.error({ error: error.message }, 'AWS connection test failed');
       this.lastError = error;
       return false;
     }

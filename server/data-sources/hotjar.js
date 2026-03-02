@@ -3,6 +3,7 @@
 // ===========================================================================
 
 import { DataSource } from './base.js';
+import logger from '../logger.js';
 
 export class HotJarDataSource extends DataSource {
   constructor(config = {}) {
@@ -12,7 +13,7 @@ export class HotJarDataSource extends DataSource {
   }
 
   async fetchMetrics(widgetConfig) {
-    console.warn('[hotjar] Using mock data - HotJar API not yet implemented');
+    logger.warn('[hotjar] Using mock data - HotJar API not yet implemented');
     return {
       timestamp: new Date().toISOString(),
       source: 'hotjar',

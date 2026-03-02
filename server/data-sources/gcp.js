@@ -3,6 +3,8 @@
 // ===========================================================================
 
 import { DataSource } from './base.js';
+import { metricsCollector } from '../metrics.js';
+import logger from '../logger.js';
 
 /**
  * GCP Cloud Monitoring data source
@@ -22,9 +24,9 @@ export class GCPDataSource extends DataSource {
       const gcpModule = await import('../gcp-metrics.js');
       this.gcpMetrics = gcpModule;
       this.isConnected = true;
-      console.log('[gcp] GCP data source initialized');
+      logger.info('[gcp] GCP data source initialized');
     } catch (error) {
-      console.error('[gcp] Failed to initialize:', error.message);
+      logger.error({ error: error.message }, 'GCP data source failed to initialize');
       this.lastError = error;
       this.isConnected = false;
     }
@@ -72,6 +74,7 @@ export class GCPDataSource extends DataSource {
    * Execute a saved query from query-manager
    */
   async executeQuery(widgetConfig) {
+    const startTime = Date.now();
     try {
       // Load saved query
       const { getQuery } = await import('../query-manager.js');
@@ -93,6 +96,10 @@ export class GCPDataSource extends DataSource {
       // Transform data for widget type
       const transformed = this.transformData(timeSeries, widgetConfig.type);
 
+      // Record successful query
+      const duration = Date.now() - startTime;
+      metricsCollector.recordDataSourceQuery('gcp', duration, false);
+
       return {
         timestamp: new Date().toISOString(),
         source: 'gcp',
@@ -102,6 +109,9 @@ export class GCPDataSource extends DataSource {
         metricType: savedQuery.metricType
       };
     } catch (error) {
+      // Record failed query
+      const duration = Date.now() - startTime;
+      metricsCollector.recordDataSourceQuery('gcp', duration, true);
       return this.handleError(error, widgetConfig.type);
     }
   }
@@ -116,7 +126,7 @@ export class GCPDataSource extends DataSource {
       }
       return this.isConnected;
     } catch (error) {
-      console.error('[gcp] Connection test failed:', error.message);
+      logger.error({ error: error.message }, 'GCP connection test failed');
       return false;
     }
   }
@@ -206,7 +216,7 @@ export class GCPDataSource extends DataSource {
       try {
         return transformer(timeSeries);
       } catch (error) {
-        console.error('[gcp] Transform error:', error.message);
+        logger.error({ error: error.message }, 'GCP transform error');
         return this.getEmptyData(widgetType);
       }
     }

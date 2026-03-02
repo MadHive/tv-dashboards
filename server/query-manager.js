@@ -6,6 +6,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, unlinkSync } from
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { load, dump } from 'js-yaml';
+import logger from './logger.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const QUERIES_PATH = join(__dirname, '..', 'config', 'queries.yaml');
@@ -19,17 +20,17 @@ const MAX_BACKUPS = 10;
 export function loadQueries() {
   try {
     if (!existsSync(QUERIES_PATH)) {
-      console.log('[query-manager] No queries.yaml found, initializing empty');
+      logger.info('No queries.yaml found, initializing empty');
       return {};
     }
 
     const raw = readFileSync(QUERIES_PATH, 'utf8');
     const queries = load(raw) || {};
 
-    console.log('[query-manager] Loaded queries from', QUERIES_PATH);
+    logger.info({ path: QUERIES_PATH }, 'Loaded queries');
     return queries;
   } catch (error) {
-    console.error('[query-manager] Failed to load queries:', error.message);
+    logger.error({ error: error.message }, 'Failed to load queries');
     // Return empty object on error - don't crash the server
     return {};
   }
@@ -54,10 +55,10 @@ export async function saveQueries(queries) {
     // Write to file
     writeFileSync(QUERIES_PATH, yamlContent, 'utf8');
 
-    console.log('[query-manager] Queries saved successfully');
+    logger.info('Queries saved successfully');
     return { success: true };
   } catch (error) {
-    console.error('[query-manager] Failed to save queries:', error.message);
+    logger.error({ error: error.message }, 'Failed to save queries');
     throw error;
   }
 }
@@ -76,7 +77,7 @@ export async function getQuery(source, queryId) {
     const query = queries[source].find(q => q.id === queryId);
     return query || null;
   } catch (error) {
-    console.error('[query-manager] Failed to get query:', error.message);
+    logger.error({ error: error.message }, 'Failed to get query');
     return null;
   }
 }
@@ -89,7 +90,7 @@ export async function listQueries(source) {
     const queries = loadQueries();
     return queries[source] || [];
   } catch (error) {
-    console.error('[query-manager] Failed to list queries:', error.message);
+    logger.error({ error: error.message }, 'Failed to list queries');
     return [];
   }
 }
@@ -101,7 +102,7 @@ export async function listAllQueries() {
   try {
     return loadQueries();
   } catch (error) {
-    console.error('[query-manager] Failed to list all queries:', error.message);
+    logger.error({ error: error.message }, 'Failed to list all queries');
     return {};
   }
 }
@@ -141,12 +142,12 @@ export async function saveQuery(source, queryDef) {
       // Update existing query
       queryData.createdAt = queries[source][existingIndex].createdAt || now;
       queries[source][existingIndex] = queryData;
-      console.log('[query-manager] Updated query:', source, queryDef.id);
+      logger.info({ source, queryId: queryDef.id }, 'Query updated');
     } else {
       // Create new query
       queryData.createdAt = now;
       queries[source].push(queryData);
-      console.log('[query-manager] Created query:', source, queryDef.id);
+      logger.info({ source, queryId: queryDef.id }, 'Query created');
     }
 
     // Save to file
@@ -154,7 +155,7 @@ export async function saveQuery(source, queryDef) {
 
     return { success: true, query: queryData };
   } catch (error) {
-    console.error('[query-manager] Failed to save query:', error.message);
+    logger.error({ error: error.message }, 'Failed to save query');
     throw error;
   }
 }
@@ -184,10 +185,10 @@ export async function deleteQuery(source, queryId) {
     // Save updated queries
     await saveQueries(queries);
 
-    console.log('[query-manager] Deleted query:', source, queryId);
+    logger.info({ source, queryId }, 'Query deleted');
     return { success: true, deleted };
   } catch (error) {
-    console.error('[query-manager] Failed to delete query:', error.message);
+    logger.error({ error: error.message }, 'Failed to delete query');
     throw error;
   }
 }
@@ -198,7 +199,7 @@ export async function deleteQuery(source, queryId) {
 export async function createBackup() {
   try {
     if (!existsSync(QUERIES_PATH)) {
-      console.warn('[query-manager] No queries file to backup');
+      logger.warn('No queries file to backup');
       return null;
     }
 
@@ -212,14 +213,14 @@ export async function createBackup() {
     // Write backup
     writeFileSync(backupPath, content, 'utf8');
 
-    console.log('[query-manager] Backup created:', backupPath);
+    logger.info({ backupPath }, 'Query backup created');
 
     // Clean up old backups
     await cleanupOldBackups();
 
     return backupPath;
   } catch (error) {
-    console.error('[query-manager] Failed to create backup:', error.message);
+    logger.error({ error: error.message }, 'Failed to create query backup');
     // Don't throw - backups are best-effort
     return null;
   }
@@ -246,11 +247,11 @@ async function cleanupOldBackups() {
       const toDelete = backups.slice(MAX_BACKUPS);
       toDelete.forEach(backup => {
         unlinkSync(backup.path);
-        console.log('[query-manager] Deleted old backup:', backup.name);
+        logger.info({ backup: backup.name }, 'Deleted old query backup');
       });
     }
   } catch (error) {
-    console.error('[query-manager] Failed to cleanup backups:', error.message);
+    logger.error({ error: error.message }, 'Failed to cleanup query backups');
     // Don't throw - cleanup is best-effort
   }
 }
@@ -272,7 +273,7 @@ export function listBackups() {
 
     return backups;
   } catch (error) {
-    console.error('[query-manager] Failed to list backups:', error.message);
+    logger.error({ error: error.message }, 'Failed to list query backups');
     return [];
   }
 }
@@ -298,10 +299,10 @@ export async function restoreBackup(backupFilename) {
     // Restore backup
     writeFileSync(QUERIES_PATH, content, 'utf8');
 
-    console.log('[query-manager] Restored from backup:', backupFilename);
+    logger.info({ backupFilename }, 'Restored queries from backup');
     return { success: true, backup: backupFilename };
   } catch (error) {
-    console.error('[query-manager] Failed to restore backup:', error.message);
+    logger.error({ error: error.message }, 'Failed to restore queries from backup');
     throw error;
   }
 }

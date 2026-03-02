@@ -3,6 +3,7 @@
 // ===========================================================================
 
 import { DataSource } from './base.js';
+import logger from '../logger.js';
 
 export class SalesforceDataSource extends DataSource {
   constructor(config = {}) {
@@ -12,7 +13,7 @@ export class SalesforceDataSource extends DataSource {
   }
 
   async fetchMetrics(widgetConfig) {
-    console.warn('[salesforce] Using mock data - Salesforce API not yet implemented');
+    logger.warn('[salesforce] Using mock data - Salesforce API not yet implemented');
     return {
       timestamp: new Date().toISOString(),
       source: 'salesforce',
