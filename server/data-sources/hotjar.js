@@ -242,14 +242,124 @@ export class HotJarDataSource extends DataSource {
     }
   }
 
+  /**
+   * Get mock data for testing when HotJar not available
+   */
   getMockData(widgetType) {
-    return this.getEmptyData(widgetType);
+    switch (widgetType) {
+      case 'big-number':
+      case 'stat-card':
+        return {
+          value: Math.round(Math.random() * 50000),
+          unit: 'views'
+        };
+
+      case 'gauge':
+      case 'gauge-row':
+        return {
+          value: Math.round(Math.random() * 100),
+          min: 0,
+          max: 100,
+          unit: '%'
+        };
+
+      case 'bar-chart':
+        return {
+          values: [
+            { label: 'Desktop', value: 12450 },
+            { label: 'Mobile', value: 8920 },
+            { label: 'Tablet', value: 2340 }
+          ]
+        };
+
+      case 'line-chart':
+      case 'sparkline': {
+        const now = Date.now();
+        return {
+          labels: Array.from({ length: 7 }, (_, i) =>
+            new Date(now - (6 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          ),
+          values: Array.from({ length: 7 }, () =>
+            Math.round(Math.random() * 5000)
+          ),
+          series: 'Mock Page Views'
+        };
+      }
+
+      default:
+        return this.getEmptyData(widgetType);
+    }
   }
 
+  /**
+   * Get available HotJar metrics
+   */
   getAvailableMetrics() {
     return [
-      { id: 'pageviews', name: 'Page Views', type: 'number', widgets: ['big-number'] },
-      { id: 'recordings', name: 'Session Recordings', type: 'number', widgets: ['stat-card'] }
+      {
+        id: 'pageviews',
+        name: 'Page Views',
+        description: 'Total page views',
+        metric: 'pageviews',
+        type: 'number',
+        widgets: ['big-number', 'stat-card', 'line-chart']
+      },
+      {
+        id: 'recordings',
+        name: 'Session Recordings',
+        description: 'Number of session recordings',
+        metric: 'recordings',
+        type: 'number',
+        widgets: ['big-number', 'stat-card']
+      },
+      {
+        id: 'heatmap_clicks',
+        name: 'Heatmap Clicks',
+        description: 'Click tracking data',
+        metric: 'heatmaps',
+        type: 'number',
+        widgets: ['big-number', 'bar-chart']
+      },
+      {
+        id: 'feedback_responses',
+        name: 'Feedback Responses',
+        description: 'Survey and poll responses',
+        metric: 'feedback',
+        type: 'number',
+        widgets: ['big-number', 'line-chart']
+      },
+      {
+        id: 'conversion_rate',
+        name: 'Conversion Rate',
+        description: 'Goal conversion percentage',
+        metric: 'conversions',
+        type: 'percentage',
+        widgets: ['gauge', 'gauge-row', 'big-number']
+      },
+      {
+        id: 'bounce_rate',
+        name: 'Bounce Rate',
+        description: 'Percentage of single-page sessions',
+        metric: 'bounces',
+        type: 'percentage',
+        widgets: ['gauge', 'line-chart']
+      },
+      {
+        id: 'avg_session_duration',
+        name: 'Average Session Duration',
+        description: 'Mean session time in seconds',
+        metric: 'sessions',
+        type: 'duration',
+        widgets: ['big-number', 'stat-card']
+      },
+      {
+        id: 'custom_metric',
+        name: 'Custom Metric',
+        description: 'User-defined custom metric',
+        metric: '',
+        type: 'number',
+        widgets: ['big-number', 'gauge', 'line-chart', 'bar-chart']
+      }
     ];
   }
 }
