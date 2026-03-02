@@ -238,7 +238,6 @@ window.WidgetPalette = (function () {
     }
 
     onDragStart(event, widgetType) {
-      console.log('[Palette] Drag start:', widgetType.type);
       this.draggedWidgetType = widgetType;
 
       // Set drag data
@@ -271,7 +270,6 @@ window.WidgetPalette = (function () {
     }
 
     onDragEnd(event) {
-      console.log('[Palette] Drag end');
       event.target.classList.remove('dragging');
       this.draggedWidgetType = null;
 

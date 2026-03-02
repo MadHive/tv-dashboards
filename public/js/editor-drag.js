@@ -47,7 +47,6 @@ window.WidgetDragController = (function () {
           return;
         }
 
-        console.log('[Drag] Mouse down on widget:', widgetConfig.id);
 
         // Prevent text selection during drag
         e.preventDefault();
@@ -79,7 +78,6 @@ window.WidgetDragController = (function () {
      * Start dragging a widget
      */
     startDrag(widgetElement, widgetConfig, event) {
-      console.log('[Drag] Starting drag for widget:', widgetConfig.id);
       this.isDragging = true;
       this.draggedWidget = widgetConfig;
       this.draggedElement = widgetElement;
@@ -250,7 +248,6 @@ window.WidgetDragController = (function () {
      * Palette drag started - handle dragging new widget from palette
      */
     onPaletteDragStart(widgetType) {
-      console.log('[Drag] Palette drag start:', widgetType.type);
       this.isPaletteDragging = true;
       this.paletteWidgetType = widgetType;
 
@@ -272,7 +269,6 @@ window.WidgetDragController = (function () {
      * Palette drag ended
      */
     onPaletteDragEnd() {
-      console.log('[Drag] Palette drag end');
       document.body.classList.remove('is-palette-dragging');
       Utils.clearCellHighlights();
 
@@ -401,7 +397,6 @@ window.WidgetDragController = (function () {
      * Create new widget from palette
      */
     createWidgetFromPalette(widgetType, position) {
-      console.log('[Drag] Creating widget from palette:', widgetType.type, 'at', position);
 
       // Get palette instance to create widget config
       const palette = this.editorApp.palette;
