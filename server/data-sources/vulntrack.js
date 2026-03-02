@@ -3,6 +3,7 @@
 // ===========================================================================
 
 import { DataSource } from './base.js';
+import logger from '../logger.js';
 
 const VULNTRACK_URL = process.env.VULNTRACK_API_URL || 'https://vulntrack.madhive.dev';
 const VULNTRACK_KEY = process.env.VULNTRACK_API_KEY || '';
@@ -41,7 +42,7 @@ export class VulnTrackDataSource extends DataSource {
       ]);
 
       if (!dashRes.ok || !statsRes.ok) {
-        console.error(`[vulntrack] API error: dashboard=${dashRes.status} stats=${statsRes.status}`);
+        logger.error('[vulntrack] API error: dashboard=${dashRes.status} stats=${statsRes.status}');
         return this.cache || null;
       }
 
@@ -53,7 +54,7 @@ export class VulnTrackDataSource extends DataSource {
 
       return this.cache;
     } catch (error) {
-      console.error('[vulntrack] Fetch error:', error.message);
+      logger.error({ error: error.message }, 'VulnTrack fetch error');
       return this.cache || null;
     }
   }
@@ -100,7 +101,7 @@ export class VulnTrackDataSource extends DataSource {
 
       return response.ok;
     } catch (error) {
-      console.error('[vulntrack] Connection test failed:', error.message);
+      logger.error({ error: error.message }, 'VulnTrack connection test failed');
       return false;
     }
   }

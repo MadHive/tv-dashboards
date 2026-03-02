@@ -8,6 +8,7 @@
 
 import monitoring from '@google-cloud/monitoring';
 import { BigQuery } from '@google-cloud/bigquery';
+import logger from './logger.js';
 const client = new monitoring.MetricServiceClient();
 const bq = new BigQuery({ projectId: 'mad-data' });
 
@@ -34,7 +35,7 @@ export async function query(project, metricType, extra, minutes, aggregation) {
     const [ts] = await client.listTimeSeries(req);
     return ts || [];
   } catch (err) {
-    console.error(`[gcp] ${project}/${metricType}: ${err.message}`);
+    logger.error({ project, metricType, error: err.message }, 'GCP metrics query error');
     return [];
   }
 }
@@ -200,10 +201,10 @@ async function getDeliveryGeo() {
       dma: r.dma || null,
     }));
     _bqGeoCacheTime = Date.now();
-    console.log(`[bq] Delivery geo: ${_bqGeoCache.length} zip3 prefixes loaded`);
+    logger.info('[bq] Delivery geo: ${_bqGeoCache.length} zip3 prefixes loaded');
     return _bqGeoCache;
   } catch (err) {
-    console.error(`[bq] Delivery geo query failed: ${err.message}`);
+    logger.error('[bq] Delivery geo query failed: ${err.message}');
     return _bqGeoCache || [];
   }
 }
@@ -1051,7 +1052,7 @@ async function fetchVulnTrack() {
   ]);
 
   if (!dashRes.ok || !statsRes.ok) {
-    console.error(`[vulntrack] API error: dashboard=${dashRes.status} stats=${statsRes.status}`);
+    logger.error('[vulntrack] API error: dashboard=${dashRes.status} stats=${statsRes.status}');
     return _vtCache || null;
   }
 

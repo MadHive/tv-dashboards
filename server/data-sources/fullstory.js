@@ -3,6 +3,7 @@
 // ===========================================================================
 
 import { DataSource } from './base.js';
+import logger from '../logger.js';
 
 const FULLSTORY_API_BASE = 'https://api.fullstory.com';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes

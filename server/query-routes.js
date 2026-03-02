@@ -13,6 +13,8 @@ import {
   restoreBackup
 } from './query-manager.js';
 import { dataSourceRegistry } from './data-source-registry.js';
+import { metricsCollector, timeOperation } from './metrics.js';
+import logger from './logger.js';
 
 /**
  * Universal query routes for all data sources
@@ -259,14 +261,25 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
           ? body.sql
           : `${body.sql.trim().replace(/;?\s*$/, '')} LIMIT 10`;
 
-        const rows = await dataSource.executeQuery(testSql, {}, false); // no cache for tests
+        // Time the query execution
+        const { result: rows, duration, error } = await timeOperation(
+          () => dataSource.executeQuery(testSql, {}, false)
+        );
+
+        // Record metrics
+        metricsCollector.recordDataSourceQuery('bigquery', duration, !!error);
+
+        if (error) {
+          throw error;
+        }
 
         result = {
           success: true,
           message: 'Query executed successfully',
           rowCount: rows?.length || 0,
           preview: rows?.slice(0, 5) || [], // Show first 5 rows
-          sql: testSql
+          sql: testSql,
+          executionTime: `${duration}ms`
         };
       } else if (source === 'gcp') {
         // For GCP Monitoring, validate the metric query structure
@@ -296,7 +309,7 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
 
       return result;
     } catch (error) {
-      console.error('[query-routes] Test execution error:', error);
+      logger.error({ error }, 'Query test execution error');
       return {
         success: false,
         error: error.message,

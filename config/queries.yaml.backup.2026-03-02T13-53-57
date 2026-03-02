@@ -43,7 +43,11 @@ bigquery:
     sql: SELECT COUNT(*) as value FROM test_table
     widgetTypes:
       - big-number
+<<<<<<<< HEAD:config/queries.yaml.backup.2026-03-02T14-09-35
     updatedAt: '2026-03-02T14:09:35.373Z'
+========
+    updatedAt: '2026-03-02T13:53:57.060Z'
+>>>>>>>> f33ed20121c43502c16d54afdf16379bf32dc7e3:config/queries.yaml.backup.2026-03-02T13-53-57
     createdAt: '2026-02-26T17:39:15.018Z'
   - id: update-test
     name: Updated Name
@@ -51,35 +55,55 @@ bigquery:
     widgetTypes:
       - big-number
       - stat-card
+<<<<<<<< HEAD:config/queries.yaml.backup.2026-03-02T14-09-35
     updatedAt: '2026-03-02T14:09:35.376Z'
+========
+    updatedAt: '2026-03-02T13:53:57.062Z'
+>>>>>>>> f33ed20121c43502c16d54afdf16379bf32dc7e3:config/queries.yaml.backup.2026-03-02T13-53-57
     createdAt: '2026-02-26T17:39:15.024Z'
   - id: retrieve-test
     name: Retrieve Test
     sql: SELECT * FROM test
     widgetTypes:
       - big-number
+<<<<<<<< HEAD:config/queries.yaml.backup.2026-03-02T14-09-35
     updatedAt: '2026-03-02T14:09:35.377Z'
+========
+    updatedAt: '2026-03-02T13:53:57.063Z'
+>>>>>>>> f33ed20121c43502c16d54afdf16379bf32dc7e3:config/queries.yaml.backup.2026-03-02T13-53-57
     createdAt: '2026-02-26T17:39:15.026Z'
   - id: list-test-1
     name: List Test 1
     sql: SELECT 1
     widgetTypes:
       - big-number
+<<<<<<<< HEAD:config/queries.yaml.backup.2026-03-02T14-09-35
     updatedAt: '2026-03-02T14:09:35.379Z'
+========
+    updatedAt: '2026-03-02T13:53:57.064Z'
+>>>>>>>> f33ed20121c43502c16d54afdf16379bf32dc7e3:config/queries.yaml.backup.2026-03-02T13-53-57
     createdAt: '2026-02-26T17:39:15.028Z'
   - id: list-test-2
     name: List Test 2
     sql: SELECT 2
     widgetTypes:
       - stat-card
+<<<<<<<< HEAD:config/queries.yaml.backup.2026-03-02T14-09-35
     updatedAt: '2026-03-02T14:09:35.380Z'
+========
+    updatedAt: '2026-03-02T13:53:57.065Z'
+>>>>>>>> f33ed20121c43502c16d54afdf16379bf32dc7e3:config/queries.yaml.backup.2026-03-02T13-53-57
     createdAt: '2026-02-26T17:39:15.028Z'
   - id: backup-test
     name: Backup Test
     sql: SELECT 1
     widgetTypes:
       - big-number
+<<<<<<<< HEAD:config/queries.yaml.backup.2026-03-02T14-09-35
     updatedAt: '2026-03-02T14:09:35.385Z'
+========
+    updatedAt: '2026-03-02T13:53:57.069Z'
+>>>>>>>> f33ed20121c43502c16d54afdf16379bf32dc7e3:config/queries.yaml.backup.2026-03-02T13-53-57
     createdAt: '2026-02-26T17:39:15.032Z'
   - id: persist-test
     name: Persistence Test
@@ -151,5 +175,9 @@ gcp:
     widgetTypes:
       - big-number
       - line-chart
+<<<<<<<< HEAD:config/queries.yaml.backup.2026-03-02T14-09-35
     updatedAt: '2026-03-02T14:09:35.374Z'
+========
+    updatedAt: '2026-03-02T13:53:57.061Z'
+>>>>>>>> f33ed20121c43502c16d54afdf16379bf32dc7e3:config/queries.yaml.backup.2026-03-02T13-53-57
     createdAt: '2026-02-26T17:39:15.022Z'

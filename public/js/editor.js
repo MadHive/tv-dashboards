@@ -325,14 +325,44 @@ window.EditorApp = (function () {
       if (!widgetElement) return;
 
       // Apply changes to the DOM for live preview
-      if (updates.title) {
+
+      // 1. Title changes
+      if (updates.title !== undefined) {
         const titleEl = widgetElement.querySelector('.widget-title');
         if (titleEl) titleEl.textContent = updates.title;
       }
 
-      // Position changes require grid updates
+      // 2. Position and size changes
       if (updates.position) {
         this.updateWidgetPosition(widgetElement, updates.position);
+
+        // Update resize handles if this is the selected widget
+        if (this.selectedWidgetElement === widgetElement && this.resizeController) {
+          const currentDash = this.modifiedConfig.dashboards[this.dashboardApp.currentPage];
+          const widgetConfig = currentDash.widgets.find(w => w.id === widgetId);
+          if (widgetConfig) {
+            this.resizeController.removeHandles(widgetElement);
+            this.resizeController.attachHandles(widgetElement, widgetConfig);
+          }
+        }
+      }
+
+      // 3. Type changes require complete widget re-render
+      if (updates.type !== undefined) {
+        this.reRenderWidget(widgetId, widgetElement);
+        return; // Don't process other updates after type change
+      }
+
+      // 4. Widget-specific property changes (unit, sparkline, min/max, etc.)
+      // These require re-rendering to take effect
+      if (updates.unit !== undefined ||
+          updates.sparkline !== undefined ||
+          updates.min !== undefined ||
+          updates.max !== undefined ||
+          updates.source !== undefined ||
+          updates.queryId !== undefined ||
+          updates.project !== undefined) {
+        this.reRenderWidget(widgetId, widgetElement);
       }
     }
 
@@ -340,6 +370,108 @@ window.EditorApp = (function () {
       const { col, row, colSpan, rowSpan } = position;
       element.style.gridColumn = `${col} / span ${colSpan || 1}`;
       element.style.gridRow = `${row} / span ${rowSpan || 1}`;
+    }
+
+    reRenderWidget(widgetId, widgetElement) {
+      // Re-render a widget when its type or configuration changes
+      const currentDash = this.modifiedConfig.dashboards[this.dashboardApp.currentPage];
+      const widgetConfig = currentDash.widgets.find(w => w.id === widgetId);
+
+      if (!widgetConfig) {
+        console.error('[Editor] Widget config not found:', widgetId);
+        return;
+      }
+
+      // Preserve the selected state
+      const wasSelected = widgetElement.classList.contains('selected');
+
+      // Update widget class
+      widgetElement.className = `widget widget-${widgetConfig.type}`;
+      if (wasSelected) widgetElement.classList.add('selected');
+      widgetElement.classList.add('editable');
+
+      // Re-apply position
+      this.updateWidgetPosition(widgetElement, widgetConfig.position);
+
+      // Clear and re-render content
+      const titleEl = widgetElement.querySelector('.widget-title');
+      const contentEl = widgetElement.querySelector('.widget-content');
+
+      if (titleEl) {
+        titleEl.textContent = widgetConfig.title;
+      }
+
+      if (contentEl) {
+        // Clear existing content safely
+        while (contentEl.firstChild) {
+          contentEl.removeChild(contentEl.firstChild);
+        }
+
+        // Re-create widget renderer
+        const widgetKey = currentDash.id + ':' + widgetId;
+        try {
+          this.dashboardApp.widgets[widgetKey] = window.Widgets.create(
+            widgetConfig.type,
+            contentEl,
+            widgetConfig
+          );
+
+          // Trigger a data refresh for this widget
+          this.refreshWidgetData(widgetKey);
+        } catch (error) {
+          console.error('[Editor] Failed to re-render widget:', error);
+          const errorDiv = document.createElement('div');
+          errorDiv.style.color = 'red';
+          errorDiv.style.padding = '10px';
+          errorDiv.textContent = 'Failed to render widget';
+          contentEl.appendChild(errorDiv);
+        }
+      }
+
+      // Re-attach resize handles if selected
+      if (wasSelected && this.resizeController) {
+        this.resizeController.removeHandles(widgetElement);
+        this.resizeController.attachHandles(widgetElement, widgetConfig);
+      }
+    }
+
+    async refreshWidgetData(widgetKey) {
+      // Refresh data for a specific widget
+      const [dashboardId, widgetId] = widgetKey.split(':');
+      const dash = this.modifiedConfig.dashboards.find(d => d.id === dashboardId);
+      if (!dash) return;
+
+      const widget = dash.widgets.find(w => w.id === widgetId);
+      if (!widget) return;
+
+      const renderer = this.dashboardApp.widgets[widgetKey];
+      if (!renderer || !renderer.update) return;
+
+      try {
+        // Construct the API endpoint based on widget source
+        let endpoint;
+        if (widget.queryId) {
+          // Use query-based endpoint
+          endpoint = `/api/data/${widget.source}?queryId=${widget.queryId}`;
+        } else {
+          // Use legacy metric endpoint
+          const params = new URLSearchParams();
+          if (widget.metric) params.set('metric', widget.metric);
+          if (widget.project) params.set('project', widget.project);
+          endpoint = `/api/data/${widget.source}?${params.toString()}`;
+        }
+
+        const res = await fetch(endpoint);
+        if (!res.ok) {
+          console.warn('[Editor] Failed to fetch widget data:', res.statusText);
+          return;
+        }
+
+        const data = await res.json();
+        renderer.update(data);
+      } catch (error) {
+        console.error('[Editor] Error refreshing widget data:', error);
+      }
     }
 
     deleteWidget(widgetId) {

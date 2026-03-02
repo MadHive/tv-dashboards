@@ -7,6 +7,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { load, dump } from 'js-yaml';
 import { validateConfig, validateDashboard } from './config-validator.js';
+import logger from './logger.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const CONFIG_PATH = join(__dirname, '..', 'config', 'dashboards.yaml');
@@ -27,7 +28,7 @@ export function loadConfig() {
 
     return config;
   } catch (error) {
-    console.error('[config-manager] Failed to load config:', error.message);
+    logger.error({ error: error.message }, 'Failed to load config');
     throw new Error(`Failed to load configuration: ${error.message}`);
   }
 }
@@ -61,10 +62,10 @@ export async function saveConfig(config) {
     // Write to file
     writeFileSync(CONFIG_PATH, yamlContent, 'utf8');
 
-    console.log('[config-manager] Configuration saved successfully');
+    logger.info('Configuration saved successfully');
     return { success: true };
   } catch (error) {
-    console.error('[config-manager] Failed to save config:', error.message);
+    logger.error({ error: error.message }, 'Failed to save config');
     throw error;
   }
 }
@@ -96,10 +97,10 @@ export async function updateDashboard(dashboardId, dashboardData) {
     // Save updated config
     await saveConfig(config);
 
-    console.log('[config-manager] Dashboard updated:', dashboardId);
+    logger.info({ dashboardId }, 'Dashboard updated');
     return { success: true, dashboard: dashboardData };
   } catch (error) {
-    console.error('[config-manager] Failed to update dashboard:', error.message);
+    logger.error({ error: error.message }, 'Failed to update dashboard');
     throw error;
   }
 }
@@ -130,10 +131,10 @@ export async function createDashboard(dashboardData) {
     // Save updated config
     await saveConfig(config);
 
-    console.log('[config-manager] Dashboard created:', dashboardData.id);
+    logger.info({ dashboardId: dashboardData.id }, 'Dashboard created');
     return { success: true, dashboard: dashboardData };
   } catch (error) {
-    console.error('[config-manager] Failed to create dashboard:', error.message);
+    logger.error({ error: error.message }, 'Failed to create dashboard');
     throw error;
   }
 }
@@ -164,10 +165,10 @@ export async function deleteDashboard(dashboardId) {
     // Save updated config
     await saveConfig(config);
 
-    console.log('[config-manager] Dashboard deleted:', dashboardId);
+    logger.info({ dashboardId }, 'Dashboard deleted');
     return { success: true, deleted };
   } catch (error) {
-    console.error('[config-manager] Failed to delete dashboard:', error.message);
+    logger.error({ error: error.message }, 'Failed to delete dashboard');
     throw error;
   }
 }
@@ -178,7 +179,7 @@ export async function deleteDashboard(dashboardId) {
 export async function createBackup() {
   try {
     if (!existsSync(CONFIG_PATH)) {
-      console.warn('[config-manager] No config file to backup');
+      logger.warn('No config file to backup');
       return null;
     }
 
@@ -192,14 +193,14 @@ export async function createBackup() {
     // Write backup
     writeFileSync(backupPath, content, 'utf8');
 
-    console.log('[config-manager] Backup created:', backupPath);
+    logger.info({ backupPath }, 'Config backup created');
 
     // Clean up old backups
     await cleanupOldBackups();
 
     return backupPath;
   } catch (error) {
-    console.error('[config-manager] Failed to create backup:', error.message);
+    logger.error({ error: error.message }, 'Failed to create config backup');
     // Don't throw - backups are best-effort
     return null;
   }
@@ -226,11 +227,11 @@ async function cleanupOldBackups() {
       const toDelete = backups.slice(MAX_BACKUPS);
       toDelete.forEach(backup => {
         unlinkSync(backup.path);
-        console.log('[config-manager] Deleted old backup:', backup.name);
+        logger.info({ backup: backup.name }, 'Deleted old config backup');
       });
     }
   } catch (error) {
-    console.error('[config-manager] Failed to cleanup backups:', error.message);
+    logger.error({ error: error.message }, 'Failed to cleanup config backups');
     // Don't throw - cleanup is best-effort
   }
 }
@@ -252,7 +253,7 @@ export function listBackups() {
 
     return backups;
   } catch (error) {
-    console.error('[config-manager] Failed to list backups:', error.message);
+    logger.error({ error: error.message }, 'Failed to list config backups');
     return [];
   }
 }
@@ -284,10 +285,10 @@ export async function restoreBackup(backupFilename) {
     // Restore backup
     writeFileSync(CONFIG_PATH, content, 'utf8');
 
-    console.log('[config-manager] Restored from backup:', backupFilename);
+    logger.info({ backupFilename }, 'Restored config from backup');
     return { success: true, backup: backupFilename };
   } catch (error) {
-    console.error('[config-manager] Failed to restore backup:', error.message);
+    logger.error({ error: error.message }, 'Failed to restore config from backup');
     throw error;
   }
 }

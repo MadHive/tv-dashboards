@@ -13,6 +13,7 @@ import { hotJarDataSource } from './data-sources/hotjar.js';
 import { fullStoryDataSource } from './data-sources/fullstory.js';
 import { zendeskDataSource } from './data-sources/zendesk.js';
 import { bigQueryDataSource } from './data-sources/bigquery.js';
+import logger from './logger.js';
 
 /**
  * Central registry for managing data source plugins
@@ -29,7 +30,7 @@ class DataSourceRegistry {
   async initialize() {
     if (this.initialized) return;
 
-    console.log('[registry] Initializing data source registry...');
+    logger.info('Initializing data source registry');
 
     // Register all data sources
     this.register(gcpDataSource);
@@ -47,14 +48,14 @@ class DataSourceRegistry {
     // Initialize all sources
     const initPromises = Array.from(this.sources.values()).map(source =>
       source.initialize().catch(err =>
-        console.warn(`[registry] Failed to initialize ${source.name}:`, err.message)
+        logger.warn({ dataSource: source.name, error: err.message }, 'Failed to initialize data source')
       )
     );
 
     await Promise.all(initPromises);
 
     this.initialized = true;
-    console.log(`[registry] Registered ${this.sources.size} data sources`);
+    logger.info({ count: this.sources.size }, 'Registered data sources');
   }
 
   /**
@@ -62,12 +63,12 @@ class DataSourceRegistry {
    */
   register(dataSource) {
     if (this.sources.has(dataSource.name)) {
-      console.warn(`[registry] Data source already registered: ${dataSource.name}`);
+      logger.warn({ dataSource: dataSource.name }, 'Data source already registered');
       return;
     }
 
     this.sources.set(dataSource.name, dataSource);
-    console.log(`[registry] Registered data source: ${dataSource.name}`);
+    logger.info({ dataSource: dataSource.name }, 'Registered data source');
   }
 
   /**
@@ -107,7 +108,7 @@ class DataSourceRegistry {
 
     // Check if source exists
     if (!this.sources.has(sourceName)) {
-      console.warn(`[registry] Unknown data source: ${sourceName}, falling back to mock`);
+      logger.warn({ dataSource: sourceName }, 'Unknown data source, falling back to mock');
       return mockDataSource.fetchMetrics({ ...widgetConfig, dashboardId });
     }
 
@@ -116,7 +117,7 @@ class DataSourceRegistry {
     // Validate widget config
     const validationErrors = source.validateWidgetConfig(widgetConfig);
     if (validationErrors.length > 0) {
-      console.warn(`[registry] Widget validation failed for ${sourceName}:`, validationErrors);
+      logger.warn({ dataSource: sourceName, errors: validationErrors }, 'Widget validation failed');
       // Fall back to mock data on validation error
       return mockDataSource.fetchMetrics({ ...widgetConfig, dashboardId });
     }
@@ -125,7 +126,7 @@ class DataSourceRegistry {
       // Fetch from data source
       return await source.fetchMetrics({ ...widgetConfig, dashboardId });
     } catch (error) {
-      console.error(`[registry] Error fetching from ${sourceName}:`, error.message);
+      logger.error({ dataSource: sourceName, error: error.message }, 'Error fetching from data source');
       // Return error-handled data (which may include mock fallback)
       return source.handleError(error, widgetConfig.type);
     }
@@ -146,7 +147,7 @@ class DataSourceRegistry {
         try {
           return await source.gcpMetrics.getMetrics(dashboardId);
         } catch (err) {
-          console.error('[registry] Legacy GCP fetch failed, using mock:', err.message);
+          logger.error({ error: err.message }, 'Legacy GCP fetch failed, using mock');
         }
       }
       return mockDataSource.fetchMetrics({ dashboardId, type: 'dashboard' });
@@ -158,7 +159,7 @@ class DataSourceRegistry {
         const data = await this.fetchMetrics(widget, dashboardId);
         return { widgetId: widget.id, data };
       } catch (error) {
-        console.error(`[registry] Failed to fetch widget ${widget.id}:`, error.message);
+        logger.error({ widgetId: widget.id, error: error.message }, 'Failed to fetch widget');
         return { widgetId: widget.id, data: { error: error.message } };
       }
     });
@@ -210,5 +211,5 @@ export const dataSourceRegistry = new DataSourceRegistry();
 
 // Initialize on import
 dataSourceRegistry.initialize().catch(err =>
-  console.error('[registry] Failed to initialize:', err)
+  logger.error({ error: err.message || String(err) }, 'Failed to initialize data source registry')
 );

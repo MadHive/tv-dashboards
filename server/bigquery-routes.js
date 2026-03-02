@@ -4,6 +4,7 @@
 
 import { Elysia, t } from 'elysia';
 import { bigQueryDataSource } from './data-sources/bigquery.js';
+import logger from './logger.js';
 
 /**
  * BigQuery routes for query management
@@ -258,7 +259,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
                     columns: schema?.fields || []
                   };
                 } catch (error) {
-                  console.error(`[bigquery] Failed to get schema for ${dataset.id}.${table.id}:`, error.message);
+                  logger.error({ datasetId: dataset.id, tableId: table.id, error: error.message }, 'Failed to get BigQuery table schema');
                   return {
                     id: table.id,
                     name: table.name,
@@ -274,7 +275,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
               tables: tablesWithColumns
             };
           } catch (error) {
-            console.error(`[bigquery] Failed to list tables for ${dataset.id}:`, error.message);
+            logger.error({ datasetId: dataset.id, error: error.message }, 'Failed to list BigQuery tables');
             return {
               id: dataset.id,
               name: dataset.name,
