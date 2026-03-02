@@ -166,8 +166,74 @@ export class DataDogDataSource extends DataSource {
     };
   }
 
-  transformData(raw, widgetType) {
-    return raw;
+  /**
+   * Transform DataDog API response to widget format
+   */
+  transformData(response, widgetType) {
+    if (!response || !response.series || response.series.length === 0) {
+      return this.getEmptyData(widgetType);
+    }
+
+    const series = response.series[0];
+    const pointlist = series.pointlist || [];
+
+    if (pointlist.length === 0) {
+      return this.getEmptyData(widgetType);
+    }
+
+    switch (widgetType) {
+      case 'big-number':
+      case 'stat-card': {
+        const latestValue = pointlist[pointlist.length - 1][1];
+        const previousValue = pointlist.length > 1 ? pointlist[pointlist.length - 2][1] : latestValue;
+        const trend = latestValue > previousValue ? 'up' : latestValue < previousValue ? 'down' : 'stable';
+
+        return {
+          value: Math.round(latestValue * 100) / 100,
+          previous: Math.round(previousValue * 100) / 100,
+          trend,
+          unit: series.unit || ''
+        };
+      }
+
+      case 'gauge':
+      case 'gauge-row': {
+        const latestValue = pointlist[pointlist.length - 1][1];
+        return {
+          value: Math.round(latestValue * 100) / 100,
+          min: 0,
+          max: 100,
+          unit: '%'
+        };
+      }
+
+      case 'line-chart':
+      case 'sparkline': {
+        return {
+          labels: pointlist.map(p => new Date(p[0]).toISOString()),
+          values: pointlist.map(p => Math.round(p[1] * 100) / 100),
+          series: series.metric || 'Value'
+        };
+      }
+
+      case 'bar-chart': {
+        const lastN = Math.min(10, pointlist.length);
+        const recentPoints = pointlist.slice(-lastN);
+
+        return {
+          values: recentPoints.map(p => ({
+            label: new Date(p[0]).toLocaleTimeString(),
+            value: Math.round(p[1] * 100) / 100
+          }))
+        };
+      }
+
+      default:
+        return {
+          pointlist,
+          metric: series.metric
+        };
+    }
   }
 
   getMockData(widgetType) {

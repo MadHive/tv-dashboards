@@ -38,6 +38,76 @@ describe('DataDog Data Source', () => {
     });
   });
 
+  describe('fetchMetrics() - without credentials', () => {
+    it('should return mock data when client not initialized', async () => {
+      const result = await dataSource.fetchMetrics({
+        id: 'test-widget',
+        type: 'big-number'
+      });
+
+      expect(result).toHaveProperty('timestamp');
+      expect(result).toHaveProperty('source');
+      expect(result).toHaveProperty('data');
+      expect(result.source).toBe('datadog');
+    });
+  });
+
+  describe('transformData()', () => {
+    it('should handle empty results', () => {
+      const result = dataSource.transformData(null, 'big-number');
+      expect(result).toBeDefined();
+    });
+
+    it('should transform big-number data correctly', () => {
+      const mockResponse = {
+        series: [{
+          pointlist: [[1704110400000, 45.5], [1704110700000, 50.2], [1704111000000, 55.8]],
+          metric: 'system.cpu.user'
+        }]
+      };
+
+      const result = dataSource.transformData(mockResponse, 'big-number');
+
+      expect(result).toHaveProperty('value');
+      expect(result).toHaveProperty('previous');
+      expect(result).toHaveProperty('trend');
+      expect(result.value).toBe(55.8);
+      expect(result.trend).toBe('up');
+    });
+
+    it('should transform gauge data correctly', () => {
+      const mockResponse = {
+        series: [{
+          pointlist: [[1704110400000, 75.5]],
+          metric: 'system.cpu.user'
+        }]
+      };
+
+      const result = dataSource.transformData(mockResponse, 'gauge');
+
+      expect(result).toHaveProperty('value');
+      expect(result).toHaveProperty('min');
+      expect(result).toHaveProperty('max');
+      expect(result.value).toBe(75.5);
+    });
+
+    it('should transform line-chart data correctly', () => {
+      const mockResponse = {
+        series: [{
+          pointlist: [[1704110400000, 10], [1704110700000, 20], [1704111000000, 30]],
+          metric: 'requests.count'
+        }]
+      };
+
+      const result = dataSource.transformData(mockResponse, 'line-chart');
+
+      expect(result).toHaveProperty('labels');
+      expect(result).toHaveProperty('values');
+      expect(result.labels.length).toBe(3);
+      expect(result.values).toEqual([10, 20, 30]);
+    });
+  });
+
   describe('getMockData()', () => {
     it('should return mock data for big-number widget', () => {
       const data = dataSource.getMockData('big-number');
