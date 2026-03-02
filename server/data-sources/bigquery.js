@@ -139,11 +139,29 @@ export class BigQueryDataSource extends DataSource {
   }
 
   /**
+   * Extract time period from query description
+   * @param {string} description - Query description text
+   * @returns {string|null} Human-readable time period or null
+   */
+  extractTimePeriod(description) {
+    if (!description) return null;
+
+    // Match patterns like "last 30 days", "last 1 hour", etc.
+    const match = description.match(/last\s+\d+\s+(day|hour|minute|week|month)s?/i);
+    if (match) {
+      // Capitalize first letter
+      return match[0].charAt(0).toUpperCase() + match[0].slice(1);
+    }
+    return null;
+  }
+
+  /**
    * Fetch metrics using widget config
    */
   async fetchMetrics(widgetConfig) {
     try {
       let rows;
+      let timePeriod = null;
 
       // Check if widget has a saved query reference
       if (widgetConfig.queryId) {
@@ -154,6 +172,9 @@ export class BigQueryDataSource extends DataSource {
         if (!savedQuery) {
           throw new Error(`Saved query not found: ${widgetConfig.queryId}`);
         }
+
+        // Extract time period from query description
+        timePeriod = this.extractTimePeriod(savedQuery.description);
 
         // Execute saved query
         rows = await this.executeQuery(
@@ -177,8 +198,8 @@ export class BigQueryDataSource extends DataSource {
         throw new Error('No query defined for widget');
       }
 
-      // Transform data for widget type
-      const transformed = this.transformData(rows, widgetConfig.type);
+      // Transform data for widget type with time period metadata
+      const transformed = this.transformData(rows, widgetConfig.type, { timePeriod });
 
       return {
         timestamp: new Date().toISOString(),
@@ -378,8 +399,14 @@ export class BigQueryDataSource extends DataSource {
 
   /**
    * Transform query results to widget format
+   * @param {Array} rows - Query result rows
+   * @param {string} widgetType - Widget type
+   * @param {object} options - Transform options
+   * @param {string} options.timePeriod - Time period metadata
    */
-  transformData(rows, widgetType) {
+  transformData(rows, widgetType, options = {}) {
+    const { timePeriod } = options;
+
     if (!rows || rows.length === 0) {
       return this.getEmptyData(widgetType);
     }
@@ -393,7 +420,8 @@ export class BigQueryDataSource extends DataSource {
           value: row.value !== undefined ? row.value : Object.values(row)[0],
           label: row.label,
           trend: row.trend,
-          unit: row.unit
+          unit: row.unit,
+          ...(timePeriod && { timePeriod })
         };
       }
 
@@ -407,7 +435,8 @@ export class BigQueryDataSource extends DataSource {
           thresholds: {
             warning: row.warning,
             critical: row.critical
-          }
+          },
+          ...(timePeriod && { timePeriod })
         };
       }
 
@@ -418,7 +447,8 @@ export class BigQueryDataSource extends DataSource {
             label: row.label || row.name,
             value: row.value !== undefined ? row.value : row.count,
             color: row.color
-          }))
+          })),
+          ...(timePeriod && { timePeriod })
         };
       }
 
@@ -446,7 +476,8 @@ export class BigQueryDataSource extends DataSource {
             data,
             color: rows.find(r => (r.series || 'value') === label)?.color
           })),
-          timestamps
+          timestamps,
+          ...(timePeriod && { timePeriod })
         };
       }
 
