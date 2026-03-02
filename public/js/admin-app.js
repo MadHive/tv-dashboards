@@ -6,6 +6,7 @@ import { AdminAPI } from './admin-api.js';
 import { DashboardForm } from './admin-components.js';
 import { ThemeSelector } from './components/theme-selector.js';
 import { TVPreview } from './components/tv-preview.js';
+import { TemplateBrowser } from './components/template-browser.js';
 
 class AdminApp {
   constructor() {
@@ -14,6 +15,7 @@ class AdminApp {
     this.selectedDashboards = new Set();
     this.currentForm = null;
     this.themeSelector = null;
+    this.templateBrowser = null;
     this.selectedTheme = null;
     this.currentTab = 'dashboards';
     this.init();
@@ -116,6 +118,9 @@ class AdminApp {
     if (tabName === 'themes' && !this.themeSelector) {
       await this.initializeThemeSelector();
     }
+    if (tabName === 'templates' && !this.templateBrowser) {
+      await this.initializeTemplateBrowser();
+    }
   }
 
   async initializeThemeSelector() {
@@ -139,6 +144,63 @@ class AdminApp {
     } catch (error) {
       console.error('Failed to load themes:', error);
       this.showToast('Failed to load themes', 'error');
+    }
+  }
+
+  async initializeTemplateBrowser() {
+    const container = document.getElementById('template-browser-container');
+    if (!container) {
+      console.error('Template browser container not found');
+      return;
+    }
+
+    this.templateBrowser = new TemplateBrowser({
+      container: container,
+      onSelect: (template) => {
+        this.createDashboardFromTemplate(template);
+      }
+    });
+
+    try {
+      await this.templateBrowser.loadTemplates('/api/templates');
+    } catch (error) {
+      console.error('Failed to load templates:', error);
+      this.showToast('Failed to load templates', 'error');
+    }
+  }
+
+  async createDashboardFromTemplate(template) {
+    if (!template.dashboard) {
+      this.showToast('Invalid template: missing dashboard configuration', 'error');
+      return;
+    }
+
+    // Generate a unique ID based on template name
+    const timestamp = Date.now();
+    const baseId = template.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const newId = `${baseId}-${timestamp}`;
+
+    // Create new dashboard from template
+    const newDashboard = {
+      ...template.dashboard,
+      id: newId,
+      name: `${template.name} (from template)`,
+      subtitle: template.dashboard.subtitle || template.description || ''
+    };
+
+    try {
+      await this.api.createDashboard(newDashboard);
+      this.showToast(`Dashboard "${newDashboard.name}" created successfully!`);
+
+      // Switch to dashboards tab and reload
+      const dashboardsTab = document.querySelector('.admin-tab[data-tab="dashboards"]');
+      if (dashboardsTab) {
+        dashboardsTab.click();
+      }
+      await this.loadDashboards();
+    } catch (error) {
+      console.error('Failed to create dashboard from template:', error);
+      this.showToast(`Error: ${error.message}`, 'error');
     }
   }
 
