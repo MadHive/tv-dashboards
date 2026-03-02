@@ -73,6 +73,39 @@ export VULNTRACK_API_URL=https://vulntrack.madhive.dev
 export VULNTRACK_API_KEY=your-api-key
 ```
 
+## Interfaces
+
+The system provides two primary interfaces for different purposes:
+
+### Dashboard Viewer (`/`)
+
+**URL:** `http://tv.madhive.local`
+
+**Purpose:** Real-time dashboard display for TV screens
+
+**Features:**
+- View rotating dashboards with live metrics
+- Keyboard navigation (arrow keys, number keys)
+- **Ctrl+E** - Enter visual edit mode (drag, resize, configure widgets)
+- **Ctrl+Q** - Open query editor (create/manage data queries)
+
+**Use when:** Displaying dashboards on TV screens or viewing live data
+
+### Admin Panel (`/admin`)
+
+**URL:** `http://tv.madhive.local/admin`
+
+**Purpose:** Configuration and management interface
+
+**Features:**
+- Create/edit/delete dashboards
+- Browse and apply templates
+- Manage themes and styling
+- Configure data sources (credentials, connection testing)
+- Import/export dashboards
+
+**Use when:** Creating new dashboards, managing templates, or configuring data sources
+
 ## Using the WYSIWYG Editor
 
 ### Enter Edit Mode

@@ -60,9 +60,6 @@ export class SalesforceDataSource extends DataSource {
    */
   async initialize() {
     try {
-      // Check if connection info is available
-      if (!this.instanceUrl) {
-        console.warn('[salesforce] No Salesforce instance URL found - data source will use mock data');
       // Check if we have credentials
       const hasOAuth = this.username && this.password;
       const hasToken = this.accessToken && this.instanceUrl;
@@ -73,8 +70,6 @@ export class SalesforceDataSource extends DataSource {
         return;
       }
 
-      // Use access token if available, otherwise OAuth username/password flow
-      if (this.accessToken) {
       // Create connection with appropriate login URL
       const loginUrl = this.isSandbox
         ? 'https://test.salesforce.com'
@@ -86,24 +81,6 @@ export class SalesforceDataSource extends DataSource {
           instanceUrl: this.instanceUrl,
           accessToken: this.accessToken
         });
-      } else if (this.username && this.password) {
-        this.connection = new jsforce.Connection({
-          loginUrl: this.instanceUrl
-        });
-
-        // Login with OAuth credentials
-        await this.connection.login(this.username, this.password);
-      } else {
-        console.warn('[salesforce] No authentication credentials found - data source will use mock data');
-        this.isConnected = false;
-        return;
-      }
-
-      this.isConnected = true;
-      console.log('[salesforce] Salesforce connection initialized for:', this.instanceUrl);
-    } catch (error) {
-      console.error('[salesforce] Failed to initialize:', error.message);
-
         console.log({ instanceUrl: this.instanceUrl }, 'Salesforce connection initialized with access token');
       }
       // Otherwise use OAuth username/password flow
@@ -388,9 +365,6 @@ export class SalesforceDataSource extends DataSource {
           type: 'string',
           required: false,
           description: 'Salesforce password (if using OAuth)',
-          secure: true,
-          envVar: 'SALESFORCE_PASSWORD'
-          description: 'Salesforce password',
           secure: true,
           envVar: 'SALESFORCE_PASSWORD'
         },
