@@ -2,6 +2,8 @@
 // DataSource Base Class — Abstract interface for data source plugins
 // ===========================================================================
 
+import logger from '../logger.js';
+
 /**
  * Abstract base class for data source plugins.
  * All data sources must extend this class and implement required methods.
