@@ -489,16 +489,27 @@ window.PropertyPanel = (function () {
 
         const theme = data.theme;
 
-        // Apply theme colors as CSS custom properties
-        const root = document.documentElement;
-        root.style.setProperty('--theme-primary', theme.colors.primary);
-        root.style.setProperty('--theme-secondary', theme.colors.secondary);
-        root.style.setProperty('--theme-accent', theme.colors.accent);
-        root.style.setProperty('--theme-background', theme.colors.background);
-        root.style.setProperty('--theme-surface', theme.colors.surface);
-        root.style.setProperty('--theme-text-primary', theme.colors.textPrimary);
-        root.style.setProperty('--theme-text-secondary', theme.colors.textSecondary);
-        root.style.setProperty('--theme-border', theme.colors.border);
+        // Validate color format before applying to prevent injection
+        const colorRegex = /^(#[0-9A-Fa-f]{3,8}|rgba?\([\d\s,%.]+\)|[a-z]+)$/i;
+        const safeSetColor = (property, value) => {
+          if (value && colorRegex.test(value)) {
+            document.documentElement.style.setProperty(property, value);
+          } else {
+            console.warn(`[PropertyPanel] Invalid color format for ${property}: ${value}`);
+          }
+        };
+
+        // Apply theme colors as CSS custom properties with validation
+        if (theme.colors) {
+          safeSetColor('--theme-primary', theme.colors.primary);
+          safeSetColor('--theme-secondary', theme.colors.secondary);
+          safeSetColor('--theme-accent', theme.colors.accent);
+          safeSetColor('--theme-background', theme.colors.background);
+          safeSetColor('--theme-surface', theme.colors.surface);
+          safeSetColor('--theme-text-primary', theme.colors.textPrimary);
+          safeSetColor('--theme-text-secondary', theme.colors.textSecondary);
+          safeSetColor('--theme-border', theme.colors.border);
+        }
       } catch (error) {
         console.error('[PropertyPanel] Failed to apply theme visually:', error);
       }
@@ -588,15 +599,21 @@ window.PropertyPanel = (function () {
       const source = document.getElementById('prop-source').value;
       const queryId = document.getElementById('prop-query').value;
 
+      // Parse and validate position values
+      const col = parseInt(document.getElementById('prop-col').value);
+      const row = parseInt(document.getElementById('prop-row').value);
+      const colSpan = parseInt(document.getElementById('prop-colspan').value);
+      const rowSpan = parseInt(document.getElementById('prop-rowspan').value);
+
       const values = {
         type,
         title: document.getElementById('prop-title').value,
         source,
         position: {
-          col: parseInt(document.getElementById('prop-col').value),
-          row: parseInt(document.getElementById('prop-row').value),
-          colSpan: parseInt(document.getElementById('prop-colspan').value),
-          rowSpan: parseInt(document.getElementById('prop-rowspan').value)
+          col: isNaN(col) || col < 1 ? 1 : col,
+          row: isNaN(row) || row < 1 ? 1 : row,
+          colSpan: isNaN(colSpan) || colSpan < 1 ? 1 : colSpan,
+          rowSpan: isNaN(rowSpan) || rowSpan < 1 ? 1 : rowSpan
         }
       };
 
@@ -617,11 +634,11 @@ window.PropertyPanel = (function () {
       const sparkline = document.getElementById('prop-sparkline').checked;
       if (sparkline) values.sparkline = true;
 
-      const min = document.getElementById('prop-min').value;
-      if (min !== '') values.min = parseFloat(min);
+      const minValue = parseFloat(document.getElementById('prop-min').value);
+      if (!isNaN(minValue)) values.min = minValue;
 
-      const max = document.getElementById('prop-max').value;
-      if (max !== '') values.max = parseFloat(max);
+      const maxValue = parseFloat(document.getElementById('prop-max').value);
+      if (!isNaN(maxValue)) values.max = maxValue;
 
       return values;
     }
@@ -689,7 +706,7 @@ window.PropertyPanel = (function () {
       const currentDash = this.editorApp.modifiedConfig.dashboards[this.editorApp.dashboardApp.currentPage];
       if (!currentDash) return;
 
-      // Get form values
+      // Get and parse form values
       const name = document.getElementById('dashboard-name').value.trim();
       const subtitle = document.getElementById('dashboard-subtitle').value.trim();
       const icon = document.getElementById('dashboard-icon').value;
@@ -704,8 +721,19 @@ window.PropertyPanel = (function () {
         return;
       }
 
-      if (columns < 1 || rows < 1) {
-        alert('Grid columns and rows must be at least 1');
+      // Validate parsed integers
+      if (isNaN(columns) || columns < 1 || columns > 12) {
+        alert('Grid columns must be a number between 1 and 12');
+        return;
+      }
+
+      if (isNaN(rows) || rows < 1 || rows > 12) {
+        alert('Grid rows must be a number between 1 and 12');
+        return;
+      }
+
+      if (isNaN(gap) || gap < 0 || gap > 100) {
+        alert('Grid gap must be a number between 0 and 100');
         return;
       }
 
