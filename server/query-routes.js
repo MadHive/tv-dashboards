@@ -221,93 +221,174 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
 
   // Test query execution (dry run)
   .post('/:source/test', async ({ params, body }) => {
+    const startTime = Date.now();
+
     try {
       const { source } = params;
+      let results = null;
+      let rowCount = 0;
+      let error = null;
 
-      // Validate query structure
-      if (!body || !body.sql) {
-        return {
-          success: false,
-          error: 'Missing required field: sql'
-        };
-      }
-
-      // Get data source from registry
-      let dataSource;
-      try {
-        dataSource = dataSourceRegistry.getSource(source);
-      } catch (error) {
-        return {
-          success: false,
-          error: `Unknown data source: ${source}`
-        };
-      }
-
-      if (!dataSource) {
-        return {
-          success: false,
-          error: `Unknown data source: ${source}`
-        };
-      }
-
-      // Execute test query based on source type
-      let result;
-
+      // Execute query based on data source type
       if (source === 'bigquery') {
-        // Execute BigQuery SQL query (limit to 10 rows for testing)
-        const testSql = body.sql.trim().toLowerCase().includes('limit')
-          ? body.sql
-          : `${body.sql.trim().replace(/;?\s*$/, '')} LIMIT 10`;
-
-        const rows = await dataSource.executeQuery(testSql, {}, false); // no cache for tests
-
-        result = {
-          success: true,
-          message: 'Query executed successfully',
-          rowCount: rows?.length || 0,
-          preview: rows?.slice(0, 5) || [], // Show first 5 rows
-          sql: testSql
-        };
-      } else if (source === 'gcp') {
-        // For GCP Monitoring, validate the metric query structure
-        if (!body.metric) {
-          return {
-            success: false,
-            error: 'GCP queries require a "metric" field'
-          };
+        // Validate required fields
+        if (!body.sql) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'BigQuery test queries require sql field'
+            }),
+            { status: 400, headers: { 'content-type': 'application/json' } }
+          );
         }
 
-        result = {
-          success: true,
-          message: 'GCP metric query structure is valid',
-          metric: body.metric,
-          filters: body.filters || {},
-          aggregation: body.aggregation || 'mean'
-        };
+        // Import and execute BigQuery query
+        const { bigQueryDataSource } = await import('./data-sources/bigquery.js');
+
+        // Add LIMIT to prevent large result sets
+        let testSql = body.sql.trim();
+        if (!testSql.toLowerCase().includes('limit')) {
+          testSql += ' LIMIT 10';
+        }
+
+        try {
+          const rows = await bigQueryDataSource.executeQuery(
+            testSql,
+            body.params || {},
+            false // Don't use cache for test queries
+          );
+
+          results = rows.slice(0, 50); // Limit to 50 rows max
+          rowCount = rows.length;
+        } catch (err) {
+          error = err.message;
+        }
+
+      } else if (source === 'gcp') {
+        // Validate required fields
+        if (!body.metricType) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'GCP test queries require metricType field'
+            }),
+            { status: 400, headers: { 'content-type': 'application/json' } }
+          );
+        }
+
+        // Import and execute GCP monitoring query
+        const gcpMetrics = await import('./gcp-metrics.js');
+
+        try {
+          // Convert filters object to filter string if needed
+          let filterString = null;
+          if (body.filters) {
+            if (typeof body.filters === 'string') {
+              filterString = body.filters;
+            } else if (typeof body.filters === 'object' && Object.keys(body.filters).length > 0) {
+              // Convert object to filter string format
+              filterString = Object.entries(body.filters)
+                .map(([key, value]) => `${key} = "${value}"`)
+                .join(' AND ');
+            }
+          }
+
+          const timeSeries = await gcpMetrics.query(
+            body.project || 'mad-master',
+            body.metricType,
+            filterString,
+            body.timeWindow || 10,
+            body.aggregation
+          );
+
+          results = timeSeries.slice(0, 10); // Limit time series results
+          rowCount = timeSeries.length;
+        } catch (err) {
+          error = err.message;
+        }
+
+      } else if (source === 'aws') {
+        // AWS CloudWatch test query
+        if (!body.metricName || !body.namespace) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: 'AWS test queries require metricName and namespace fields'
+            }),
+            { status: 400, headers: { 'content-type': 'application/json' } }
+          );
+        }
+
+        try {
+          const { awsDataSource } = await import('./data-sources/aws.js');
+          const metrics = await awsDataSource.fetchMetrics({
+            metricName: body.metricName,
+            namespace: body.namespace,
+            dimensions: body.dimensions || [],
+            statistic: body.statistic || 'Average',
+            period: body.period || 300,
+            type: 'line-chart' // Default widget type for testing
+          });
+
+          results = metrics.data;
+          rowCount = metrics.data?.series?.[0]?.data?.length || 0;
+        } catch (err) {
+          error = err.message;
+        }
+
+      } else if (source === 'mock') {
+        // Mock data source - always succeeds with sample data
+        results = [
+          { label: 'Sample 1', value: 100 },
+          { label: 'Sample 2', value: 200 },
+          { label: 'Sample 3', value: 150 }
+        ];
+        rowCount = 3;
+
       } else {
-        // For other sources, validate structure only
-        result = {
+        // For other data sources, return a basic success message
+        // These would need implementation once the data sources are active
+        return {
           success: true,
-          message: `Query structure validated for ${source}`,
-          note: `Full execution not yet implemented for ${source}`,
-          query: body
+          message: `Test query validation for ${source} - data source not yet implemented`,
+          source,
+          query: body,
+          executionTime: Date.now() - startTime
         };
       }
 
-      return result;
+      const executionTime = Date.now() - startTime;
+
+      if (error) {
+        return {
+          success: false,
+          source,
+          error,
+          executionTime
+        };
+      }
+
+      return {
+        success: true,
+        source,
+        results,
+        rowCount,
+        executionTime,
+        message: `Query executed successfully in ${executionTime}ms`
+      };
+
     } catch (error) {
-      console.error('[query-routes] Test execution error:', error);
       return {
         success: false,
         error: error.message,
-        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        executionTime: Date.now() - startTime
       };
     }
   }, {
     detail: {
       tags: ['Queries'],
       summary: 'Test query',
-      description: 'Test query execution without saving (dry run). Executes BigQuery queries with LIMIT 10, validates structure for other sources.'
+      description: 'Test query execution without saving (dry run)'
     }
   })
 

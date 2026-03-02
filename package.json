@@ -30,5 +30,8 @@
     "elysia": "^1.2",
     "google-auth-library": "^10.6.1",
     "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "jsdom": "^28.1.0"
   }
 }
