@@ -337,7 +337,8 @@ export class TemplateBrowser {
         throw new Error(`Failed to load templates: ${response.status}`);
       }
 
-      this.allTemplates = await response.json();
+      const data = await response.json();
+      this.allTemplates = data.templates || data;  // Unwrap API response
       this.filteredTemplates = [...this.allTemplates];
 
       // Render UI

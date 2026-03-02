@@ -299,7 +299,7 @@ describe('TemplateBrowser', () => {
     it('should render two-column layout with sidebar and content area', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -325,7 +325,7 @@ describe('TemplateBrowser', () => {
     it('should render search input in sidebar', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -346,7 +346,7 @@ describe('TemplateBrowser', () => {
     it('should render category checkboxes in sidebar', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -367,7 +367,7 @@ describe('TemplateBrowser', () => {
     it('should render clear filters button in sidebar', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -385,7 +385,7 @@ describe('TemplateBrowser', () => {
     it('should render template cards in grid', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -405,7 +405,7 @@ describe('TemplateBrowser', () => {
     it('should display template details on cards', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -429,7 +429,7 @@ describe('TemplateBrowser', () => {
     it('should display "Use Template" button on each card', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -450,7 +450,7 @@ describe('TemplateBrowser', () => {
     it('should filter templates by search query (name)', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -475,7 +475,7 @@ describe('TemplateBrowser', () => {
     it('should filter templates by search query (description)', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -500,7 +500,7 @@ describe('TemplateBrowser', () => {
     it('should be case-insensitive when searching', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -524,7 +524,7 @@ describe('TemplateBrowser', () => {
     it('should show all templates when search is cleared', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -555,7 +555,7 @@ describe('TemplateBrowser', () => {
     it('should filter templates by single category', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -584,7 +584,7 @@ describe('TemplateBrowser', () => {
     it('should filter templates by multiple categories', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -617,7 +617,7 @@ describe('TemplateBrowser', () => {
     it('should show all templates when no categories selected', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -637,7 +637,7 @@ describe('TemplateBrowser', () => {
     it('should combine search and category filters', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -672,7 +672,7 @@ describe('TemplateBrowser', () => {
     it('should clear all filters when clear button is clicked', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -717,7 +717,7 @@ describe('TemplateBrowser', () => {
     it('should show empty state when no templates match filters', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -740,7 +740,7 @@ describe('TemplateBrowser', () => {
     it('should hide empty state when templates are visible', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -760,7 +760,7 @@ describe('TemplateBrowser', () => {
     it('should emit onSelect event when "Use Template" button is clicked', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -781,7 +781,7 @@ describe('TemplateBrowser', () => {
     it('should pass correct template object to onSelect callback', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => templates
+        json: async () => ({ success: true, templates })
       }));
 
       const browser = new TemplateBrowser({
@@ -812,7 +812,7 @@ describe('TemplateBrowser', () => {
         await fetchPromise;
         return {
           ok: true,
-          json: async () => templates
+          json: async () => ({ success: true, templates })
         };
       });
 
@@ -867,7 +867,7 @@ describe('TemplateBrowser', () => {
 
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => maliciousTemplates
+        json: async () => ({ success: true, templates: maliciousTemplates })
       }));
 
       const browser = new TemplateBrowser({
@@ -901,7 +901,7 @@ describe('TemplateBrowser', () => {
 
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => maliciousTemplates
+        json: async () => ({ success: true, templates: maliciousTemplates })
       }));
 
       const browser = new TemplateBrowser({
@@ -922,7 +922,7 @@ describe('TemplateBrowser', () => {
     it('should handle empty templates array', async () => {
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => []
+        json: async () => ({ success: true, templates: [] })
       }));
 
       const browser = new TemplateBrowser({
@@ -952,7 +952,7 @@ describe('TemplateBrowser', () => {
 
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => minimalTemplates
+        json: async () => ({ success: true, templates: minimalTemplates })
       }));
 
       const browser = new TemplateBrowser({
@@ -976,7 +976,7 @@ describe('TemplateBrowser', () => {
 
       global.fetch = mock(async () => ({
         ok: true,
-        json: async () => noCategoryTemplates
+        json: async () => ({ success: true, templates: noCategoryTemplates })
       }));
 
       const browser = new TemplateBrowser({
