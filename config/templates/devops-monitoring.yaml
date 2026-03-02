@@ -1,0 +1,161 @@
+name: DevOps Monitoring
+description: Real-time service health and performance metrics for Cloud Run services
+category: DevOps
+tags:
+  - gcp
+  - cloud-run
+  - performance
+  - monitoring
+requiredSources:
+  - gcp
+recommendedTheme: dark-high-contrast
+author: MadHive
+createdAt: '2026-03-02'
+dashboard:
+  name: DevOps Monitoring
+  icon: bolt
+  refreshInterval: 30
+  gridColumns: 12
+  gridRows: 12
+  widgets:
+    - id: cpu-usage
+      type: gauge
+      title: CPU Usage
+      source: gcp
+      position:
+        col: 1
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        min: 0
+        max: 100
+        unit: '%'
+        thresholds:
+          - value: 70
+            color: '#FFA500'
+          - value: 90
+            color: '#FF0000'
+
+    - id: memory-usage
+      type: gauge
+      title: Memory Usage
+      source: gcp
+      position:
+        col: 4
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        min: 0
+        max: 100
+        unit: '%'
+        thresholds:
+          - value: 70
+            color: '#FFA500'
+          - value: 90
+            color: '#FF0000'
+
+    - id: instance-count
+      type: metric
+      title: Active Instances
+      source: gcp
+      position:
+        col: 7
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: ''
+        trend: true
+
+    - id: error-rate
+      type: metric
+      title: Error Rate
+      source: gcp
+      position:
+        col: 10
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: '%'
+        trend: true
+        thresholds:
+          - value: 1
+            color: '#FFA500'
+          - value: 5
+            color: '#FF0000'
+
+    - id: request-rate
+      type: chart
+      title: Request Rate (req/s)
+      source: gcp
+      position:
+        col: 1
+        row: 3
+        colSpan: 6
+        rowSpan: 4
+      config:
+        chartType: line
+        timeRange: '1h'
+        yAxis:
+          label: 'Requests/sec'
+
+    - id: response-time
+      type: chart
+      title: Response Time (ms)
+      source: gcp
+      position:
+        col: 7
+        row: 3
+        colSpan: 6
+        rowSpan: 4
+      config:
+        chartType: line
+        timeRange: '1h'
+        yAxis:
+          label: 'Milliseconds'
+
+    - id: service-status
+      type: list
+      title: Service Health
+      source: gcp
+      position:
+        col: 1
+        row: 7
+        colSpan: 4
+        rowSpan: 3
+      config:
+        maxItems: 10
+        showStatus: true
+
+    - id: recent-errors
+      type: list
+      title: Recent Errors
+      source: gcp
+      position:
+        col: 5
+        row: 7
+        colSpan: 8
+        rowSpan: 3
+      config:
+        maxItems: 5
+        showTimestamp: true
+
+    - id: resource-allocation
+      type: grid
+      title: Resource Allocation by Service
+      source: gcp
+      position:
+        col: 1
+        row: 10
+        colSpan: 12
+        rowSpan: 3
+      config:
+        columns:
+          - name
+          - cpu
+          - memory
+          - instances
+          - requests

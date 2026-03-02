@@ -1,0 +1,180 @@
+name: Infrastructure Health
+description: Infrastructure monitoring and resource utilization across all systems
+category: DevOps
+tags:
+  - infrastructure
+  - monitoring
+  - resources
+  - gcp
+requiredSources:
+  - gcp
+recommendedTheme: dark-high-contrast
+author: MadHive
+createdAt: '2026-03-02'
+dashboard:
+  name: Infrastructure Health
+  icon: server
+  refreshInterval: 30
+  gridColumns: 12
+  gridRows: 12
+  widgets:
+    - id: overall-health
+      type: gauge
+      title: Overall Health Score
+      source: gcp
+      position:
+        col: 1
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        min: 0
+        max: 100
+        unit: '%'
+        thresholds:
+          - value: 80
+            color: '#FF0000'
+          - value: 95
+            color: '#FFA500'
+          - value: 99
+            color: '#00FF00'
+
+    - id: cpu-utilization
+      type: gauge
+      title: Avg CPU Utilization
+      source: gcp
+      position:
+        col: 4
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        min: 0
+        max: 100
+        unit: '%'
+        thresholds:
+          - value: 70
+            color: '#FFA500'
+          - value: 90
+            color: '#FF0000'
+
+    - id: memory-utilization
+      type: gauge
+      title: Avg Memory Utilization
+      source: gcp
+      position:
+        col: 7
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        min: 0
+        max: 100
+        unit: '%'
+        thresholds:
+          - value: 70
+            color: '#FFA500'
+          - value: 90
+            color: '#FF0000'
+
+    - id: disk-usage
+      type: gauge
+      title: Disk Usage
+      source: gcp
+      position:
+        col: 10
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        min: 0
+        max: 100
+        unit: '%'
+        thresholds:
+          - value: 80
+            color: '#FFA500'
+          - value: 95
+            color: '#FF0000'
+
+    - id: resource-utilization
+      type: chart
+      title: Resource Utilization (Last Hour)
+      source: gcp
+      position:
+        col: 1
+        row: 3
+        colSpan: 8
+        rowSpan: 4
+      config:
+        chartType: line
+        timeRange: '1h'
+        showMultipleSeries: true
+        series:
+          - cpu
+          - memory
+          - disk
+          - network
+
+    - id: service-uptime
+      type: chart
+      title: Service Uptime
+      source: gcp
+      position:
+        col: 9
+        row: 3
+        colSpan: 4
+        rowSpan: 4
+      config:
+        chartType: bar
+        orientation: horizontal
+        unit: '%'
+
+    - id: network-traffic
+      type: chart
+      title: Network Traffic (MB/s)
+      source: gcp
+      position:
+        col: 1
+        row: 7
+        colSpan: 6
+        rowSpan: 3
+      config:
+        chartType: line
+        timeRange: '1h'
+        showMultipleSeries: true
+        series:
+          - ingress
+          - egress
+
+    - id: service-status
+      type: list
+      title: Service Status
+      source: gcp
+      position:
+        col: 7
+        row: 7
+        colSpan: 6
+        rowSpan: 3
+      config:
+        maxItems: 10
+        showStatus: true
+        showUptime: true
+
+    - id: infrastructure-inventory
+      type: grid
+      title: Infrastructure Inventory
+      source: gcp
+      position:
+        col: 1
+        row: 10
+        colSpan: 12
+        rowSpan: 3
+      config:
+        columns:
+          - service
+          - type
+          - region
+          - cpu
+          - memory
+          - status
+          - uptime

@@ -1,0 +1,168 @@
+name: Incident Response
+description: Real-time incident tracking and response coordination dashboard
+category: Operations
+tags:
+  - incidents
+  - alerts
+  - sla
+  - response
+requiredSources:
+  - gcp
+  - mock
+recommendedTheme: dark-high-contrast
+author: MadHive
+createdAt: '2026-03-02'
+dashboard:
+  name: Incident Response
+  icon: alert-triangle
+  refreshInterval: 30
+  gridColumns: 12
+  gridRows: 12
+  widgets:
+    - id: active-incidents
+      type: metric
+      title: Active Incidents
+      source: mock
+      position:
+        col: 1
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: ''
+        trend: true
+        thresholds:
+          - value: 1
+            color: '#FFA500'
+          - value: 5
+            color: '#FF0000'
+
+    - id: critical-alerts
+      type: metric
+      title: Critical Alerts
+      source: gcp
+      position:
+        col: 4
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: ''
+        trend: true
+        thresholds:
+          - value: 1
+            color: '#FF0000'
+
+    - id: mean-time-to-respond
+      type: metric
+      title: Mean Time to Respond
+      source: mock
+      position:
+        col: 7
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: 'min'
+        trend: true
+
+    - id: mean-time-to-resolve
+      type: metric
+      title: Mean Time to Resolve
+      source: mock
+      position:
+        col: 10
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: 'min'
+        trend: true
+
+    - id: incidents-by-severity
+      type: chart
+      title: Incidents by Severity (Last 7 Days)
+      source: mock
+      position:
+        col: 1
+        row: 3
+        colSpan: 6
+        rowSpan: 4
+      config:
+        chartType: bar
+        timeRange: '7d'
+        showMultipleSeries: true
+        series:
+          - critical
+          - high
+          - medium
+          - low
+
+    - id: severity-distribution
+      type: chart
+      title: Current Severity Distribution
+      source: mock
+      position:
+        col: 7
+        row: 3
+        colSpan: 6
+        rowSpan: 4
+      config:
+        chartType: pie
+        showLegend: true
+
+    - id: active-incident-list
+      type: list
+      title: Active Incidents
+      source: mock
+      position:
+        col: 1
+        row: 7
+        colSpan: 8
+        rowSpan: 3
+      config:
+        maxItems: 8
+        showSeverity: true
+        showTimestamp: true
+        showAssignee: true
+
+    - id: sla-compliance
+      type: gauge
+      title: SLA Compliance
+      source: mock
+      position:
+        col: 9
+        row: 7
+        colSpan: 4
+        rowSpan: 3
+      config:
+        min: 0
+        max: 100
+        unit: '%'
+        thresholds:
+          - value: 95
+            color: '#FF0000'
+          - value: 98
+            color: '#FFA500'
+          - value: 99.5
+            color: '#00FF00'
+
+    - id: incident-details
+      type: grid
+      title: Incident History
+      source: mock
+      position:
+        col: 1
+        row: 10
+        colSpan: 12
+        rowSpan: 3
+      config:
+        columns:
+          - incident_id
+          - severity
+          - title
+          - status
+          - assigned_to
+          - created_at
+          - resolved_at
+          - duration
