@@ -189,6 +189,20 @@ window.PropertyPanel = (function () {
                 </select>
                 <button type="button" id="theme-preview-btn" class="btn btn-secondary" style="margin-top: 8px;">Preview on TV</button>
               </div>
+
+              <div class="form-group">
+                <label>Dashboard Template</label>
+                <button type="button" id="apply-template-btn" class="btn btn-secondary" style="width: 100%;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                  </svg>
+                  Apply Template
+                </button>
+                <small class="help-text">Replace current dashboard with a template</small>
+              </div>
             </div>
 
             <div class="form-section">
@@ -290,6 +304,14 @@ window.PropertyPanel = (function () {
       // Theme preview button
       document.getElementById('theme-preview-btn').addEventListener('click', () => {
         this.previewThemeOnTV();
+      });
+
+      // Apply template button
+      document.getElementById('apply-template-btn').addEventListener('click', () => {
+        // Delegate to editor app to show template modal
+        if (this.editorApp && this.editorApp.showTemplateModal) {
+          this.editorApp.showTemplateModal();
+        }
       });
     }
 

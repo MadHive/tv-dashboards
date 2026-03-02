@@ -589,6 +589,150 @@ window.EditorApp = (function () {
       if (saveBtn) saveBtn.classList.add('has-changes');
     }
 
+    async showTemplateModal() {
+      // Create modal overlay
+      const overlay = document.createElement('div');
+      overlay.className = 'template-modal-overlay';
+
+      // Create modal
+      const modal = document.createElement('div');
+      modal.className = 'template-modal';
+
+      // Create header
+      const header = document.createElement('div');
+      header.className = 'template-modal-header';
+
+      const title = document.createElement('h2');
+      title.textContent = 'Apply Template';
+      header.appendChild(title);
+
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'close-modal-btn';
+      closeBtn.textContent = '×';
+      header.appendChild(closeBtn);
+
+      modal.appendChild(header);
+
+      // Create container for template browser
+      const container = document.createElement('div');
+      container.id = 'editor-template-browser-container';
+      modal.appendChild(container);
+
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+
+      // Load and initialize TemplateBrowser
+      try {
+        // Dynamically import TemplateBrowser
+        const { TemplateBrowser } = await import('/js/components/template-browser.js');
+
+        const browser = new TemplateBrowser({
+          container,
+          onSelect: (template) => {
+            this.handleTemplateSelection(template, overlay);
+          }
+        });
+
+        browser.loadTemplates();
+      } catch (error) {
+        console.error('[Editor] Failed to load TemplateBrowser:', error);
+        this.showNotification('Failed to load template browser', 'error');
+        document.body.removeChild(overlay);
+        return;
+      }
+
+      // Close button
+      closeBtn.addEventListener('click', () => {
+        document.body.removeChild(overlay);
+      });
+
+      // Click outside to close
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          document.body.removeChild(overlay);
+        }
+      });
+
+      // ESC key to close
+      const escHandler = (e) => {
+        if (e.key === 'Escape') {
+          document.body.removeChild(overlay);
+          document.removeEventListener('keydown', escHandler);
+        }
+      };
+      document.addEventListener('keydown', escHandler);
+    }
+
+    handleTemplateSelection(template, overlay) {
+      // Warn about overwriting
+      const confirmed = confirm(
+        `This will replace the current dashboard with the template "${template.name}".\n\n` +
+        `All unsaved changes will be lost. Continue?`
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      // Apply template to current dashboard
+      this.applyTemplateToCurrentDashboard(template);
+
+      // Close modal
+      document.body.removeChild(overlay);
+    }
+
+    applyTemplateToCurrentDashboard(template) {
+      if (!template.dashboard) {
+        this.showNotification('Invalid template: missing dashboard configuration', 'error');
+        return;
+      }
+
+      // Get current dashboard
+      const currentDash = this.modifiedConfig.dashboards[this.dashboardApp.currentPage];
+      if (!currentDash) {
+        this.showNotification('No dashboard selected', 'error');
+        return;
+      }
+
+      // Preserve current dashboard ID and name
+      const currentId = currentDash.id;
+      const currentName = currentDash.name;
+
+      // Replace dashboard with template
+      const templateDash = JSON.parse(JSON.stringify(template.dashboard));
+      templateDash.id = currentId;
+      templateDash.name = currentName;
+
+      // Apply recommended theme if present
+      if (template.recommendedTheme) {
+        templateDash.theme = template.recommendedTheme;
+      }
+
+      // Update modified config
+      this.modifiedConfig.dashboards[this.dashboardApp.currentPage] = templateDash;
+
+      // Mark as modified
+      this.markAsModified();
+
+      // Deselect current widget
+      this.deselectWidget();
+
+      // Reload dashboard to show template
+      this.dashboardApp.config = JSON.parse(JSON.stringify(this.modifiedConfig));
+      this.dashboardApp.showPage(this.dashboardApp.currentPage);
+
+      // Re-sync modified config with new config
+      this.modifiedConfig = JSON.parse(JSON.stringify(this.dashboardApp.config));
+
+      // Re-attach editor handlers
+      this.attachWidgetHandlers();
+
+      // Update grid overlay
+      this.updateGridOverlay();
+
+      this.showNotification(`Template "${template.name}" applied successfully!`, 'success');
+    }
+
     showNotification(message, type = 'info') {
       // Simple notification system
       const notification = document.createElement('div');
