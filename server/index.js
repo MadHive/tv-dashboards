@@ -209,7 +209,7 @@ const app = new Elysia()
   }))
 
   .get('/admin', () => {
-    const adminHtml = readFileSync(join(publicDir, 'admin.html'), 'utf8');
+    const adminHtml = readFileSync(join(publicDir, 'studio.html'), 'utf8');
     return new Response(adminHtml, {
       headers: {
         'content-type': 'text/html; charset=utf-8',

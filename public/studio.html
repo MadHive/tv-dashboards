@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MadHive Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@400;500;600&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/dashboard.css?v=11">
+  <link rel="stylesheet" href="/css/studio.css?v=1">
+</head>
+<body class="studio-body">
+
+  <!-- Topbar -->
+  <header class="studio-topbar">
+    <div class="studio-brand">
+      <span class="studio-logo">&#9672;</span>
+      <span class="studio-title">MadHive Studio</span>
+    </div>
+    <div class="studio-actions">
+      <span id="dirty-indicator" style="display:none">&#9679; Unsaved</span>
+      <button id="discard-btn" class="studio-btn secondary small" disabled>Discard</button>
+      <button id="save-btn" class="studio-btn primary small" disabled>Save</button>
+      <a href="/" target="_blank" class="studio-btn ghost small">View on TV &#8599;</a>
+    </div>
+  </header>
+
+  <!-- Three-panel layout -->
+  <div class="studio-layout">
+
+    <!-- Left Sidebar -->
+    <aside class="studio-sidebar">
+
+      <!-- Dashboards Section -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-header">
+          <span>DASHBOARDS</span>
+          <button id="new-dashboard-btn" class="sidebar-add-btn" title="New dashboard">+</button>
+        </div>
+        <div id="dashboard-list"></div>
+        <form id="new-dashboard-form" class="new-dashboard-form" style="display:none">
+          <input id="new-dash-name" type="text" placeholder="Dashboard name" required>
+          <input id="new-dash-subtitle" type="text" placeholder="Subtitle (optional)">
+          <div style="display:flex;gap:8px;">
+            <input id="new-dash-cols" type="number" placeholder="Cols" value="4" min="1" max="12" style="flex:1">
+            <input id="new-dash-rows" type="number" placeholder="Rows" value="2" min="1" max="12" style="flex:1">
+          </div>
+          <div class="icon-picker">
+            <span class="icon-opt selected" data-icon="bolt" title="Bolt">&#9889;</span>
+            <span class="icon-opt" data-icon="grid" title="Grid">&#9783;</span>
+            <span class="icon-opt" data-icon="server" title="Server">&#128421;</span>
+            <span class="icon-opt" data-icon="flow" title="Flow">&#10608;</span>
+            <span class="icon-opt" data-icon="data" title="Data">&#128202;</span>
+            <span class="icon-opt" data-icon="shield" title="Shield">&#128737;</span>
+            <span class="icon-opt" data-icon="map" title="Map">&#128506;</span>
+          </div>
+          <div style="display:flex;gap:6px;">
+            <button type="submit" class="studio-btn primary small" style="flex:1">Create</button>
+            <button type="button" id="cancel-new-dash-btn" class="studio-btn secondary small" style="flex:1">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Themes Section (collapsible) -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-header collapsible" data-target="themes-content">
+          <span>THEMES</span>
+          <span class="collapse-arrow">&#9656;</span>
+        </div>
+        <div id="themes-content" class="sidebar-collapsible-content" style="display:none">
+          <div id="theme-swatches" class="theme-swatch-grid"></div>
+        </div>
+      </div>
+
+      <!-- Settings Section (collapsible) -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-header collapsible" data-target="settings-content">
+          <span>SETTINGS</span>
+          <span class="collapse-arrow">&#9656;</span>
+        </div>
+        <div id="settings-content" class="sidebar-collapsible-content" style="display:none">
+          <form id="settings-form" class="settings-form">
+            <label>
+              Title
+              <input id="setting-title" type="text" placeholder="Dashboard title">
+            </label>
+            <label>
+              Rotation (s)
+              <input id="setting-rotation" type="number" placeholder="30" min="0">
+            </label>
+            <label>
+              Refresh (s)
+              <input id="setting-refresh" type="number" placeholder="60" min="0">
+            </label>
+            <button type="submit" class="studio-btn primary small">Save Settings</button>
+          </form>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- Center Canvas -->
+    <main class="studio-canvas-pane">
+      <div class="studio-canvas-wrapper">
+        <div id="studio-canvas" class="studio-canvas">
+          <div id="canvas-placeholder" class="canvas-placeholder">Select a dashboard to edit</div>
+        </div>
+      </div>
+      <footer class="studio-canvas-footer">
+        <button id="add-widget-btn" class="studio-btn primary" disabled>+ Add Widget</button>
+      </footer>
+    </main>
+
+    <!-- Right Properties -->
+    <aside class="studio-properties">
+      <div id="properties-placeholder" class="properties-placeholder">Click a widget to edit its properties</div>
+      <div id="properties-content" style="display:none">
+
+        <!-- Dashboard props -->
+        <div id="dashboard-props" style="display:none">
+          <h3 class="props-heading">Dashboard</h3>
+          <label>
+            Name
+            <input id="prop-dash-name" type="text">
+          </label>
+          <label>
+            Subtitle
+            <input id="prop-dash-subtitle" type="text">
+          </label>
+          <div class="props-grid-2">
+            <label>
+              Columns
+              <input id="prop-dash-cols" type="number" min="1" max="12">
+            </label>
+            <label>
+              Rows
+              <input id="prop-dash-rows" type="number" min="1" max="12">
+            </label>
+          </div>
+          <label>
+            Gap (px)
+            <input id="prop-dash-gap" type="number" min="0" max="40">
+          </label>
+        </div>
+
+        <!-- Widget props -->
+        <div id="widget-props" style="display:none">
+
+          <details class="props-section" open>
+            <summary>Basic</summary>
+            <div>
+              <label>
+                Title
+                <input id="prop-title" type="text">
+              </label>
+              <label>
+                Type
+                <select id="prop-type">
+                  <option value="big-number">Big Number</option>
+                  <option value="stat-card">Stat Card</option>
+                  <option value="gauge">Gauge</option>
+                  <option value="gauge-row">Gauge Row</option>
+                  <option value="bar-chart">Bar Chart</option>
+                  <option value="progress-bar">Progress Bar</option>
+                  <option value="status-grid">Status Grid</option>
+                  <option value="alert-list">Alert List</option>
+                  <option value="service-heatmap">Service Heatmap</option>
+                  <option value="pipeline-flow">Pipeline Flow</option>
+                  <option value="usa-map">USA Map</option>
+                  <option value="security-scorecard">Security Scorecard</option>
+                </select>
+              </label>
+            </div>
+          </details>
+
+          <details class="props-section" open>
+            <summary>Data</summary>
+            <div>
+              <label>
+                Source
+                <select id="prop-source">
+                  <option value="gcp">GCP</option>
+                  <option value="bigquery">BigQuery</option>
+                  <option value="vulntrack">VulnTrack</option>
+                  <option value="mock">Mock</option>
+                </select>
+              </label>
+              <label>
+                Query
+                <select id="prop-query"></select>
+              </label>
+              <button id="new-query-btn" class="studio-btn secondary small">+ New Query</button>
+            </div>
+          </details>
+
+          <details class="props-section">
+            <summary>Position</summary>
+            <div>
+              <div class="props-grid-2">
+                <label>
+                  Col
+                  <input id="prop-col" type="number" min="1">
+                </label>
+                <label>
+                  Row
+                  <input id="prop-row" type="number" min="1">
+                </label>
+                <label>
+                  Col Span
+                  <input id="prop-colspan" type="number" min="1">
+                </label>
+                <label>
+                  Row Span
+                  <input id="prop-rowspan" type="number" min="1">
+                </label>
+              </div>
+            </div>
+          </details>
+
+          <details class="props-section">
+            <summary>Display</summary>
+            <div>
+              <label>
+                Unit
+                <input id="prop-unit" type="text" placeholder="e.g. ms, %, req/s">
+              </label>
+              <div class="props-grid-2">
+                <label>
+                  Min
+                  <input id="prop-min" type="number">
+                </label>
+                <label>
+                  Max
+                  <input id="prop-max" type="number">
+                </label>
+                <label>
+                  Warn
+                  <input id="prop-warn" type="number">
+                </label>
+                <label>
+                  Crit
+                  <input id="prop-crit" type="number">
+                </label>
+              </div>
+            </div>
+          </details>
+
+          <div class="props-danger-zone">
+            <button id="delete-widget-btn" class="studio-btn danger">Delete Widget</button>
+          </div>
+
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- Widget Palette Modal -->
+  <div id="widget-palette-modal" class="studio-modal" style="display:none">
+    <div class="studio-modal-content">
+      <div class="studio-modal-header">
+        <h2>Add Widget</h2>
+        <button id="palette-close" class="modal-close">&#215;</button>
+      </div>
+      <div class="studio-modal-body">
+        <div id="palette-type-grid" class="palette-type-grid"></div>
+        <form id="add-widget-form" style="display:none" class="add-widget-form">
+          <h3 id="palette-selected-type"></h3>
+          <label>
+            Title
+            <input id="aw-title" type="text" placeholder="Widget title">
+          </label>
+          <label>
+            Source
+            <select id="aw-source">
+              <option value="gcp">GCP</option>
+              <option value="bigquery">BigQuery</option>
+              <option value="vulntrack">VulnTrack</option>
+              <option value="mock">Mock</option>
+            </select>
+          </label>
+          <label>
+            Query
+            <select id="aw-query"></select>
+          </label>
+          <div class="add-widget-actions">
+            <button type="button" id="palette-back-btn" class="studio-btn secondary">&#8592; Back</button>
+            <button type="submit" class="studio-btn primary">Add to Dashboard</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/us-states.js?v=11"></script>
+  <script src="/js/charts.js?v=11"></script>
+  <script src="/js/widgets.js?v=11"></script>
+  <script src="/js/query-editor.js?v=1"></script>
+  <script src="/js/studio-canvas.js?v=1"></script>
+  <script src="/js/studio.js?v=1"></script>
+</body>
+</html>
