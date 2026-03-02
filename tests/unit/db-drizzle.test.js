@@ -64,6 +64,7 @@ const TEST_DB_PATH = join(process.cwd(), 'data', 'test-drizzle-instance.db');
 
 describe('Drizzle Instance', () => {
   beforeAll(() => {
+    resetDrizzle();
     initDatabase(TEST_DB_PATH);
   });
 
