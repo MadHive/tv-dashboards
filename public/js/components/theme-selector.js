@@ -165,11 +165,15 @@ export class ThemeSelector {
     // Create swatches for background, primary, secondary
     if (theme.colors) {
       const colorKeys = ['background', 'primary', 'secondary'];
+      const colorRegex = /^(#[0-9A-Fa-f]{3,8}|rgba?\([\d\s,%.]+\)|[a-z]+)$/i;
       for (const key of colorKeys) {
         if (theme.colors[key]) {
           const swatch = document.createElement('div');
           swatch.className = 'theme-color-swatch';
-          swatch.style.backgroundColor = theme.colors[key];
+          // Validate color format before applying to prevent CSS injection
+          if (colorRegex.test(theme.colors[key])) {
+            swatch.style.backgroundColor = theme.colors[key];
+          }
           swatch.setAttribute('title', `${key}: ${theme.colors[key]}`);
           swatchesContainer.appendChild(swatch);
         }
@@ -216,8 +220,9 @@ export class ThemeSelector {
       card.classList.remove('selected');
     }
 
-    // Add selected to the chosen card
-    const selectedCard = this.container.querySelector(`[data-theme-id="${themeId}"]`);
+    // Add selected to the chosen card (using dataset iteration to prevent CSS injection)
+    const selectedCard = Array.from(this.container.querySelectorAll('.theme-card'))
+      .find(card => card.dataset.themeId === themeId);
     if (selectedCard) {
       selectedCard.classList.add('selected');
     }
@@ -256,17 +261,22 @@ export class ThemeSelector {
    * @returns {Promise<Array>} Array of theme objects
    */
   async loadThemes(endpoint = '/api/themes') {
-    const response = await fetch(endpoint);
+    this.container.classList.add('loading');
+    try {
+      const response = await fetch(endpoint);
 
-    if (!response.ok) {
-      throw new Error(`Failed to load themes: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`Failed to load themes: ${response.status}`);
+      }
+
+      this.themes = await response.json();
+
+      // Re-render with new themes
+      this.render();
+
+      return this.themes;
+    } finally {
+      this.container.classList.remove('loading');
     }
-
-    this.themes = await response.json();
-
-    // Re-render with new themes
-    this.render();
-
-    return this.themes;
   }
 }
