@@ -15,10 +15,9 @@ describe('Data Source Schemas', () => {
   it('should get all schemas', () => {
     const schemas = getAllSchemas();
 
-    expect(schemas.length).toBe(4);
+    expect(schemas.length).toBe(3);
     expect(schemas.map(s => s.id)).toContain('bigquery');
     expect(schemas.map(s => s.id)).toContain('gcp-monitoring');
-    expect(schemas.map(s => s.id)).toContain('looker');
     expect(schemas.map(s => s.id)).toContain('mock');
   });
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "bun:test";
+import { describe, it, expect, beforeAll, afterAll } from "bun:test";
 import { promises as fs } from "fs";
 import path from "path";
 import yaml from "js-yaml";
@@ -6,14 +6,24 @@ import { ThemeManager } from "../../server/theme-manager.js";
 
 describe("ThemeManager", () => {
   let manager;
+  let originalThemes;
   const testConfigPath = path.resolve(
     process.cwd(),
     "config/themes.yaml"
   );
 
   beforeAll(async () => {
+    // Save original themes state
+    const content = await fs.readFile(testConfigPath, "utf-8");
+    originalThemes = yaml.load(content);
+
     manager = new ThemeManager(testConfigPath);
     await manager.loadThemes();
+  });
+
+  afterAll(async () => {
+    // Restore original themes state
+    await fs.writeFile(testConfigPath, yaml.dump(originalThemes), "utf-8");
   });
 
   describe("loadThemes()", () => {
@@ -148,11 +158,28 @@ describe("ThemeManager", () => {
       const saved = await manager.saveTheme(newTheme);
       expect(saved.createdAt).toBeDefined();
       expect(saved.author).toBe("Custom");
+
+      // Clean up
+      await manager.deleteTheme("test-theme");
     });
 
     it("should add updatedAt timestamp for existing themes", async () => {
+      // Create theme first
+      const newTheme = {
+        id: "test-theme-2",
+        name: "Test Theme",
+        category: "Test",
+        colors: {
+          background: "#000",
+          text: "#fff",
+          primary: "#00f"
+        }
+      };
+      await manager.saveTheme(newTheme);
+
+      // Update it
       const existingTheme = {
-        id: "test-theme",
+        id: "test-theme-2",
         name: "Test Theme Updated",
         category: "Test",
         colors: {
@@ -163,6 +190,9 @@ describe("ThemeManager", () => {
       };
       const saved = await manager.saveTheme(existingTheme);
       expect(saved.updatedAt).toBeDefined();
+
+      // Clean up
+      await manager.deleteTheme("test-theme-2");
     });
   });
 
