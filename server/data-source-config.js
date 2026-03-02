@@ -131,6 +131,10 @@ export function getConfig(sourceName) {
     if (!row) return null;
 
     return {
+      // Normalize to integer (0/1) for backward compatibility — callers and tests
+      // expect numeric values. Route handlers apply Boolean() before HTTP responses.
+      // Drizzle's { mode: 'boolean' } returns JS true/false for Drizzle-inserted rows,
+      // but raw SQL test fixtures insert integers directly, bypassing the mode mapping.
       enabled:   row.enabled ? 1 : 0,
       config:    row.configJson ? JSON.parse(row.configJson) : null,
       updatedAt: row.updatedAt,
@@ -291,6 +295,7 @@ export function exportConfigs() {
     const configs = {};
     for (const row of rows) {
       configs[row.sourceName] = {
+        // Normalize to integer (0/1) for backward compatibility — same as getConfig.
         enabled:   row.enabled ? 1 : 0,
         config:    row.configJson ? JSON.parse(row.configJson) : null,
         updatedAt: row.updatedAt,
