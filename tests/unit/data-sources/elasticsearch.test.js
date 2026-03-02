@@ -26,4 +26,32 @@ describe('Elasticsearch Data Source', () => {
       expect(data).toHaveProperty('value');
     });
   });
+
+  describe('initialize()', () => {
+    it('should handle missing credentials gracefully', async () => {
+      await dataSource.initialize();
+      expect(dataSource.isConnected).toBe(false);
+    });
+
+    it('should initialize with host and API key if provided', async () => {
+      const ds = new ElasticsearchDataSource({
+        host: 'https://localhost:9200',
+        apiKey: 'test-api-key'
+      });
+
+      await ds.initialize();
+      expect(ds.client).not.toBeNull();
+    });
+
+    it('should support basic auth credentials', async () => {
+      const ds = new ElasticsearchDataSource({
+        host: 'https://localhost:9200',
+        username: 'elastic',
+        password: 'test-password'
+      });
+
+      await ds.initialize();
+      expect(ds.client).not.toBeNull();
+    });
+  });
 });
