@@ -54,4 +54,18 @@ describe('Elasticsearch Data Source', () => {
       expect(ds.client).not.toBeNull();
     });
   });
+
+  describe('fetchMetrics() - without credentials', () => {
+    it('should return mock data when client not initialized', async () => {
+      const result = await dataSource.fetchMetrics({
+        id: 'test-widget',
+        type: 'big-number'
+      });
+
+      expect(result).toHaveProperty('timestamp');
+      expect(result).toHaveProperty('source');
+      expect(result).toHaveProperty('data');
+      expect(result.source).toBe('elasticsearch');
+    });
+  });
 });
