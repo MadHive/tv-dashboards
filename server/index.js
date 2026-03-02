@@ -679,11 +679,8 @@ const app = new Elysia()
       }
 
       const filename = `${sanitizedId}.yaml`;
-      const result = deleteTemplate(filename);
-      return new Response(
-        JSON.stringify(result),
-        { status: 204, headers: { 'content-type': 'application/json' } }
-      );
+      deleteTemplate(filename);
+      return new Response(null, { status: 204 });
     } catch (error) {
       return new Response(
         JSON.stringify({ success: false, error: error.message }),
