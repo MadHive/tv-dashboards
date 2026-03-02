@@ -20,6 +20,8 @@ export class BigQueryDataSource extends DataSource {
     this.queryCache = new Map();
     this.projectId = config.projectId || process.env.GCP_PROJECT_ID || 'mad-master';
     this.credentials = config.credentials || process.env.GOOGLE_APPLICATION_CREDENTIALS;
+    // Track if explicit config was provided (unit tests provide config, integration tests don't)
+    this._hasExplicitConfig = Object.keys(config).length > 0;
     // Note: Saved queries now managed by query-manager.js
   }
 
@@ -28,9 +30,9 @@ export class BigQueryDataSource extends DataSource {
    */
   async initialize() {
     try {
-      // Check for CI environment without credentials
-      // Note: Don't check NODE_ENV=test here - unit tests mock the client
-      if (process.env.CI === 'true') {
+      // Only use mock mode in CI for instances without explicit config
+      // (integration tests use default instance, unit tests provide config)
+      if (process.env.CI === 'true' && !this._hasExplicitConfig) {
         if (!this.credentials && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
           logger.info('[bigquery] No credentials in CI environment - using mock mode');
           this.client = null;
