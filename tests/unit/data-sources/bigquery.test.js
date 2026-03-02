@@ -2,14 +2,47 @@
 // BigQuery Data Source Tests
 // ===========================================================================
 
-import { describe, it, expect, beforeEach, mock } from 'bun:test';
+import { describe, it, expect, beforeEach, mock, beforeAll } from 'bun:test';
 import { BigQueryDataSource } from '../../../server/data-sources/bigquery.js';
+
+// Mock BigQuery client to prevent real GCP authentication in CI
+const mockBigQueryClient = {
+  query: mock(async () => [[{ value: 100 }]]),
+  createQueryJob: mock(async () => [{
+    id: 'mock-job-id',
+    getQueryResults: async () => [[{ value: 100 }]]
+  }]),
+  dataset: mock((datasetId) => ({
+    table: mock((tableId) => ({
+      get: mock(async () => [{
+        metadata: {
+          schema: {
+            fields: [
+              { name: 'column1', type: 'STRING' },
+              { name: 'column2', type: 'INTEGER' }
+            ]
+          }
+        }
+      }])
+    }))
+  }))
+};
 
 describe('BigQuery Data Source', () => {
   let dataSource;
 
+  beforeAll(() => {
+    // Mock BigQuery client globally
+    globalThis.__mockBigQueryClient = mockBigQueryClient;
+  });
+
   beforeEach(() => {
     dataSource = new BigQueryDataSource({});
+    // Mock the initialize method to prevent real BigQuery client creation
+    dataSource.initialize = async function() {
+      this.client = globalThis.__mockBigQueryClient;
+      this.isConnected = true;
+    };
   });
 
   describe('Constructor', () => {
