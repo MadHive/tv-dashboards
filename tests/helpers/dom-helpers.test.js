@@ -89,10 +89,10 @@ describe('DOM Helpers', () => {
       domEnv = setupDOM();
     });
 
-    it('should read and append script to DOM', async () => {
-      // Test that loadScript reads file and appends to DOM
-      // Note: Due to Bun/JSDOM interaction, actual execution may not work in tests
-      // but the function should at least append the script element
+    it('should read and execute script in window context', async () => {
+      // Test that loadScript reads file and executes it
+      // loadScript uses Function constructor to execute scripts directly
+      // rather than creating script elements (avoids Bun/JSDOM Proxy issues)
 
       const fs = await import('fs');
       const path = await import('path');
@@ -101,9 +101,14 @@ describe('DOM Helpers', () => {
       const utilsPath = path.join(process.cwd(), 'public/js/utils.js');
 
       if (fs.existsSync(utilsPath)) {
+        // Before loading, these should not exist
+        assert.ok(!domEnv.window.escapeHTML, 'escapeHTML should not exist before load');
+
         await loadScript(utilsPath, domEnv.window);
-        const scripts = domEnv.document.querySelectorAll('script');
-        assert.ok(scripts.length > 0, 'Should have script element in DOM');
+
+        // After loading, utils.js functions should be available
+        assert.ok(typeof domEnv.window.escapeHTML === 'function', 'Should have escapeHTML function');
+        assert.ok(typeof domEnv.window.setText === 'function', 'Should have setText function');
       } else {
         // Skip if utils.js doesn't exist
         assert.ok(true, 'Skipping - test file not found');

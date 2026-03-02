@@ -28,6 +28,10 @@ describe('Data Source Configuration', () => {
   });
 
   beforeEach(() => {
+    // Re-initialize database to ensure we're using the test database
+    // (other test files may have called initDatabase with different paths)
+    initDatabase(TEST_DB_PATH);
+
     // Clear data between tests
     const db = getDatabase();
     db.query('DELETE FROM data_source_configs').run();

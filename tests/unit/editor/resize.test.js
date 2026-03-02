@@ -22,10 +22,10 @@ describe('Editor: Resize', () => {
     cleanup();
   });
 
-  it('should initialize WidgetResizeController class', () => {
-    const WidgetResizeController = window.WidgetResizeController;
-    expect(WidgetResizeController).toBeTruthy();
-    expect(typeof WidgetResizeController).toBe('function');
+  it('should initialize ResizeController class', () => {
+    const ResizeController = window.ResizeController;
+    expect(ResizeController).toBeTruthy();
+    expect(typeof ResizeController).toBe('function');
   });
 
   it('should create resize controller instance', () => {
@@ -35,8 +35,8 @@ describe('Editor: Resize', () => {
       }
     };
 
-    const WidgetResizeController = window.WidgetResizeController;
-    const resizeController = new WidgetResizeController(mockEditorApp);
+    const ResizeController = window.ResizeController;
+    const resizeController = new ResizeController(mockEditorApp);
 
     expect(resizeController).toBeTruthy();
     expect(resizeController.editorApp).toBe(mockEditorApp);
@@ -49,8 +49,8 @@ describe('Editor: Resize', () => {
       }
     };
 
-    const WidgetResizeController = window.WidgetResizeController;
-    const resizeController = new WidgetResizeController(mockEditorApp);
+    const ResizeController = window.ResizeController;
+    const resizeController = new ResizeController(mockEditorApp);
 
     expect(resizeController.isResizing).toBe(false);
   });
@@ -62,37 +62,37 @@ describe('Editor: Resize', () => {
       }
     };
 
-    const WidgetResizeController = window.WidgetResizeController;
-    const resizeController = new WidgetResizeController(mockEditorApp);
+    const ResizeController = window.ResizeController;
+    const resizeController = new ResizeController(mockEditorApp);
 
     expect(resizeController.resizedWidget).toBe(null);
     expect(resizeController.resizedElement).toBe(null);
   });
 
-  it('should have attachResizeHandlers method', () => {
+  it('should have attachHandles method', () => {
     const mockEditorApp = {
       dashboardApp: {
         config: { dashboards: [] }
       }
     };
 
-    const WidgetResizeController = window.WidgetResizeController;
-    const resizeController = new WidgetResizeController(mockEditorApp);
+    const ResizeController = window.ResizeController;
+    const resizeController = new ResizeController(mockEditorApp);
 
-    expect(typeof resizeController.attachResizeHandlers).toBe('function');
+    expect(typeof resizeController.attachHandles).toBe('function');
   });
 
-  it('should have detachResizeHandlers method', () => {
+  it('should have removeHandles method', () => {
     const mockEditorApp = {
       dashboardApp: {
         config: { dashboards: [] }
       }
     };
 
-    const WidgetResizeController = window.WidgetResizeController;
-    const resizeController = new WidgetResizeController(mockEditorApp);
+    const ResizeController = window.ResizeController;
+    const resizeController = new ResizeController(mockEditorApp);
 
-    expect(typeof resizeController.detachResizeHandlers).toBe('function');
+    expect(typeof resizeController.removeHandles).toBe('function');
   });
 
   it('should have startResize method', () => {
@@ -102,8 +102,8 @@ describe('Editor: Resize', () => {
       }
     };
 
-    const WidgetResizeController = window.WidgetResizeController;
-    const resizeController = new WidgetResizeController(mockEditorApp);
+    const ResizeController = window.ResizeController;
+    const resizeController = new ResizeController(mockEditorApp);
 
     expect(typeof resizeController.startResize).toBe('function');
   });
@@ -115,8 +115,8 @@ describe('Editor: Resize', () => {
       }
     };
 
-    const WidgetResizeController = window.WidgetResizeController;
-    const resizeController = new WidgetResizeController(mockEditorApp);
+    const ResizeController = window.ResizeController;
+    const resizeController = new ResizeController(mockEditorApp);
 
     const widgetElement = document.createElement('div');
     widgetElement.className = 'widget';
@@ -127,7 +127,7 @@ describe('Editor: Resize', () => {
       position: { col: 1, row: 1, colSpan: 2, rowSpan: 2 }
     };
 
-    resizeController.attachResizeHandlers(widgetElement, mockConfig);
+    resizeController.attachHandles(widgetElement, mockConfig);
 
     const resizeHandles = widgetElement.querySelectorAll('.resize-handle');
     expect(resizeHandles.length).toBeGreaterThan(0);
