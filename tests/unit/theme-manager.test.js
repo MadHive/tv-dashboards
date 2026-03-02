@@ -93,74 +93,102 @@ describe("ThemeManager", () => {
   });
 
   describe("saveTheme()", () => {
-    it("should validate required fields", () => {
+    it("should validate required fields", async () => {
       const invalidTheme = { name: "Test" };
-      expect(() => manager.saveTheme(invalidTheme)).toThrow();
+      await expect(manager.saveTheme(invalidTheme)).rejects.toThrow();
     });
 
-    it("should prevent overwriting MadHive themes", () => {
+    it("should validate theme ID format", async () => {
+      const invalidIds = [
+        { id: "Invalid_ID", name: "Test", colors: { background: "#000", text: "#fff", primary: "#00f" } },
+        { id: "UPPERCASE", name: "Test", colors: { background: "#000", text: "#fff", primary: "#00f" } },
+        { id: "../path-traversal", name: "Test", colors: { background: "#000", text: "#fff", primary: "#00f" } },
+        { id: "a".repeat(51), name: "Test", colors: { background: "#000", text: "#fff", primary: "#00f" } },
+      ];
+
+      for (const theme of invalidIds) {
+        await expect(manager.saveTheme(theme)).rejects.toThrow();
+      }
+    });
+
+    it("should validate colors structure", async () => {
+      const invalidColors = [
+        { id: "test-1", name: "Test", colors: null },
+        { id: "test-2", name: "Test", colors: "invalid" },
+        { id: "test-3", name: "Test", colors: { background: "#000" } }, // missing text and primary
+        { id: "test-4", name: "Test", colors: { background: "#000", text: "#fff" } }, // missing primary
+      ];
+
+      for (const theme of invalidColors) {
+        await expect(manager.saveTheme(theme)).rejects.toThrow();
+      }
+    });
+
+    it("should prevent overwriting MadHive themes", async () => {
       const madhiveTheme = {
         id: "dark-high-contrast",
         name: "Modified",
         author: "MadHive",
-        colors: { background: "#000" }
+        colors: { background: "#000", text: "#fff", primary: "#00f" }
       };
-      expect(() => manager.saveTheme(madhiveTheme)).toThrow();
+      await expect(manager.saveTheme(madhiveTheme)).rejects.toThrow();
     });
 
-    it("should add createdAt timestamp for new themes", () => {
+    it("should add createdAt timestamp for new themes", async () => {
       const newTheme = {
         id: "test-theme",
         name: "Test Theme",
         category: "Test",
         colors: {
           background: "#000",
-          text: "#fff"
+          text: "#fff",
+          primary: "#00f"
         }
       };
-      const saved = manager.saveTheme(newTheme);
+      const saved = await manager.saveTheme(newTheme);
       expect(saved.createdAt).toBeDefined();
       expect(saved.author).toBe("Custom");
     });
 
-    it("should add updatedAt timestamp for existing themes", () => {
+    it("should add updatedAt timestamp for existing themes", async () => {
       const existingTheme = {
         id: "test-theme",
         name: "Test Theme Updated",
         category: "Test",
         colors: {
           background: "#000",
-          text: "#fff"
+          text: "#fff",
+          primary: "#00f"
         }
       };
-      const saved = manager.saveTheme(existingTheme);
+      const saved = await manager.saveTheme(existingTheme);
       expect(saved.updatedAt).toBeDefined();
     });
   });
 
   describe("deleteTheme()", () => {
-    it("should prevent deleting MadHive themes", () => {
-      expect(() => manager.deleteTheme("dark-high-contrast")).toThrow();
+    it("should prevent deleting MadHive themes", async () => {
+      await expect(manager.deleteTheme("dark-high-contrast")).rejects.toThrow();
     });
 
-    it("should delete custom themes", () => {
+    it("should delete custom themes", async () => {
       // First create a custom theme
       const customTheme = {
         id: "delete-test",
         name: "Delete Test",
         category: "Test",
-        colors: { background: "#000", text: "#fff" }
+        colors: { background: "#000", text: "#fff", primary: "#00f" }
       };
-      manager.saveTheme(customTheme);
+      await manager.saveTheme(customTheme);
 
       // Then delete it
-      const result = manager.deleteTheme("delete-test");
+      const result = await manager.deleteTheme("delete-test");
       expect(result).toBe(true);
       expect(manager.getTheme("delete-test")).toBeNull();
     });
 
-    it("should return false for non-existent theme", () => {
-      const result = manager.deleteTheme("non-existent");
+    it("should return false for non-existent theme", async () => {
+      const result = await manager.deleteTheme("non-existent");
       expect(result).toBe(false);
     });
   });

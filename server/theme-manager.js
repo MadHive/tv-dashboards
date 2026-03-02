@@ -26,7 +26,7 @@ export class ThemeManager {
   async loadThemes() {
     try {
       const content = await fs.readFile(this.configPath, "utf8");
-      const data = yaml.load(content);
+      const data = yaml.load(content, { schema: yaml.CORE_SCHEMA });
       this.themes = data.themes || [];
 
       // Build lookup map for performance
@@ -101,10 +101,29 @@ export class ThemeManager {
    * @returns {object} Saved theme
    * @throws {Error} If validation fails or attempting to overwrite MadHive theme
    */
-  saveTheme(theme) {
+  async saveTheme(theme) {
     // Validate required fields
     if (!theme.id || !theme.name || !theme.colors) {
       throw new Error("Theme must have id, name, and colors");
+    }
+
+    // Validate theme.id format (security - prevent path traversal)
+    if (typeof theme.id !== 'string' || !/^[a-z0-9-]+$/.test(theme.id)) {
+      throw new Error('Theme ID must be lowercase alphanumeric with hyphens');
+    }
+    if (theme.id.length > 50) {
+      throw new Error('Theme ID must be less than 50 characters');
+    }
+
+    // Validate colors structure
+    const requiredColors = ['background', 'text', 'primary'];
+    if (!theme.colors || typeof theme.colors !== 'object') {
+      throw new Error('Theme colors must be an object');
+    }
+    for (const color of requiredColors) {
+      if (!theme.colors[color]) {
+        throw new Error(`Theme colors must include ${color}`);
+      }
     }
 
     // Check if theme exists
@@ -139,6 +158,9 @@ export class ThemeManager {
     // Update map
     this.themesMap.set(theme.id, theme);
 
+    // Persist to disk
+    await this.writeThemes();
+
     return theme;
   }
 
@@ -148,7 +170,7 @@ export class ThemeManager {
    * @returns {boolean} True if deleted, false if not found
    * @throws {Error} If attempting to delete MadHive theme
    */
-  deleteTheme(id) {
+  async deleteTheme(id) {
     const theme = this.getTheme(id);
 
     if (!theme) {
@@ -169,6 +191,9 @@ export class ThemeManager {
     // Remove from map
     this.themesMap.delete(id);
 
+    // Persist to disk
+    await this.writeThemes();
+
     return true;
   }
 
@@ -176,17 +201,21 @@ export class ThemeManager {
    * Write themes to YAML file
    */
   async writeThemes() {
-    const data = {
-      themes: this.themes
-    };
+    try {
+      const data = {
+        themes: this.themes
+      };
 
-    const yamlContent = yaml.dump(data, {
-      indent: 2,
-      lineWidth: -1,
-      noRefs: true
-    });
+      const yamlContent = yaml.dump(data, {
+        indent: 2,
+        lineWidth: -1,
+        noRefs: true
+      });
 
-    await fs.writeFile(this.configPath, yamlContent, "utf8");
+      await fs.writeFile(this.configPath, yamlContent, "utf8");
+    } catch (error) {
+      throw new Error(`Failed to write themes to ${this.configPath}: ${error.message}`);
+    }
   }
 
   /**

@@ -1,138 +1,131 @@
-# TV Dashboard Themes Configuration
-# Optimized for large displays and readability from distance
-
 themes:
   - id: dark-high-contrast
-    name: "Dark High Contrast"
-    category: "TV-Optimized"
-    description: "Maximum readability with vibrant colors on pure black background"
+    name: Dark High Contrast
+    category: TV-Optimized
+    description: Maximum readability with vibrant colors on pure black background
     isDefault: true
     author: MadHive
-    createdAt: "2026-03-02"
+    createdAt: '2026-03-02'
     colors:
-      background: "#000000"
-      surface: "#1a1a1a"
-      primary: "#FF006E"
-      secondary: "#00F5FF"
-      success: "#00FF41"
-      warning: "#FFD60A"
-      error: "#FF006E"
-      text: "#FFFFFF"
-      textSecondary: "#B0B0B0"
+      background: '#000000'
+      surface: '#1a1a1a'
+      primary: '#FF006E'
+      secondary: '#00F5FF'
+      success: '#00FF41'
+      warning: '#FFD60A'
+      error: '#FF006E'
+      text: '#FFFFFF'
+      textSecondary: '#B0B0B0'
     fonts:
-      base: "24px"
-      title: "48px"
-      widget: "28px"
-      small: "20px"
+      base: 24px
+      title: 48px
+      widget: 28px
+      small: 20px
     spacing:
-      gap: "24px"
-      padding: "20px"
-      margin: "16px"
-
+      gap: 24px
+      padding: 20px
+      margin: 16px
   - id: light-clean
-    name: "Light Clean"
-    category: "TV-Optimized"
-    description: "Professional light theme with excellent contrast"
+    name: Light Clean
+    category: TV-Optimized
+    description: Professional light theme with excellent contrast
     isDefault: false
     author: MadHive
-    createdAt: "2026-03-02"
+    createdAt: '2026-03-02'
     colors:
-      background: "#FFFFFF"
-      surface: "#F5F5F5"
-      primary: "#2563EB"
-      secondary: "#7C3AED"
-      success: "#10B981"
-      warning: "#F59E0B"
-      error: "#EF4444"
-      text: "#1F2937"
-      textSecondary: "#6B7280"
+      background: '#FFFFFF'
+      surface: '#F5F5F5'
+      primary: '#2563EB'
+      secondary: '#7C3AED'
+      success: '#10B981'
+      warning: '#F59E0B'
+      error: '#EF4444'
+      text: '#1F2937'
+      textSecondary: '#6B7280'
     fonts:
-      base: "22px"
-      title: "44px"
-      widget: "26px"
-      small: "18px"
+      base: 22px
+      title: 44px
+      widget: 26px
+      small: 18px
     spacing:
-      gap: "22px"
-      padding: "18px"
-      margin: "14px"
-
+      gap: 22px
+      padding: 18px
+      margin: 14px
   - id: neon-cyberpunk
-    name: "Neon Cyberpunk"
-    category: "TV-Optimized"
-    description: "Futuristic neon aesthetic with high visual impact"
+    name: Neon Cyberpunk
+    category: TV-Optimized
+    description: Futuristic neon aesthetic with high visual impact
     isDefault: false
     author: MadHive
-    createdAt: "2026-03-02"
+    createdAt: '2026-03-02'
     colors:
-      background: "#1a1a1a"
-      surface: "#2a2a2a"
-      primary: "#FF006E"
-      secondary: "#00F5FF"
-      success: "#39FF14"
-      warning: "#FFFF00"
-      error: "#FF0080"
-      text: "#00F5FF"
-      textSecondary: "#888888"
+      background: '#1a1a1a'
+      surface: '#2a2a2a'
+      primary: '#FF006E'
+      secondary: '#00F5FF'
+      success: '#39FF14'
+      warning: '#FFFF00'
+      error: '#FF0080'
+      text: '#00F5FF'
+      textSecondary: '#888888'
     fonts:
-      base: "24px"
-      title: "50px"
-      widget: "28px"
-      small: "20px"
+      base: 24px
+      title: 50px
+      widget: 28px
+      small: 20px
     spacing:
-      gap: "26px"
-      padding: "22px"
-      margin: "18px"
-
+      gap: 26px
+      padding: 22px
+      margin: 18px
   - id: corporate-blue
-    name: "Corporate Blue"
-    category: "Professional"
-    description: "Traditional corporate aesthetic with professional blue palette"
+    name: Corporate Blue
+    category: Professional
+    description: Traditional corporate aesthetic with professional blue palette
     isDefault: false
     author: MadHive
-    createdAt: "2026-03-02"
+    createdAt: '2026-03-02'
     colors:
-      background: "#1e3a5f"
-      surface: "#2c4f7c"
-      primary: "#3B82F6"
-      secondary: "#60A5FA"
-      success: "#34D399"
-      warning: "#FBBF24"
-      error: "#F87171"
-      text: "#F0F9FF"
-      textSecondary: "#BFDBFE"
+      background: '#1e3a5f'
+      surface: '#2c4f7c'
+      primary: '#3B82F6'
+      secondary: '#60A5FA'
+      success: '#34D399'
+      warning: '#FBBF24'
+      error: '#F87171'
+      text: '#F0F9FF'
+      textSecondary: '#BFDBFE'
     fonts:
-      base: "22px"
-      title: "44px"
-      widget: "26px"
-      small: "18px"
+      base: 22px
+      title: 44px
+      widget: 26px
+      small: 18px
     spacing:
-      gap: "20px"
-      padding: "16px"
-      margin: "12px"
-
+      gap: 20px
+      padding: 16px
+      margin: 12px
   - id: alert-red
-    name: "Alert Red"
-    category: "Operations"
-    description: "High-urgency theme for monitoring critical systems"
+    name: Alert Red
+    category: Operations
+    description: High-urgency theme for monitoring critical systems
     isDefault: false
     author: MadHive
-    createdAt: "2026-03-02"
+    createdAt: '2026-03-02'
     colors:
-      background: "#2b0000"
-      surface: "#450000"
-      primary: "#FF0000"
-      secondary: "#FF4444"
-      success: "#00FF00"
-      warning: "#FFAA00"
-      error: "#FF0000"
-      text: "#FFCCCC"
-      textSecondary: "#CC8888"
+      background: '#2b0000'
+      surface: '#450000'
+      primary: '#FF0000'
+      secondary: '#FF4444'
+      success: '#00FF00'
+      warning: '#FFAA00'
+      error: '#FF0000'
+      text: '#FFCCCC'
+      textSecondary: '#CC8888'
     fonts:
-      base: "26px"
-      title: "52px"
-      widget: "30px"
-      small: "22px"
+      base: 26px
+      title: 52px
+      widget: 30px
+      small: 22px
     spacing:
-      gap: "28px"
-      padding: "24px"
-      margin: "20px"
+      gap: 28px
+      padding: 24px
+      margin: 20px
