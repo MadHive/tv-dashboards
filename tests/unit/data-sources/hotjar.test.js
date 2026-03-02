@@ -38,6 +38,57 @@ describe('HotJar Data Source', () => {
     });
   });
 
+  describe('fetchMetrics() - without credentials', () => {
+    it('should return mock data when client not initialized', async () => {
+      const result = await dataSource.fetchMetrics({
+        id: 'test-widget',
+        type: 'big-number'
+      });
+
+      expect(result).toHaveProperty('timestamp');
+      expect(result).toHaveProperty('source');
+      expect(result).toHaveProperty('data');
+      expect(result.source).toBe('hotjar');
+    });
+  });
+
+  describe('transformData()', () => {
+    it('should handle empty results', () => {
+      const result = dataSource.transformData(null, 'big-number');
+      expect(result).toBeDefined();
+    });
+
+    it('should transform pageview data for big-number', () => {
+      const mockResponse = {
+        pageviews: 125430,
+        previous_pageviews: 112000
+      };
+
+      const result = dataSource.transformData(mockResponse, 'big-number');
+
+      expect(result).toHaveProperty('value');
+      expect(result.value).toBe(125430);
+      expect(result).toHaveProperty('trend');
+    });
+
+    it('should transform time series data for line-chart', () => {
+      const mockResponse = {
+        data: [
+          { date: '2024-01-01', value: 100 },
+          { date: '2024-01-02', value: 150 },
+          { date: '2024-01-03', value: 120 }
+        ]
+      };
+
+      const result = dataSource.transformData(mockResponse, 'line-chart');
+
+      expect(result).toHaveProperty('labels');
+      expect(result).toHaveProperty('values');
+      expect(result.labels.length).toBe(3);
+      expect(result.values).toEqual([100, 150, 120]);
+    });
+  });
+
   describe('getMockData()', () => {
     it('should return mock data for big-number widget', () => {
       const data = dataSource.getMockData('big-number');
