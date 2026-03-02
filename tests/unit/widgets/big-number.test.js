@@ -9,15 +9,15 @@ import { setupDOM, loadScript, mockCanvas } from '../../helpers/dom-helpers.js';
 describe('Widget: Big Number', () => {
   let dom, cleanup;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     const setup = setupDOM();
     dom = setup.dom;
     cleanup = setup.cleanup;
 
     // Load Charts utilities (required dependency)
-    loadScript('public/js/charts.js');
+    await loadScript('public/js/charts.js');
     // Load Widgets
-    loadScript('public/js/widgets.js');
+    await loadScript('public/js/widgets.js');
   });
 
   afterEach(() => {
