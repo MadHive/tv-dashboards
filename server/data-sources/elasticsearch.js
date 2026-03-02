@@ -384,14 +384,135 @@ export class ElasticsearchDataSource extends DataSource {
     return response;
   }
 
+  /**
+   * Get mock data for testing when Elasticsearch not available
+   */
   getMockData(widgetType) {
-    return this.getEmptyData(widgetType);
+    switch (widgetType) {
+      case 'big-number':
+      case 'stat-card':
+        return {
+          value: Math.round(Math.random() * 100000),
+          unit: 'docs'
+        };
+
+      case 'gauge':
+      case 'gauge-row':
+        return {
+          value: Math.round(Math.random() * 100),
+          min: 0,
+          max: 100,
+          unit: '%'
+        };
+
+      case 'bar-chart':
+        return {
+          values: [
+            { label: 'errors', value: 145 },
+            { label: 'warnings', value: 312 },
+            { label: 'info', value: 4280 },
+            { label: 'debug', value: 8910 }
+          ]
+        };
+
+      case 'line-chart':
+      case 'sparkline': {
+        const now = Date.now();
+        return {
+          labels: Array.from({ length: 12 }, (_, i) =>
+            new Date(now - (11 - i) * 300000).toISOString()
+          ),
+          values: Array.from({ length: 12 }, () =>
+            Math.round(Math.random() * 1000)
+          ),
+          series: 'Mock Documents'
+        };
+      }
+
+      default:
+        return this.getEmptyData(widgetType);
+    }
   }
 
+  /**
+   * Get available Elasticsearch metrics
+   */
   getAvailableMetrics() {
     return [
-      { id: 'doc_count', name: 'Document Count', type: 'number', widgets: ['big-number'] },
-      { id: 'index_size', name: 'Index Size', type: 'bytes', widgets: ['stat-card'] }
+      {
+        id: 'log_count',
+        name: 'Log Count',
+        description: 'Total number of log documents',
+        index: 'logs-*',
+        aggregation: 'count',
+        type: 'number',
+        widgets: ['big-number', 'stat-card', 'line-chart']
+      },
+      {
+        id: 'error_rate',
+        name: 'Error Rate',
+        description: 'Percentage of error-level logs',
+        index: 'logs-*',
+        query: { match: { level: 'error' } },
+        aggregation: 'count',
+        type: 'percentage',
+        widgets: ['gauge', 'gauge-row', 'big-number']
+      },
+      {
+        id: 'response_time_avg',
+        name: 'Average Response Time',
+        description: 'Average API response time',
+        index: 'metrics-*',
+        aggregation: 'avg',
+        field: 'response_time_ms',
+        type: 'duration',
+        widgets: ['gauge', 'line-chart', 'big-number']
+      },
+      {
+        id: 'request_rate',
+        name: 'Request Rate',
+        description: 'Requests per time interval',
+        index: 'metrics-*',
+        aggregation: 'count',
+        type: 'number',
+        widgets: ['line-chart', 'bar-chart', 'big-number']
+      },
+      {
+        id: 'unique_users',
+        name: 'Unique Users',
+        description: 'Unique user count',
+        index: 'events-*',
+        aggregation: 'cardinality',
+        field: 'user_id',
+        type: 'number',
+        widgets: ['big-number', 'stat-card']
+      },
+      {
+        id: 'disk_usage',
+        name: 'Index Disk Usage',
+        description: 'Total disk space used by indices',
+        aggregation: 'sum',
+        field: 'store.size_in_bytes',
+        type: 'bytes',
+        widgets: ['big-number', 'gauge']
+      },
+      {
+        id: 'search_latency_p95',
+        name: 'Search Latency (p95)',
+        description: '95th percentile search latency',
+        aggregation: 'percentiles',
+        field: 'search_time_ms',
+        type: 'duration',
+        widgets: ['gauge', 'line-chart']
+      },
+      {
+        id: 'custom_aggregation',
+        name: 'Custom Aggregation',
+        description: 'User-defined custom aggregation',
+        aggregation: 'count',
+        type: 'number',
+        widgets: ['big-number', 'gauge', 'line-chart', 'bar-chart']
+      }
     ];
   }
 }
