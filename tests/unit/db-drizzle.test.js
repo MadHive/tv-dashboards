@@ -2,9 +2,14 @@
 // Drizzle Schema Tests — Verify schema definitions match existing database
 // ===========================================================================
 
-import { describe, it, expect } from 'bun:test';
+import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
 import { getTableColumns, getTableName } from 'drizzle-orm';
 import { dataSourceConfigs, configAuditLog } from '../../server/db/schema.js';
+import { initDatabase, closeDatabase } from '../../server/db.js';
+import { getDrizzle } from '../../server/db/index.js';
+import { join } from 'path';
+import { unlink } from 'fs/promises';
+import { existsSync } from 'fs';
 
 describe('Drizzle Schema Definitions', () => {
   describe('dataSourceConfigs table', () => {
@@ -52,5 +57,43 @@ describe('Drizzle Schema Definitions', () => {
       expect(columns.userEmail).toBeDefined();
       expect(columns.timestamp).toBeDefined();
     });
+  });
+});
+
+const TEST_DB_PATH = join(process.cwd(), 'data', 'test-drizzle-instance.db');
+
+describe('Drizzle Instance', () => {
+  beforeAll(() => {
+    initDatabase(TEST_DB_PATH);
+  });
+
+  afterAll(async () => {
+    closeDatabase();
+    for (const ext of ['', '-shm', '-wal']) {
+      const p = TEST_DB_PATH + ext;
+      if (existsSync(p)) await unlink(p);
+    }
+  });
+
+  it('should return a Drizzle instance with select capability', () => {
+    const db = getDrizzle();
+    expect(db).toBeDefined();
+    expect(typeof db.select).toBe('function');
+  });
+
+  it('should return a Drizzle instance with insert capability', () => {
+    const db = getDrizzle();
+    expect(typeof db.insert).toBe('function');
+  });
+
+  it('should return a Drizzle instance with transaction capability', () => {
+    const db = getDrizzle();
+    expect(typeof db.transaction).toBe('function');
+  });
+
+  it('should query the data_source_configs table without error', () => {
+    const db = getDrizzle();
+    const rows = db.select().from(dataSourceConfigs).all();
+    expect(Array.isArray(rows)).toBe(true);
   });
 });
