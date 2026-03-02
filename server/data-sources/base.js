@@ -71,13 +71,13 @@ export class DataSource {
     try {
       this.isConnected = await this.testConnection();
       if (this.isConnected) {
-        console.log(`[${this.name}] Connected successfully`);
+        logger.info('[${this.name}] Connected successfully');
       } else {
-        console.warn(`[${this.name}] Connection test failed`);
+        logger.warn('[${this.name}] Connection test failed');
       }
     } catch (error) {
       this.lastError = error;
-      console.error(`[${this.name}] Initialization error:`, error.message);
+      logger.error({ dataSource: this.name, error: error.message }, 'Data source initialization error');
       this.isConnected = false;
     }
   }
@@ -125,14 +125,14 @@ export class DataSource {
    * @returns {Object} - Fallback data
    */
   handleError(error, widgetType) {
-    console.error(`[${this.name}] Error fetching metrics:`, error.message);
+    logger.error({ dataSource: this.name, error: error.message }, 'Error fetching metrics');
     this.lastError = error;
 
     // Return mock data as fallback
     try {
       return this.getMockData(widgetType);
     } catch (mockError) {
-      console.error(`[${this.name}] Failed to get mock data:`, mockError.message);
+      logger.error({ dataSource: this.name, error: mockError.message }, 'Failed to get mock data');
       return this.getEmptyData(widgetType);
     }
   }

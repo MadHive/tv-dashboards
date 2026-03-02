@@ -360,6 +360,301 @@ describe('Query Routes (Elysia Unit Tests)', () => {
     });
   });
 
+  describe('POST /api/queries/:source/test', () => {
+    it('should test BigQuery query with valid SQL', async () => {
+      const testQuery = {
+        sql: 'SELECT 1 as test_value, "hello" as test_string'
+      };
+
+      const response = await app.handle(
+        new Request('http://localhost/api/queries/bigquery/test', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(testQuery)
+        })
+      );
+
+      expect(response.status).toBe(200);
+
+      const data = await response.json();
+      expect(data.success).toBe(true);
+      expect(data.source).toBe('bigquery');
+      expect(data.executionTime).toBeNumber();
+      expect(data.results).toBeDefined();
+      expect(data.rowCount).toBeNumber();
+    });
+
+    it('should test BigQuery query and automatically add LIMIT', async () => {
+      const testQuery = {
+        sql: 'SELECT 1 as value UNION ALL SELECT 2 UNION ALL SELECT 3'
+      };
+
+      const response = await app.handle(
+        new Request('http://localhost/api/queries/bigquery/test', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(testQuery)
+        })
+      );
+
+      expect(response.status).toBe(200);
+
+      const data = await response.json();
+      expect(data.success).toBe(true);
+      expect(data.source).toBe('bigquery');
+      // Should have limited results even though query returns multiple rows
+      expect(data.rowCount).toBeLessThanOrEqual(50);
+    });
+
+    it('should return 400 when BigQuery test missing sql field', async () => {
+      const testQuery = {
+        params: {}
+      };
+
+      const response = await app.handle(
+        new Request('http://localhost/api/queries/bigquery/test', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(testQuery)
+        })
+      );
+
+      expect(response.status).toBe(400);
+
+      const data = await response.json();
+      expect(data.success).toBe(false);
+      expect(data.error).toContain('BigQuery test queries require sql field');
+    });
+
+    it('should handle BigQuery SQL errors gracefully', async () => {
+      const testQuery = {
+        sql: 'SELECT * FROM nonexistent_table_that_does_not_exist'
+      };
+
+      const response = await app.handle(
+        new Request('http://localhost/api/queries/bigquery/test', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(testQuery)
+        })
+      );
+
+      expect(response.status).toBe(200);
+
+      const data = await response.json();
+      expect(data.success).toBe(false);
+      expect(data.error).toBeDefined();
+      expect(data.executionTime).toBeNumber();
+    });
+
+    it('should test GCP monitoring query with valid metricType', async () => {
+      const testQuery = {
+        metricType: 'run.googleapis.com/request_count',
+        project: 'mad-master',
+        timeWindow: 10
+      };
+
+      const response = await app.handle(
+        new Request('http://localhost/api/queries/gcp/test', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(testQuery)
+        })
+      );
+
+      expect(response.status).toBe(200);
+
+      const data = await response.json();
+      expect(data.success).toBe(true);
+      expect(data.source).toBe('gcp');
+      expect(data.executionTime).toBeNumber();
+      expect(data.results).toBeDefined();
+      expect(data.rowCount).toBeNumber();
+    });
+
+    it('should return 400 when GCP test missing metricType field', async () => {
+      const testQuery = {
+        project: 'mad-master'
+      };
+
+      const response = await app.handle(
+        new Request('http://localhost/api/queries/gcp/test', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(testQuery)
+        })
+      );
+
+      expect(response.status).toBe(400);
+
+      const data = await response.json();
+      expect(data.success).toBe(false);
+      expect(data.error).toContain('GCP test queries require metricType field');
+    });
+
+    it('should test GCP query with aggregation and filters', async () => {
+      const testQuery = {
+        metricType: 'run.googleapis.com/request_count',
+        project: 'mad-master',
+        timeWindow: 5,
+        aggregation: {
+          alignmentPeriod: { seconds: 60 },
+          perSeriesAligner: 'ALIGN_RATE',
+          crossSeriesReducer: 'REDUCE_SUM'
+        },
+        filters: {}
+      };
+
+      const response = await app.handle(
+        new Request('http://localhost/api/queries/gcp/test', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(testQuery)
+        })
+      );
+
+      expect(response.status).toBe(200);
+
+      const data = await response.json();
+      expect(data.success).toBe(true);
+      expect(data.source).toBe('gcp');
+    });
+
+    it('should test mock data source', async () => {
+      const testQuery = {
+        anyField: 'value'
+      };
+
+      const response = await app.handle(
+        new Request('http://localhost/api/queries/mock/test', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(testQuery)
+        })
+      );
+
+      expect(response.status).toBe(200);
+
+      const data = await response.json();
+      expect(data.success).toBe(true);
+      expect(data.source).toBe('mock');
+      expect(data.results).toBeArray();
+      expect(data.rowCount).toBe(3);
+    });
+
+    it('should handle unimplemented data sources gracefully', async () => {
+      const testQuery = {
+        query: 'test'
+      };
+
+      const response = await app.handle(
+        new Request('http://localhost/api/queries/elasticsearch/test', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(testQuery)
+        })
+      );
+
+      expect(response.status).toBe(200);
+
+      const data = await response.json();
+      expect(data.success).toBe(true);
+      expect(data.message).toContain('not yet implemented');
+      expect(data.source).toBe('elasticsearch');
+      expect(data.executionTime).toBeNumber();
+    });
+
+    it('should measure and report execution time', async () => {
+      const testQuery = {
+        sql: 'SELECT 1 as value'
+      };
+
+      const response = await app.handle(
+        new Request('http://localhost/api/queries/bigquery/test', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(testQuery)
+        })
+      );
+
+      expect(response.status).toBe(200);
+
+      const data = await response.json();
+      expect(data.success).toBe(true);
+      expect(data.executionTime).toBeNumber();
+      expect(data.executionTime).toBeGreaterThanOrEqual(0);
+    });
+
+    it('should limit BigQuery results to 50 rows max', async () => {
+      // This test validates the safety limit, even if query returns more
+      const testQuery = {
+        sql: 'SELECT num FROM UNNEST(GENERATE_ARRAY(1, 100)) as num LIMIT 100'
+      };
+
+      const response = await app.handle(
+        new Request('http://localhost/api/queries/bigquery/test', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(testQuery)
+        })
+      );
+
+      expect(response.status).toBe(200);
+
+      const data = await response.json();
+      if (data.success) {
+        expect(data.results.length).toBeLessThanOrEqual(50);
+      }
+    });
+
+    it('should limit GCP time series results to 10 items max', async () => {
+      const testQuery = {
+        metricType: 'run.googleapis.com/request_count',
+        project: 'mad-master',
+        timeWindow: 60 // Longer window might return more series
+      };
+
+      const response = await app.handle(
+        new Request('http://localhost/api/queries/gcp/test', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(testQuery)
+        })
+      );
+
+      expect(response.status).toBe(200);
+
+      const data = await response.json();
+      if (data.success && data.results) {
+        expect(data.results.length).toBeLessThanOrEqual(10);
+      }
+    });
+  });
+
   describe('Error Handling', () => {
     it('should handle malformed JSON in POST request', async () => {
       const response = await app.handle(

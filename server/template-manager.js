@@ -6,6 +6,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, unlinkSync } from
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { dump, load } from 'js-yaml';
+import logger from './logger.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_DIR = join(__dirname, '..', 'config', 'templates');
@@ -39,10 +40,10 @@ export async function saveTemplate(templateName, dashboardConfig, metadata = {})
     // Write to file
     writeFileSync(filepath, yamlContent, 'utf8');
 
-    console.log('[template-manager] Template saved:', filename);
+    logger.info({ filename }, 'Template saved');
     return { success: true, filename, template };
   } catch (error) {
-    console.error('[template-manager] Failed to save template:', error.message);
+    logger.error({ error: error.message }, 'Failed to save template');
     throw error;
   }
 }
@@ -74,7 +75,7 @@ export function listTemplates() {
             createdAt: template.createdAt
           };
         } catch (err) {
-          console.warn('[template-manager] Failed to load template:', filename, err.message);
+          logger.warn({ filename, error: err.message }, 'Failed to load template');
           return null;
         }
       })
@@ -82,7 +83,7 @@ export function listTemplates() {
 
     return templates;
   } catch (error) {
-    console.error('[template-manager] Failed to list templates:', error.message);
+    logger.error({ error: error.message }, 'Failed to list templates');
     return [];
   }
 }
@@ -101,10 +102,10 @@ export function loadTemplate(filename) {
     const content = readFileSync(filepath, 'utf8');
     const template = load(content);
 
-    console.log('[template-manager] Template loaded:', filename);
+    logger.info({ filename }, 'Template loaded');
     return template;
   } catch (error) {
-    console.error('[template-manager] Failed to load template:', error.message);
+    logger.error({ error: error.message }, 'Failed to load template');
     throw error;
   }
 }
@@ -122,10 +123,10 @@ export function deleteTemplate(filename) {
 
     unlinkSync(filepath);
 
-    console.log('[template-manager] Template deleted:', filename);
+    logger.info({ filename }, 'Template deleted');
     return { success: true, filename };
   } catch (error) {
-    console.error('[template-manager] Failed to delete template:', error.message);
+    logger.error({ error: error.message }, 'Failed to delete template');
     throw error;
   }
 }
@@ -143,7 +144,7 @@ export function exportDashboard(dashboardConfig) {
 
     return JSON.stringify(exportData, null, 2);
   } catch (error) {
-    console.error('[template-manager] Failed to export dashboard:', error.message);
+    logger.error({ error: error.message }, 'Failed to export dashboard');
     throw error;
   }
 }
@@ -159,10 +160,10 @@ export function importDashboard(jsonString) {
       throw new Error('Invalid import format: missing dashboard field');
     }
 
-    console.log('[template-manager] Dashboard imported successfully');
+    logger.info('Dashboard imported successfully');
     return importData.dashboard;
   } catch (error) {
-    console.error('[template-manager] Failed to import dashboard:', error.message);
+    logger.error({ error: error.message }, 'Failed to import dashboard');
     throw error;
   }
 }
