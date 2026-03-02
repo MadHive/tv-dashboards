@@ -12,6 +12,7 @@ import {
   listBackups,
   restoreBackup
 } from './query-manager.js';
+import { dataSourceRegistry } from './data-source-registry.js';
 
 /**
  * Universal query routes for all data sources
@@ -221,25 +222,92 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
   // Test query execution (dry run)
   .post('/:source/test', async ({ params, body }) => {
     try {
-      // TODO: Implement test execution for each data source
-      // For now, just validate the query structure
-      return {
-        success: true,
-        message: 'Query test endpoint - implementation pending',
-        source: params.source,
-        query: body
-      };
+      const { source } = params;
+
+      // Validate query structure
+      if (!body || !body.sql) {
+        return {
+          success: false,
+          error: 'Missing required field: sql'
+        };
+      }
+
+      // Get data source from registry
+      let dataSource;
+      try {
+        dataSource = dataSourceRegistry.getSource(source);
+      } catch (error) {
+        return {
+          success: false,
+          error: `Unknown data source: ${source}`
+        };
+      }
+
+      if (!dataSource) {
+        return {
+          success: false,
+          error: `Unknown data source: ${source}`
+        };
+      }
+
+      // Execute test query based on source type
+      let result;
+
+      if (source === 'bigquery') {
+        // Execute BigQuery SQL query (limit to 10 rows for testing)
+        const testSql = body.sql.trim().toLowerCase().includes('limit')
+          ? body.sql
+          : `${body.sql.trim().replace(/;?\s*$/, '')} LIMIT 10`;
+
+        const rows = await dataSource.executeQuery(testSql, {}, false); // no cache for tests
+
+        result = {
+          success: true,
+          message: 'Query executed successfully',
+          rowCount: rows?.length || 0,
+          preview: rows?.slice(0, 5) || [], // Show first 5 rows
+          sql: testSql
+        };
+      } else if (source === 'gcp') {
+        // For GCP Monitoring, validate the metric query structure
+        if (!body.metric) {
+          return {
+            success: false,
+            error: 'GCP queries require a "metric" field'
+          };
+        }
+
+        result = {
+          success: true,
+          message: 'GCP metric query structure is valid',
+          metric: body.metric,
+          filters: body.filters || {},
+          aggregation: body.aggregation || 'mean'
+        };
+      } else {
+        // For other sources, validate structure only
+        result = {
+          success: true,
+          message: `Query structure validated for ${source}`,
+          note: `Full execution not yet implemented for ${source}`,
+          query: body
+        };
+      }
+
+      return result;
     } catch (error) {
+      console.error('[query-routes] Test execution error:', error);
       return {
         success: false,
-        error: error.message
+        error: error.message,
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
       };
     }
   }, {
     detail: {
       tags: ['Queries'],
       summary: 'Test query',
-      description: 'Test query execution without saving (dry run)'
+      description: 'Test query execution without saving (dry run). Executes BigQuery queries with LIMIT 10, validates structure for other sources.'
     }
   })
 
