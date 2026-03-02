@@ -5,6 +5,7 @@
 import { JSDOM } from 'jsdom';
 import fs from 'fs';
 import path from 'path';
+import vm from 'vm';
 
 /**
  * Initialize jsdom environment with test container
@@ -74,11 +75,30 @@ export function setupDOM(options = {}) {
   // Add fetch mock to window (JSDOM doesn't provide fetch by default)
   window.fetch = mockFetch();
 
+  // Add Image constructor (needed for charts.js)
+  window.Image = window.Image || class {
+    constructor() {
+      this.src = "";
+      this.alt = "";
+      this.width = 0;
+      this.height = 0;
+    }
+  };
+
   // Expose globals
   global.window = window;
   global.document = window.document;
   global.navigator = window.navigator;
   global.HTMLElement = window.HTMLElement;
+  global.Image = window.Image;
+
+  // Add requestAnimationFrame mock (needed for pipeline animations)
+  global.requestAnimationFrame = global.requestAnimationFrame || function(callback) {
+    return setTimeout(callback, 16); // ~60fps
+  };
+  global.cancelAnimationFrame = global.cancelAnimationFrame || function(id) {
+    clearTimeout(id);
+  };
 
   const container = window.document.getElementById('test-container');
 
@@ -124,10 +144,23 @@ export function loadScript(scriptPath, windowContext = global.window) {
 
     const scriptContent = fs.readFileSync(fullPath, 'utf-8');
 
-    // Execute script in window context
-    const scriptElement = windowContext.document.createElement('script');
-    scriptElement.textContent = scriptContent;
-    windowContext.document.head.appendChild(scriptElement);
+    // Execute script directly in the window context using Function constructor
+    // This avoids the Bun/JSDOM Proxy incompatibility
+    const scriptFunc = new Function(
+      'window',
+      'document',
+      'self',
+      'global',
+      scriptContent
+    );
+
+    scriptFunc.call(
+      windowContext,
+      windowContext,
+      windowContext.document,
+      windowContext,
+      windowContext
+    );
 
     return Promise.resolve();
   } catch (error) {
@@ -237,6 +270,12 @@ export function mockCanvasContext() {
     arc: function(x, y, radius, startAngle, endAngle, anticlockwise) {
       this._operations.push({ type: 'arc', x, y, radius, startAngle, endAngle, anticlockwise });
     },
+    quadraticCurveTo: function(cpx, cpy, x, y) {
+      this._operations.push({ type: 'quadraticCurveTo', cpx, cpy, x, y });
+    },
+    bezierCurveTo: function(cp1x, cp1y, cp2x, cp2y, x, y) {
+      this._operations.push({ type: 'bezierCurveTo', cp1x, cp1y, cp2x, cp2y, x, y });
+    },
     stroke: function() {
       this._operations.push({ type: 'stroke', strokeStyle: this.strokeStyle, lineWidth: this.lineWidth });
     },
@@ -259,6 +298,31 @@ export function mockCanvasContext() {
     },
     rotate: function(angle) {
       this._operations.push({ type: 'rotate', angle });
+    },
+    setTransform: function(a, b, c, d, e, f) {
+      this._operations.push({ type: 'setTransform', a, b, c, d, e, f });
+      this._transform = [a, b, c, d, e, f];
+    },
+
+    // Image methods
+    getImageData: function(x, y, width, height) {
+      const data = new Uint8ClampedArray(width * height * 4);
+      return { data, width, height };
+    },
+    putImageData: function(imageData, x, y) {
+      this._operations.push({ type: 'putImageData', x, y, width: imageData.width, height: imageData.height });
+    },
+
+    // Gradient methods
+    createLinearGradient: function(x0, y0, x1, y1) {
+      return {
+        addColorStop: function(offset, color) {}
+      };
+    },
+    createRadialGradient: function(x0, y0, r0, x1, y1, r1) {
+      return {
+        addColorStop: function(offset, color) {}
+      };
     },
 
     // Track operations for testing

@@ -123,6 +123,199 @@ export const dataSourceSchemas = {
         help: 'Percentage of requests that should fail (for testing error handling)'
       }
     ]
+  },
+
+  checkly: {
+    id: 'checkly',
+    name: 'Checkly',
+    description: 'API monitoring and synthetic checks platform',
+    fields: [
+      {
+        id: 'name',
+        type: 'text',
+        label: 'Connection Name',
+        required: true,
+        placeholder: 'e.g., Production Checkly'
+      },
+      {
+        id: 'apiKey',
+        type: 'password',
+        label: 'API Key',
+        required: true,
+        placeholder: 'cu_xxxxx',
+        help: 'Your Checkly API key from Account Settings'
+      },
+      {
+        id: 'accountId',
+        type: 'text',
+        label: 'Account ID',
+        required: true,
+        placeholder: 'abc123',
+        help: 'Your Checkly account ID'
+      }
+    ]
+  },
+
+  chromatic: {
+    id: 'chromatic',
+    name: 'Chromatic',
+    description: 'Visual testing and UI review platform',
+    fields: [
+      {
+        id: 'name',
+        type: 'text',
+        label: 'Connection Name',
+        required: true,
+        placeholder: 'e.g., Production Chromatic'
+      },
+      {
+        id: 'projectToken',
+        type: 'password',
+        label: 'Project Token',
+        required: true,
+        placeholder: 'chpt_xxxxx',
+        help: 'Your Chromatic project token'
+      },
+      {
+        id: 'projectId',
+        type: 'text',
+        label: 'Project ID',
+        required: true,
+        placeholder: '12345',
+        help: 'Your Chromatic project ID'
+      }
+    ]
+  },
+
+  looker: {
+    id: 'looker',
+    name: 'Looker',
+    description: 'Business intelligence and analytics platform',
+    fields: [
+      {
+        id: 'name',
+        type: 'text',
+        label: 'Connection Name',
+        required: true,
+        placeholder: 'e.g., Production Looker'
+      },
+      {
+        id: 'baseUrl',
+        type: 'text',
+        label: 'Looker Instance URL',
+        required: true,
+        placeholder: 'https://your-company.looker.com',
+        help: 'Your Looker instance URL'
+      },
+      {
+        id: 'clientId',
+        type: 'text',
+        label: 'Client ID',
+        required: true,
+        placeholder: 'xxxxx',
+        help: 'API3 client ID from Admin > Users > Edit'
+      },
+      {
+        id: 'clientSecret',
+        type: 'password',
+        label: 'Client Secret',
+        required: true,
+        help: 'API3 client secret'
+      }
+    ]
+  },
+
+  rollbar: {
+    id: 'rollbar',
+    name: 'Rollbar',
+    description: 'Error tracking and monitoring platform',
+    fields: [
+      {
+        id: 'name',
+        type: 'text',
+        label: 'Connection Name',
+        required: true,
+        placeholder: 'e.g., Production Rollbar'
+      },
+      {
+        id: 'accessToken',
+        type: 'password',
+        label: 'Access Token',
+        required: true,
+        placeholder: 'xxxxx',
+        help: 'Read access token from Project Settings > Project Access Tokens'
+      },
+      {
+        id: 'projectName',
+        type: 'text',
+        label: 'Project Name',
+        required: true,
+        placeholder: 'my-project',
+        help: 'Your Rollbar project name'
+      }
+    ]
+  },
+
+  rootly: {
+    id: 'rootly',
+    name: 'Rootly',
+    description: 'Incident management and response platform',
+    fields: [
+      {
+        id: 'name',
+        type: 'text',
+        label: 'Connection Name',
+        required: true,
+        placeholder: 'e.g., Production Rootly'
+      },
+      {
+        id: 'apiKey',
+        type: 'password',
+        label: 'API Key',
+        required: true,
+        placeholder: 'xxxxx',
+        help: 'Your Rootly API key from Settings > API Keys'
+      },
+      {
+        id: 'baseUrl',
+        type: 'text',
+        label: 'Rootly Instance URL',
+        required: true,
+        placeholder: 'https://rootly.com',
+        help: 'Your Rootly instance URL (default: https://rootly.com)'
+      }
+    ]
+  },
+
+  segment: {
+    id: 'segment',
+    name: 'Segment',
+    description: 'Customer data platform and analytics',
+    fields: [
+      {
+        id: 'name',
+        type: 'text',
+        label: 'Connection Name',
+        required: true,
+        placeholder: 'e.g., Production Segment'
+      },
+      {
+        id: 'accessToken',
+        type: 'password',
+        label: 'Access Token',
+        required: true,
+        placeholder: 'xxxxx',
+        help: 'Public API access token from Settings > Workspace Settings > Access Management'
+      },
+      {
+        id: 'workspaceId',
+        type: 'text',
+        label: 'Workspace ID',
+        required: true,
+        placeholder: 'workspace-id',
+        help: 'Your Segment workspace ID'
+      }
+    ]
   }
 };
 

@@ -9,13 +9,13 @@ import { setupDOM, loadScript } from '../../helpers/dom-helpers.js';
 describe('Widget: Line Chart', () => {
   let dom, cleanup;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     const setup = setupDOM();
     dom = setup.dom;
     cleanup = setup.cleanup;
 
-    loadScript('public/js/charts.js');
-    loadScript('public/js/widgets.js');
+    await loadScript('public/js/charts.js');
+    await loadScript('public/js/widgets.js');
   });
 
   afterEach(() => {
@@ -97,8 +97,8 @@ describe('Widget: Line Chart', () => {
 
     widget.update({
       series: [
-        { name: 'Series 1', points: [{ x: 1, y: 10 }, { x: 2, y: 20 }] },
-        { name: 'Series 2', points: [{ x: 1, y: 15 }, { x: 2, y: 25 }] }
+        { name: 'Series 1', values: [{ x: 1, y: 10 }, { x: 2, y: 20 }] },
+        { name: 'Series 2', values: [{ x: 1, y: 15 }, { x: 2, y: 25 }] }
       ]
     });
 

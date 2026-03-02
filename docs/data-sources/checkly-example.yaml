@@ -1,0 +1,135 @@
+# ===========================================================================
+# Example Dashboard Configuration - Checkly Synthetic Monitoring
+# ===========================================================================
+#
+# This example shows various ways to use the Checkly data source
+# for monitoring uptime, response times, and check health.
+#
+# Prerequisites:
+# - Set CHECKLY_API_KEY environment variable
+# - Set CHECKLY_ACCOUNT_ID environment variable
+#
+# ===========================================================================
+
+dashboards:
+  - id: checkly-monitoring
+    name: "Synthetic Monitoring - Checkly"
+    description: "Real-time monitoring of API and browser checks via Checkly"
+    refreshInterval: 60
+    layout:
+      columns: 12
+      rows: 4
+
+    widgets:
+      # =====================================================================
+      # Row 1: Overview Metrics
+      # =====================================================================
+
+      - id: checkly-uptime
+        type: gauge
+        title: "System Uptime"
+        source: checkly
+        metric: uptime
+        period: 24h
+        position: { x: 0, y: 0, w: 3, h: 1 }
+        refresh: 60
+
+      - id: checkly-total-checks
+        type: stat-card
+        title: "Total Checks"
+        source: checkly
+        metric: checks
+        position: { x: 3, y: 0, w: 2, h: 1 }
+        refresh: 120
+
+      - id: checkly-failing-checks
+        type: stat-card
+        title: "Failing Checks"
+        source: checkly
+        metric: failing_checks
+        position: { x: 5, y: 0, w: 2, h: 1 }
+        refresh: 30
+
+      - id: checkly-avg-response
+        type: big-number
+        title: "Avg Response Time"
+        source: checkly
+        metric: response_time
+        period: 24h
+        position: { x: 7, y: 0, w: 2, h: 1 }
+        refresh: 60
+
+      - id: checkly-alerts
+        type: big-number
+        title: "Active Alerts"
+        source: checkly
+        metric: failing_checks
+        position: { x: 9, y: 0, w: 3, h: 1 }
+        refresh: 30
+
+      # =====================================================================
+      # Row 2: Health Status Grid
+      # =====================================================================
+
+      - id: checkly-health-grid
+        type: status-grid
+        title: "Check Health Status"
+        source: checkly
+        metric: checks
+        position: { x: 0, y: 1, w: 12, h: 1 }
+        refresh: 60
+
+      # =====================================================================
+      # Row 3: Trends and Distribution
+      # =====================================================================
+
+      - id: checkly-response-trend
+        type: line-chart
+        title: "Response Time Trend (24h)"
+        source: checkly
+        metric: response_time
+        period: 24h
+        position: { x: 0, y: 2, w: 6, h: 1 }
+        refresh: 120
+
+      - id: checkly-checks-by-type
+        type: bar-chart
+        title: "Checks by Type"
+        source: checkly
+        metric: checks_by_type
+        position: { x: 6, y: 2, w: 6, h: 1 }
+        refresh: 300
+
+      # =====================================================================
+      # Row 4: Specific Check Monitoring
+      # =====================================================================
+
+      - id: checkly-api-homepage
+        type: sparkline
+        title: "Homepage API - Response Time"
+        source: checkly
+        metric: response_time
+        checkId: "check-abc123"  # Replace with actual check ID
+        period: 24h
+        position: { x: 0, y: 3, w: 4, h: 1 }
+        refresh: 120
+
+      - id: checkly-api-uptime
+        type: gauge-row
+        title: "API Uptime"
+        source: checkly
+        metric: uptime
+        checkType: api
+        period: 7d
+        position: { x: 4, y: 3, w: 4, h: 1 }
+        refresh: 120
+
+      - id: checkly-browser-uptime
+        type: gauge-row
+        title: "Browser Check Uptime"
+        source: checkly
+        metric: uptime
+        checkType: browser
+        period: 7d
+        position: { x: 8, y: 3, w: 4, h: 1 }
+        refresh: 120

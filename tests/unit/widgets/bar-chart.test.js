@@ -9,13 +9,13 @@ import { setupDOM, loadScript } from '../../helpers/dom-helpers.js';
 describe('Widget: Bar Chart', () => {
   let dom, cleanup;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     const setup = setupDOM();
     dom = setup.dom;
     cleanup = setup.cleanup;
 
-    loadScript('public/js/charts.js');
-    loadScript('public/js/widgets.js');
+    await loadScript('public/js/charts.js');
+    await loadScript('public/js/widgets.js');
   });
 
   afterEach(() => {
