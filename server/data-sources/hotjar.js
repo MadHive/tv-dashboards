@@ -157,8 +157,66 @@ export class HotJarDataSource extends DataSource {
     };
   }
 
-  transformData(raw, widgetType) {
-    return raw;
+  /**
+   * Transform HotJar API response to widget format
+   */
+  transformData(response, widgetType) {
+    if (!response) {
+      return this.getEmptyData(widgetType);
+    }
+
+    switch (widgetType) {
+      case 'big-number':
+      case 'stat-card': {
+        const value = response.pageviews || response.total || response.count || 0;
+        const previous = response.previous_pageviews || response.previous_total || value;
+        const trend = value > previous ? 'up' : value < previous ? 'down' : 'stable';
+
+        return {
+          value: Math.round(value),
+          previous: Math.round(previous),
+          trend,
+          unit: ''
+        };
+      }
+
+      case 'gauge':
+      case 'gauge-row': {
+        const value = response.percentage || response.rate || 0;
+        return {
+          value: Math.round(value * 100) / 100,
+          min: 0,
+          max: 100,
+          unit: '%'
+        };
+      }
+
+      case 'line-chart':
+      case 'sparkline': {
+        const data = response.data || [];
+        return {
+          labels: data.map(d => d.date || d.timestamp),
+          values: data.map(d => d.value || d.count || 0),
+          series: 'HotJar'
+        };
+      }
+
+      case 'bar-chart': {
+        const data = response.data || [];
+        const lastN = Math.min(10, data.length);
+        const recentData = data.slice(-lastN);
+
+        return {
+          values: recentData.map(d => ({
+            label: d.label || d.date || d.name,
+            value: d.value || d.count || 0
+          }))
+        };
+      }
+
+      default:
+        return response;
+    }
   }
 
   getMockData(widgetType) {
