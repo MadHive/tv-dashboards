@@ -174,8 +174,7 @@ const app = new Elysia()
 
     return response;
   })
-  .use(staticPlugin({ assets: join(frontendDistDir, 'assets'), prefix: '/app/assets' }))
-  .use(staticPlugin({ assets: publicDir, prefix: '/' }))
+  // HTML pages need to be served before static plugin to avoid build issues
   .get('/', () => new Response(indexHtml, {
     headers: {
       'content-type': 'text/html; charset=utf-8',
@@ -196,6 +195,21 @@ const app = new Elysia()
       }
     });
   })
+
+  .get('/data-sources.html', () => {
+    const dataSourcesHtml = readFileSync(join(publicDir, 'data-sources-page.html'), 'utf8');
+    return new Response(dataSourcesHtml, {
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
+  })
+
+  .use(staticPlugin({ assets: join(frontendDistDir, 'assets'), prefix: '/app/assets' }))
+  .use(staticPlugin({ assets: publicDir, prefix: '/' }))
 
   .get('/wizard-demo', async () => {
     const file = Bun.file(join(publicDir, 'wizard-demo.html'));
