@@ -64,14 +64,14 @@ describe('Query Test Execution Route', () => {
         expect(data.message).toContain('successfully');
         expect(data).toHaveProperty('rowCount');
         expect(data).toHaveProperty('sql');
-        expect(data.sql).toContain('LIMIT 10');
+        expect(data.sql).toContain('LIMIT 50');
       } else {
         // Connection error is acceptable in tests
         expect(data).toHaveProperty('error');
       }
     });
 
-    it('should add LIMIT 10 to bigquery queries without limit', async () => {
+    it('should add LIMIT 50 to bigquery queries without limit', async () => {
       const response = await app.handle(
         new Request('http://localhost/api/queries/bigquery/test', {
           method: 'POST',
@@ -86,7 +86,7 @@ describe('Query Test Execution Route', () => {
       const data = await response.json();
 
       if (data.success && data.sql) {
-        expect(data.sql).toContain('LIMIT 10');
+        expect(data.sql).toContain('LIMIT 50');
       }
     });
 

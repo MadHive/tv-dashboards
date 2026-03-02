@@ -164,14 +164,13 @@ describe('BigQuery Data Source', () => {
 
     it('should initialize client if not already initialized', async () => {
       const ds = new BigQueryDataSource({});
+      ds.initialize = async function() {
+        this.client = globalThis.__mockBigQueryClient;
+        this.isConnected = true;
+      };
       expect(ds.client).toBeNull();
 
-      // Will fail without proper mocking, but shows initialization attempt
-      try {
-        await ds.executeQuery('SELECT 1');
-      } catch (error) {
-        // Expected - client may not be valid
-      }
+      await ds.executeQuery('SELECT 1');
 
       expect(ds.client).not.toBeNull();
     });
@@ -559,6 +558,10 @@ describe('BigQuery Data Source', () => {
 
     it('should initialize if client is null', async () => {
       const ds = new BigQueryDataSource({});
+      ds.initialize = async function() {
+        this.client = globalThis.__mockBigQueryClient;
+        this.isConnected = true;
+      };
       expect(ds.client).toBeNull();
 
       await ds.listDatasets();
@@ -641,6 +644,10 @@ describe('BigQuery Data Source', () => {
 
     it('should initialize if client is null', async () => {
       const ds = new BigQueryDataSource({});
+      ds.initialize = async function() {
+        this.client = globalThis.__mockBigQueryClient;
+        this.isConnected = true;
+      };
       expect(ds.client).toBeNull();
 
       await ds.listTables('test-dataset');
@@ -745,6 +752,10 @@ describe('BigQuery Data Source', () => {
 
     it('should initialize if client is null', async () => {
       const ds = new BigQueryDataSource({});
+      ds.initialize = async function() {
+        this.client = globalThis.__mockBigQueryClient;
+        this.isConnected = true;
+      };
       expect(ds.client).toBeNull();
 
       await ds.getTableSchema('dataset', 'table');
@@ -844,6 +855,10 @@ describe('BigQuery Data Source', () => {
 
     it('should initialize if client is null', async () => {
       const ds = new BigQueryDataSource({});
+      ds.initialize = async function() {
+        this.client = globalThis.__mockBigQueryClient;
+        this.isConnected = true;
+      };
       expect(ds.client).toBeNull();
 
       await ds.validateQuery('SELECT 1');
