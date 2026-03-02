@@ -51,7 +51,7 @@ window.PropertyPanel = (function () {
       this.panel.style.display = 'none';
       this.panel.innerHTML = `
         <div class="property-panel-header">
-          <h3>Widget Properties</h3>
+          <h3 id="panel-title">Widget Properties</h3>
           <button class="panel-close" title="Close (Esc)">&times;</button>
         </div>
         <div class="property-panel-content">
@@ -161,10 +161,73 @@ window.PropertyPanel = (function () {
               </div>
             </div>
           </form>
+
+          <!-- Dashboard Properties Form -->
+          <form id="dashboard-property-form" style="display: none;">
+            <div class="form-section">
+              <h4>Dashboard Settings</h4>
+
+              <div class="form-group">
+                <label for="dashboard-name">Dashboard Name</label>
+                <input type="text" id="dashboard-name" placeholder="Dashboard Name">
+              </div>
+
+              <div class="form-group">
+                <label for="dashboard-subtitle">Subtitle</label>
+                <input type="text" id="dashboard-subtitle" placeholder="Optional subtitle">
+              </div>
+
+              <div class="form-group">
+                <label for="dashboard-icon">Icon</label>
+                <input type="text" id="dashboard-icon" placeholder="e.g., bolt, chart-line, server">
+              </div>
+
+              <div class="form-group">
+                <label for="dashboard-theme-select">Theme</label>
+                <select id="dashboard-theme-select">
+                  <option value="">Default Theme</option>
+                </select>
+                <button type="button" id="theme-preview-btn" class="btn btn-secondary" style="margin-top: 8px;">Preview on TV</button>
+              </div>
+
+              <div class="form-group">
+                <label>Dashboard Template</label>
+                <button type="button" id="apply-template-btn" class="btn btn-secondary" style="width: 100%;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                  </svg>
+                  Apply Template
+                </button>
+                <small class="help-text">Replace current dashboard with a template</small>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h4>Grid Layout</h4>
+
+              <div class="form-group">
+                <label for="dashboard-columns">Grid Columns</label>
+                <input type="number" id="dashboard-columns" min="1" max="12" placeholder="4">
+              </div>
+
+              <div class="form-group">
+                <label for="dashboard-rows">Grid Rows</label>
+                <input type="number" id="dashboard-rows" min="1" max="12" placeholder="2">
+              </div>
+
+              <div class="form-group">
+                <label for="dashboard-gap">Grid Gap (px)</label>
+                <input type="number" id="dashboard-gap" min="0" max="100" placeholder="14">
+              </div>
+            </div>
+          </form>
         </div>
 
         <div class="property-panel-footer">
-          <button id="prop-delete" class="btn btn-danger" style="margin-right: auto;">Delete Widget</button>
+          <button id="prop-delete" class="btn btn-danger" style="margin-right: auto; display: none;">Delete Widget</button>
           <button id="prop-save" class="btn btn-primary">Save Changes</button>
           <button id="prop-cancel" class="btn btn-secondary">Cancel</button>
         </div>
@@ -237,6 +300,19 @@ window.PropertyPanel = (function () {
           this.updateLivePreview();
         });
       });
+
+      // Theme preview button
+      document.getElementById('theme-preview-btn').addEventListener('click', () => {
+        this.previewThemeOnTV();
+      });
+
+      // Apply template button
+      document.getElementById('apply-template-btn').addEventListener('click', () => {
+        // Delegate to editor app to show template modal
+        if (this.editorApp && this.editorApp.showTemplateModal) {
+          this.editorApp.showTemplateModal();
+        }
+      });
     }
 
     async loadQueriesForSource(source) {
@@ -267,6 +343,12 @@ window.PropertyPanel = (function () {
       this.currentWidget = widgetConfig;
       this.currentElement = widgetElement;
 
+      // Show widget form, hide dashboard form
+      document.getElementById('widget-property-form').style.display = 'block';
+      document.getElementById('dashboard-property-form').style.display = 'none';
+      document.getElementById('panel-title').textContent = 'Widget Properties';
+      document.getElementById('prop-delete').style.display = 'block';
+
       // Populate form with widget config
       await this.populateForm(widgetConfig);
 
@@ -275,6 +357,184 @@ window.PropertyPanel = (function () {
 
       // Update type-specific options
       this.updateTypeSpecificOptions(widgetConfig.type);
+    }
+
+    async showDashboardProperties() {
+      this.currentWidget = null;
+      this.currentElement = null;
+
+      // Show dashboard form, hide widget form
+      document.getElementById('widget-property-form').style.display = 'none';
+      document.getElementById('dashboard-property-form').style.display = 'block';
+      document.getElementById('panel-title').textContent = 'Dashboard Properties';
+      document.getElementById('prop-delete').style.display = 'none';
+
+      // Load themes
+      await this.loadThemesDropdown();
+
+      // Populate dashboard properties
+      await this.populateDashboardForm();
+
+      // Show panel
+      this.panel.style.display = 'flex';
+    }
+
+    async loadThemesDropdown() {
+      const themeSelect = document.getElementById('dashboard-theme-select');
+
+      try {
+        const response = await fetch('/api/themes');
+        if (!response.ok) {
+          console.warn('[PropertyPanel] Themes API not available (PR #28 pending)');
+          themeSelect.innerHTML = '<option value="">-- Default Theme (API not available) --</option>';
+          themeSelect.disabled = true;
+          document.getElementById('theme-preview-btn').disabled = true;
+          return;
+        }
+
+        const data = await response.json();
+
+        // Clear existing options
+        themeSelect.innerHTML = '<option value="">-- Default Theme --</option>';
+
+        // Populate with themes
+        if (data.success && data.themes) {
+          data.themes.forEach(theme => {
+            const option = document.createElement('option');
+            option.value = theme.id;
+            option.textContent = theme.name;
+            themeSelect.appendChild(option);
+          });
+          themeSelect.disabled = false;
+          document.getElementById('theme-preview-btn').disabled = false;
+        }
+      } catch (error) {
+        console.warn('[PropertyPanel] Failed to load themes:', error);
+        themeSelect.innerHTML = '<option value="">-- Default Theme (API not available) --</option>';
+        themeSelect.disabled = true;
+        document.getElementById('theme-preview-btn').disabled = true;
+      }
+    }
+
+    async populateDashboardForm() {
+      const currentDash = this.editorApp.modifiedConfig.dashboards[this.editorApp.dashboardApp.currentPage];
+
+      if (!currentDash) return;
+
+      document.getElementById('dashboard-name').value = currentDash.name || '';
+      document.getElementById('dashboard-subtitle').value = currentDash.subtitle || '';
+      document.getElementById('dashboard-icon').value = currentDash.icon || 'bolt';
+      document.getElementById('dashboard-theme-select').value = currentDash.theme || '';
+      document.getElementById('dashboard-columns').value = currentDash.grid?.columns || 4;
+      document.getElementById('dashboard-rows').value = currentDash.grid?.rows || 2;
+      document.getElementById('dashboard-gap').value = currentDash.grid?.gap || 14;
+    }
+
+    async previewThemeOnTV() {
+      const themeId = document.getElementById('dashboard-theme-select').value;
+
+      if (!themeId) {
+        alert('Please select a theme first');
+        return;
+      }
+
+      try {
+        // Fetch the theme
+        const response = await fetch(`/api/themes/${themeId}`);
+        if (!response.ok) {
+          throw new Error('Failed to load theme');
+        }
+
+        const data = await response.json();
+        if (!data.success || !data.theme) {
+          throw new Error('Invalid theme data');
+        }
+
+        const theme = data.theme;
+
+        // Get current dashboard config
+        const currentDash = this.editorApp.modifiedConfig.dashboards[this.editorApp.dashboardApp.currentPage];
+
+        // Dynamically import TVPreview
+        const { TVPreview } = await import('/js/components/tv-preview.js');
+
+        // Create and open TV preview
+        const preview = new TVPreview({
+          container: document.body,
+          theme: theme,
+          dashboardConfig: currentDash,
+          onApply: (appliedTheme) => {
+            // Auto-apply the theme to the dashboard
+            this.applyThemeToDashboard(appliedTheme.id);
+            this.editorApp.showNotification(`Theme "${appliedTheme.name}" applied`, 'success');
+          }
+        });
+
+        preview.open();
+      } catch (error) {
+        console.error('[PropertyPanel] Failed to preview theme:', error);
+        alert('Failed to preview theme. Make sure the themes API is available.');
+      }
+    }
+
+    applyThemeToDashboard(themeId) {
+      // Update the dropdown
+      document.getElementById('dashboard-theme-select').value = themeId;
+
+      // Theme will be saved when user clicks "Save Changes"
+      // For now, just apply visually using CSS custom properties
+      this.applyThemeVisually(themeId);
+    }
+
+    async applyThemeVisually(themeId) {
+      if (!themeId) {
+        // Remove theme - reset to default
+        const root = document.documentElement;
+        root.style.removeProperty('--theme-primary');
+        root.style.removeProperty('--theme-secondary');
+        root.style.removeProperty('--theme-accent');
+        root.style.removeProperty('--theme-background');
+        root.style.removeProperty('--theme-surface');
+        root.style.removeProperty('--theme-text-primary');
+        root.style.removeProperty('--theme-text-secondary');
+        root.style.removeProperty('--theme-border');
+        return;
+      }
+
+      try {
+        // Fetch theme
+        const response = await fetch(`/api/themes/${themeId}`);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (!data.success || !data.theme) return;
+
+        const theme = data.theme;
+
+        // Validate color format before applying to prevent injection
+        const colorRegex = /^(#[0-9A-Fa-f]{3,8}|rgba?\([\d\s,%.]+\)|[a-z]+)$/i;
+        const safeSetColor = (property, value) => {
+          if (value && colorRegex.test(value)) {
+            document.documentElement.style.setProperty(property, value);
+          } else {
+            console.warn(`[PropertyPanel] Invalid color format for ${property}: ${value}`);
+          }
+        };
+
+        // Apply theme colors as CSS custom properties with validation
+        if (theme.colors) {
+          safeSetColor('--theme-primary', theme.colors.primary);
+          safeSetColor('--theme-secondary', theme.colors.secondary);
+          safeSetColor('--theme-accent', theme.colors.accent);
+          safeSetColor('--theme-background', theme.colors.background);
+          safeSetColor('--theme-surface', theme.colors.surface);
+          safeSetColor('--theme-text-primary', theme.colors.textPrimary);
+          safeSetColor('--theme-text-secondary', theme.colors.textSecondary);
+          safeSetColor('--theme-border', theme.colors.border);
+        }
+      } catch (error) {
+        console.error('[PropertyPanel] Failed to apply theme visually:', error);
+      }
     }
 
     hide() {
@@ -361,15 +621,21 @@ window.PropertyPanel = (function () {
       const source = document.getElementById('prop-source').value;
       const queryId = document.getElementById('prop-query').value;
 
+      // Parse and validate position values
+      const col = parseInt(document.getElementById('prop-col').value);
+      const row = parseInt(document.getElementById('prop-row').value);
+      const colSpan = parseInt(document.getElementById('prop-colspan').value);
+      const rowSpan = parseInt(document.getElementById('prop-rowspan').value);
+
       const values = {
         type,
         title: document.getElementById('prop-title').value,
         source,
         position: {
-          col: parseInt(document.getElementById('prop-col').value),
-          row: parseInt(document.getElementById('prop-row').value),
-          colSpan: parseInt(document.getElementById('prop-colspan').value),
-          rowSpan: parseInt(document.getElementById('prop-rowspan').value)
+          col: isNaN(col) || col < 1 ? 1 : col,
+          row: isNaN(row) || row < 1 ? 1 : row,
+          colSpan: isNaN(colSpan) || colSpan < 1 ? 1 : colSpan,
+          rowSpan: isNaN(rowSpan) || rowSpan < 1 ? 1 : rowSpan
         }
       };
 
@@ -390,11 +656,11 @@ window.PropertyPanel = (function () {
       const sparkline = document.getElementById('prop-sparkline').checked;
       if (sparkline) values.sparkline = true;
 
-      const min = document.getElementById('prop-min').value;
-      if (min !== '') values.min = parseFloat(min);
+      const minValue = parseFloat(document.getElementById('prop-min').value);
+      if (!isNaN(minValue)) values.min = minValue;
 
-      const max = document.getElementById('prop-max').value;
-      if (max !== '') values.max = parseFloat(max);
+      const maxValue = parseFloat(document.getElementById('prop-max').value);
+      if (!isNaN(maxValue)) values.max = maxValue;
 
       return values;
     }
@@ -422,6 +688,17 @@ window.PropertyPanel = (function () {
     }
 
     saveChanges() {
+      // Check if we're editing dashboard or widget
+      const isDashboardMode = document.getElementById('dashboard-property-form').style.display !== 'none';
+
+      if (isDashboardMode) {
+        this.saveDashboardChanges();
+      } else {
+        this.saveWidgetChanges();
+      }
+    }
+
+    saveWidgetChanges() {
       if (!this.currentWidget) return;
 
       const values = this.getFormValues();
@@ -447,13 +724,80 @@ window.PropertyPanel = (function () {
       this.editorApp.showNotification('Widget updated', 'success');
     }
 
+    saveDashboardChanges() {
+      const currentDash = this.editorApp.modifiedConfig.dashboards[this.editorApp.dashboardApp.currentPage];
+      if (!currentDash) return;
+
+      // Get and parse form values
+      const name = document.getElementById('dashboard-name').value.trim();
+      const subtitle = document.getElementById('dashboard-subtitle').value.trim();
+      const icon = document.getElementById('dashboard-icon').value;
+      const theme = document.getElementById('dashboard-theme-select').value;
+      const columns = parseInt(document.getElementById('dashboard-columns').value);
+      const rows = parseInt(document.getElementById('dashboard-rows').value);
+      const gap = parseInt(document.getElementById('dashboard-gap').value);
+
+      // Validate
+      if (!name) {
+        alert('Dashboard name is required');
+        return;
+      }
+
+      // Validate parsed integers
+      if (isNaN(columns) || columns < 1 || columns > 12) {
+        alert('Grid columns must be a number between 1 and 12');
+        return;
+      }
+
+      if (isNaN(rows) || rows < 1 || rows > 12) {
+        alert('Grid rows must be a number between 1 and 12');
+        return;
+      }
+
+      if (isNaN(gap) || gap < 0 || gap > 100) {
+        alert('Grid gap must be a number between 0 and 100');
+        return;
+      }
+
+      // Update dashboard config
+      currentDash.name = name;
+      currentDash.subtitle = subtitle;
+      currentDash.icon = icon;
+      currentDash.theme = theme;
+      currentDash.grid = currentDash.grid || {};
+      currentDash.grid.columns = columns;
+      currentDash.grid.rows = rows;
+      currentDash.grid.gap = gap;
+
+      // Mark as modified
+      this.editorApp.markAsModified();
+
+      // Apply theme visually
+      this.applyThemeVisually(theme);
+
+      // Update the dashboard display
+      this.editorApp.dashboardApp.showPage(this.editorApp.dashboardApp.currentPage);
+
+      // Show success message
+      this.editorApp.showNotification('Dashboard updated', 'success');
+    }
+
     cancel() {
+      // Check if we're editing dashboard or widget
+      const isDashboardMode = document.getElementById('dashboard-property-form').style.display !== 'none';
+
+      if (isDashboardMode) {
+        // Just hide the panel for dashboard mode
+        this.hide();
+        return;
+      }
+
       if (!this.currentWidget) {
         this.hide();
         return;
       }
 
-      // Revert any live preview changes
+      // Revert any live preview changes for widget
       const titleEl = this.currentElement.querySelector('.widget-title');
       if (titleEl) titleEl.textContent = this.currentWidget.title;
 

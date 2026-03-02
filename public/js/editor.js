@@ -32,6 +32,12 @@ window.EditorApp = (function () {
           this.toggle();
         }
 
+        // Ctrl+D or Cmd+D to show dashboard properties
+        if ((e.ctrlKey || e.metaKey) && e.key === 'd' && this.isActive) {
+          e.preventDefault();
+          this.showDashboardProperties();
+        }
+
         // Escape to deselect widget
         if (e.key === 'Escape' && this.isActive) {
           this.deselectWidget();
@@ -116,7 +122,7 @@ window.EditorApp = (function () {
       if (toggleBtn) toggleBtn.classList.add('active');
 
       // Show notification
-      this.showNotification('Edit mode enabled. Press Ctrl+E to exit.');
+      this.showNotification('Edit mode enabled. Press Ctrl+D for dashboard properties, Ctrl+E to exit.');
 
       // Dispatch event
       document.dispatchEvent(new CustomEvent('editorStateChanged', { detail: { isActive: true } }));
@@ -296,6 +302,18 @@ window.EditorApp = (function () {
       // Hide property panel
       if (this.propertyPanel) {
         this.propertyPanel.hide();
+      }
+    }
+
+    showDashboardProperties() {
+      if (!this.isActive) return;
+
+      // Deselect any selected widget
+      this.deselectWidget();
+
+      // Show dashboard properties panel
+      if (this.propertyPanel) {
+        this.propertyPanel.showDashboardProperties();
       }
     }
 
@@ -569,6 +587,155 @@ window.EditorApp = (function () {
       // Update UI to show unsaved changes indicator
       const saveBtn = document.getElementById('editor-save');
       if (saveBtn) saveBtn.classList.add('has-changes');
+    }
+
+    async showTemplateModal() {
+      // Create modal overlay
+      const overlay = document.createElement('div');
+      overlay.className = 'template-modal-overlay';
+
+      // Create modal
+      const modal = document.createElement('div');
+      modal.className = 'template-modal';
+
+      // Create header
+      const header = document.createElement('div');
+      header.className = 'template-modal-header';
+
+      const title = document.createElement('h2');
+      title.textContent = 'Apply Template';
+      header.appendChild(title);
+
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'close-modal-btn';
+      closeBtn.textContent = '×';
+      header.appendChild(closeBtn);
+
+      modal.appendChild(header);
+
+      // Create container for template browser
+      const container = document.createElement('div');
+      container.id = 'editor-template-browser-container';
+      modal.appendChild(container);
+
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+
+      // Create closeModal function that handles cleanup
+      const closeModal = () => {
+        if (document.body.contains(overlay)) {
+          document.body.removeChild(overlay);
+        }
+        document.removeEventListener('keydown', escHandler);
+      };
+
+      // ESC key handler calls closeModal
+      const escHandler = (e) => {
+        if (e.key === 'Escape') {
+          closeModal();
+        }
+      };
+      document.addEventListener('keydown', escHandler);
+
+      // Load and initialize TemplateBrowser
+      try {
+        // Dynamically import TemplateBrowser
+        const { TemplateBrowser } = await import('/js/components/template-browser.js');
+
+        const browser = new TemplateBrowser({
+          container,
+          onSelect: (template) => {
+            this.handleTemplateSelection(template, closeModal);
+          }
+        });
+
+        browser.loadTemplates();
+      } catch (error) {
+        console.error('[Editor] Failed to load TemplateBrowser:', error);
+        this.showNotification('Failed to load template browser', 'error');
+        closeModal();
+        return;
+      }
+
+      // Close button uses closeModal
+      closeBtn.addEventListener('click', closeModal);
+
+      // Click outside uses closeModal
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          closeModal();
+        }
+      });
+    }
+
+    handleTemplateSelection(template, closeModal) {
+      // Warn about overwriting
+      const confirmed = confirm(
+        `This will replace the current dashboard with the template "${template.name}".\n\n` +
+        `All unsaved changes will be lost. Continue?`
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      // Apply template to current dashboard
+      this.applyTemplateToCurrentDashboard(template);
+
+      // Close modal
+      closeModal();
+    }
+
+    applyTemplateToCurrentDashboard(template) {
+      if (!template.dashboard) {
+        this.showNotification('Invalid template: missing dashboard configuration', 'error');
+        return;
+      }
+
+      // Get current dashboard
+      const currentDash = this.modifiedConfig.dashboards[this.dashboardApp.currentPage];
+      if (!currentDash) {
+        this.showNotification('No dashboard selected', 'error');
+        return;
+      }
+
+      // Preserve current dashboard ID and name
+      const currentId = currentDash.id;
+      const currentName = currentDash.name;
+
+      // Replace dashboard with template
+      const templateDash = JSON.parse(JSON.stringify(template.dashboard));
+      templateDash.id = currentId;
+      templateDash.name = currentName;
+
+      // Apply recommended theme if present
+      if (template.recommendedTheme) {
+        templateDash.theme = template.recommendedTheme;
+      }
+
+      // Update modified config
+      this.modifiedConfig.dashboards[this.dashboardApp.currentPage] = templateDash;
+
+      // Mark as modified
+      this.markAsModified();
+
+      // Deselect current widget
+      this.deselectWidget();
+
+      // Reload dashboard to show template
+      this.dashboardApp.config = JSON.parse(JSON.stringify(this.modifiedConfig));
+      this.dashboardApp.showPage(this.dashboardApp.currentPage);
+
+      // Re-sync modified config with new config
+      this.modifiedConfig = JSON.parse(JSON.stringify(this.dashboardApp.config));
+
+      // Re-attach editor handlers
+      this.attachWidgetHandlers();
+
+      // Update grid overlay
+      this.updateGridOverlay();
+
+      this.showNotification(`Template "${template.name}" applied successfully!`, 'success');
     }
 
     showNotification(message, type = 'info') {

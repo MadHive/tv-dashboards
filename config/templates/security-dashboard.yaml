@@ -1,0 +1,162 @@
+name: Security Dashboard
+description: Security monitoring and threat detection overview
+category: Security
+tags:
+  - security
+  - vulnerabilities
+  - compliance
+  - threats
+requiredSources:
+  - vulntrack
+recommendedTheme: dark-high-contrast
+author: MadHive
+createdAt: '2026-03-02'
+dashboard:
+  name: Security Dashboard
+  icon: shield
+  refreshInterval: 60
+  gridColumns: 12
+  gridRows: 12
+  widgets:
+    - id: security-score
+      type: gauge
+      title: Security Score
+      source: vulntrack
+      position:
+        col: 1
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        min: 0
+        max: 100
+        unit: ''
+        thresholds:
+          - value: 60
+            color: '#FF0000'
+          - value: 80
+            color: '#FFA500'
+          - value: 95
+            color: '#00FF00'
+
+    - id: critical-vulnerabilities
+      type: metric
+      title: Critical Vulnerabilities
+      source: vulntrack
+      position:
+        col: 4
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: ''
+        trend: true
+        thresholds:
+          - value: 1
+            color: '#FFA500'
+          - value: 5
+            color: '#FF0000'
+
+    - id: high-vulnerabilities
+      type: metric
+      title: High Vulnerabilities
+      source: vulntrack
+      position:
+        col: 7
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: ''
+        trend: true
+
+    - id: mean-time-to-patch
+      type: metric
+      title: Mean Time to Patch
+      source: vulntrack
+      position:
+        col: 10
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: 'days'
+        trend: true
+
+    - id: vulnerability-trend
+      type: chart
+      title: Vulnerability Trend (Last 30 Days)
+      source: vulntrack
+      position:
+        col: 1
+        row: 3
+        colSpan: 8
+        rowSpan: 4
+      config:
+        chartType: line
+        timeRange: '30d'
+        showMultipleSeries: true
+        series:
+          - critical
+          - high
+          - medium
+          - low
+
+    - id: severity-breakdown
+      type: chart
+      title: Severity Breakdown
+      source: vulntrack
+      position:
+        col: 9
+        row: 3
+        colSpan: 4
+        rowSpan: 4
+      config:
+        chartType: pie
+
+    - id: recent-cves
+      type: list
+      title: Recent CVEs
+      source: vulntrack
+      position:
+        col: 1
+        row: 7
+        colSpan: 6
+        rowSpan: 3
+      config:
+        maxItems: 10
+        showSeverity: true
+        showTimestamp: true
+
+    - id: vulnerability-heatmap
+      type: heatmap
+      title: Vulnerability Heatmap by Service
+      source: vulntrack
+      position:
+        col: 7
+        row: 7
+        colSpan: 6
+        rowSpan: 3
+      config:
+        colorScale:
+          low: '#00FF00'
+          medium: '#FFFF00'
+          high: '#FFA500'
+          critical: '#FF0000'
+
+    - id: patch-status
+      type: grid
+      title: Patch Status by Component
+      source: vulntrack
+      position:
+        col: 1
+        row: 10
+        colSpan: 12
+        rowSpan: 3
+      config:
+        columns:
+          - component
+          - vulnerabilities
+          - patched
+          - pending
+          - last_scan

@@ -72,11 +72,10 @@ export class SalesforceDataSource extends DataSource {
           instanceUrl: this.instanceUrl,
           accessToken: this.accessToken
         });
-
-        console.log({ instanceUrl: this.instanceUrl }, 'Salesforce connection initialized with access token');
+        console.log('[salesforce] Salesforce connection initialized with access token');
       }
       // Otherwise use OAuth username/password flow
-      else {
+      else if (hasOAuth) {
         this.connection = new jsforce.Connection({
           loginUrl,
           clientId: this.clientId,
@@ -100,7 +99,7 @@ export class SalesforceDataSource extends DataSource {
 
       this.isConnected = true;
     } catch (error) {
-      console.error({ error: error.message }, 'Salesforce data source failed to initialize');
+      console.error('[salesforce] Failed to initialize:', error.message);
       this.lastError = error;
       this.isConnected = false;
     }

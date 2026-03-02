@@ -5,13 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Admin | MadHive TV Dashboards</title>
   <link rel="stylesheet" href="/css/admin.css">
+  <link rel="stylesheet" href="/css/components/theme-selector.css">
+  <link rel="stylesheet" href="/css/components/tv-preview.css">
+  <link rel="stylesheet" href="/css/components/template-browser.css">
 </head>
 <body>
   <div class="admin-container">
     <header class="admin-header">
       <div class="admin-header-left">
         <h1>Dashboard Management</h1>
-        <p class="admin-subtitle">Manage TV dashboard pages</p>
+        <p class="admin-subtitle">Manage TV dashboard pages, themes, and templates</p>
       </div>
       <div class="admin-header-right">
         <input type="file" id="import-file-input" accept=".json" style="display: none;">
@@ -21,35 +24,76 @@
       </div>
     </header>
 
-    <div class="admin-toolbar">
-      <div class="search-filter">
-        <input type="text" id="search-input" placeholder="Search dashboards..." class="search-input">
-        <select id="filter-icon" class="filter-select">
-          <option value="">All Icons</option>
-          <option value="bolt">⚡ Bolt</option>
-          <option value="grid">▦ Grid</option>
-          <option value="map">🗺️ Map</option>
-          <option value="data">📊 Data</option>
-          <option value="flow">🔄 Flow</option>
-          <option value="shield">🛡️ Shield</option>
-          <option value="palette">🎨 Palette</option>
-        </select>
-        <select id="sort-by" class="filter-select">
-          <option value="order">Order</option>
-          <option value="name">Name</option>
-          <option value="widgets">Widget Count</option>
-        </select>
+    <!-- Tab Navigation -->
+    <nav class="admin-tabs">
+      <button class="admin-tab active" data-tab="dashboards">Dashboards</button>
+      <button class="admin-tab" data-tab="templates">Templates</button>
+      <button class="admin-tab" data-tab="themes">Themes</button>
+      <button class="admin-tab" data-tab="settings">Settings</button>
+    </nav>
+
+    <!-- Dashboards Tab -->
+    <div class="tab-pane active" id="dashboards-tab">
+      <div class="admin-toolbar">
+        <div class="search-filter">
+          <input type="text" id="search-input" placeholder="Search dashboards..." class="search-input">
+          <select id="filter-icon" class="filter-select">
+            <option value="">All Icons</option>
+            <option value="bolt">⚡ Bolt</option>
+            <option value="grid">▦ Grid</option>
+            <option value="map">🗺️ Map</option>
+            <option value="data">📊 Data</option>
+            <option value="flow">🔄 Flow</option>
+            <option value="shield">🛡️ Shield</option>
+            <option value="palette">🎨 Palette</option>
+          </select>
+          <select id="sort-by" class="filter-select">
+            <option value="order">Order</option>
+            <option value="name">Name</option>
+            <option value="widgets">Widget Count</option>
+          </select>
+        </div>
+        <div class="bulk-actions" style="display: none;">
+          <button id="bulk-delete-btn" class="btn btn-danger">Delete Selected</button>
+          <button id="bulk-export-btn" class="btn btn-secondary">Export Selected</button>
+        </div>
       </div>
-      <div class="bulk-actions" style="display: none;">
-        <button id="bulk-delete-btn" class="btn btn-danger">Delete Selected</button>
-        <button id="bulk-export-btn" class="btn btn-secondary">Export Selected</button>
+
+      <div class="dashboard-list" id="dashboard-list">
+        <!-- Dashboard items will be rendered here -->
+        <div style="text-align: center; padding: 60px; color: #6b7280;">
+          <p style="font-size: 18px; margin-bottom: 8px;">Loading dashboards...</p>
+        </div>
       </div>
     </div>
 
-    <div class="dashboard-list" id="dashboard-list">
-      <!-- Dashboard items will be rendered here -->
-      <div style="text-align: center; padding: 60px; color: #6b7280;">
-        <p style="font-size: 18px; margin-bottom: 8px;">Loading dashboards...</p>
+    <!-- Templates Tab -->
+    <div class="tab-pane" id="templates-tab">
+      <div class="tab-header">
+        <h2>Dashboard Templates</h2>
+        <p class="tab-subtitle">Browse and create dashboards from pre-built templates</p>
+      </div>
+      <div id="template-browser-container"></div>
+    </div>
+
+    <!-- Themes Tab -->
+    <div class="tab-pane" id="themes-tab">
+      <div class="tab-header">
+        <h2>Theme Gallery</h2>
+        <p class="tab-subtitle">Customize the look and feel of your dashboards</p>
+        <button id="preview-on-tv-btn" class="btn btn-primary">Preview on TV</button>
+      </div>
+      <div id="theme-selector-container"></div>
+    </div>
+
+    <!-- Settings Tab -->
+    <div class="tab-pane" id="settings-tab">
+      <div class="tab-header">
+        <h2>Settings</h2>
+        <p class="tab-subtitle">Configure application preferences</p>
+      </div>
+      <div class="tab-content-placeholder">
+        <p>Settings panel coming soon.</p>
       </div>
     </div>
   </div>
