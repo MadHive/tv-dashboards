@@ -309,16 +309,6 @@ export class SalesforceDataSource extends DataSource {
           envVar: 'SALESFORCE_INSTANCE_URL'
         },
         {
-          name: 'accessToken',
-          type: 'string',
-          required: false,
-          description: 'Salesforce access token (preferred)',
-          required: false,
-          description: 'Salesforce instance URL',
-          example: 'https://yourinstance.my.salesforce.com',
-          envVar: 'SALESFORCE_INSTANCE_URL'
-        },
-        {
           name: 'isSandbox',
           type: 'boolean',
           required: false,
@@ -338,7 +328,6 @@ export class SalesforceDataSource extends DataSource {
           name: 'clientId',
           type: 'string',
           required: false,
-          description: 'OAuth client ID (if not using access token)',
           description: 'OAuth Connected App client ID',
           secure: true,
           envVar: 'SALESFORCE_CLIENT_ID'
@@ -347,7 +336,6 @@ export class SalesforceDataSource extends DataSource {
           name: 'clientSecret',
           type: 'string',
           required: false,
-          description: 'OAuth client secret (if not using access token)',
           description: 'OAuth Connected App client secret',
           secure: true,
           envVar: 'SALESFORCE_CLIENT_SECRET'
@@ -356,7 +344,6 @@ export class SalesforceDataSource extends DataSource {
           name: 'username',
           type: 'string',
           required: false,
-          description: 'Salesforce username (if using OAuth)',
           description: 'Salesforce username',
           envVar: 'SALESFORCE_USERNAME'
         },
