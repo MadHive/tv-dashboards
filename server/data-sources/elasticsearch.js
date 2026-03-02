@@ -4,6 +4,7 @@
 
 import { DataSource } from './base.js';
 import { Client } from '@elastic/elasticsearch';
+import logger from '../logger.js';
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -32,7 +33,7 @@ export class ElasticsearchDataSource extends DataSource {
     try {
       // Check if connection info is available
       if (!this.host) {
-        console.warn('[elasticsearch] No Elasticsearch host found - data source will use mock data');
+        logger.warn('[elasticsearch] No Elasticsearch host found - data source will use mock data');
         this.isConnected = false;
         return;
       }
@@ -53,7 +54,7 @@ export class ElasticsearchDataSource extends DataSource {
           password: this.password
         };
       } else {
-        console.warn('[elasticsearch] No authentication credentials found - data source will use mock data');
+        logger.warn('[elasticsearch] No authentication credentials found - data source will use mock data');
         this.isConnected = false;
         return;
       }
@@ -61,9 +62,9 @@ export class ElasticsearchDataSource extends DataSource {
       this.client = new Client(clientConfig);
       this.isConnected = true;
 
-      console.log('[elasticsearch] Elasticsearch client initialized for:', this.host);
+      logger.info({ host: this.host }, 'Elasticsearch client initialized');
     } catch (error) {
-      console.error('[elasticsearch] Failed to initialize:', error.message);
+      logger.error({ error: error.message }, 'Elasticsearch data source failed to initialize');
       this.lastError = error;
       this.isConnected = false;
     }
@@ -83,7 +84,7 @@ export class ElasticsearchDataSource extends DataSource {
   async fetchMetrics(widgetConfig) {
     try {
       if (!this.client) {
-        console.warn('[elasticsearch] Elasticsearch client not initialized - using mock data');
+        logger.warn('[elasticsearch] Elasticsearch client not initialized - using mock data');
         return {
           timestamp: new Date().toISOString(),
           source: 'elasticsearch',
@@ -113,7 +114,7 @@ export class ElasticsearchDataSource extends DataSource {
       if (this.metricCache.has(cacheKey)) {
         const cached = this.metricCache.get(cacheKey);
         if (Date.now() - cached.timestamp < CACHE_TTL) {
-          console.log('[elasticsearch] Cache hit for query');
+          logger.info('[elasticsearch] Cache hit for query');
           return {
             timestamp: new Date().toISOString(),
             source: 'elasticsearch',
@@ -198,13 +199,34 @@ export class ElasticsearchDataSource extends DataSource {
         widgetId: widgetConfig.id
       };
     } catch (error) {
-      console.error('[elasticsearch] Fetch metrics error:', error.message);
+      logger.error({ error: error.message }, 'Elasticsearch fetch metrics error');
       return this.handleError(error, widgetConfig.type);
     }
   }
 
+  /**
+   * Test connection to Elasticsearch
+   */
   async testConnection() {
-    return false; // Not implemented
+    try {
+      if (!this.client) {
+        return false;
+      }
+
+      // Ping the cluster
+      const response = await this.client.ping();
+
+      if (response) {
+        logger.info('[elasticsearch] Connection test successful');
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      logger.error({ error: error.message }, 'Elasticsearch connection test failed');
+      this.lastError = error;
+      return false;
+    }
   }
 
   getConfigSchema() {
@@ -254,18 +276,244 @@ export class ElasticsearchDataSource extends DataSource {
     };
   }
 
-  transformData(raw, widgetType, aggregation = 'count') {
-    return raw;
+  /**
+   * Transform Elasticsearch response to widget format
+   */
+  transformData(response, widgetType, aggregation = 'count') {
+    if (!response) {
+      return this.getEmptyData(widgetType);
+    }
+
+    // Handle simple count aggregation
+    if (aggregation === 'count' && !response.aggregations) {
+      const count = response.hits?.total?.value || 0;
+
+      switch (widgetType) {
+        case 'big-number':
+        case 'stat-card':
+          return {
+            value: count,
+            unit: 'docs'
+          };
+
+        case 'gauge':
+        case 'gauge-row':
+          return {
+            value: count,
+            min: 0,
+            max: count * 1.2, // 20% headroom
+            unit: 'docs'
+          };
+
+        default:
+          return { value: count };
+      }
+    }
+
+    // Handle time-series aggregations
+    if (response.aggregations?.time_buckets?.buckets) {
+      const buckets = response.aggregations.time_buckets.buckets;
+
+      if (buckets.length === 0) {
+        return this.getEmptyData(widgetType);
+      }
+
+      switch (widgetType) {
+        case 'big-number':
+        case 'stat-card': {
+          // Use latest value
+          const latest = buckets[buckets.length - 1];
+          const previous = buckets.length > 1 ? buckets[buckets.length - 2] : latest;
+
+          const latestValue = latest.metric?.value || latest.doc_count;
+          const previousValue = previous.metric?.value || previous.doc_count;
+          const trend = latestValue > previousValue ? 'up' : latestValue < previousValue ? 'down' : 'stable';
+
+          return {
+            value: Math.round(latestValue * 100) / 100,
+            previous: Math.round(previousValue * 100) / 100,
+            trend
+          };
+        }
+
+        case 'gauge':
+        case 'gauge-row': {
+          const latest = buckets[buckets.length - 1];
+          const value = latest.metric?.value || latest.doc_count;
+
+          return {
+            value: Math.round(value * 100) / 100,
+            min: 0,
+            max: 100,
+            unit: '%'
+          };
+        }
+
+        case 'line-chart':
+        case 'sparkline': {
+          return {
+            labels: buckets.map(b => new Date(b.key).toISOString()),
+            values: buckets.map(b => {
+              const val = b.metric?.value || b.doc_count;
+              return Math.round(val * 100) / 100;
+            }),
+            series: 'Elasticsearch'
+          };
+        }
+
+        case 'bar-chart': {
+          const lastN = Math.min(10, buckets.length);
+          const recentBuckets = buckets.slice(-lastN);
+
+          return {
+            values: recentBuckets.map(b => {
+              const val = b.metric?.value || b.doc_count;
+              return {
+                label: new Date(b.key).toLocaleTimeString(),
+                value: Math.round(val * 100) / 100
+              };
+            })
+          };
+        }
+
+        default:
+          return { buckets };
+      }
+    }
+
+    // Return raw data for unsupported formats
+    return response;
   }
 
+  /**
+   * Get mock data for testing when Elasticsearch not available
+   */
   getMockData(widgetType) {
-    return this.getEmptyData(widgetType);
+    switch (widgetType) {
+      case 'big-number':
+      case 'stat-card':
+        return {
+          value: Math.round(Math.random() * 100000),
+          unit: 'docs'
+        };
+
+      case 'gauge':
+      case 'gauge-row':
+        return {
+          value: Math.round(Math.random() * 100),
+          min: 0,
+          max: 100,
+          unit: '%'
+        };
+
+      case 'bar-chart':
+        return {
+          values: [
+            { label: 'errors', value: 145 },
+            { label: 'warnings', value: 312 },
+            { label: 'info', value: 4280 },
+            { label: 'debug', value: 8910 }
+          ]
+        };
+
+      case 'line-chart':
+      case 'sparkline': {
+        const now = Date.now();
+        return {
+          labels: Array.from({ length: 12 }, (_, i) =>
+            new Date(now - (11 - i) * 300000).toISOString()
+          ),
+          values: Array.from({ length: 12 }, () =>
+            Math.round(Math.random() * 1000)
+          ),
+          series: 'Mock Documents'
+        };
+      }
+
+      default:
+        return this.getEmptyData(widgetType);
+    }
   }
 
+  /**
+   * Get available Elasticsearch metrics
+   */
   getAvailableMetrics() {
     return [
-      { id: 'doc_count', name: 'Document Count', type: 'number', widgets: ['big-number'] },
-      { id: 'index_size', name: 'Index Size', type: 'bytes', widgets: ['stat-card'] }
+      {
+        id: 'log_count',
+        name: 'Log Count',
+        description: 'Total number of log documents',
+        index: 'logs-*',
+        aggregation: 'count',
+        type: 'number',
+        widgets: ['big-number', 'stat-card', 'line-chart']
+      },
+      {
+        id: 'error_rate',
+        name: 'Error Rate',
+        description: 'Percentage of error-level logs',
+        index: 'logs-*',
+        query: { match: { level: 'error' } },
+        aggregation: 'count',
+        type: 'percentage',
+        widgets: ['gauge', 'gauge-row', 'big-number']
+      },
+      {
+        id: 'response_time_avg',
+        name: 'Average Response Time',
+        description: 'Average API response time',
+        index: 'metrics-*',
+        aggregation: 'avg',
+        field: 'response_time_ms',
+        type: 'duration',
+        widgets: ['gauge', 'line-chart', 'big-number']
+      },
+      {
+        id: 'request_rate',
+        name: 'Request Rate',
+        description: 'Requests per time interval',
+        index: 'metrics-*',
+        aggregation: 'count',
+        type: 'number',
+        widgets: ['line-chart', 'bar-chart', 'big-number']
+      },
+      {
+        id: 'unique_users',
+        name: 'Unique Users',
+        description: 'Unique user count',
+        index: 'events-*',
+        aggregation: 'cardinality',
+        field: 'user_id',
+        type: 'number',
+        widgets: ['big-number', 'stat-card']
+      },
+      {
+        id: 'disk_usage',
+        name: 'Index Disk Usage',
+        description: 'Total disk space used by indices',
+        aggregation: 'sum',
+        field: 'store.size_in_bytes',
+        type: 'bytes',
+        widgets: ['big-number', 'gauge']
+      },
+      {
+        id: 'search_latency_p95',
+        name: 'Search Latency (p95)',
+        description: '95th percentile search latency',
+        aggregation: 'percentiles',
+        field: 'search_time_ms',
+        type: 'duration',
+        widgets: ['gauge', 'line-chart']
+      },
+      {
+        id: 'custom_aggregation',
+        name: 'Custom Aggregation',
+        description: 'User-defined custom aggregation',
+        aggregation: 'count',
+        type: 'number',
+        widgets: ['big-number', 'gauge', 'line-chart', 'bar-chart']
+      }
     ];
   }
 }
