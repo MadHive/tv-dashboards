@@ -254,8 +254,113 @@ export class ElasticsearchDataSource extends DataSource {
     };
   }
 
-  transformData(raw, widgetType) {
-    return raw;
+  /**
+   * Transform Elasticsearch response to widget format
+   */
+  transformData(response, widgetType, aggregation = 'count') {
+    if (!response) {
+      return this.getEmptyData(widgetType);
+    }
+
+    // Handle simple count aggregation
+    if (aggregation === 'count' && !response.aggregations) {
+      const count = response.hits?.total?.value || 0;
+
+      switch (widgetType) {
+        case 'big-number':
+        case 'stat-card':
+          return {
+            value: count,
+            unit: 'docs'
+          };
+
+        case 'gauge':
+        case 'gauge-row':
+          return {
+            value: count,
+            min: 0,
+            max: count * 1.2, // 20% headroom
+            unit: 'docs'
+          };
+
+        default:
+          return { value: count };
+      }
+    }
+
+    // Handle time-series aggregations
+    if (response.aggregations?.time_buckets?.buckets) {
+      const buckets = response.aggregations.time_buckets.buckets;
+
+      if (buckets.length === 0) {
+        return this.getEmptyData(widgetType);
+      }
+
+      switch (widgetType) {
+        case 'big-number':
+        case 'stat-card': {
+          // Use latest value
+          const latest = buckets[buckets.length - 1];
+          const previous = buckets.length > 1 ? buckets[buckets.length - 2] : latest;
+
+          const latestValue = latest.metric?.value || latest.doc_count;
+          const previousValue = previous.metric?.value || previous.doc_count;
+          const trend = latestValue > previousValue ? 'up' : latestValue < previousValue ? 'down' : 'stable';
+
+          return {
+            value: Math.round(latestValue * 100) / 100,
+            previous: Math.round(previousValue * 100) / 100,
+            trend
+          };
+        }
+
+        case 'gauge':
+        case 'gauge-row': {
+          const latest = buckets[buckets.length - 1];
+          const value = latest.metric?.value || latest.doc_count;
+
+          return {
+            value: Math.round(value * 100) / 100,
+            min: 0,
+            max: 100,
+            unit: '%'
+          };
+        }
+
+        case 'line-chart':
+        case 'sparkline': {
+          return {
+            labels: buckets.map(b => new Date(b.key).toISOString()),
+            values: buckets.map(b => {
+              const val = b.metric?.value || b.doc_count;
+              return Math.round(val * 100) / 100;
+            }),
+            series: 'Elasticsearch'
+          };
+        }
+
+        case 'bar-chart': {
+          const lastN = Math.min(10, buckets.length);
+          const recentBuckets = buckets.slice(-lastN);
+
+          return {
+            values: recentBuckets.map(b => {
+              const val = b.metric?.value || b.doc_count;
+              return {
+                label: new Date(b.key).toLocaleTimeString(),
+                value: Math.round(val * 100) / 100
+              };
+            })
+          };
+        }
+
+        default:
+          return { buckets };
+      }
+    }
+
+    // Return raw data for unsupported formats
+    return response;
   }
 
   getMockData(widgetType) {
