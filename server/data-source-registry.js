@@ -13,6 +13,12 @@ import { hotJarDataSource } from './data-sources/hotjar.js';
 import { fullStoryDataSource } from './data-sources/fullstory.js';
 import { zendeskDataSource } from './data-sources/zendesk.js';
 import { bigQueryDataSource } from './data-sources/bigquery.js';
+import { checklyDataSource } from './data-sources/checkly.js';
+import { chromaticDataSource } from './data-sources/chromatic.js';
+import { lookerDataSource } from './data-sources/looker.js';
+import { rollbarDataSource } from './data-sources/rollbar.js';
+import { rootlyDataSource } from './data-sources/rootly.js';
+import { segmentDataSource } from './data-sources/segment.js';
 import logger from './logger.js';
 
 /**
@@ -44,6 +50,12 @@ class DataSourceRegistry {
     this.register(fullStoryDataSource);
     this.register(zendeskDataSource);
     this.register(bigQueryDataSource);
+    this.register(checklyDataSource);
+    this.register(chromaticDataSource);
+    this.register(lookerDataSource);
+    this.register(rollbarDataSource);
+    this.register(rootlyDataSource);
+    this.register(segmentDataSource);
 
     // Initialize all sources
     const initPromises = Array.from(this.sources.values()).map(source =>
