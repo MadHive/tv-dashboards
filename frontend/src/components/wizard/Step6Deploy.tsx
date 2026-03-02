@@ -9,6 +9,17 @@ interface Step6DeployProps {
   onBack: () => void;
 }
 
+// Create a URL-safe slug from the dashboard name by allowing only
+// lowercase letters, digits, and hyphens, and collapsing whitespace.
+function createSlug(name: string): string {
+  return name
+    .toLowerCase()
+    // Replace any sequence of non-alphanumeric characters with a hyphen.
+    .replace(/[^a-z0-9]+/g, '-')
+    // Trim leading/trailing hyphens.
+    .replace(/^-+|-+$/g, '') || 'dashboard';
+}
+
 export function Step6Deploy({
   dashboardName,
   refreshInterval,
@@ -22,7 +33,7 @@ export function Step6Deploy({
 
   const handleDeploy = () => {
     // Generate URL based on dashboard name
-    const slug = dashboardName.toLowerCase().replace(/\s+/g, '-');
+    const slug = createSlug(dashboardName);
     const url = `http://tv.madhive.dev/dashboard/${slug}`;
     setDisplayUrl(url);
     setDeployed(true);
