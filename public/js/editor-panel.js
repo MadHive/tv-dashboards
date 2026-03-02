@@ -164,7 +164,7 @@ window.PropertyPanel = (function () {
         </div>
 
         <div class="property-panel-footer">
-          <button id="prop-delete" class="btn btn-danger" style="margin-right: auto;">Delete Widget</button>
+          <button id="prop-delete" class="btn btn-danger" style="margin-right: auto; display: none;">Delete Widget</button>
           <button id="prop-save" class="btn btn-primary">Save Changes</button>
           <button id="prop-cancel" class="btn btn-secondary">Cancel</button>
         </div>
@@ -237,6 +237,11 @@ window.PropertyPanel = (function () {
           this.updateLivePreview();
         });
       });
+
+      // Theme preview button
+      document.getElementById('theme-preview-btn').addEventListener('click', () => {
+        this.previewThemeOnTV();
+      });
     }
 
     async loadQueriesForSource(source) {
@@ -267,6 +272,12 @@ window.PropertyPanel = (function () {
       this.currentWidget = widgetConfig;
       this.currentElement = widgetElement;
 
+      // Show widget form, hide dashboard form
+      document.getElementById('widget-property-form').style.display = 'block';
+      document.getElementById('dashboard-property-form').style.display = 'none';
+      document.getElementById('panel-title').textContent = 'Widget Properties';
+      document.getElementById('prop-delete').style.display = 'block';
+
       // Populate form with widget config
       await this.populateForm(widgetConfig);
 
@@ -275,6 +286,173 @@ window.PropertyPanel = (function () {
 
       // Update type-specific options
       this.updateTypeSpecificOptions(widgetConfig.type);
+    }
+
+    async showDashboardProperties() {
+      this.currentWidget = null;
+      this.currentElement = null;
+
+      // Show dashboard form, hide widget form
+      document.getElementById('widget-property-form').style.display = 'none';
+      document.getElementById('dashboard-property-form').style.display = 'block';
+      document.getElementById('panel-title').textContent = 'Dashboard Properties';
+      document.getElementById('prop-delete').style.display = 'none';
+
+      // Load themes
+      await this.loadThemesDropdown();
+
+      // Populate dashboard properties
+      await this.populateDashboardForm();
+
+      // Show panel
+      this.panel.style.display = 'flex';
+    }
+
+    async loadThemesDropdown() {
+      const themeSelect = document.getElementById('dashboard-theme-select');
+
+      try {
+        const response = await fetch('/api/themes');
+        if (!response.ok) {
+          console.warn('[PropertyPanel] Themes API not available (PR #28 pending)');
+          themeSelect.innerHTML = '<option value="">-- Default Theme (API not available) --</option>';
+          themeSelect.disabled = true;
+          document.getElementById('theme-preview-btn').disabled = true;
+          return;
+        }
+
+        const data = await response.json();
+
+        // Clear existing options
+        themeSelect.innerHTML = '<option value="">-- Default Theme --</option>';
+
+        // Populate with themes
+        if (data.success && data.themes) {
+          data.themes.forEach(theme => {
+            const option = document.createElement('option');
+            option.value = theme.id;
+            option.textContent = theme.name;
+            themeSelect.appendChild(option);
+          });
+          themeSelect.disabled = false;
+          document.getElementById('theme-preview-btn').disabled = false;
+        }
+      } catch (error) {
+        console.warn('[PropertyPanel] Failed to load themes:', error);
+        themeSelect.innerHTML = '<option value="">-- Default Theme (API not available) --</option>';
+        themeSelect.disabled = true;
+        document.getElementById('theme-preview-btn').disabled = true;
+      }
+    }
+
+    async populateDashboardForm() {
+      const currentDash = this.editorApp.modifiedConfig.dashboards[this.editorApp.dashboardApp.currentPage];
+
+      if (!currentDash) return;
+
+      document.getElementById('dashboard-name').value = currentDash.name || '';
+      document.getElementById('dashboard-subtitle').value = currentDash.subtitle || '';
+      document.getElementById('dashboard-icon').value = currentDash.icon || 'bolt';
+      document.getElementById('dashboard-theme-select').value = currentDash.theme || '';
+      document.getElementById('dashboard-columns').value = currentDash.grid?.columns || 4;
+      document.getElementById('dashboard-rows').value = currentDash.grid?.rows || 2;
+      document.getElementById('dashboard-gap').value = currentDash.grid?.gap || 14;
+    }
+
+    async previewThemeOnTV() {
+      const themeId = document.getElementById('dashboard-theme-select').value;
+
+      if (!themeId) {
+        alert('Please select a theme first');
+        return;
+      }
+
+      try {
+        // Fetch the theme
+        const response = await fetch(`/api/themes/${themeId}`);
+        if (!response.ok) {
+          throw new Error('Failed to load theme');
+        }
+
+        const data = await response.json();
+        if (!data.success || !data.theme) {
+          throw new Error('Invalid theme data');
+        }
+
+        const theme = data.theme;
+
+        // Get current dashboard config
+        const currentDash = this.editorApp.modifiedConfig.dashboards[this.editorApp.dashboardApp.currentPage];
+
+        // Dynamically import TVPreview
+        const { TVPreview } = await import('/js/components/tv-preview.js');
+
+        // Create and open TV preview
+        const preview = new TVPreview({
+          container: document.body,
+          theme: theme,
+          dashboardConfig: currentDash,
+          onApply: (appliedTheme) => {
+            // Auto-apply the theme to the dashboard
+            this.applyThemeToDashboard(appliedTheme.id);
+            this.editorApp.showNotification(`Theme "${appliedTheme.name}" applied`, 'success');
+          }
+        });
+
+        preview.open();
+      } catch (error) {
+        console.error('[PropertyPanel] Failed to preview theme:', error);
+        alert('Failed to preview theme. Make sure the themes API is available.');
+      }
+    }
+
+    applyThemeToDashboard(themeId) {
+      // Update the dropdown
+      document.getElementById('dashboard-theme-select').value = themeId;
+
+      // Theme will be saved when user clicks "Save Changes"
+      // For now, just apply visually using CSS custom properties
+      this.applyThemeVisually(themeId);
+    }
+
+    async applyThemeVisually(themeId) {
+      if (!themeId) {
+        // Remove theme - reset to default
+        const root = document.documentElement;
+        root.style.removeProperty('--theme-primary');
+        root.style.removeProperty('--theme-secondary');
+        root.style.removeProperty('--theme-accent');
+        root.style.removeProperty('--theme-background');
+        root.style.removeProperty('--theme-surface');
+        root.style.removeProperty('--theme-text-primary');
+        root.style.removeProperty('--theme-text-secondary');
+        root.style.removeProperty('--theme-border');
+        return;
+      }
+
+      try {
+        // Fetch theme
+        const response = await fetch(`/api/themes/${themeId}`);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (!data.success || !data.theme) return;
+
+        const theme = data.theme;
+
+        // Apply theme colors as CSS custom properties
+        const root = document.documentElement;
+        root.style.setProperty('--theme-primary', theme.colors.primary);
+        root.style.setProperty('--theme-secondary', theme.colors.secondary);
+        root.style.setProperty('--theme-accent', theme.colors.accent);
+        root.style.setProperty('--theme-background', theme.colors.background);
+        root.style.setProperty('--theme-surface', theme.colors.surface);
+        root.style.setProperty('--theme-text-primary', theme.colors.textPrimary);
+        root.style.setProperty('--theme-text-secondary', theme.colors.textSecondary);
+        root.style.setProperty('--theme-border', theme.colors.border);
+      } catch (error) {
+        console.error('[PropertyPanel] Failed to apply theme visually:', error);
+      }
     }
 
     hide() {
@@ -422,6 +600,17 @@ window.PropertyPanel = (function () {
     }
 
     saveChanges() {
+      // Check if we're editing dashboard or widget
+      const isDashboardMode = document.getElementById('dashboard-property-form').style.display !== 'none';
+
+      if (isDashboardMode) {
+        this.saveDashboardChanges();
+      } else {
+        this.saveWidgetChanges();
+      }
+    }
+
+    saveWidgetChanges() {
       if (!this.currentWidget) return;
 
       const values = this.getFormValues();
@@ -447,13 +636,69 @@ window.PropertyPanel = (function () {
       this.editorApp.showNotification('Widget updated', 'success');
     }
 
+    saveDashboardChanges() {
+      const currentDash = this.editorApp.modifiedConfig.dashboards[this.editorApp.dashboardApp.currentPage];
+      if (!currentDash) return;
+
+      // Get form values
+      const name = document.getElementById('dashboard-name').value.trim();
+      const subtitle = document.getElementById('dashboard-subtitle').value.trim();
+      const icon = document.getElementById('dashboard-icon').value;
+      const theme = document.getElementById('dashboard-theme-select').value;
+      const columns = parseInt(document.getElementById('dashboard-columns').value);
+      const rows = parseInt(document.getElementById('dashboard-rows').value);
+      const gap = parseInt(document.getElementById('dashboard-gap').value);
+
+      // Validate
+      if (!name) {
+        alert('Dashboard name is required');
+        return;
+      }
+
+      if (columns < 1 || rows < 1) {
+        alert('Grid columns and rows must be at least 1');
+        return;
+      }
+
+      // Update dashboard config
+      currentDash.name = name;
+      currentDash.subtitle = subtitle;
+      currentDash.icon = icon;
+      currentDash.theme = theme;
+      currentDash.grid = currentDash.grid || {};
+      currentDash.grid.columns = columns;
+      currentDash.grid.rows = rows;
+      currentDash.grid.gap = gap;
+
+      // Mark as modified
+      this.editorApp.markAsModified();
+
+      // Apply theme visually
+      this.applyThemeVisually(theme);
+
+      // Update the dashboard display
+      this.editorApp.dashboardApp.showPage(this.editorApp.dashboardApp.currentPage);
+
+      // Show success message
+      this.editorApp.showNotification('Dashboard updated', 'success');
+    }
+
     cancel() {
+      // Check if we're editing dashboard or widget
+      const isDashboardMode = document.getElementById('dashboard-property-form').style.display !== 'none';
+
+      if (isDashboardMode) {
+        // Just hide the panel for dashboard mode
+        this.hide();
+        return;
+      }
+
       if (!this.currentWidget) {
         this.hide();
         return;
       }
 
-      // Revert any live preview changes
+      // Revert any live preview changes for widget
       const titleEl = this.currentElement.querySelector('.widget-title');
       if (titleEl) titleEl.textContent = this.currentWidget.title;
 

@@ -32,6 +32,12 @@ window.EditorApp = (function () {
           this.toggle();
         }
 
+        // Ctrl+D or Cmd+D to show dashboard properties
+        if ((e.ctrlKey || e.metaKey) && e.key === 'd' && this.isActive) {
+          e.preventDefault();
+          this.showDashboardProperties();
+        }
+
         // Escape to deselect widget
         if (e.key === 'Escape' && this.isActive) {
           this.deselectWidget();
@@ -116,7 +122,7 @@ window.EditorApp = (function () {
       if (toggleBtn) toggleBtn.classList.add('active');
 
       // Show notification
-      this.showNotification('Edit mode enabled. Press Ctrl+E to exit.');
+      this.showNotification('Edit mode enabled. Press Ctrl+D for dashboard properties, Ctrl+E to exit.');
 
       // Dispatch event
       document.dispatchEvent(new CustomEvent('editorStateChanged', { detail: { isActive: true } }));
@@ -296,6 +302,18 @@ window.EditorApp = (function () {
       // Hide property panel
       if (this.propertyPanel) {
         this.propertyPanel.hide();
+      }
+    }
+
+    showDashboardProperties() {
+      if (!this.isActive) return;
+
+      // Deselect any selected widget
+      this.deselectWidget();
+
+      // Show dashboard properties panel
+      if (this.propertyPanel) {
+        this.propertyPanel.showDashboardProperties();
       }
     }
 
