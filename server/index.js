@@ -6,8 +6,8 @@ import { Elysia } from 'elysia';
 import { staticPlugin } from '@elysiajs/static';
 import { cookie } from '@elysiajs/cookie';
 import { cors } from '@elysiajs/cors';
-import { readFileSync } from 'fs';
-import { load } from 'js-yaml';
+import { readFileSync, writeFileSync } from 'fs';
+import { load, dump } from 'js-yaml';
 import { join, dirname } from 'path';
 import logger from './logger.js';
 import { fileURLToPath } from 'url';
@@ -508,9 +508,16 @@ const app = new Elysia()
   })
 
   // Template management endpoints
-  .get('/api/templates', () => {
+  .get('/api/templates', ({ query }) => {
     try {
       const templates = listTemplates();
+
+      // Filter by category if provided
+      if (query.category) {
+        const filtered = templates.filter(t => t.category === query.category);
+        return { success: true, templates: filtered };
+      }
+
       return { success: true, templates };
     } catch (error) {
       return new Response(
@@ -520,26 +527,71 @@ const app = new Elysia()
     }
   })
 
-  .get('/api/templates/:filename', ({ params }) => {
+  .get('/api/templates/:id', ({ params }) => {
     try {
-      const template = loadTemplate(params.filename);
+      // Validate BEFORE sanitization (prevent path traversal)
+      if (params.id.includes('..') || params.id.includes('/') || params.id.includes('\\')) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Invalid template ID' }),
+          { status: 400, headers: { 'content-type': 'application/json' } }
+        );
+      }
+
+      // Sanitize ID and add .yaml extension
+      const sanitizedId = params.id.replace(/[^a-z0-9-]/g, '-');
+
+      // Additional validation after sanitization
+      if (sanitizedId.startsWith('-') || sanitizedId.length === 0) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Invalid template ID' }),
+          { status: 400, headers: { 'content-type': 'application/json' } }
+        );
+      }
+
+      const filename = `${sanitizedId}.yaml`;
+      const template = loadTemplate(filename);
       return { success: true, template };
     } catch (error) {
       return new Response(
         JSON.stringify({ success: false, error: error.message }),
-        { status: 404, headers: { 'content-type': 'application/json' } }
+        { status: error.message.includes('not found') ? 404 : 500, headers: { 'content-type': 'application/json' } }
       );
     }
   })
 
   .post('/api/templates', async ({ body }) => {
     try {
-      const { name, dashboard, metadata } = body;
+      const { name, dashboard, description, category, author } = body;
+
+      // Validate required fields
       if (!name || !dashboard) {
         throw new Error('Template name and dashboard configuration required');
       }
+
+      // Validate BEFORE sanitization (prevent path traversal)
+      if (name.includes('..') || name.includes('/') || name.includes('\\')) {
+        throw new Error('Invalid template name');
+      }
+
+      // Sanitize name for filename
+      const sanitizedName = name.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+
+      // Additional validation after sanitization
+      if (sanitizedName.startsWith('-') || sanitizedName.length === 0) {
+        throw new Error('Invalid template name');
+      }
+
+      const metadata = {
+        description: description || '',
+        category: category || 'Custom',
+        author: author || 'User'
+      };
+
       const result = await saveTemplate(name, dashboard, metadata);
-      return result;
+      return new Response(
+        JSON.stringify(result),
+        { status: 201, headers: { 'content-type': 'application/json' } }
+      );
     } catch (error) {
       return new Response(
         JSON.stringify({ success: false, error: error.message }),
@@ -548,14 +600,94 @@ const app = new Elysia()
     }
   })
 
-  .delete('/api/templates/:filename', ({ params }) => {
+  .put('/api/templates/:id', async ({ params, body }) => {
     try {
-      const result = deleteTemplate(params.filename);
-      return result;
+      // Validate BEFORE sanitization (prevent path traversal)
+      if (params.id.includes('..') || params.id.includes('/') || params.id.includes('\\')) {
+        throw new Error('Invalid template ID');
+      }
+
+      // Sanitize ID and add .yaml extension
+      const sanitizedId = params.id.replace(/[^a-z0-9-]/g, '-');
+
+      // Additional validation after sanitization
+      if (sanitizedId.startsWith('-') || sanitizedId.length === 0) {
+        throw new Error('Invalid template ID');
+      }
+
+      const filename = `${sanitizedId}.yaml`;
+
+      // Load existing template
+      const existing = loadTemplate(filename);
+
+      // Merge updates
+      const updated = {
+        name: body.name || existing.name,
+        description: body.description || existing.description,
+        category: body.category || existing.category,
+        author: existing.author, // Don't allow changing author
+        createdAt: existing.createdAt || new Date().toISOString(),
+        dashboard: body.dashboard || existing.dashboard
+      };
+
+      // Validate updated name if it was changed
+      if (body.name && (body.name.includes('..') || body.name.includes('/') || body.name.includes('\\'))) {
+        throw new Error('Invalid template name');
+      }
+
+      // Write updated template directly to same file (don't change filename)
+      const TEMPLATES_DIR = join(__dirname, '..', 'config', 'templates');
+      const filepath = join(TEMPLATES_DIR, filename);
+
+      const yamlContent = dump(updated, {
+        indent: 2,
+        lineWidth: 120,
+        noRefs: true,
+        sortKeys: false
+      });
+
+      writeFileSync(filepath, yamlContent, 'utf8');
+
+      return { success: true, filename, template: updated };
     } catch (error) {
       return new Response(
         JSON.stringify({ success: false, error: error.message }),
-        { status: 404, headers: { 'content-type': 'application/json' } }
+        { status: 400, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
+  .delete('/api/templates/:id', ({ params }) => {
+    try {
+      // Validate BEFORE sanitization (prevent path traversal)
+      if (params.id.includes('..') || params.id.includes('/') || params.id.includes('\\')) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Invalid template ID' }),
+          { status: 400, headers: { 'content-type': 'application/json' } }
+        );
+      }
+
+      // Sanitize ID and add .yaml extension
+      const sanitizedId = params.id.replace(/[^a-z0-9-]/g, '-');
+
+      // Additional validation after sanitization
+      if (sanitizedId.startsWith('-') || sanitizedId.length === 0) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Invalid template ID' }),
+          { status: 400, headers: { 'content-type': 'application/json' } }
+        );
+      }
+
+      const filename = `${sanitizedId}.yaml`;
+      const result = deleteTemplate(filename);
+      return new Response(
+        JSON.stringify(result),
+        { status: 204, headers: { 'content-type': 'application/json' } }
+      );
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: error.message.includes('not found') ? 404 : 500, headers: { 'content-type': 'application/json' } }
       );
     }
   })
