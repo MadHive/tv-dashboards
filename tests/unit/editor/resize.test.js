@@ -69,7 +69,7 @@ describe('Editor: Resize', () => {
     expect(resizeController.resizedElement).toBe(null);
   });
 
-  it('should have attachResizeHandlers method', () => {
+  it('should have attachHandles method', () => {
     const mockEditorApp = {
       dashboardApp: {
         config: { dashboards: [] }
@@ -79,10 +79,10 @@ describe('Editor: Resize', () => {
     const ResizeController = window.ResizeController;
     const resizeController = new ResizeController(mockEditorApp);
 
-    expect(typeof resizeController.attachResizeHandlers).toBe('function');
+    expect(typeof resizeController.attachHandles).toBe('function');
   });
 
-  it('should have detachResizeHandlers method', () => {
+  it('should have removeHandles method', () => {
     const mockEditorApp = {
       dashboardApp: {
         config: { dashboards: [] }
@@ -92,7 +92,7 @@ describe('Editor: Resize', () => {
     const ResizeController = window.ResizeController;
     const resizeController = new ResizeController(mockEditorApp);
 
-    expect(typeof resizeController.detachResizeHandlers).toBe('function');
+    expect(typeof resizeController.removeHandles).toBe('function');
   });
 
   it('should have startResize method', () => {
@@ -127,7 +127,7 @@ describe('Editor: Resize', () => {
       position: { col: 1, row: 1, colSpan: 2, rowSpan: 2 }
     };
 
-    resizeController.attachResizeHandlers(widgetElement, mockConfig);
+    resizeController.attachHandles(widgetElement, mockConfig);
 
     const resizeHandles = widgetElement.querySelectorAll('.resize-handle');
     expect(resizeHandles.length).toBeGreaterThan(0);

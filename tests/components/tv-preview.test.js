@@ -254,15 +254,11 @@ class MockDocument {
   }
 }
 
-// Make globals available
-global.KeyboardEvent = MockKeyboardEvent;
-global.Event = MockEvent;
-
-// Mock requestAnimationFrame to run synchronously in tests
-global.requestAnimationFrame = (callback) => {
-  callback();
-  return 0;
-};
+// Save originals before any global pollution
+const originalKeyboardEvent = global.KeyboardEvent;
+const originalEvent = global.Event;
+const originalRequestAnimationFrame = global.requestAnimationFrame;
+const originalDocument = global.document;
 
 describe('TVPreview', () => {
   let container;
@@ -272,6 +268,14 @@ describe('TVPreview', () => {
   let mockDocument;
 
   beforeEach(() => {
+    // Make globals available for this test
+    global.KeyboardEvent = MockKeyboardEvent;
+    global.Event = MockEvent;
+    global.requestAnimationFrame = (callback) => {
+      callback();
+      return 0;
+    };
+
     // Setup mock document
     mockDocument = new MockDocument();
     global.document = mockDocument;
@@ -328,6 +332,12 @@ describe('TVPreview', () => {
     if (global.document) {
       global.document.eventListeners = {};
     }
+
+    // Restore original globals to prevent pollution
+    global.document = originalDocument;
+    global.requestAnimationFrame = originalRequestAnimationFrame;
+    global.KeyboardEvent = originalKeyboardEvent;
+    global.Event = originalEvent;
   });
 
   describe('Initialization', () => {
