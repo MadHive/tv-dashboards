@@ -88,6 +88,11 @@ bigquery:
       - big-number
     updatedAt: '2026-03-02T18:18:50.945Z'
     createdAt: '2026-02-26T17:39:15.033Z'
+  - id: test-query
+    name: Test Query
+    sql: SELECT 1
+    updatedAt: '2026-03-02T18:20:38.682Z'
+    createdAt: '2026-03-02T18:20:38.682Z'
 gcp:
   - id: cloudrun-requests
     name: Cloud Run Request Count

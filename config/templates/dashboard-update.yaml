@@ -1,0 +1,15 @@
+name: Dashboard Update
+description: ''
+category: Test
+author: User
+createdAt: '2026-03-02T18:20:30.672Z'
+dashboard:
+  id: test-dashboard
+  name: Updated Dashboard Name
+  subtitle: Dashboard for testing
+  icon: test
+  grid:
+    columns: 4
+    rows: 3
+    gap: 14
+  widgets: []

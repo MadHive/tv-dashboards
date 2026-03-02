@@ -226,14 +226,6 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
     try {
       const { source } = params;
 
-      // Validate query structure
-      if (!body || !body.sql) {
-        return {
-          success: false,
-          error: 'Missing required field: sql'
-        };
-      }
-
       // Get data source from registry
       let dataSource;
       try {
@@ -256,10 +248,29 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       let result;
 
       if (source === 'bigquery') {
-        // Execute BigQuery SQL query (limit to 10 rows for testing)
-        const testSql = body.sql.trim().toLowerCase().includes('limit')
-          ? body.sql
-          : `${body.sql.trim().replace(/;?\s*$/, '')} LIMIT 10`;
+        // Validate BigQuery-specific fields
+        if (!body || !body.sql) {
+          return {
+            success: false,
+            error: 'Missing required field: sql'
+          };
+        }
+
+        // Execute BigQuery SQL query (limit to 50 rows max for testing)
+        let testSql = body.sql.trim().replace(/;?\s*$/, '');
+
+        // Check if query has a LIMIT clause and enforce max of 50
+        const limitMatch = testSql.match(/\bLIMIT\s+(\d+)\b/i);
+        if (limitMatch) {
+          const limit = parseInt(limitMatch[1], 10);
+          if (limit > 50) {
+            // Replace with max limit of 50
+            testSql = testSql.replace(/\bLIMIT\s+\d+\b/i, 'LIMIT 50');
+          }
+        } else {
+          // No LIMIT clause, add one
+          testSql = `${testSql} LIMIT 50`;
+        }
 
         // Time the query execution
         const { result: rows, duration, error } = await timeOperation(
@@ -270,37 +281,59 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
         metricsCollector.recordDataSourceQuery('bigquery', duration, !!error);
 
         if (error) {
-          throw error;
-        }
-
-        result = {
-          success: true,
-          message: 'Query executed successfully',
-          rowCount: rows?.length || 0,
-          preview: rows?.slice(0, 5) || [], // Show first 5 rows
-          sql: testSql,
-          executionTime: `${duration}ms`
-        };
-      } else if (source === 'gcp') {
-        // For GCP Monitoring, validate the metric query structure
-        if (!body.metric) {
+          // Return error gracefully instead of throwing
           return {
             success: false,
-            error: 'GCP queries require a "metric" field'
+            source,
+            error: error.message || 'BigQuery query failed',
+            sql: testSql,
+            executionTime: duration
           };
         }
 
         result = {
           success: true,
+          source,
+          message: 'Query executed successfully',
+          rowCount: rows?.length || 0,
+          results: rows || [],
+          sql: testSql,
+          executionTime: duration
+        };
+      } else if (source === 'gcp') {
+        // For GCP Monitoring, validate the metric query structure
+        // Accept both 'metric' and 'metricType' for backward compatibility
+        const metricField = body.metric || body.metricType;
+        if (!body || !metricField) {
+          return {
+            success: false,
+            error: 'Missing required field: metric'
+          };
+        }
+
+        result = {
+          success: true,
+          source,
           message: 'GCP metric query structure is valid',
-          metric: body.metric,
+          metric: metricField,
+          metricType: metricField,
           filters: body.filters || {},
           aggregation: body.aggregation || 'mean'
+        };
+      } else if (source === 'mock') {
+        // For mock, just validate structure
+        result = {
+          success: true,
+          source,
+          message: 'Mock query structure validated',
+          note: 'Full execution not yet implemented for mock',
+          query: body
         };
       } else {
         // For other sources, validate structure only
         result = {
           success: true,
+          source,
           message: `Query structure validated for ${source}`,
           note: `Full execution not yet implemented for ${source}`,
           query: body

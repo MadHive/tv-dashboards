@@ -101,12 +101,9 @@ export async function getData(dashboardId) {
   return mockGetMetrics(dashboardId);
 }
 
-// Serve vanilla JS (public/) - Astro migration incomplete
+// Serve vanilla JS (public/)
 const publicDir = join(__dirname, '..', 'public');
 const indexHtml = readFileSync(join(publicDir, 'index.html'), 'utf8');
-
-// Serve React frontend (frontend/dist/)
-const frontendDistDir = join(__dirname, '..', 'frontend', 'dist');
 
 // Simple in-memory cache to speed up widget loading (10 second cache)
 const widgetCache = new Map();
@@ -212,7 +209,6 @@ const app = new Elysia()
     });
   })
 
-  .use(staticPlugin({ assets: join(frontendDistDir, 'assets'), prefix: '/app/assets' }))
   .use(staticPlugin({ assets: publicDir, prefix: '/' }))
 
   .get('/wizard-demo', async () => {
