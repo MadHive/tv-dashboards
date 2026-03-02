@@ -42,10 +42,16 @@
     ───────────────────────────────────────────── */
 
     async loadConfig() {
-      const res = await fetch('/api/config');
-      const data = await res.json();
-      this.config = data;
-      this.modifiedConfig = JSON.parse(JSON.stringify(data));
+      try {
+        const res = await fetch('/api/config');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        this.config = await res.json();
+        this.modifiedConfig = JSON.parse(JSON.stringify(this.config));
+      } catch (e) {
+        this.showToast('Failed to load config: ' + e.message, 'error');
+        this.config = { global: {}, dashboards: [] };
+        this.modifiedConfig = { global: {}, dashboards: [] };
+      }
     }
 
     async loadThemes() {
