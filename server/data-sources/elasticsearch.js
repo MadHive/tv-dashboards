@@ -4,6 +4,7 @@
 
 import { DataSource } from './base.js';
 import { Client } from '@elastic/elasticsearch';
+import logger from '../logger.js';
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -32,7 +33,7 @@ export class ElasticsearchDataSource extends DataSource {
     try {
       // Check if connection info is available
       if (!this.host) {
-        console.warn('[elasticsearch] No Elasticsearch host found - data source will use mock data');
+        logger.warn('[elasticsearch] No Elasticsearch host found - data source will use mock data');
         this.isConnected = false;
         return;
       }
@@ -53,7 +54,7 @@ export class ElasticsearchDataSource extends DataSource {
           password: this.password
         };
       } else {
-        console.warn('[elasticsearch] No authentication credentials found - data source will use mock data');
+        logger.warn('[elasticsearch] No authentication credentials found - data source will use mock data');
         this.isConnected = false;
         return;
       }
@@ -61,9 +62,9 @@ export class ElasticsearchDataSource extends DataSource {
       this.client = new Client(clientConfig);
       this.isConnected = true;
 
-      console.log('[elasticsearch] Elasticsearch client initialized for:', this.host);
+      logger.info({ host: this.host }, 'Elasticsearch client initialized');
     } catch (error) {
-      console.error('[elasticsearch] Failed to initialize:', error.message);
+      logger.error({ error: error.message }, 'Elasticsearch data source failed to initialize');
       this.lastError = error;
       this.isConnected = false;
     }
@@ -83,7 +84,7 @@ export class ElasticsearchDataSource extends DataSource {
   async fetchMetrics(widgetConfig) {
     try {
       if (!this.client) {
-        console.warn('[elasticsearch] Elasticsearch client not initialized - using mock data');
+        logger.warn('[elasticsearch] Elasticsearch client not initialized - using mock data');
         return {
           timestamp: new Date().toISOString(),
           source: 'elasticsearch',
@@ -113,7 +114,7 @@ export class ElasticsearchDataSource extends DataSource {
       if (this.metricCache.has(cacheKey)) {
         const cached = this.metricCache.get(cacheKey);
         if (Date.now() - cached.timestamp < CACHE_TTL) {
-          console.log('[elasticsearch] Cache hit for query');
+          logger.info('[elasticsearch] Cache hit for query');
           return {
             timestamp: new Date().toISOString(),
             source: 'elasticsearch',
@@ -198,7 +199,7 @@ export class ElasticsearchDataSource extends DataSource {
         widgetId: widgetConfig.id
       };
     } catch (error) {
-      console.error('[elasticsearch] Fetch metrics error:', error.message);
+      logger.error({ error: error.message }, 'Elasticsearch fetch metrics error');
       return this.handleError(error, widgetConfig.type);
     }
   }
@@ -216,13 +217,13 @@ export class ElasticsearchDataSource extends DataSource {
       const response = await this.client.ping();
 
       if (response) {
-        console.log('[elasticsearch] Connection test successful');
+        logger.info('[elasticsearch] Connection test successful');
         return true;
       }
 
       return false;
     } catch (error) {
-      console.error('[elasticsearch] Connection test failed:', error.message);
+      logger.error({ error: error.message }, 'Elasticsearch connection test failed');
       this.lastError = error;
       return false;
     }

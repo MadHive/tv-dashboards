@@ -4,6 +4,8 @@
 
 import { DataSource } from './base.js';
 import { BigQuery } from '@google-cloud/bigquery';
+import { metricsCollector } from '../metrics.js';
+import logger from '../logger.js';
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -36,9 +38,9 @@ export class BigQueryDataSource extends DataSource {
 
       this.client = new BigQuery(clientConfig);
       this.isConnected = true;
-      console.log(`[bigquery] Initialized for project: ${this.projectId}`);
+      logger.info('[bigquery] Initialized for project: ${this.projectId}');
     } catch (error) {
-      console.error('[bigquery] Initialization failed:', error.message);
+      logger.error({ error: error.message }, 'BigQuery initialization failed');
       this.lastError = error;
       this.isConnected = false;
     }
@@ -64,11 +66,15 @@ export class BigQueryDataSource extends DataSource {
     if (useCache && this.queryCache.has(cacheKey)) {
       const cached = this.queryCache.get(cacheKey);
       if (Date.now() - cached.timestamp < CACHE_TTL) {
-        console.log('[bigquery] Cache hit');
+        logger.info('[bigquery] Cache hit');
+        metricsCollector.recordCacheHit();
         return cached.data;
       }
     }
 
+    metricsCollector.recordCacheMiss();
+
+    const startTime = Date.now();
     try {
       const options = {
         query: sql,
@@ -77,9 +83,12 @@ export class BigQueryDataSource extends DataSource {
       };
 
       const [job] = await this.client.createQueryJob(options);
-      console.log(`[bigquery] Job ${job.id} started`);
+      logger.info('[bigquery] Job ${job.id} started');
 
       const [rows] = await job.getQueryResults();
+
+      const duration = Date.now() - startTime;
+      metricsCollector.recordDataSourceQuery('bigquery', duration, false);
 
       // Cache results
       if (useCache) {
@@ -87,11 +96,14 @@ export class BigQueryDataSource extends DataSource {
           data: rows,
           timestamp: Date.now()
         });
+        metricsCollector.recordCacheSet();
       }
 
       return rows;
     } catch (error) {
-      console.error('[bigquery] Query failed:', error.message);
+      const duration = Date.now() - startTime;
+      metricsCollector.recordDataSourceQuery('bigquery', duration, true);
+      logger.error({ error: error.message }, 'BigQuery query failed');
       throw error;
     }
   }
@@ -197,7 +209,7 @@ export class BigQueryDataSource extends DataSource {
 
       return rows.length > 0;
     } catch (error) {
-      console.error('[bigquery] Connection test failed:', error.message);
+      logger.error({ error: error.message }, 'BigQuery connection test failed');
       return false;
     }
   }
@@ -219,7 +231,7 @@ export class BigQueryDataSource extends DataSource {
         created: ds.metadata.creationTime
       }));
     } catch (error) {
-      console.error('[bigquery] Failed to list datasets:', error.message);
+      logger.error({ error: error.message }, 'Failed to list BigQuery datasets');
       return [];
     }
   }
@@ -244,7 +256,7 @@ export class BigQueryDataSource extends DataSource {
         created: t.metadata.creationTime
       }));
     } catch (error) {
-      console.error('[bigquery] Failed to list tables:', error.message);
+      logger.error({ error: error.message }, 'Failed to list BigQuery tables');
       return [];
     }
   }
@@ -273,7 +285,7 @@ export class BigQueryDataSource extends DataSource {
         numBytes: metadata.numBytes
       };
     } catch (error) {
-      console.error('[bigquery] Failed to get schema:', error.message);
+      logger.error({ error: error.message }, 'Failed to get BigQuery table schema');
       return null;
     }
   }

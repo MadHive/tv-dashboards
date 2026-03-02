@@ -3,6 +3,7 @@
 // ===========================================================================
 
 import { DataSource } from './base.js';
+import logger from '../logger.js';
 
 export class FullStoryDataSource extends DataSource {
   constructor(config = {}) {
@@ -11,7 +12,7 @@ export class FullStoryDataSource extends DataSource {
   }
 
   async fetchMetrics(widgetConfig) {
-    console.warn('[fullstory] Using mock data - FullStory API not yet implemented');
+    logger.warn('[fullstory] Using mock data - FullStory API not yet implemented');
     return {
       timestamp: new Date().toISOString(),
       source: 'fullstory',
