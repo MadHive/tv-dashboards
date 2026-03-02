@@ -231,23 +231,17 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       try {
         dataSource = dataSourceRegistry.getSource(source);
       } catch (error) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: `Unknown data source: ${source}`
-          }),
-          { status: 400, headers: { 'content-type': 'application/json' } }
-        );
+        return {
+          success: false,
+          error: `Unknown data source: ${source}`
+        };
       }
 
       if (!dataSource) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: `Unknown data source: ${source}`
-          }),
-          { status: 400, headers: { 'content-type': 'application/json' } }
-        );
+        return {
+          success: false,
+          error: `Unknown data source: ${source}`
+        };
       }
 
       // Execute test query based on source type
@@ -256,13 +250,10 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       if (source === 'bigquery') {
         // Validate BigQuery-specific fields
         if (!body || !body.sql) {
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: 'BigQuery test queries require sql field'
-            }),
-            { status: 400, headers: { 'content-type': 'application/json' } }
-          );
+          return {
+            success: false,
+            error: 'Missing required field: sql'
+          };
         }
 
         // Execute BigQuery SQL query (limit to 50 rows max for testing)
@@ -311,69 +302,41 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
         };
       } else if (source === 'gcp') {
         // For GCP Monitoring, validate the metric query structure
-        if (!body || !body.metricType) {
-          return new Response(
-            JSON.stringify({
-              success: false,
-              error: 'GCP test queries require metricType field'
-            }),
-            { status: 400, headers: { 'content-type': 'application/json' } }
-          );
-        }
-
-        // Execute actual GCP query for testing
-        const { result: metrics, duration, error } = await timeOperation(
-          () => dataSource.fetchMetrics({ metricType: body.metricType })
-        );
-
-        metricsCollector.recordDataSourceQuery('gcp', duration, !!error);
-
-        if (error) {
-          // Return error gracefully
+        // Accept both 'metric' and 'metricType' for backward compatibility
+        const metricField = body.metric || body.metricType;
+        if (!body || !metricField) {
           return {
             success: false,
-            source,
-            error: error.message || 'GCP query failed',
-            executionTime: duration
+            error: 'Missing required field: metric'
           };
         }
 
-        // Ensure results is always an array
-        const results = Array.isArray(metrics?.data) ? metrics.data.slice(0, 10) :
-                       Array.isArray(metrics) ? metrics.slice(0, 10) :
-                       [];
-
         result = {
           success: true,
           source,
-          message: 'GCP metric query executed successfully',
-          metricType: body.metricType,
-          results,
-          rowCount: results.length,
-          executionTime: duration
+          message: 'GCP metric query structure is valid',
+          metric: metricField,
+          metricType: metricField,
+          filters: body.filters || {},
+          aggregation: body.aggregation || 'mean'
         };
       } else if (source === 'mock') {
-        // For mock, execute and return sample data
-        const { result: mockData, duration } = await timeOperation(
-          () => dataSource.fetchMetrics({})
-        );
-
+        // For mock, just validate structure
         result = {
           success: true,
           source,
-          message: 'Mock query executed successfully',
-          results: mockData?.data || [{ value: 100 }, { value: 200 }, { value: 300 }],
-          rowCount: 3,
-          executionTime: duration
+          message: 'Mock query structure validated',
+          note: 'Full execution not yet implemented for mock',
+          query: body
         };
       } else {
         // For other sources, validate structure only
         result = {
           success: true,
           source,
-          message: `Query validated - execution not yet implemented for ${source}`,
-          query: body,
-          executionTime: 0
+          message: `Query structure validated for ${source}`,
+          note: `Full execution not yet implemented for ${source}`,
+          query: body
         };
       }
 

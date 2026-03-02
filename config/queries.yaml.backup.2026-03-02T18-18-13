@@ -43,7 +43,7 @@ bigquery:
     sql: SELECT COUNT(*) as value FROM test_table
     widgetTypes:
       - big-number
-    updatedAt: '2026-03-02T17:15:09.391Z'
+    updatedAt: '2026-03-02T18:08:57.862Z'
     createdAt: '2026-02-26T17:39:15.018Z'
   - id: update-test
     name: Updated Name
@@ -51,48 +51,43 @@ bigquery:
     widgetTypes:
       - big-number
       - stat-card
-    updatedAt: '2026-03-02T17:15:09.394Z'
+    updatedAt: '2026-03-02T18:08:57.864Z'
     createdAt: '2026-02-26T17:39:15.024Z'
   - id: retrieve-test
     name: Retrieve Test
     sql: SELECT * FROM test
     widgetTypes:
       - big-number
-    updatedAt: '2026-03-02T17:15:09.395Z'
+    updatedAt: '2026-03-02T18:08:57.864Z'
     createdAt: '2026-02-26T17:39:15.026Z'
   - id: list-test-1
     name: List Test 1
     sql: SELECT 1
     widgetTypes:
       - big-number
-    updatedAt: '2026-03-02T17:15:09.397Z'
+    updatedAt: '2026-03-02T18:08:57.865Z'
     createdAt: '2026-02-26T17:39:15.028Z'
   - id: list-test-2
     name: List Test 2
     sql: SELECT 2
     widgetTypes:
       - stat-card
-    updatedAt: '2026-03-02T17:15:09.398Z'
+    updatedAt: '2026-03-02T18:08:57.866Z'
     createdAt: '2026-02-26T17:39:15.028Z'
   - id: backup-test
     name: Backup Test
     sql: SELECT 1
     widgetTypes:
       - big-number
-    updatedAt: '2026-03-02T17:15:09.403Z'
+    updatedAt: '2026-03-02T18:08:57.869Z'
     createdAt: '2026-02-26T17:39:15.032Z'
   - id: persist-test
     name: Persistence Test
     sql: SELECT COUNT(*) as value
     widgetTypes:
       - big-number
-    updatedAt: '2026-03-02T17:15:09.405Z'
+    updatedAt: '2026-03-02T18:08:57.869Z'
     createdAt: '2026-02-26T17:39:15.033Z'
-  - id: test-query
-    name: Test Query
-    sql: SELECT 1
-    updatedAt: '2026-03-02T17:16:52.688Z'
-    createdAt: '2026-03-02T17:16:52.688Z'
 gcp:
   - id: cloudrun-requests
     name: Cloud Run Request Count
@@ -156,5 +151,5 @@ gcp:
     widgetTypes:
       - big-number
       - line-chart
-    updatedAt: '2026-03-02T17:15:09.392Z'
+    updatedAt: '2026-03-02T18:08:57.863Z'
     createdAt: '2026-02-26T17:39:15.022Z'

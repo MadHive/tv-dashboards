@@ -1,0 +1,35 @@
+name: Minimal Template
+description: ''
+category: Custom
+author: User
+createdAt: '2026-03-02T18:20:30.649Z'
+dashboard:
+  id: test-dashboard
+  name: Test Dashboard
+  subtitle: Dashboard for testing
+  icon: test
+  grid:
+    columns: 4
+    rows: 3
+    gap: 14
+  widgets:
+    - id: test-widget-1
+      type: big-number
+      title: Test Widget 1
+      source: mock
+      position:
+        col: 1
+        row: 1
+        colSpan: 1
+        rowSpan: 1
+    - id: test-widget-2
+      type: gauge
+      title: Test Widget 2
+      source: mock
+      position:
+        col: 2
+        row: 1
+        colSpan: 1
+        rowSpan: 1
+      min: 0
+      max: 100
