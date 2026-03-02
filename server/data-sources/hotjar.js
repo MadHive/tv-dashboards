@@ -122,8 +122,31 @@ export class HotJarDataSource extends DataSource {
     }
   }
 
+  /**
+   * Test connection to HotJar API
+   */
   async testConnection() {
-    return false; // Not implemented
+    try {
+      if (!this.apiKey || !this.siteId) {
+        return false;
+      }
+
+      // Try to fetch site info
+      const url = `${HOTJAR_API_BASE}/sites/${this.siteId}`;
+      await axios.get(url, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('[hotjar] Connection test successful');
+      return true;
+    } catch (error) {
+      console.error('[hotjar] Connection test failed:', error.message);
+      this.lastError = error;
+      return false;
+    }
   }
 
   getConfigSchema() {
