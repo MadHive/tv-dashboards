@@ -274,6 +274,39 @@ dashboards:
         position: { col: 1, row: 1, colSpan: 2, rowSpan: 1 }
 ```
 
+## Data Source Management
+
+Configure and monitor all 17 data source integrations through the web UI.
+
+### Access
+
+Navigate to: `http://tv.madhive.local:3000/data-sources.html`
+
+Or via Admin panel → Data Sources button
+
+### Features
+
+- **View Status**: Real-time connection status for all data sources
+- **Configure**: Edit non-sensitive settings (regions, timeouts, project IDs)
+- **Test Connections**: Verify credentials before deployment
+- **Enable/Disable**: Toggle data sources on/off without deleting config
+- **Audit Trail**: Track all configuration changes with user attribution
+
+### Security
+
+- **Credentials**: Sensitive data (API keys, tokens, passwords) remain in `.env` file
+- **Access Control**: Admin-only via Google OAuth
+- **Validation**: Automatically rejects attempts to save sensitive fields to database
+
+### Configuration Storage
+
+- **Sensitive**: `.env` file (API keys, tokens, passwords)
+- **Non-Sensitive**: SQLite database (`data/tv-dashboards.db`)
+
+### Supported Data Sources
+
+GCP, BigQuery, AWS, Salesforce, DataDog, Elasticsearch, HotJar, FullStory, Zendesk, Checkly, Chromatic, Looker, Rollbar, Rootly, Segment, VulnTrack, Mock
+
 ## Documentation
 
 - `COMPLETE_SUMMARY.md` - Full project summary

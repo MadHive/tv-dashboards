@@ -40,11 +40,16 @@ import { getSchema, getAllSchemas, validateConnection } from './data-source-sche
 import { themeManager } from './theme-manager.js';
 import { metricsCollector } from './metrics.js';
 import { smartRateLimit, addCacheHeaders, cachePresets } from './rate-limiter.js';
+import { getConfig, updateConfig, toggleEnabled, getAuditLog, exportConfigs } from './data-source-config.js';
+import { initDatabase } from './db.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT || '80', 10);
 const HOST = process.env.HOST || 'tv.madhive.local';
 const LIVE = process.env.USE_REAL_DATA === 'true';
+
+// Initialize database for data source configuration management
+initDatabase();
 
 // Use config manager for loading (with caching)
 let cachedConfig = null;
@@ -173,8 +178,7 @@ const app = new Elysia()
 
     return response;
   })
-  .use(staticPlugin({ assets: join(frontendDistDir, 'assets'), prefix: '/app/assets' }))
-  .use(staticPlugin({ assets: publicDir, prefix: '/' }))
+  // HTML pages need to be served before static plugin to avoid build issues
   .get('/', () => new Response(indexHtml, {
     headers: {
       'content-type': 'text/html; charset=utf-8',
@@ -195,6 +199,21 @@ const app = new Elysia()
       }
     });
   })
+
+  .get('/data-sources.html', () => {
+    const dataSourcesHtml = readFileSync(join(publicDir, 'data-sources-page.html'), 'utf8');
+    return new Response(dataSourcesHtml, {
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
+  })
+
+  .use(staticPlugin({ assets: join(frontendDistDir, 'assets'), prefix: '/app/assets' }))
+  .use(staticPlugin({ assets: publicDir, prefix: '/' }))
 
   .get('/wizard-demo', async () => {
     const file = Bun.file(join(publicDir, 'wizard-demo.html'));
@@ -499,6 +518,116 @@ const app = new Elysia()
       }
       const result = validateConnection(sourceId, data);
       return { success: true, ...result };
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
+  // Data source configuration management endpoints
+  .get('/api/data-sources/:name/config', ({ params }) => {
+    try {
+      const result = getConfig(params.name);
+      if (!result) {
+        return new Response(
+          JSON.stringify({ success: false, error: `Data source "${params.name}" not found` }),
+          { status: 404, headers: { 'content-type': 'application/json' } }
+        );
+      }
+      return {
+        success: true,
+        enabled: Boolean(result.enabled),
+        config: result.config,
+        updatedAt: result.updatedAt,
+        updatedBy: result.updatedBy
+      };
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
+  .put('/api/data-sources/:name/config', async ({ params, body }) => {
+    try {
+      const config = body;
+      const userEmail = 'system@madhive.com'; // TODO: Extract from session
+      updateConfig(params.name, config, userEmail);
+      const result = getConfig(params.name);
+      return {
+        success: true,
+        enabled: Boolean(result.enabled),
+        config: result.config,
+        updatedAt: result.updatedAt,
+        updatedBy: result.updatedBy
+      };
+    } catch (error) {
+      if (error.message.includes('Sensitive') || error.message.includes('Invalid')) {
+        return new Response(
+          JSON.stringify({ success: false, error: error.message }),
+          { status: 400, headers: { 'content-type': 'application/json' } }
+        );
+      }
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
+  .post('/api/data-sources/:name/toggle', async ({ params, body }) => {
+    try {
+      const { enabled } = body;
+      if (typeof enabled !== 'boolean') {
+        return new Response(
+          JSON.stringify({ success: false, error: 'enabled must be a boolean' }),
+          { status: 400, headers: { 'content-type': 'application/json' } }
+        );
+      }
+      const userEmail = 'system@madhive.com'; // TODO: Extract from session
+      toggleEnabled(params.name, enabled, userEmail);
+      const result = getConfig(params.name);
+      return {
+        success: true,
+        enabled: Boolean(result.enabled),
+        config: result.config,
+        updatedAt: result.updatedAt,
+        updatedBy: result.updatedBy
+      };
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
+  .get('/api/data-sources/:name/history', ({ params, query }) => {
+    try {
+      const limit = query.limit ? parseInt(query.limit, 10) : 50;
+      const history = getAuditLog(params.name, limit);
+      return {
+        success: true,
+        history
+      };
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
+  .get('/api/data-sources/export', () => {
+    try {
+      const configs = exportConfigs();
+      return {
+        success: true,
+        configs
+      };
     } catch (error) {
       return new Response(
         JSON.stringify({ success: false, error: error.message }),

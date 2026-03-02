@@ -64,3 +64,8 @@ temp/
 .DS_Store
 Thumbs.db
 google-service-account-key.json
+
+# Database
+data/*.db
+data/*.db-shm
+data/*.db-wal
