@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { Elysia } from 'elysia';
+import { swagger } from '@elysiajs/swagger';
 import { staticPlugin } from '@elysiajs/static';
 import { cookie } from '@elysiajs/cookie';
 import { cors } from '@elysiajs/cors';
@@ -131,6 +132,28 @@ const dashboardManager = new DashboardManager('./config/dashboards.yaml');
 await themeManager.loadThemes();
 
 const app = new Elysia()
+  .use(swagger({
+    documentation: {
+      info: {
+        title:       'MadHive TV Dashboards API',
+        version:     '2.0.0',
+        description: 'Real-time engineering dashboard system with WYSIWYG editor. Data sources: GCP, BigQuery, VulnTrack, Mock.',
+      },
+      tags: [
+        { name: 'health',       description: 'Health and status checks' },
+        { name: 'dashboards',   description: 'Dashboard CRUD and management' },
+        { name: 'data-sources', description: 'Data source configuration and health' },
+        { name: 'queries',      description: 'Saved query management' },
+        { name: 'templates',    description: 'Dashboard template library' },
+        { name: 'themes',       description: 'Visual theme management' },
+        { name: 'backups',      description: 'Configuration backup and restore' },
+        { name: 'metrics',      description: 'Performance and widget metrics' },
+      ],
+    },
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  }))
   .use(cors())
   .use(cookie())
   // Performance monitoring middleware
