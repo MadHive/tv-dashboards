@@ -51,7 +51,7 @@ window.PropertyPanel = (function () {
       this.panel.style.display = 'none';
       this.panel.innerHTML = `
         <div class="property-panel-header">
-          <h3>Widget Properties</h3>
+          <h3 id="panel-title">Widget Properties</h3>
           <button class="panel-close" title="Close (Esc)">&times;</button>
         </div>
         <div class="property-panel-content">
@@ -158,6 +158,55 @@ window.PropertyPanel = (function () {
                   <label for="prop-max">Max</label>
                   <input type="number" id="prop-max" placeholder="100">
                 </div>
+              </div>
+            </div>
+          </form>
+
+          <!-- Dashboard Properties Form -->
+          <form id="dashboard-property-form" style="display: none;">
+            <div class="form-section">
+              <h4>Dashboard Settings</h4>
+
+              <div class="form-group">
+                <label for="dashboard-name">Dashboard Name</label>
+                <input type="text" id="dashboard-name" placeholder="Dashboard Name">
+              </div>
+
+              <div class="form-group">
+                <label for="dashboard-subtitle">Subtitle</label>
+                <input type="text" id="dashboard-subtitle" placeholder="Optional subtitle">
+              </div>
+
+              <div class="form-group">
+                <label for="dashboard-icon">Icon</label>
+                <input type="text" id="dashboard-icon" placeholder="e.g., bolt, chart-line, server">
+              </div>
+
+              <div class="form-group">
+                <label for="dashboard-theme-select">Theme</label>
+                <select id="dashboard-theme-select">
+                  <option value="">Default Theme</option>
+                </select>
+                <button type="button" id="theme-preview-btn" class="btn btn-secondary" style="margin-top: 8px;">Preview on TV</button>
+              </div>
+            </div>
+
+            <div class="form-section">
+              <h4>Grid Layout</h4>
+
+              <div class="form-group">
+                <label for="dashboard-columns">Grid Columns</label>
+                <input type="number" id="dashboard-columns" min="1" max="12" placeholder="4">
+              </div>
+
+              <div class="form-group">
+                <label for="dashboard-rows">Grid Rows</label>
+                <input type="number" id="dashboard-rows" min="1" max="12" placeholder="2">
+              </div>
+
+              <div class="form-group">
+                <label for="dashboard-gap">Grid Gap (px)</label>
+                <input type="number" id="dashboard-gap" min="0" max="100" placeholder="14">
               </div>
             </div>
           </form>
