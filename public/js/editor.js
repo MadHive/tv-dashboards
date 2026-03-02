@@ -621,6 +621,22 @@ window.EditorApp = (function () {
       overlay.appendChild(modal);
       document.body.appendChild(overlay);
 
+      // Create closeModal function that handles cleanup
+      const closeModal = () => {
+        if (document.body.contains(overlay)) {
+          document.body.removeChild(overlay);
+        }
+        document.removeEventListener('keydown', escHandler);
+      };
+
+      // ESC key handler calls closeModal
+      const escHandler = (e) => {
+        if (e.key === 'Escape') {
+          closeModal();
+        }
+      };
+      document.addEventListener('keydown', escHandler);
+
       // Load and initialize TemplateBrowser
       try {
         // Dynamically import TemplateBrowser
@@ -629,7 +645,7 @@ window.EditorApp = (function () {
         const browser = new TemplateBrowser({
           container,
           onSelect: (template) => {
-            this.handleTemplateSelection(template, overlay);
+            this.handleTemplateSelection(template, closeModal);
           }
         });
 
@@ -637,33 +653,22 @@ window.EditorApp = (function () {
       } catch (error) {
         console.error('[Editor] Failed to load TemplateBrowser:', error);
         this.showNotification('Failed to load template browser', 'error');
-        document.body.removeChild(overlay);
+        closeModal();
         return;
       }
 
-      // Close button
-      closeBtn.addEventListener('click', () => {
-        document.body.removeChild(overlay);
-      });
+      // Close button uses closeModal
+      closeBtn.addEventListener('click', closeModal);
 
-      // Click outside to close
+      // Click outside uses closeModal
       overlay.addEventListener('click', (e) => {
         if (e.target === overlay) {
-          document.body.removeChild(overlay);
+          closeModal();
         }
       });
-
-      // ESC key to close
-      const escHandler = (e) => {
-        if (e.key === 'Escape') {
-          document.body.removeChild(overlay);
-          document.removeEventListener('keydown', escHandler);
-        }
-      };
-      document.addEventListener('keydown', escHandler);
     }
 
-    handleTemplateSelection(template, overlay) {
+    handleTemplateSelection(template, closeModal) {
       // Warn about overwriting
       const confirmed = confirm(
         `This will replace the current dashboard with the template "${template.name}".\n\n` +
@@ -678,7 +683,7 @@ window.EditorApp = (function () {
       this.applyTemplateToCurrentDashboard(template);
 
       // Close modal
-      document.body.removeChild(overlay);
+      closeModal();
     }
 
     applyTemplateToCurrentDashboard(template) {
