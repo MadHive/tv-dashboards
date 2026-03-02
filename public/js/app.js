@@ -63,6 +63,12 @@
       this.startRefresh();
       this.bindKeys();
 
+      // Click anywhere on dashboard (not top-bar or bottom-bar) to pause/resume
+      document.addEventListener('click', (e) => {
+        if (e.target.closest('#top-bar') || e.target.closest('#bottom-bar')) return;
+        this.togglePause();
+      });
+
       // Initialize editor (if available)
       if (window.EditorApp) {
         this.editor = new window.EditorApp(this);
@@ -169,6 +175,25 @@
       bar.style.width = '100%';
     }
 
+    togglePause() {
+      this.paused = !this.paused;
+      const bar = document.getElementById('rotation-progress');
+      const indicator = document.getElementById('pause-indicator');
+      if (this.paused) {
+        clearInterval(this.rotationTimer);
+        this.rotationTimer = null;
+        clearInterval(this.refreshTimer);
+        this.refreshTimer = null;
+        if (bar) bar.style.animationPlayState = 'paused';
+        if (indicator) indicator.style.display = 'block';
+      } else {
+        this.startRotation();
+        this.startRefresh();
+        if (bar) bar.style.animationPlayState = 'running';
+        if (indicator) indicator.style.display = 'none';
+      }
+    }
+
     // ---- data refresh ----
     startRefresh() {
       const interval = (this.config.global.refresh_interval || 5) * 1000;
@@ -246,9 +271,7 @@
             break;
           case ' ':
             e.preventDefault();
-            this.paused = !this.paused;
-            document.getElementById('rotation-progress').style.animationPlayState =
-              this.paused ? 'paused' : 'running';
+            this.togglePause();
             break;
         }
       });
