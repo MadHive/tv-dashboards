@@ -259,17 +259,17 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
         // Execute BigQuery SQL query (limit to 50 rows max for testing)
         let testSql = body.sql.trim().replace(/;?\s*$/, '');
 
-        // Check if query has a LIMIT clause and enforce max of 50
+        // Check if query has a LIMIT clause and enforce max of 10 for test previews
         const limitMatch = testSql.match(/\bLIMIT\s+(\d+)\b/i);
         if (limitMatch) {
           const limit = parseInt(limitMatch[1], 10);
-          if (limit > 50) {
-            // Replace with max limit of 50
-            testSql = testSql.replace(/\bLIMIT\s+\d+\b/i, 'LIMIT 50');
+          if (limit > 10) {
+            // Replace with max limit of 10 for test previews
+            testSql = testSql.replace(/\bLIMIT\s+\d+\b/i, 'LIMIT 10');
           }
         } else {
-          // No LIMIT clause, add one
-          testSql = `${testSql} LIMIT 50`;
+          // No LIMIT clause, add one for test preview
+          testSql = `${testSql} LIMIT 10`;
         }
 
         // Time the query execution
