@@ -29,6 +29,8 @@
     "@google-cloud/monitoring": "^5.3.1",
     "elysia": "^1.2",
     "google-auth-library": "^10.6.1",
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^4.1.0",
+    "jsforce": "^3.10.14",
+    "node-zendesk": "^6.0.1"
   }
 }
