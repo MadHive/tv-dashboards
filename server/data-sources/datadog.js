@@ -259,14 +259,126 @@ export class DataDogDataSource extends DataSource {
     }
   }
 
+  /**
+   * Get mock data for testing when DataDog credentials not available
+   */
   getMockData(widgetType) {
-    return this.getEmptyData(widgetType);
+    switch (widgetType) {
+      case 'big-number':
+      case 'stat-card':
+        return {
+          value: Math.round(Math.random() * 1000),
+          trend: Math.random() > 0.5 ? 'up' : 'down',
+          unit: 'req/s'
+        };
+
+      case 'gauge':
+      case 'gauge-row':
+        return {
+          value: Math.round(Math.random() * 100),
+          min: 0,
+          max: 100,
+          unit: '%'
+        };
+
+      case 'bar-chart':
+        return {
+          values: [
+            { label: 'web-1', value: 245 },
+            { label: 'web-2', value: 312 },
+            { label: 'api-1', value: 428 },
+            { label: 'api-2', value: 391 }
+          ]
+        };
+
+      case 'line-chart':
+      case 'sparkline': {
+        const now = Date.now();
+        return {
+          labels: Array.from({ length: 12 }, (_, i) =>
+            new Date(now - (11 - i) * 300000).toISOString()
+          ),
+          values: Array.from({ length: 12 }, () =>
+            Math.round(Math.random() * 500)
+          ),
+          series: 'Mock Requests'
+        };
+      }
+
+      default:
+        return this.getEmptyData(widgetType);
+    }
   }
 
+  /**
+   * Get available DataDog metrics
+   */
   getAvailableMetrics() {
     return [
-      { id: 'apm_requests', name: 'APM Requests', type: 'number', widgets: ['big-number', 'bar-chart'] },
-      { id: 'error_rate', name: 'Error Rate', type: 'percentage', widgets: ['gauge'] }
+      {
+        id: 'apm_requests_per_second',
+        name: 'APM Requests Per Second',
+        description: 'Application requests per second',
+        query: 'avg:trace.web.request.hits{*}.as_count()',
+        type: 'number',
+        widgets: ['big-number', 'stat-card', 'line-chart']
+      },
+      {
+        id: 'apm_error_rate',
+        name: 'APM Error Rate',
+        description: 'Application error rate percentage',
+        query: 'avg:trace.web.request.errors{*}.as_rate()',
+        type: 'percentage',
+        widgets: ['gauge', 'gauge-row', 'big-number']
+      },
+      {
+        id: 'apm_latency_p95',
+        name: 'APM Latency (p95)',
+        description: '95th percentile response time',
+        query: 'p95:trace.web.request.duration{*}',
+        type: 'duration',
+        widgets: ['gauge', 'line-chart', 'big-number']
+      },
+      {
+        id: 'system_cpu_user',
+        name: 'System CPU (User)',
+        description: 'CPU usage in user space',
+        query: 'avg:system.cpu.user{*}',
+        type: 'percentage',
+        widgets: ['gauge', 'line-chart']
+      },
+      {
+        id: 'system_mem_used',
+        name: 'System Memory Used',
+        description: 'Memory usage percentage',
+        query: 'avg:system.mem.used{*}',
+        type: 'percentage',
+        widgets: ['gauge', 'line-chart']
+      },
+      {
+        id: 'system_load_1',
+        name: 'System Load (1m)',
+        description: 'System load average (1 minute)',
+        query: 'avg:system.load.1{*}',
+        type: 'number',
+        widgets: ['gauge', 'line-chart', 'big-number']
+      },
+      {
+        id: 'docker_containers_running',
+        name: 'Docker Containers Running',
+        description: 'Number of running Docker containers',
+        query: 'avg:docker.containers.running{*}',
+        type: 'number',
+        widgets: ['big-number', 'bar-chart']
+      },
+      {
+        id: 'custom_metric',
+        name: 'Custom Metric',
+        description: 'User-defined custom metric',
+        query: '',
+        type: 'number',
+        widgets: ['big-number', 'gauge', 'line-chart', 'bar-chart']
+      }
     ];
   }
 }

@@ -129,9 +129,39 @@ describe('DataDog Data Source', () => {
   });
 
   describe('getMockData()', () => {
-    it('should return mock data for big-number widget', () => {
+    it('should return realistic mock data for big-number', () => {
       const data = dataSource.getMockData('big-number');
+
       expect(data).toHaveProperty('value');
+      expect(data).toHaveProperty('trend');
+      expect(typeof data.value).toBe('number');
+    });
+
+    it('should return mock data for all widget types', () => {
+      const types = ['big-number', 'gauge', 'line-chart', 'bar-chart', 'sparkline'];
+
+      types.forEach(type => {
+        const data = dataSource.getMockData(type);
+        expect(data).toBeDefined();
+      });
+    });
+  });
+
+  describe('getAvailableMetrics()', () => {
+    it('should return array of metrics', () => {
+      const metrics = dataSource.getAvailableMetrics();
+
+      expect(Array.isArray(metrics)).toBe(true);
+      expect(metrics.length).toBeGreaterThan(0);
+    });
+
+    it('should include APM metrics', () => {
+      const metrics = dataSource.getAvailableMetrics();
+      const apmMetric = metrics.find(m => m.id === 'apm_requests_per_second');
+
+      expect(apmMetric).toBeDefined();
+      expect(apmMetric).toHaveProperty('query');
+      expect(apmMetric).toHaveProperty('widgets');
     });
   });
 });
