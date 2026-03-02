@@ -4,6 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import { Elysia } from 'elysia';
+import logger from './logger.js';
 
 let monitoringClients = {};
 
@@ -14,10 +15,10 @@ async function getClient(projectId) {
     const MonitoringModule = monitoring.default || monitoring;
     const client = new MonitoringModule.MetricServiceClient();
     monitoringClients[projectId] = client;
-    console.log(`[gcp] Initialized monitoring client for ${projectId}`);
+    logger.info({ projectId }, 'Initialized GCP monitoring client');
     return client;
   } catch (err) {
-    console.error(`[gcp] Failed to init client for ${projectId}:`, err.message);
+    logger.error({ projectId, error: err.message }, 'Failed to initialize GCP monitoring client');
     return null;
   }
 }
@@ -55,7 +56,7 @@ export const proxyRoutes = new Elysia({ prefix: '/api/proxy' })
 
       return { timeSeries };
     } catch (err) {
-      console.error(`[gcp] Query error (${project}/${metric}):`, err.message);
+      logger.error({ project, metric, error: err.message }, 'GCP timeseries query error');
       set.status = 500;
       return { error: err.message };
     }

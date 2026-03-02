@@ -4,6 +4,7 @@
 
 import { Elysia, t } from 'elysia';
 import { OAuth2Client } from 'google-auth-library';
+import logger from './logger.js';
 
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -107,14 +108,14 @@ export const googleOAuthRoutes = new Elysia({ prefix: '/auth/google' })
         createdAt: Date.now()
       });
 
-      console.log('[OAuth] Session created for:', email, '- Token:', sessionToken.substring(0, 8) + '...');
-      console.log('[OAuth] Active sessions:', sessions.size);
+      logger.info({ email, tokenPreview: sessionToken.substring(0, 8) + '...' }, 'OAuth session created');
+      logger.info({ activeSessions: sessions.size }, 'OAuth active sessions');
 
       // Try without Domain attribute (let browser handle it)
       const cookieValue = `session=${sessionToken}; HttpOnly; Path=/; Max-Age=86400; SameSite=Lax`;
-      console.log('[OAuth] Setting cookie for session:', sessionToken.substring(0, 16) + '...');
-      console.log('[OAuth] Cookie header:', cookieValue);
-      console.log('[OAuth] Redirecting to / - check browser will send cookie on next request');
+      logger.debug({ tokenPreview: sessionToken.substring(0, 16) + '...' }, 'Setting OAuth cookie');
+      logger.debug({ cookieValue }, 'OAuth cookie header');
+      logger.debug('Redirecting to / - check browser will send cookie on next request');
 
       // Redirect to dashboard with session cookie
       return new Response(null, {
@@ -125,7 +126,7 @@ export const googleOAuthRoutes = new Elysia({ prefix: '/auth/google' })
         }
       });
     } catch (error) {
-      console.error('[OAuth] Callback error:', error);
+      logger.error({ error }, 'OAuth callback error');
       set.status = 500;
       return { error: 'Authentication failed' };
     }
@@ -163,12 +164,12 @@ export const googleOAuthRoutes = new Elysia({ prefix: '/auth/google' })
   .get('/me', ({ cookie, set, request }) => {
     const sessionToken = cookie.session;
 
-    console.log('[Auth] /me called');
-    console.log('[Auth] Cookie from Elysia:', sessionToken ? (typeof sessionToken === 'string' ? sessionToken.substring(0, 16) + '...' : String(sessionToken)) : 'MISSING');
-    console.log('[Auth] Raw cookie header:', request.headers.get('cookie'));
-    console.log('[Auth] Active sessions count:', sessions.size);
+    logger.debug('OAuth /me endpoint called');
+    logger.debug({ sessionToken: sessionToken ? (typeof sessionToken === 'string' ? sessionToken.substring(0, 16) + '...' : String(sessionToken)) : 'MISSING' }, 'Cookie from Elysia');
+    logger.debug({ rawCookie: request.headers.get('cookie') }, 'Raw cookie header');
+    logger.debug({ activeSessions: sessions.size }, 'Active sessions count');
     if (sessions.size > 0) {
-      console.log('[Auth] Session tokens:', Array.from(sessions.keys()).map(k => k.substring(0, 16) + '...'));
+      logger.debug({ sessions: Array.from(sessions.keys()).map(k => k.substring(0, 16) + '...') }, 'Session tokens');
     }
 
     if (!sessionToken || !sessions.has(sessionToken)) {
@@ -185,7 +186,7 @@ export const googleOAuthRoutes = new Elysia({ prefix: '/auth/google' })
       return { error: 'Session expired' };
     }
 
-    console.log('[Auth] User authenticated:', session.email);
+    logger.info({ email: session.email }, 'User authenticated');
 
     return {
       email: session.email,

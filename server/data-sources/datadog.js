@@ -4,6 +4,7 @@
 
 import { DataSource } from './base.js';
 import { client, v1 } from '@datadog/datadog-api-client';
+import logger from '../logger.js';
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -31,7 +32,7 @@ export class DataDogDataSource extends DataSource {
     try {
       // Check if credentials are available
       if (!this.apiKey || !this.appKey) {
-        console.warn('[datadog] No DataDog credentials found - data source will use mock data');
+        logger.warn('[datadog] No DataDog credentials found - data source will use mock data');
         this.isConnected = false;
         return;
       }
@@ -48,9 +49,9 @@ export class DataDogDataSource extends DataSource {
       this.metricsApi = new v1.MetricsApi(configuration);
       this.isConnected = true;
 
-      console.log('[datadog] DataDog client initialized');
+      logger.info('[datadog] DataDog client initialized');
     } catch (error) {
-      console.error('[datadog] Failed to initialize:', error.message);
+      logger.error({ error: error.message }, 'DataDog data source failed to initialize');
       this.lastError = error;
       this.isConnected = false;
     }
@@ -67,7 +68,7 @@ export class DataDogDataSource extends DataSource {
   async fetchMetrics(widgetConfig) {
     try {
       if (!this.metricsApi) {
-        console.warn('[datadog] DataDog client not initialized - using mock data');
+        logger.warn('[datadog] DataDog client not initialized - using mock data');
         return {
           timestamp: new Date().toISOString(),
           source: 'datadog',
@@ -92,7 +93,7 @@ export class DataDogDataSource extends DataSource {
       if (this.metricCache.has(cacheKey)) {
         const cached = this.metricCache.get(cacheKey);
         if (Date.now() - cached.timestamp < CACHE_TTL) {
-          console.log('[datadog] Cache hit for metric:', metric);
+          logger.debug({ metric }, 'Cache hit for DataDog metric');
           return {
             timestamp: new Date().toISOString(),
             source: 'datadog',
@@ -125,7 +126,7 @@ export class DataDogDataSource extends DataSource {
         widgetId: widgetConfig.id
       };
     } catch (error) {
-      console.error('[datadog] Fetch metrics error:', error.message);
+      logger.error({ error: error.message }, 'DataDog fetch metrics error');
       return this.handleError(error, widgetConfig.type);
     }
   }
@@ -148,10 +149,10 @@ export class DataDogDataSource extends DataSource {
       };
 
       await this.metricsApi.queryMetrics(params);
-      console.log('[datadog] Connection test successful');
+      logger.info('[datadog] Connection test successful');
       return true;
     } catch (error) {
-      console.error('[datadog] Connection test failed:', error.message);
+      logger.error({ error: error.message }, 'DataDog connection test failed');
       this.lastError = error;
       return false;
     }

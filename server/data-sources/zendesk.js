@@ -4,6 +4,7 @@
 
 import { DataSource } from './base.js';
 import zendesk from 'node-zendesk';
+import logger from '../logger.js';
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const RATE_LIMIT_PER_MINUTE = 200; // Zendesk API rate limit
@@ -203,6 +204,13 @@ export class ZendeskDataSource extends DataSource {
       console.error('[zendesk] Fetch metrics error:', error.message);
       return this.handleError(error, widgetConfig.type);
     }
+    logger.warn('[zendesk] Using mock data - Zendesk API not yet implemented');
+    return {
+      timestamp: new Date().toISOString(),
+      source: 'zendesk',
+      data: this.getMockData(widgetConfig.type),
+      widgetId: widgetConfig.id
+    };
   }
 
   /**

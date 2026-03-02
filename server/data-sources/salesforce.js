@@ -4,6 +4,7 @@
 
 import { DataSource } from './base.js';
 import jsforce from 'jsforce';
+import logger from '../logger.js';
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -196,6 +197,13 @@ export class SalesforceDataSource extends DataSource {
       console.error({ error: error.message }, 'Salesforce fetch metrics error');
       return this.handleError(error, widgetConfig.type);
     }
+    logger.warn('[salesforce] Using mock data - Salesforce API not yet implemented');
+    return {
+      timestamp: new Date().toISOString(),
+      source: 'salesforce',
+      data: this.getMockData(widgetConfig.type),
+      widgetId: widgetConfig.id
+    };
   }
 
   /**
