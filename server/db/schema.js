@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
-import { relations } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 
 export const dataSourceConfigs = sqliteTable('data_source_configs', {
   sourceName: text('source_name').primaryKey(),
@@ -21,7 +21,7 @@ export const configAuditLog = sqliteTable('config_audit_log', {
   userEmail:   text('user_email'),
   timestamp:   text('timestamp'),
 }, (table) => [
-  index('idx_audit_timestamp').on(table.timestamp),
+  index('idx_audit_timestamp').on(sql`${table.timestamp} DESC`),
   index('idx_audit_source').on(table.sourceName),
 ]);
 
