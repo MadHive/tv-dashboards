@@ -1,0 +1,176 @@
+name: Customer Success
+description: Customer health, satisfaction, and engagement metrics
+category: Operations
+tags:
+  - customer-success
+  - nps
+  - churn
+  - engagement
+requiredSources:
+  - mock
+recommendedTheme: light
+author: MadHive
+createdAt: '2026-03-02'
+dashboard:
+  name: Customer Success
+  icon: users
+  refreshInterval: 300
+  gridColumns: 12
+  gridRows: 12
+  widgets:
+    - id: net-promoter-score
+      type: gauge
+      title: Net Promoter Score
+      source: mock
+      position:
+        col: 1
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        min: -100
+        max: 100
+        unit: ''
+        thresholds:
+          - value: 0
+            color: '#FF0000'
+          - value: 30
+            color: '#FFA500'
+          - value: 50
+            color: '#00FF00'
+
+    - id: customer-health-score
+      type: gauge
+      title: Avg Customer Health
+      source: mock
+      position:
+        col: 4
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        min: 0
+        max: 100
+        unit: ''
+        thresholds:
+          - value: 60
+            color: '#FF0000'
+          - value: 80
+            color: '#FFA500'
+          - value: 90
+            color: '#00FF00'
+
+    - id: churn-rate
+      type: metric
+      title: Monthly Churn Rate
+      source: mock
+      position:
+        col: 7
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: '%'
+        trend: true
+        thresholds:
+          - value: 3
+            color: '#FFA500'
+          - value: 5
+            color: '#FF0000'
+
+    - id: active-customers
+      type: metric
+      title: Active Customers
+      source: mock
+      position:
+        col: 10
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: ''
+        trend: true
+
+    - id: customer-health-trend
+      type: chart
+      title: Customer Health Trend
+      source: mock
+      position:
+        col: 1
+        row: 3
+        colSpan: 8
+        rowSpan: 4
+      config:
+        chartType: line
+        timeRange: '6M'
+        showMultipleSeries: true
+        series:
+          - healthy
+          - at_risk
+          - critical
+
+    - id: health-distribution
+      type: chart
+      title: Health Score Distribution
+      source: mock
+      position:
+        col: 9
+        row: 3
+        colSpan: 4
+        rowSpan: 4
+      config:
+        chartType: pie
+        categories:
+          - healthy
+          - at_risk
+          - critical
+
+    - id: at-risk-customers
+      type: list
+      title: At-Risk Customers
+      source: mock
+      position:
+        col: 1
+        row: 7
+        colSpan: 6
+        rowSpan: 3
+      config:
+        maxItems: 10
+        showHealthScore: true
+        showLastContact: true
+        sortBy: health_score
+
+    - id: engagement-metrics
+      type: chart
+      title: Engagement Metrics
+      source: mock
+      position:
+        col: 7
+        row: 7
+        colSpan: 6
+        rowSpan: 3
+      config:
+        chartType: bar
+        metrics:
+          - login_frequency
+          - feature_usage
+          - support_tickets
+
+    - id: customer-details
+      type: grid
+      title: Customer Overview
+      source: mock
+      position:
+        col: 1
+        row: 10
+        colSpan: 12
+        rowSpan: 3
+      config:
+        columns:
+          - customer
+          - health_score
+          - nps
+          - mrr
+          - last_contact
+          - csm
+          - status

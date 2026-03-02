@@ -1,0 +1,156 @@
+name: Marketing Analytics
+description: Marketing campaign performance and customer acquisition metrics
+category: Marketing
+tags:
+  - marketing
+  - analytics
+  - campaigns
+  - roi
+requiredSources:
+  - mock
+recommendedTheme: light
+author: MadHive
+createdAt: '2026-03-02'
+dashboard:
+  name: Marketing Analytics
+  icon: megaphone
+  refreshInterval: 300
+  gridColumns: 12
+  gridRows: 12
+  widgets:
+    - id: website-traffic
+      type: metric
+      title: Website Traffic (Monthly)
+      source: mock
+      position:
+        col: 1
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: ''
+        format: 'number'
+        trend: true
+
+    - id: conversion-rate
+      type: gauge
+      title: Conversion Rate
+      source: mock
+      position:
+        col: 4
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        min: 0
+        max: 10
+        unit: '%'
+        thresholds:
+          - value: 2
+            color: '#FFA500'
+          - value: 5
+            color: '#00FF00'
+
+    - id: cost-per-lead
+      type: metric
+      title: Cost Per Lead
+      source: mock
+      position:
+        col: 7
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: '$'
+        format: 'currency'
+        trend: true
+
+    - id: marketing-roi
+      type: metric
+      title: Marketing ROI
+      source: mock
+      position:
+        col: 10
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: '%'
+        trend: true
+
+    - id: traffic-sources
+      type: chart
+      title: Traffic Sources
+      source: mock
+      position:
+        col: 1
+        row: 3
+        colSpan: 4
+        rowSpan: 4
+      config:
+        chartType: pie
+        showLegend: true
+
+    - id: traffic-trend
+      type: chart
+      title: Traffic Trend (Last 90 Days)
+      source: mock
+      position:
+        col: 5
+        row: 3
+        colSpan: 8
+        rowSpan: 4
+      config:
+        chartType: line
+        timeRange: '90d'
+        yAxis:
+          label: 'Visitors'
+
+    - id: top-campaigns
+      type: list
+      title: Top Performing Campaigns
+      source: mock
+      position:
+        col: 1
+        row: 7
+        colSpan: 6
+        rowSpan: 3
+      config:
+        maxItems: 8
+        showMetrics: true
+        sortBy: roi
+
+    - id: channel-performance
+      type: chart
+      title: Channel Performance Comparison
+      source: mock
+      position:
+        col: 7
+        row: 7
+        colSpan: 6
+        rowSpan: 3
+      config:
+        chartType: bar
+        orientation: horizontal
+        metrics:
+          - leads
+          - conversions
+          - revenue
+
+    - id: campaign-details
+      type: grid
+      title: Campaign Details
+      source: mock
+      position:
+        col: 1
+        row: 10
+        colSpan: 12
+        rowSpan: 3
+      config:
+        columns:
+          - campaign
+          - impressions
+          - clicks
+          - conversions
+          - spend
+          - roi

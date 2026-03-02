@@ -1,0 +1,152 @@
+name: Sales Pipeline
+description: Sales performance metrics and pipeline analytics
+category: Sales
+tags:
+  - sales
+  - revenue
+  - crm
+  - pipeline
+requiredSources:
+  - mock
+recommendedTheme: light
+author: MadHive
+createdAt: '2026-03-02'
+dashboard:
+  name: Sales Pipeline
+  icon: trending-up
+  refreshInterval: 300
+  gridColumns: 12
+  gridRows: 12
+  widgets:
+    - id: monthly-revenue
+      type: metric
+      title: Monthly Revenue
+      source: mock
+      position:
+        col: 1
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: '$'
+        format: 'currency'
+        trend: true
+
+    - id: deals-closed
+      type: metric
+      title: Deals Closed (MTD)
+      source: mock
+      position:
+        col: 4
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: ''
+        trend: true
+
+    - id: win-rate
+      type: gauge
+      title: Win Rate
+      source: mock
+      position:
+        col: 7
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        min: 0
+        max: 100
+        unit: '%'
+        thresholds:
+          - value: 30
+            color: '#FF0000'
+          - value: 50
+            color: '#FFA500'
+          - value: 70
+            color: '#00FF00'
+
+    - id: pipeline-value
+      type: metric
+      title: Pipeline Value
+      source: mock
+      position:
+        col: 10
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: '$'
+        format: 'currency'
+        trend: true
+
+    - id: revenue-trend
+      type: chart
+      title: Revenue Trend (Last 6 Months)
+      source: mock
+      position:
+        col: 1
+        row: 3
+        colSpan: 8
+        rowSpan: 4
+      config:
+        chartType: bar
+        timeRange: '6M'
+        yAxis:
+          label: 'Revenue ($)'
+
+    - id: pipeline-stages
+      type: chart
+      title: Deals by Stage
+      source: mock
+      position:
+        col: 9
+        row: 3
+        colSpan: 4
+        rowSpan: 4
+      config:
+        chartType: bar
+        orientation: horizontal
+
+    - id: top-deals
+      type: list
+      title: Top Opportunities
+      source: mock
+      position:
+        col: 1
+        row: 7
+        colSpan: 6
+        rowSpan: 3
+      config:
+        maxItems: 8
+        showValue: true
+        sortBy: value
+
+    - id: sales-team-performance
+      type: grid
+      title: Sales Team Performance
+      source: mock
+      position:
+        col: 7
+        row: 7
+        colSpan: 6
+        rowSpan: 3
+      config:
+        columns:
+          - rep
+          - deals
+          - revenue
+          - win_rate
+
+    - id: conversion-funnel
+      type: chart
+      title: Conversion Funnel
+      source: mock
+      position:
+        col: 1
+        row: 10
+        colSpan: 12
+        rowSpan: 3
+      config:
+        chartType: line
+        showPercentages: true

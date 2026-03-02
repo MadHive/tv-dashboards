@@ -44,7 +44,6 @@ bigquery:
     widgetTypes:
       - big-number
     updatedAt: '2026-03-02T14:09:35.373Z'
-    updatedAt: '2026-03-02T13:54:06.177Z'
     createdAt: '2026-02-26T17:39:15.018Z'
   - id: update-test
     name: Updated Name
@@ -53,7 +52,6 @@ bigquery:
       - big-number
       - stat-card
     updatedAt: '2026-03-02T14:09:35.376Z'
-    updatedAt: '2026-03-02T13:54:06.179Z'
     createdAt: '2026-02-26T17:39:15.024Z'
   - id: retrieve-test
     name: Retrieve Test
@@ -61,7 +59,6 @@ bigquery:
     widgetTypes:
       - big-number
     updatedAt: '2026-03-02T14:09:35.377Z'
-    updatedAt: '2026-03-02T13:54:06.181Z'
     createdAt: '2026-02-26T17:39:15.026Z'
   - id: list-test-1
     name: List Test 1
@@ -69,7 +66,6 @@ bigquery:
     widgetTypes:
       - big-number
     updatedAt: '2026-03-02T14:09:35.379Z'
-    updatedAt: '2026-03-02T13:54:06.182Z'
     createdAt: '2026-02-26T17:39:15.028Z'
   - id: list-test-2
     name: List Test 2
@@ -77,7 +73,6 @@ bigquery:
     widgetTypes:
       - stat-card
     updatedAt: '2026-03-02T14:09:35.380Z'
-    updatedAt: '2026-03-02T13:54:06.183Z'
     createdAt: '2026-02-26T17:39:15.028Z'
   - id: backup-test
     name: Backup Test
@@ -85,7 +80,6 @@ bigquery:
     widgetTypes:
       - big-number
     updatedAt: '2026-03-02T14:09:35.385Z'
-    updatedAt: '2026-03-02T13:54:06.188Z'
     createdAt: '2026-02-26T17:39:15.032Z'
   - id: persist-test
     name: Persistence Test
@@ -93,7 +87,6 @@ bigquery:
     widgetTypes:
       - big-number
     updatedAt: '2026-03-02T14:09:35.386Z'
-    updatedAt: '2026-03-02T13:54:06.189Z'
     createdAt: '2026-02-26T17:39:15.033Z'
 gcp:
   - id: cloudrun-requests
@@ -159,5 +152,4 @@ gcp:
       - big-number
       - line-chart
     updatedAt: '2026-03-02T14:09:35.374Z'
-    updatedAt: '2026-03-02T13:54:06.178Z'
     createdAt: '2026-02-26T17:39:15.022Z'

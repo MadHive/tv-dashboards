@@ -1,0 +1,375 @@
+/* public/css/components/tv-preview.css */
+
+/* =========================================================================
+   TV Preview Modal - Fullscreen TV Simulation
+   ========================================================================= */
+
+/* Modal Overlay */
+.tv-preview-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.tv-preview-modal.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Black background overlay */
+.tv-preview-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #000000;
+  z-index: 1;
+}
+
+/* Controls Bar (top) */
+.tv-preview-controls {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Size Selector Buttons */
+.tv-size-selector {
+  display: flex;
+  gap: 12px;
+}
+
+.tv-size-btn {
+  padding: 10px 24px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 80px;
+}
+
+.tv-size-btn:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-2px);
+}
+
+.tv-size-btn.active {
+  background-color: #3B82F6;
+  border-color: #3B82F6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.tv-size-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* Action Buttons */
+.tv-preview-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.tv-preview-close,
+.tv-preview-apply {
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.tv-preview-close {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.tv-preview-close:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.tv-preview-apply {
+  background-color: #10B981;
+  color: #FFFFFF;
+  padding: 10px 32px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.tv-preview-apply:hover {
+  background-color: #059669;
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+  transform: translateY(-2px);
+}
+
+.tv-preview-apply:focus,
+.tv-preview-close:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+
+/* TV Viewport Container */
+.tv-preview-container {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  overflow: hidden;
+}
+
+/* TV Viewport (simulates actual TV screen) */
+.tv-preview-viewport {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  background: #000000;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 12px #1a1a1a,
+    0 0 0 14px #333333,
+    0 20px 60px rgba(0, 0, 0, 0.8),
+    0 0 80px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s ease;
+}
+
+/* TV Size Scaling - Maintains 16:9 aspect ratio */
+.tv-preview-viewport.size-55 {
+  transform: scale(0.55);
+}
+
+.tv-preview-viewport.size-65 {
+  transform: scale(0.65);
+}
+
+.tv-preview-viewport.size-85 {
+  transform: scale(0.85);
+}
+
+/* Bezel effect */
+.tv-preview-viewport::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    transparent 50%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
+  z-index: 100;
+}
+
+/* Dashboard Preview Container */
+.preview-dashboard {
+  width: 100%;
+  height: 100%;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Dashboard Header */
+.preview-dashboard-header {
+  margin-bottom: 32px;
+}
+
+.preview-dashboard-name {
+  font-size: 48px;
+  font-weight: 700;
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.preview-dashboard-subtitle {
+  font-size: 24px;
+  margin-top: 8px;
+  font-weight: 400;
+}
+
+/* Dashboard Grid */
+.preview-dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  flex: 1;
+  align-content: start;
+}
+
+/* Widget Container */
+.preview-widget {
+  position: relative;
+  min-height: 200px;
+}
+
+/* Widget Card */
+.preview-widget-card {
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.preview-widget-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent-color, rgba(255, 255, 255, 0.2));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Widget Title */
+.preview-widget-title {
+  font-size: 18px;
+  font-weight: 600;
+  opacity: 0.9;
+  letter-spacing: 0.02em;
+}
+
+/* Widget Content */
+.preview-widget-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Mock Widget Types */
+.mock-big-number {
+  font-size: 64px;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.mock-gauge {
+  width: 120px;
+  height: 120px;
+  position: relative;
+}
+
+.mock-gauge-arc {
+  width: 100%;
+  height: 100%;
+  border: 12px solid;
+  border-radius: 50%;
+  border-color: currentColor transparent transparent transparent;
+  transform: rotate(45deg);
+  opacity: 0.8;
+}
+
+.mock-stat {
+  font-size: 48px;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.mock-placeholder {
+  font-size: 72px;
+  opacity: 0.6;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1600px) {
+  .tv-preview-viewport.size-55 {
+    transform: scale(0.45);
+  }
+
+  .tv-preview-viewport.size-65 {
+    transform: scale(0.55);
+  }
+
+  .tv-preview-viewport.size-85 {
+    transform: scale(0.7);
+  }
+}
+
+@media (max-width: 1200px) {
+  .tv-preview-viewport.size-55 {
+    transform: scale(0.35);
+  }
+
+  .tv-preview-viewport.size-65 {
+    transform: scale(0.45);
+  }
+
+  .tv-preview-viewport.size-85 {
+    transform: scale(0.55);
+  }
+
+  .preview-dashboard-name {
+    font-size: 42px;
+  }
+
+  .preview-dashboard-subtitle {
+    font-size: 20px;
+  }
+}
+
+/* Animation for opening */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.tv-preview-modal.open .tv-preview-viewport {
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* Accessibility */
+.tv-preview-close:focus-visible,
+.tv-preview-apply:focus-visible,
+.tv-size-btn:focus-visible {
+  outline: 3px solid #3B82F6;
+  outline-offset: 2px;
+}
+
+/* Print Styles */
+@media print {
+  .tv-preview-modal {
+    display: none;
+  }
+}

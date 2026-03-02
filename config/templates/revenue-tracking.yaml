@@ -1,0 +1,161 @@
+name: Revenue Tracking
+description: Financial performance and revenue growth analytics
+category: Executive
+tags:
+  - revenue
+  - financial
+  - growth
+  - metrics
+requiredSources:
+  - mock
+recommendedTheme: light
+author: MadHive
+createdAt: '2026-03-02'
+dashboard:
+  name: Revenue Tracking
+  icon: dollar-sign
+  refreshInterval: 600
+  gridColumns: 12
+  gridRows: 12
+  widgets:
+    - id: monthly-recurring-revenue
+      type: metric
+      title: Monthly Recurring Revenue
+      source: mock
+      position:
+        col: 1
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: '$'
+        format: 'currency'
+        trend: true
+
+    - id: annual-recurring-revenue
+      type: metric
+      title: Annual Recurring Revenue
+      source: mock
+      position:
+        col: 4
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: '$'
+        format: 'currency'
+        trend: true
+
+    - id: growth-rate
+      type: gauge
+      title: MoM Growth Rate
+      source: mock
+      position:
+        col: 7
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        min: -10
+        max: 30
+        unit: '%'
+        thresholds:
+          - value: 0
+            color: '#FF0000'
+          - value: 10
+            color: '#FFA500'
+          - value: 20
+            color: '#00FF00'
+
+    - id: average-contract-value
+      type: metric
+      title: Average Contract Value
+      source: mock
+      position:
+        col: 10
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: '$'
+        format: 'currency'
+        trend: true
+
+    - id: revenue-trend
+      type: chart
+      title: Revenue Trend (Last 12 Months)
+      source: mock
+      position:
+        col: 1
+        row: 3
+        colSpan: 8
+        rowSpan: 4
+      config:
+        chartType: line
+        timeRange: '12M'
+        showMultipleSeries: true
+        series:
+          - new_revenue
+          - expansion
+          - churn
+          - net_revenue
+
+    - id: revenue-by-segment
+      type: chart
+      title: Revenue by Segment
+      source: mock
+      position:
+        col: 9
+        row: 3
+        colSpan: 4
+        rowSpan: 4
+      config:
+        chartType: pie
+        showLegend: true
+
+    - id: top-customers
+      type: list
+      title: Top Revenue Customers
+      source: mock
+      position:
+        col: 1
+        row: 7
+        colSpan: 6
+        rowSpan: 3
+      config:
+        maxItems: 10
+        showValue: true
+        showGrowth: true
+        sortBy: revenue
+
+    - id: revenue-breakdown
+      type: chart
+      title: Revenue Breakdown by Product
+      source: mock
+      position:
+        col: 7
+        row: 7
+        colSpan: 6
+        rowSpan: 3
+      config:
+        chartType: bar
+        orientation: horizontal
+
+    - id: financial-metrics
+      type: grid
+      title: Financial Metrics Detail
+      source: mock
+      position:
+        col: 1
+        row: 10
+        colSpan: 12
+        rowSpan: 3
+      config:
+        columns:
+          - metric
+          - current_month
+          - last_month
+          - change
+          - ytd
+          - target
+          - progress

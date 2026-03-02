@@ -4,7 +4,6 @@
 
 import { DataSource } from './base.js';
 import jsforce from 'jsforce';
-import logger from '../logger.js';
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -108,7 +107,7 @@ export class SalesforceDataSource extends DataSource {
         console.log({ instanceUrl: this.instanceUrl }, 'Salesforce connection initialized with access token');
       }
       // Otherwise use OAuth username/password flow
-      else {
+      else if (hasOAuth) {
         this.connection = new jsforce.Connection({
           loginUrl,
           clientId: this.clientId,
@@ -132,7 +131,7 @@ export class SalesforceDataSource extends DataSource {
 
       this.isConnected = true;
     } catch (error) {
-      console.error({ error: error.message }, 'Salesforce data source failed to initialize');
+      console.error('[salesforce] Failed to initialize:', error.message);
       this.lastError = error;
       this.isConnected = false;
     }
@@ -229,13 +228,6 @@ export class SalesforceDataSource extends DataSource {
       console.error({ error: error.message }, 'Salesforce fetch metrics error');
       return this.handleError(error, widgetConfig.type);
     }
-    logger.warn('[salesforce] Using mock data - Salesforce API not yet implemented');
-    return {
-      timestamp: new Date().toISOString(),
-      source: 'salesforce',
-      data: this.getMockData(widgetConfig.type),
-      widgetId: widgetConfig.id
-    };
   }
 
   /**

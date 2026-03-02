@@ -1,0 +1,187 @@
+name: Executive Summary
+description: High-level KPIs and business metrics across all departments
+category: Executive
+tags:
+  - executive
+  - kpi
+  - overview
+  - business
+requiredSources:
+  - mock
+  - gcp
+  - vulntrack
+recommendedTheme: light
+author: MadHive
+createdAt: '2026-03-02'
+dashboard:
+  name: Executive Summary
+  icon: trending-up
+  refreshInterval: 300
+  gridColumns: 12
+  gridRows: 12
+  widgets:
+    - id: monthly-revenue
+      type: metric
+      title: Monthly Revenue
+      source: mock
+      position:
+        col: 1
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: '$'
+        format: 'currency'
+        trend: true
+
+    - id: active-customers
+      type: metric
+      title: Active Customers
+      source: mock
+      position:
+        col: 4
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        unit: ''
+        trend: true
+
+    - id: system-uptime
+      type: gauge
+      title: System Uptime
+      source: gcp
+      position:
+        col: 7
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        min: 0
+        max: 100
+        unit: '%'
+        thresholds:
+          - value: 99
+            color: '#FF0000'
+          - value: 99.5
+            color: '#FFA500'
+          - value: 99.9
+            color: '#00FF00'
+
+    - id: security-score
+      type: gauge
+      title: Security Score
+      source: vulntrack
+      position:
+        col: 10
+        row: 1
+        colSpan: 3
+        rowSpan: 2
+      config:
+        min: 0
+        max: 100
+        unit: ''
+        thresholds:
+          - value: 70
+            color: '#FF0000'
+          - value: 85
+            color: '#FFA500'
+          - value: 95
+            color: '#00FF00'
+
+    - id: revenue-growth
+      type: chart
+      title: Revenue Growth (Last 12 Months)
+      source: mock
+      position:
+        col: 1
+        row: 3
+        colSpan: 6
+        rowSpan: 4
+      config:
+        chartType: line
+        timeRange: '12M'
+        yAxis:
+          label: 'Revenue ($)'
+
+    - id: customer-acquisition
+      type: chart
+      title: Customer Acquisition
+      source: mock
+      position:
+        col: 7
+        row: 3
+        colSpan: 6
+        rowSpan: 4
+      config:
+        chartType: bar
+        timeRange: '12M'
+        yAxis:
+          label: 'New Customers'
+
+    - id: department-kpis
+      type: grid
+      title: Department KPIs
+      source: mock
+      position:
+        col: 1
+        row: 7
+        colSpan: 8
+        rowSpan: 3
+      config:
+        columns:
+          - department
+          - metric
+          - current
+          - target
+          - progress
+          - trend
+
+    - id: key-metrics
+      type: list
+      title: Key Performance Indicators
+      source: mock
+      position:
+        col: 9
+        row: 7
+        colSpan: 4
+        rowSpan: 3
+      config:
+        maxItems: 8
+        showValue: true
+        showTarget: true
+        showProgress: true
+
+    - id: business-health
+      type: chart
+      title: Business Health Scorecard
+      source: mock
+      position:
+        col: 1
+        row: 10
+        colSpan: 6
+        rowSpan: 3
+      config:
+        chartType: bar
+        orientation: horizontal
+        categories:
+          - revenue
+          - customer_satisfaction
+          - operations
+          - security
+          - team_health
+
+    - id: critical-alerts
+      type: list
+      title: Critical Alerts
+      source: gcp
+      position:
+        col: 7
+        row: 10
+        colSpan: 6
+        rowSpan: 3
+      config:
+        maxItems: 5
+        showSeverity: true
+        showTimestamp: true
+        filterBySeverity: critical

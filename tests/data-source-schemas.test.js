@@ -15,10 +15,16 @@ describe('Data Source Schemas', () => {
   it('should get all schemas', () => {
     const schemas = getAllSchemas();
 
-    expect(schemas.length).toBe(3);
+    expect(schemas.length).toBe(9);
     expect(schemas.map(s => s.id)).toContain('bigquery');
     expect(schemas.map(s => s.id)).toContain('gcp-monitoring');
     expect(schemas.map(s => s.id)).toContain('mock');
+    expect(schemas.map(s => s.id)).toContain('checkly');
+    expect(schemas.map(s => s.id)).toContain('chromatic');
+    expect(schemas.map(s => s.id)).toContain('looker');
+    expect(schemas.map(s => s.id)).toContain('rollbar');
+    expect(schemas.map(s => s.id)).toContain('rootly');
+    expect(schemas.map(s => s.id)).toContain('segment');
   });
 
   it('should validate BigQuery connection', () => {

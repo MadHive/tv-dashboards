@@ -4,6 +4,9 @@
 
 import { AdminAPI } from './admin-api.js';
 import { DashboardForm } from './admin-components.js';
+import { ThemeSelector } from './components/theme-selector.js';
+import { TVPreview } from './components/tv-preview.js';
+import { TemplateBrowser } from './components/template-browser.js';
 
 class AdminApp {
   constructor() {
@@ -11,11 +14,16 @@ class AdminApp {
     this.dashboards = [];
     this.selectedDashboards = new Set();
     this.currentForm = null;
+    this.themeSelector = null;
+    this.templateBrowser = null;
+    this.selectedTheme = null;
+    this.currentTab = 'dashboards';
     this.init();
   }
 
   async init() {
     this.setupEventListeners();
+    this.setupTabSwitching();
     await this.loadDashboards();
   }
 
@@ -63,12 +71,207 @@ class AdminApp {
       this.importDashboard(e.target.files[0]);
     });
 
+    // Preview on TV button
+    document.getElementById('preview-on-tv-btn').addEventListener('click', () => {
+      this.openTVPreview();
+    });
+
     // Listen for checkbox changes
     document.addEventListener('change', (e) => {
       if (e.target.classList.contains('dashboard-checkbox')) {
         this.updateSelection();
       }
     });
+  }
+
+  setupTabSwitching() {
+    const tabs = document.querySelectorAll('.admin-tab');
+    const panes = document.querySelectorAll('.tab-pane');
+
+    for (const tab of tabs) {
+      tab.addEventListener('click', () => {
+        const tabName = tab.dataset.tab;
+
+        // Update active states
+        for (const t of tabs) {
+          t.classList.remove('active');
+        }
+        tab.classList.add('active');
+
+        for (const pane of panes) {
+          pane.classList.remove('active');
+        }
+
+        const targetPane = document.getElementById(`${tabName}-tab`);
+        if (targetPane) {
+          targetPane.classList.add('active');
+        }
+
+        // Initialize tab content on first view
+        this.onTabActivated(tabName);
+        this.currentTab = tabName;
+      });
+    }
+  }
+
+  async onTabActivated(tabName) {
+    if (tabName === 'themes' && !this.themeSelector) {
+      await this.initializeThemeSelector();
+    }
+    if (tabName === 'templates' && !this.templateBrowser) {
+      await this.initializeTemplateBrowser();
+    }
+  }
+
+  async initializeThemeSelector() {
+    const container = document.getElementById('theme-selector-container');
+    if (!container) {
+      console.error('Theme selector container not found');
+      return;
+    }
+
+    this.themeSelector = new ThemeSelector({
+      container: container,
+      themes: [],
+      currentTheme: this.selectedTheme,
+      onSelect: (themeId) => {
+        this.selectedTheme = themeId;
+      }
+    });
+
+    try {
+      await this.themeSelector.loadThemes('/api/themes');
+    } catch (error) {
+      console.error('Failed to load themes:', error);
+      this.showToast('Failed to load themes', 'error');
+    }
+  }
+
+  async initializeTemplateBrowser() {
+    const container = document.getElementById('template-browser-container');
+    if (!container) {
+      console.error('Template browser container not found');
+      return;
+    }
+
+    this.templateBrowser = new TemplateBrowser({
+      container: container,
+      onSelect: (template) => {
+        this.createDashboardFromTemplate(template);
+      }
+    });
+
+    try {
+      await this.templateBrowser.loadTemplates('/api/templates');
+    } catch (error) {
+      console.error('Failed to load templates:', error);
+      this.showToast('Failed to load templates', 'error');
+    }
+  }
+
+  async createDashboardFromTemplate(template) {
+    if (!template.dashboard) {
+      this.showToast('Invalid template: missing dashboard configuration', 'error');
+      return;
+    }
+
+    // Generate a unique ID based on template name
+    const timestamp = Date.now();
+    const baseId = template.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const newId = `${baseId}-${timestamp}`;
+
+    // Create new dashboard from template
+    const newDashboard = {
+      ...template.dashboard,
+      id: newId,
+      name: `${template.name} (from template)`,
+      subtitle: template.dashboard.subtitle || template.description || ''
+    };
+
+    try {
+      await this.api.createDashboard(newDashboard);
+      this.showToast(`Dashboard "${newDashboard.name}" created successfully!`);
+
+      // Switch to dashboards tab and reload
+      const dashboardsTab = document.querySelector('.admin-tab[data-tab="dashboards"]');
+      if (dashboardsTab) {
+        dashboardsTab.click();
+      }
+      await this.loadDashboards();
+    } catch (error) {
+      console.error('Failed to create dashboard from template:', error);
+      this.showToast(`Error: ${error.message}`, 'error');
+    }
+  }
+
+  openTVPreview() {
+    if (!this.selectedTheme) {
+      this.showToast('Please select a theme first', 'error');
+      return;
+    }
+
+    if (!this.themeSelector) {
+      this.showToast('Theme selector not initialized', 'error');
+      return;
+    }
+
+    // Find the selected theme object
+    const theme = this.themeSelector.themes.find(t => t.id === this.selectedTheme);
+    if (!theme) {
+      this.showToast('Selected theme not found', 'error');
+      return;
+    }
+
+    // Get the first dashboard for preview, or use a sample config
+    const dashboardConfig = this.dashboards.length > 0
+      ? this.dashboards[0]
+      : this.getSampleDashboardConfig();
+
+    // Create and open TV preview
+    const preview = new TVPreview({
+      container: document.body,
+      theme: theme,
+      dashboardConfig: dashboardConfig,
+      onApply: (appliedTheme) => {
+        this.showToast(`Theme "${appliedTheme.name}" applied`, 'success');
+      }
+    });
+
+    preview.open();
+  }
+
+  getSampleDashboardConfig() {
+    return {
+      name: 'Sample Dashboard',
+      subtitle: 'Theme Preview',
+      grid: {
+        columns: 4,
+        rows: 3,
+        gap: 16
+      },
+      widgets: [
+        {
+          type: 'big-number',
+          title: 'Total Users',
+          position: { col: 1, row: 1, colSpan: 1, rowSpan: 1 }
+        },
+        {
+          type: 'gauge',
+          title: 'Performance',
+          position: { col: 2, row: 1, colSpan: 1, rowSpan: 1 }
+        },
+        {
+          type: 'stat-card',
+          title: 'Conversion Rate',
+          position: { col: 3, row: 1, colSpan: 1, rowSpan: 1 }
+        },
+        {
+          type: 'big-number',
+          title: 'Revenue',
+          position: { col: 4, row: 1, colSpan: 1, rowSpan: 1 }
+        }
+      ]
+    };
   }
 
   async loadDashboards() {
