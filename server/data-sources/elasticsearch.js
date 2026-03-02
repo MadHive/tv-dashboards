@@ -69,14 +69,138 @@ export class ElasticsearchDataSource extends DataSource {
     }
   }
 
+  /**
+   * Fetch metrics for a widget
+   *
+   * Widget config should include:
+   * - index: Index pattern (e.g., 'logs-*')
+   * - query: Elasticsearch query DSL (optional)
+   * - aggregation: Aggregation to perform (count, avg, sum, etc.)
+   * - field: Field to aggregate on (for avg, sum, etc.)
+   * - timeField: Time field name (default: '@timestamp')
+   * - timeRange: Time range in seconds (default: 3600 = 1 hour)
+   */
   async fetchMetrics(widgetConfig) {
-    console.warn('[elasticsearch] Using mock data - fetchMetrics not yet implemented');
-    return {
-      timestamp: new Date().toISOString(),
-      source: 'elasticsearch',
-      data: this.getMockData(widgetConfig.type),
-      widgetId: widgetConfig.id
-    };
+    try {
+      if (!this.client) {
+        console.warn('[elasticsearch] Elasticsearch client not initialized - using mock data');
+        return {
+          timestamp: new Date().toISOString(),
+          source: 'elasticsearch',
+          data: this.getMockData(widgetConfig.type),
+          widgetId: widgetConfig.id
+        };
+      }
+
+      // Extract Elasticsearch parameters
+      const {
+        index = '_all',
+        query = { match_all: {} },
+        aggregation = 'count',
+        field,
+        timeField = '@timestamp',
+        timeRange = 3600,
+        interval = '5m'
+      } = widgetConfig;
+
+      // Build time range query
+      const now = Date.now();
+      const from = new Date(now - (timeRange * 1000));
+      const to = new Date(now);
+
+      // Check cache
+      const cacheKey = JSON.stringify({ index, query, aggregation, field, from: from.toISOString(), to: to.toISOString() });
+      if (this.metricCache.has(cacheKey)) {
+        const cached = this.metricCache.get(cacheKey);
+        if (Date.now() - cached.timestamp < CACHE_TTL) {
+          console.log('[elasticsearch] Cache hit for query');
+          return {
+            timestamp: new Date().toISOString(),
+            source: 'elasticsearch',
+            data: this.transformData(cached.data, widgetConfig.type, aggregation),
+            widgetId: widgetConfig.id,
+            cached: true
+          };
+        }
+      }
+
+      // Build search request based on aggregation type
+      let searchBody;
+
+      if (aggregation === 'count') {
+        searchBody = {
+          query: {
+            bool: {
+              must: [query],
+              filter: {
+                range: {
+                  [timeField]: {
+                    gte: from.toISOString(),
+                    lte: to.toISOString()
+                  }
+                }
+              }
+            }
+          },
+          size: 0
+        };
+      } else {
+        // For time-series data (avg, sum, etc. over time)
+        searchBody = {
+          query: {
+            bool: {
+              must: [query],
+              filter: {
+                range: {
+                  [timeField]: {
+                    gte: from.toISOString(),
+                    lte: to.toISOString()
+                  }
+                }
+              }
+            }
+          },
+          size: 0,
+          aggs: {
+            time_buckets: {
+              date_histogram: {
+                field: timeField,
+                fixed_interval: interval
+              },
+              aggs: field ? {
+                metric: {
+                  [aggregation]: {
+                    field: field
+                  }
+                }
+              } : {}
+            }
+          }
+        };
+      }
+
+      // Execute search
+      const response = await this.client.search({
+        index,
+        body: searchBody
+      });
+
+      // Cache the result
+      this.metricCache.set(cacheKey, {
+        data: response,
+        timestamp: Date.now()
+      });
+
+      return {
+        timestamp: new Date().toISOString(),
+        source: 'elasticsearch',
+        data: this.transformData(response, widgetConfig.type, aggregation),
+        widgetId: widgetConfig.id
+      };
+    } catch (error) {
+      console.error('[elasticsearch] Fetch metrics error:', error.message);
+      return this.handleError(error, widgetConfig.type);
+    }
   }
 
   async testConnection() {
