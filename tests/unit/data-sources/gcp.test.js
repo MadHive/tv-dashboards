@@ -15,16 +15,11 @@ const mockGCPMetrics = {
 describe('GCP Data Source', () => {
   let dataSource;
 
-  beforeAll(() => {
-    // Mock the dynamic import of gcp-metrics to prevent authentication
-    globalThis.__mockGCPMetrics = mockGCPMetrics;
-  });
-
   beforeEach(() => {
     dataSource = new GCPDataSource({});
-    // Mock the gcpMetrics module loading
+    // Mock the gcpMetrics module loading without using global state
     dataSource.initialize = async function() {
-      this.gcpMetrics = globalThis.__mockGCPMetrics;
+      this.gcpMetrics = mockGCPMetrics;
       this.isConnected = true;
     };
   });
