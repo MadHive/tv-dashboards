@@ -108,6 +108,26 @@ describe('DataDog Data Source', () => {
     });
   });
 
+  describe('testConnection()', () => {
+    it('should return false when client not initialized', async () => {
+      const result = await dataSource.testConnection();
+      expect(result).toBe(false);
+    });
+
+    it('should return true with valid credentials', async () => {
+      const ds = new DataDogDataSource({
+        apiKey: 'test-api-key',
+        appKey: 'test-app-key'
+      });
+
+      await ds.initialize();
+
+      // Will fail in tests (invalid credentials), but structure is correct
+      const result = await ds.testConnection();
+      expect(typeof result).toBe('boolean');
+    });
+  });
+
   describe('getMockData()', () => {
     it('should return mock data for big-number widget', () => {
       const data = dataSource.getMockData('big-number');

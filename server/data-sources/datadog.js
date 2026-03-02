@@ -130,8 +130,31 @@ export class DataDogDataSource extends DataSource {
     }
   }
 
+  /**
+   * Test connection to DataDog API
+   */
   async testConnection() {
-    return false; // Not implemented
+    try {
+      if (!this.metricsApi) {
+        return false;
+      }
+
+      // Try to query a simple metric (last 5 minutes)
+      const now = Math.floor(Date.now() / 1000);
+      const params = {
+        query: 'avg:system.load.1{*}',
+        from: now - 300,
+        to: now
+      };
+
+      await this.metricsApi.queryMetrics(params);
+      console.log('[datadog] Connection test successful');
+      return true;
+    } catch (error) {
+      console.error('[datadog] Connection test failed:', error.message);
+      this.lastError = error;
+      return false;
+    }
   }
 
   getConfigSchema() {
