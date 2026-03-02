@@ -20,6 +20,24 @@ describe('DataDog Data Source', () => {
     });
   });
 
+  describe('initialize()', () => {
+    it('should handle missing credentials gracefully', async () => {
+      await dataSource.initialize();
+      expect(dataSource.isConnected).toBe(false);
+    });
+
+    it('should initialize with credentials if provided', async () => {
+      const ds = new DataDogDataSource({
+        apiKey: 'test-api-key',
+        appKey: 'test-app-key'
+      });
+
+      await ds.initialize();
+      expect(ds.client).not.toBeNull();
+      expect(ds.isConnected).toBe(true);
+    });
+  });
+
   describe('getMockData()', () => {
     it('should return mock data for big-number widget', () => {
       const data = dataSource.getMockData('big-number');
