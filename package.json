@@ -27,11 +27,13 @@
     "@elysiajs/static": "^1.2",
     "@google-cloud/bigquery": "^8.1.1",
     "@google-cloud/monitoring": "^5.3.1",
+    "axios": "^1.13.6",
     "elysia": "^1.2",
     "elysia-rate-limit": "^4.5.0",
     "google-auth-library": "^10.6.1",
     "js-yaml": "^4.1.0",
     "jsforce": "^3.10.14",
+    "node-zendesk": "^6.0.1"
     "pino": "^10.3.1",
     "pino-pretty": "^13.1.3"
   }

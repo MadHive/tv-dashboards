@@ -37,6 +37,7 @@ import {
 } from './template-manager.js';
 import DashboardManager from './dashboard-manager.js';
 import { getSchema, getAllSchemas, validateConnection } from './data-source-schemas.js';
+import { themeManager } from './theme-manager.js';
 import { metricsCollector } from './metrics.js';
 import { smartRateLimit, addCacheHeaders, cachePresets } from './rate-limiter.js';
 
@@ -123,6 +124,9 @@ function setCachedData(key, data) {
 
 // Dashboard manager instance
 const dashboardManager = new DashboardManager('./config/dashboards.yaml');
+
+// Load themes on startup
+await themeManager.loadThemes();
 
 const app = new Elysia()
   .use(cors())
@@ -590,6 +594,101 @@ const app = new Elysia()
         JSON.stringify({ success: false, error: error.message }),
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
+    }
+  })
+
+  // Theme management endpoints
+  .get('/api/themes', ({ query }) => {
+    try {
+      if (query.category) {
+        return themeManager.getThemesByCategory(query.category);
+      }
+      return themeManager.getAllThemes();
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
+  .get('/api/themes/categories', () => {
+    try {
+      return themeManager.getCategories();
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
+  .get('/api/themes/default', ({ set }) => {
+    try {
+      const defaultTheme = themeManager.getDefaultTheme();
+      if (!defaultTheme) {
+        set.status = 404;
+        return { error: 'No default theme found' };
+      }
+      return defaultTheme;
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
+  .get('/api/themes/:id', ({ params, set }) => {
+    try {
+      const theme = themeManager.getTheme(params.id);
+      if (!theme) {
+        set.status = 404;
+        return { error: 'Theme not found' };
+      }
+      return theme;
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: error.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  })
+
+  .post('/api/themes', async ({ body, set }) => {
+    try {
+      const theme = await themeManager.saveTheme(body);
+      set.status = 201;
+      return theme;
+    } catch (error) {
+      set.status = 400;
+      return { error: error.message };
+    }
+  })
+
+  .put('/api/themes/:id', async ({ params, body, set }) => {
+    try {
+      // Merge ID from params into body
+      const themeData = { ...body, id: params.id };
+      const theme = await themeManager.saveTheme(themeData);
+      return theme;
+    } catch (error) {
+      set.status = 400;
+      return { error: error.message };
+    }
+  })
+
+  .delete('/api/themes/:id', async ({ params, set }) => {
+    try {
+      const deleted = await themeManager.deleteTheme(params.id);
+      if (!deleted) {
+        set.status = 404;
+        return { error: 'Theme not found' };
+      }
+      return { success: true, message: 'Theme deleted' };
+    } catch (error) {
+      set.status = 400;
+      return { error: error.message };
     }
   })
 
