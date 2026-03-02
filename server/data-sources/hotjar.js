@@ -44,14 +44,82 @@ export class HotJarDataSource extends DataSource {
     }
   }
 
+  /**
+   * Fetch metrics for a widget
+   *
+   * Widget config should include:
+   * - metric: Metric type (pageviews, heatmaps, recordings, etc.)
+   * - dateFrom: Start date (YYYY-MM-DD, default: 7 days ago)
+   * - dateTo: End date (YYYY-MM-DD, default: today)
+   */
   async fetchMetrics(widgetConfig) {
-    console.warn('[hotjar] Using mock data - fetchMetrics not yet implemented');
-    return {
-      timestamp: new Date().toISOString(),
-      source: 'hotjar',
-      data: this.getMockData(widgetConfig.type),
-      widgetId: widgetConfig.id
-    };
+    try {
+      if (!this.apiKey || !this.siteId) {
+        console.warn('[hotjar] HotJar client not initialized - using mock data');
+        return {
+          timestamp: new Date().toISOString(),
+          source: 'hotjar',
+          data: this.getMockData(widgetConfig.type),
+          widgetId: widgetConfig.id
+        };
+      }
+
+      // Extract HotJar metric parameters
+      const {
+        metric = 'pageviews',
+        dateFrom,
+        dateTo
+      } = widgetConfig;
+
+      // Default date range: last 7 days
+      const to = dateTo || new Date().toISOString().split('T')[0];
+      const from = dateFrom || new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      // Check cache
+      const cacheKey = JSON.stringify({ metric, from, to, siteId: this.siteId });
+      if (this.metricCache.has(cacheKey)) {
+        const cached = this.metricCache.get(cacheKey);
+        if (Date.now() - cached.timestamp < CACHE_TTL) {
+          console.log('[hotjar] Cache hit for metric:', metric);
+          return {
+            timestamp: new Date().toISOString(),
+            source: 'hotjar',
+            data: this.transformData(cached.data, widgetConfig.type),
+            widgetId: widgetConfig.id,
+            cached: true
+          };
+        }
+      }
+
+      // Query HotJar API
+      const url = `${HOTJAR_API_BASE}/sites/${this.siteId}/${metric}`;
+      const response = await axios.get(url, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        params: {
+          date_from: from,
+          date_to: to
+        }
+      });
+
+      // Cache the result
+      this.metricCache.set(cacheKey, {
+        data: response.data,
+        timestamp: Date.now()
+      });
+
+      return {
+        timestamp: new Date().toISOString(),
+        source: 'hotjar',
+        data: this.transformData(response.data, widgetConfig.type),
+        widgetId: widgetConfig.id
+      };
+    } catch (error) {
+      console.error('[hotjar] Fetch metrics error:', error.message);
+      return this.handleError(error, widgetConfig.type);
+    }
   }
 
   async testConnection() {
