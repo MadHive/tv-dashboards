@@ -124,6 +124,25 @@ describe('Elasticsearch Data Source', () => {
     });
   });
 
+  describe('testConnection()', () => {
+    it('should return false when client not initialized', async () => {
+      const result = await dataSource.testConnection();
+      expect(result).toBe(false);
+    });
+
+    it('should return boolean with initialized client', async () => {
+      const ds = new ElasticsearchDataSource({
+        host: 'https://localhost:9200',
+        apiKey: 'test-key'
+      });
+
+      await ds.initialize();
+
+      const result = await ds.testConnection();
+      expect(typeof result).toBe('boolean');
+    });
+  });
+
   describe('getMockData()', () => {
     it('should return mock data for big-number widget', () => {
       const data = dataSource.getMockData('big-number');

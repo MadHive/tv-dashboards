@@ -203,8 +203,29 @@ export class ElasticsearchDataSource extends DataSource {
     }
   }
 
+  /**
+   * Test connection to Elasticsearch
+   */
   async testConnection() {
-    return false; // Not implemented
+    try {
+      if (!this.client) {
+        return false;
+      }
+
+      // Ping the cluster
+      const response = await this.client.ping();
+
+      if (response) {
+        console.log('[elasticsearch] Connection test successful');
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('[elasticsearch] Connection test failed:', error.message);
+      this.lastError = error;
+      return false;
+    }
   }
 
   getConfigSchema() {
