@@ -93,8 +93,16 @@ export class GCPDataSource extends DataSource {
         savedQuery.aggregation
       );
 
-      // Transform data for widget type
-      const transformed = this.transformData(timeSeries, widgetConfig.type);
+      // Calculate human-readable time period
+      const timeWindow = savedQuery.timeWindow || 10;
+      const timePeriod = timeWindow >= 60
+        ? `Last ${Math.round(timeWindow / 60)} hr`
+        : `Last ${timeWindow} min`;
+
+      // Transform data for widget type with time period metadata
+      const transformed = this.transformData(timeSeries, widgetConfig.type, {
+        timePeriod
+      });
 
       // Record successful query
       const duration = Date.now() - startTime;
@@ -160,7 +168,7 @@ export class GCPDataSource extends DataSource {
   /**
    * Transform raw data to widget format
    */
-  transformData(timeSeries, widgetType) {
+  transformData(timeSeries, widgetType, options = {}) {
     // If data is already transformed (from dashboard), return as-is
     if (!Array.isArray(timeSeries) || timeSeries.length === 0) {
       return timeSeries || this.getEmptyData(widgetType);
@@ -179,7 +187,8 @@ export class GCPDataSource extends DataSource {
         return {
           value: latest(ts),
           unit: '',
-          trend: null
+          trend: null,
+          ...(options.timePeriod && { timePeriod: options.timePeriod })
         };
       },
       'stat-card': (ts) => {
@@ -187,7 +196,8 @@ export class GCPDataSource extends DataSource {
         return {
           value: latest(ts),
           sparkline: spark(ts, 20),
-          unit: ''
+          unit: '',
+          ...(options.timePeriod && { timePeriod: options.timePeriod })
         };
       },
       'gauge': (ts) => {
@@ -196,7 +206,8 @@ export class GCPDataSource extends DataSource {
           value: latest(ts),
           min: 0,
           max: 100,
-          unit: '%'
+          unit: '%',
+          ...(options.timePeriod && { timePeriod: options.timePeriod })
         };
       },
       'line-chart': (ts) => {
@@ -206,7 +217,8 @@ export class GCPDataSource extends DataSource {
             label: 'Value',
             data: spark(ts, 30)
           }],
-          timestamps: []
+          timestamps: [],
+          ...(options.timePeriod && { timePeriod: options.timePeriod })
         };
       }
     };

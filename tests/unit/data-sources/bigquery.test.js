@@ -1010,6 +1010,63 @@ describe('BigQuery Data Source', () => {
     });
   });
 
+  describe('extractTimePeriod()', () => {
+    it('should extract "last 30 days" pattern', () => {
+      const result = dataSource.extractTimePeriod('Count of unique active users in the last 30 days');
+      expect(result).toBe('Last 30 days');
+    });
+
+    it('should extract "last 1 hour" pattern', () => {
+      const result = dataSource.extractTimePeriod('Requests in the last 1 hour');
+      expect(result).toBe('Last 1 hour');
+    });
+
+    it('should extract "last 7 days" pattern', () => {
+      const result = dataSource.extractTimePeriod('Revenue for the last 7 days');
+      expect(result).toBe('Last 7 days');
+    });
+
+    it('should extract "last 2 weeks" pattern', () => {
+      const result = dataSource.extractTimePeriod('Activity for the last 2 weeks');
+      expect(result).toBe('Last 2 weeks');
+    });
+
+    it('should extract "last 3 months" pattern', () => {
+      const result = dataSource.extractTimePeriod('Trends for the last 3 months');
+      expect(result).toBe('Last 3 months');
+    });
+
+    it('should handle case insensitive matching', () => {
+      const result = dataSource.extractTimePeriod('Count of the LAST 30 DAYS');
+      expect(result).toBe('LAST 30 DAYS');
+    });
+
+    it('should return null for no match', () => {
+      const result = dataSource.extractTimePeriod('Daily Revenue Trend');
+      expect(result).toBeNull();
+    });
+
+    it('should return null for null description', () => {
+      const result = dataSource.extractTimePeriod(null);
+      expect(result).toBeNull();
+    });
+
+    it('should return null for undefined description', () => {
+      const result = dataSource.extractTimePeriod(undefined);
+      expect(result).toBeNull();
+    });
+
+    it('should return null for empty description', () => {
+      const result = dataSource.extractTimePeriod('');
+      expect(result).toBeNull();
+    });
+
+    it('should handle singular time units', () => {
+      const result = dataSource.extractTimePeriod('Data from the last 1 day');
+      expect(result).toBe('Last 1 day');
+    });
+  });
+
   describe('transformData()', () => {
     it('should return empty data for null input', () => {
       const result = dataSource.transformData(null, 'big-number');
@@ -1150,6 +1207,60 @@ describe('BigQuery Data Source', () => {
       const result = dataSource.transformData(rows, 'custom-widget');
 
       expect(result.rows).toEqual(rows);
+    });
+
+    it('should include timePeriod in big-number widget when provided', () => {
+      const rows = [{ value: 42 }];
+      const result = dataSource.transformData(rows, 'big-number', { timePeriod: 'Last 30 days' });
+
+      expect(result.value).toBe(42);
+      expect(result.timePeriod).toBe('Last 30 days');
+    });
+
+    it('should not include timePeriod in big-number widget when not provided', () => {
+      const rows = [{ value: 42 }];
+      const result = dataSource.transformData(rows, 'big-number');
+
+      expect(result.value).toBe(42);
+      expect(result.timePeriod).toBeUndefined();
+    });
+
+    it('should include timePeriod in stat-card widget when provided', () => {
+      const rows = [{ value: 85 }];
+      const result = dataSource.transformData(rows, 'stat-card', { timePeriod: 'Last 7 days' });
+
+      expect(result.value).toBe(85);
+      expect(result.timePeriod).toBe('Last 7 days');
+    });
+
+    it('should include timePeriod in gauge widget when provided', () => {
+      const rows = [{ value: 75 }];
+      const result = dataSource.transformData(rows, 'gauge', { timePeriod: 'Last 1 hour' });
+
+      expect(result.value).toBe(75);
+      expect(result.timePeriod).toBe('Last 1 hour');
+    });
+
+    it('should include timePeriod in bar-chart widget when provided', () => {
+      const rows = [
+        { label: 'A', value: 10 },
+        { label: 'B', value: 20 }
+      ];
+      const result = dataSource.transformData(rows, 'bar-chart', { timePeriod: 'Last 30 days' });
+
+      expect(result.values).toHaveLength(2);
+      expect(result.timePeriod).toBe('Last 30 days');
+    });
+
+    it('should include timePeriod in line-chart widget when provided', () => {
+      const rows = [
+        { timestamp: '2024-01-01', value: 10 },
+        { timestamp: '2024-01-02', value: 20 }
+      ];
+      const result = dataSource.transformData(rows, 'line-chart', { timePeriod: 'Last 30 days' });
+
+      expect(result.series).toHaveLength(1);
+      expect(result.timePeriod).toBe('Last 30 days');
     });
   });
 

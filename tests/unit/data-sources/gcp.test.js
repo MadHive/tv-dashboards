@@ -616,6 +616,86 @@ describe('GCP Data Source', () => {
     });
   });
 
+  describe('time period metadata', () => {
+    it('should add timePeriod to big-number widget when provided in options', () => {
+      const timeSeries = [{
+        points: [{ value: { doubleValue: 42 } }]
+      }];
+
+      const result = dataSource.transformData(timeSeries, 'big-number', {
+        timePeriod: 'Last 10 min'
+      });
+
+      expect(result).toHaveProperty('timePeriod');
+      expect(result.timePeriod).toBe('Last 10 min');
+    });
+
+    it('should add timePeriod to stat-card widget', () => {
+      const timeSeries = [{
+        points: [
+          { value: { doubleValue: 75 } },
+          { value: { doubleValue: 70 } },
+          { value: { doubleValue: 65 } }
+        ]
+      }];
+
+      const result = dataSource.transformData(timeSeries, 'stat-card', {
+        timePeriod: 'Last 15 min'
+      });
+
+      expect(result).toHaveProperty('timePeriod');
+      expect(result.timePeriod).toBe('Last 15 min');
+    });
+
+    it('should add timePeriod to gauge widget', () => {
+      const timeSeries = [{
+        points: [{ value: { doubleValue: 85.5 } }]
+      }];
+
+      const result = dataSource.transformData(timeSeries, 'gauge', {
+        timePeriod: 'Last 2 hr'
+      });
+
+      expect(result).toHaveProperty('timePeriod');
+      expect(result.timePeriod).toBe('Last 2 hr');
+    });
+
+    it('should add timePeriod to line-chart widget', () => {
+      const timeSeries = [{
+        points: Array.from({ length: 10 }, (_, i) => ({
+          value: { doubleValue: i * 10 }
+        }))
+      }];
+
+      const result = dataSource.transformData(timeSeries, 'line-chart', {
+        timePeriod: 'Last 1 hr'
+      });
+
+      expect(result).toHaveProperty('timePeriod');
+      expect(result.timePeriod).toBe('Last 1 hr');
+    });
+
+    it('should not add timePeriod if not provided in options', () => {
+      const timeSeries = [{
+        points: [{ value: { doubleValue: 42 } }]
+      }];
+
+      const result = dataSource.transformData(timeSeries, 'big-number', {});
+
+      expect(result).not.toHaveProperty('timePeriod');
+    });
+
+    it('should not add timePeriod if options is empty', () => {
+      const timeSeries = [{
+        points: [{ value: { doubleValue: 42 } }]
+      }];
+
+      const result = dataSource.transformData(timeSeries, 'big-number');
+
+      expect(result).not.toHaveProperty('timePeriod');
+    });
+  });
+
   describe('integration scenarios', () => {
     it('should support multiple widget types from same data source', async () => {
       await dataSource.initialize();

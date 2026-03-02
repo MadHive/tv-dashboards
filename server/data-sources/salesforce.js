@@ -4,16 +4,10 @@
 
 import { DataSource } from './base.js';
 import jsforce from 'jsforce';
-import logger from '../logger.js';
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
- * Salesforce data source for CRM analytics and sales metrics
- *
- * Configuration:
- * - Set SALESFORCE_INSTANCE_URL environment variable (e.g., https://yourinstance.salesforce.com)
- * - Set SALESFORCE_ACCESS_TOKEN or OAuth credentials
  * Salesforce data source for CRM analytics
  *
  * Configuration:
@@ -46,10 +40,6 @@ export class SalesforceDataSource extends DataSource {
 
     // Direct access token (alternative to OAuth)
     this.accessToken = config.accessToken || process.env.SALESFORCE_ACCESS_TOKEN;
-    this.clientId = config.clientId || process.env.SALESFORCE_CLIENT_ID;
-    this.clientSecret = config.clientSecret || process.env.SALESFORCE_CLIENT_SECRET;
-    this.username = config.username || process.env.SALESFORCE_USERNAME;
-    this.password = config.password || process.env.SALESFORCE_PASSWORD;
 
     // Client instance
     this.connection = null;
@@ -61,9 +51,6 @@ export class SalesforceDataSource extends DataSource {
    */
   async initialize() {
     try {
-      // Check if connection info is available
-      if (!this.instanceUrl) {
-        console.warn('[salesforce] No Salesforce instance URL found - data source will use mock data');
       // Check if we have credentials
       const hasOAuth = this.username && this.password;
       const hasToken = this.accessToken && this.instanceUrl;
@@ -74,8 +61,6 @@ export class SalesforceDataSource extends DataSource {
         return;
       }
 
-      // Use access token if available, otherwise OAuth username/password flow
-      if (this.accessToken) {
       // Create connection with appropriate login URL
       const loginUrl = this.isSandbox
         ? 'https://test.salesforce.com'
@@ -87,23 +72,6 @@ export class SalesforceDataSource extends DataSource {
           instanceUrl: this.instanceUrl,
           accessToken: this.accessToken
         });
-      } else if (this.username && this.password) {
-        this.connection = new jsforce.Connection({
-          loginUrl: this.instanceUrl
-        });
-
-        // Login with OAuth credentials
-        await this.connection.login(this.username, this.password);
-      } else {
-        console.warn('[salesforce] No authentication credentials found - data source will use mock data');
-        this.isConnected = false;
-        return;
-      }
-
-      this.isConnected = true;
-      console.log('[salesforce] Salesforce connection initialized for:', this.instanceUrl);
-    } catch (error) {
-      console.error('[salesforce] Failed to initialize:', error.message);
 
         console.log({ instanceUrl: this.instanceUrl }, 'Salesforce connection initialized with access token');
       }
@@ -152,7 +120,6 @@ export class SalesforceDataSource extends DataSource {
    * - timeRange: Time range in days (default: 30)
    */
   async fetchMetrics(widgetConfig) {
-    console.warn('[salesforce] Using mock data - fetchMetrics not yet implemented');
     try {
       if (!this.connection) {
         console.warn('[salesforce] Salesforce connection not initialized - using mock data');
@@ -229,13 +196,6 @@ export class SalesforceDataSource extends DataSource {
       console.error({ error: error.message }, 'Salesforce fetch metrics error');
       return this.handleError(error, widgetConfig.type);
     }
-    logger.warn('[salesforce] Using mock data - Salesforce API not yet implemented');
-    return {
-      timestamp: new Date().toISOString(),
-      source: 'salesforce',
-      data: this.getMockData(widgetConfig.type),
-      widgetId: widgetConfig.id
-    };
   }
 
   /**
@@ -305,7 +265,6 @@ export class SalesforceDataSource extends DataSource {
    * Test connection to Salesforce using a simple SOQL query
    */
   async testConnection() {
-    return false; // Not implemented
     try {
       if (!this.connection) {
         return false;
@@ -334,16 +293,6 @@ export class SalesforceDataSource extends DataSource {
         {
           name: 'instanceUrl',
           type: 'string',
-          required: true,
-          description: 'Salesforce instance URL',
-          example: 'https://yourinstance.salesforce.com',
-          envVar: 'SALESFORCE_INSTANCE_URL'
-        },
-        {
-          name: 'accessToken',
-          type: 'string',
-          required: false,
-          description: 'Salesforce access token (preferred)',
           required: false,
           description: 'Salesforce instance URL',
           example: 'https://yourinstance.my.salesforce.com',
@@ -369,7 +318,6 @@ export class SalesforceDataSource extends DataSource {
           name: 'clientId',
           type: 'string',
           required: false,
-          description: 'OAuth client ID (if not using access token)',
           description: 'OAuth Connected App client ID',
           secure: true,
           envVar: 'SALESFORCE_CLIENT_ID'
@@ -378,7 +326,6 @@ export class SalesforceDataSource extends DataSource {
           name: 'clientSecret',
           type: 'string',
           required: false,
-          description: 'OAuth client secret (if not using access token)',
           description: 'OAuth Connected App client secret',
           secure: true,
           envVar: 'SALESFORCE_CLIENT_SECRET'
@@ -387,7 +334,6 @@ export class SalesforceDataSource extends DataSource {
           name: 'username',
           type: 'string',
           required: false,
-          description: 'Salesforce username (if using OAuth)',
           description: 'Salesforce username',
           envVar: 'SALESFORCE_USERNAME'
         },
@@ -395,9 +341,6 @@ export class SalesforceDataSource extends DataSource {
           name: 'password',
           type: 'string',
           required: false,
-          description: 'Salesforce password (if using OAuth)',
-          secure: true,
-          envVar: 'SALESFORCE_PASSWORD'
           description: 'Salesforce password',
           secure: true,
           envVar: 'SALESFORCE_PASSWORD'
