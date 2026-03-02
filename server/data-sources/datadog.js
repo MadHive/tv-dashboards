@@ -56,14 +56,78 @@ export class DataDogDataSource extends DataSource {
     }
   }
 
+  /**
+   * Fetch metrics for a widget
+   *
+   * Widget config should include:
+   * - metric: Metric query (e.g., 'avg:system.cpu.user{*}')
+   * - from: Start time (seconds since epoch, default: 1 hour ago)
+   * - to: End time (seconds since epoch, default: now)
+   */
   async fetchMetrics(widgetConfig) {
-    console.warn('[datadog] Using mock data - fetchMetrics not yet implemented');
-    return {
-      timestamp: new Date().toISOString(),
-      source: 'datadog',
-      data: this.getMockData(widgetConfig.type),
-      widgetId: widgetConfig.id
-    };
+    try {
+      if (!this.metricsApi) {
+        console.warn('[datadog] DataDog client not initialized - using mock data');
+        return {
+          timestamp: new Date().toISOString(),
+          source: 'datadog',
+          data: this.getMockData(widgetConfig.type),
+          widgetId: widgetConfig.id
+        };
+      }
+
+      // Extract DataDog metric parameters
+      const {
+        metric = 'avg:system.cpu.user{*}',
+        from: fromTime,
+        to: toTime
+      } = widgetConfig;
+
+      // Default time range: last hour
+      const to = toTime || Math.floor(Date.now() / 1000);
+      const from = fromTime || (to - 3600);
+
+      // Check cache
+      const cacheKey = JSON.stringify({ metric, from, to });
+      if (this.metricCache.has(cacheKey)) {
+        const cached = this.metricCache.get(cacheKey);
+        if (Date.now() - cached.timestamp < CACHE_TTL) {
+          console.log('[datadog] Cache hit for metric:', metric);
+          return {
+            timestamp: new Date().toISOString(),
+            source: 'datadog',
+            data: this.transformData(cached.data, widgetConfig.type),
+            widgetId: widgetConfig.id,
+            cached: true
+          };
+        }
+      }
+
+      // Query DataDog API
+      const params = {
+        query: metric,
+        from,
+        to
+      };
+
+      const response = await this.metricsApi.queryMetrics(params);
+
+      // Cache the result
+      this.metricCache.set(cacheKey, {
+        data: response,
+        timestamp: Date.now()
+      });
+
+      return {
+        timestamp: new Date().toISOString(),
+        source: 'datadog',
+        data: this.transformData(response, widgetConfig.type),
+        widgetId: widgetConfig.id
+      };
+    } catch (error) {
+      console.error('[datadog] Fetch metrics error:', error.message);
+      return this.handleError(error, widgetConfig.type);
+    }
   }
 
   async testConnection() {
