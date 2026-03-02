@@ -2,14 +2,26 @@
 // GCP Data Source Tests
 // ===========================================================================
 
-import { describe, it, expect, beforeEach, mock } from 'bun:test';
+import { describe, it, expect, beforeEach, mock, beforeAll } from 'bun:test';
 import { GCPDataSource } from '../../../server/data-sources/gcp.js';
+
+// Mock gcp-metrics module to prevent real GCP authentication in CI
+const mockGCPMetrics = {
+  query: mock(async () => []),
+  getMetrics: mock(async () => ({ testValue: 123 })),
+  latest: mock(() => 100)
+};
 
 describe('GCP Data Source', () => {
   let dataSource;
 
   beforeEach(() => {
     dataSource = new GCPDataSource({});
+    // Mock the gcpMetrics module loading without using global state
+    dataSource.initialize = async function() {
+      this.gcpMetrics = mockGCPMetrics;
+      this.isConnected = true;
+    };
   });
 
   describe('Constructor', () => {
