@@ -248,6 +248,17 @@ const app = new Elysia()
 
   // Config endpoints
   .get('/api/config', () => loadConfig())
+  .put('/api/config/global', ({ body }) => {
+    try {
+      const cfg = loadConfig();
+      cfg.global = { ...cfg.global, ...body };
+      saveConfig(cfg);
+      invalidateConfigCache();
+      return { success: true };
+    } catch (e) {
+      return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+    }
+  }, { detail: { tags: ['config'], summary: 'Update global config settings' } })
   .get('/api/metrics/:dashboardId', async ({ params }) => {
     return getData(params.dashboardId);
   }, { detail: { tags: ['metrics'], summary: 'Get metrics for a dashboard' } })
