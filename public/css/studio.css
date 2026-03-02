@@ -18,6 +18,15 @@
   --text-dim: #7070a0;
 }
 
+/* ── Suppress dashboard.css global body rules ── */
+body.studio-body {
+  font-size: 14px;
+}
+
+body.studio-body::before {
+  content: none;
+}
+
 /* ── Reset / Base ── */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -433,6 +442,7 @@ body.studio-body {
   padding: 20px;
 }
 
+/* NOTE: JS must use display='flex' when showing this element */
 #properties-content {
   display: flex;
   flex-direction: column;
