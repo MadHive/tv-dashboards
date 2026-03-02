@@ -9,13 +9,26 @@ import { drizzle } from 'drizzle-orm/bun-sqlite';
 import { getDatabase } from '../db.js';
 import * as schema from './schema.js';
 
+/** Cached Drizzle instance — reset to null if closeDatabase() is called. */
+let _drizzle = null;
+
 /**
  * Get the Drizzle ORM instance wrapping the existing database connection.
- * Call initDatabase() (from server/db.js) before using this.
+ * Cached after first call. Call initDatabase() (from server/db.js) before using this.
  * @returns {import('drizzle-orm/bun-sqlite').BunSQLiteDatabase} Drizzle instance
  */
 export function getDrizzle() {
-  return drizzle(getDatabase(), { schema });
+  if (!_drizzle) {
+    _drizzle = drizzle(getDatabase(), { schema });
+  }
+  return _drizzle;
+}
+
+/**
+ * Reset the cached Drizzle instance. Call this after closeDatabase() in tests.
+ */
+export function resetDrizzle() {
+  _drizzle = null;
 }
 
 // Re-export tables for convenient imports in other modules

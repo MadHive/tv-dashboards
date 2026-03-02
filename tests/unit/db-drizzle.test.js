@@ -6,7 +6,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'bun:test';
 import { getTableColumns, getTableName } from 'drizzle-orm';
 import { dataSourceConfigs, configAuditLog } from '../../server/db/schema.js';
 import { initDatabase, closeDatabase } from '../../server/db.js';
-import { getDrizzle } from '../../server/db/index.js';
+import { getDrizzle, resetDrizzle } from '../../server/db/index.js';
 import { join } from 'path';
 import { unlink } from 'fs/promises';
 import { existsSync } from 'fs';
@@ -68,6 +68,7 @@ describe('Drizzle Instance', () => {
   });
 
   afterAll(async () => {
+    resetDrizzle();
     closeDatabase();
     for (const ext of ['', '-shm', '-wal']) {
       const p = TEST_DB_PATH + ext;
