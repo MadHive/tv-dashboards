@@ -265,12 +265,17 @@ export class TVPreview {
     // Apply grid configuration if available
     if (this.dashboardConfig.grid) {
       const { columns, rows, gap } = this.dashboardConfig.grid;
-      if (columns) {
-        grid.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
-      }
-      if (gap) {
-        grid.style.gap = `${gap}px`;
-      }
+
+      // Validate grid values to prevent CSS injection
+      const validColumns = Number.isInteger(columns) && columns >= 1 && columns <= 12
+        ? columns
+        : 4;
+      const validGap = typeof gap === 'number' && gap >= 0 && gap <= 100
+        ? gap
+        : 20;
+
+      grid.style.gridTemplateColumns = `repeat(${validColumns}, 1fr)`;
+      grid.style.gap = `${validGap}px`;
     }
 
     // Render widgets
@@ -320,7 +325,7 @@ export class TVPreview {
           card.style.borderColor = primaryColor;
         }
 
-        // Alternating accent colors for visual interest
+        // Alternate between primary and secondary colors for visual variety
         const useSecondary = widgets.length % 2 === 1;
         const accentColor = useSecondary && secondaryColor ? secondaryColor : primaryColor;
 

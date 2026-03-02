@@ -131,7 +131,6 @@ class AdminApp {
       currentTheme: this.selectedTheme,
       onSelect: (themeId) => {
         this.selectedTheme = themeId;
-        console.log('Theme selected:', themeId);
       }
     });
 
@@ -173,7 +172,6 @@ class AdminApp {
       dashboardConfig: dashboardConfig,
       onApply: (appliedTheme) => {
         this.showToast(`Theme "${appliedTheme.name}" applied`, 'success');
-        console.log('Applied theme:', appliedTheme);
       }
     });
 
