@@ -188,6 +188,17 @@ window.StudioCanvas = (function () {
     });
   }
 
+  function _eventToCell(e, page, dash, colSpan, rowSpan) {
+    var rect = page.getBoundingClientRect();
+    var col  = Math.max(1, Math.min(dash.grid.columns,
+                 Math.ceil((e.clientX - rect.left) / (rect.width  / dash.grid.columns))));
+    var row  = Math.max(1, Math.min(dash.grid.rows,
+                 Math.ceil((e.clientY - rect.top)  / (rect.height / dash.grid.rows))));
+    col = Math.min(col, dash.grid.columns - colSpan + 1);
+    row = Math.min(row, dash.grid.rows    - rowSpan + 1);
+    return { col: col, row: row };
+  }
+
   function _hasCollision(dash, col, row, colSpan, rowSpan, excludeId) {
     return dash.widgets.some(function (w) {
       if (w.id === excludeId) return false;
@@ -204,19 +215,11 @@ window.StudioCanvas = (function () {
       e.preventDefault();
       if (!_dragWc || !_overlay) return;
 
-      var rect    = page.getBoundingClientRect();
-      var relX    = e.clientX - rect.left;
-      var relY    = e.clientY - rect.top;
-      var colW    = rect.width  / dash.grid.columns;
-      var rowH    = rect.height / dash.grid.rows;
-      var col     = Math.max(1, Math.min(dash.grid.columns, Math.ceil(relX / colW)));
-      var row     = Math.max(1, Math.min(dash.grid.rows,    Math.ceil(relY / rowH)));
       var colSpan = _dragWc.position.colSpan || 1;
       var rowSpan = _dragWc.position.rowSpan || 1;
-
-      // Clamp so widget doesn't go off-grid
-      col = Math.min(col, dash.grid.columns - colSpan + 1);
-      row = Math.min(row, dash.grid.rows    - rowSpan + 1);
+      var pos     = _eventToCell(e, page, dash, colSpan, rowSpan);
+      var col     = pos.col;
+      var row     = pos.row;
 
       var blocked = _hasCollision(dash, col, row, colSpan, rowSpan, _dragWc.id);
 
@@ -240,18 +243,11 @@ window.StudioCanvas = (function () {
       var wc = dash.widgets.find(function (w) { return w.id === widgetId; });
       if (!wc) return;
 
-      var rect    = page.getBoundingClientRect();
-      var relX    = e.clientX - rect.left;
-      var relY    = e.clientY - rect.top;
-      var colW    = rect.width  / dash.grid.columns;
-      var rowH    = rect.height / dash.grid.rows;
-      var col     = Math.max(1, Math.min(dash.grid.columns, Math.ceil(relX / colW)));
-      var row     = Math.max(1, Math.min(dash.grid.rows,    Math.ceil(relY / rowH)));
       var colSpan = wc.position.colSpan || 1;
       var rowSpan = wc.position.rowSpan || 1;
-
-      col = Math.min(col, dash.grid.columns - colSpan + 1);
-      row = Math.min(row, dash.grid.rows    - rowSpan + 1);
+      var pos     = _eventToCell(e, page, dash, colSpan, rowSpan);
+      var col     = pos.col;
+      var row     = pos.row;
 
       // Reject blocked drops
       if (_hasCollision(dash, col, row, colSpan, rowSpan, widgetId)) return;
