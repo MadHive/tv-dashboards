@@ -2,7 +2,7 @@ name: Security Template
 description: Security template
 category: Security
 author: User
-createdAt: '2026-03-02T18:20:30.561Z'
+createdAt: '2026-03-02T22:06:30.951Z'
 dashboard:
   id: test-dashboard
   name: Test Dashboard

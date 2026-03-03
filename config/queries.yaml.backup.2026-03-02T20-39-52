@@ -91,8 +91,8 @@ bigquery:
   - id: test-query
     name: Test Query
     sql: SELECT 1
-    updatedAt: '2026-03-02T18:20:38.682Z'
-    createdAt: '2026-03-02T18:20:38.682Z'
+    updatedAt: '2026-03-02T20:39:52.744Z'
+    createdAt: '2026-03-02T20:39:52.744Z'
 gcp:
   - id: cloudrun-requests
     name: Cloud Run Request Count

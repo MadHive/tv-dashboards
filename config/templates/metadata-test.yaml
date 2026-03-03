@@ -2,7 +2,7 @@ name: Metadata Test
 description: Test description
 category: Test
 author: Test Author
-createdAt: '2026-03-02T18:20:30.584Z'
+createdAt: '2026-03-02T22:06:30.970Z'
 dashboard:
   id: test-dashboard
   name: Test Dashboard

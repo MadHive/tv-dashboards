@@ -892,30 +892,6 @@ body { animation: pageLoad 0.6s ease; }
    EDITOR MODE OVERRIDES
    =========================================================================== */
 
-/* Disable rotation progress bar in edit mode */
-body.editor-active #rotation-track {
-  display: none;
-}
-
-/* Adjust main container to account for editor action bar */
-body.editor-active #dashboard-container {
-  padding-top: 80px;
-}
-
-/* Make widgets slightly transparent when grid overlay is active */
-body.editor-active .widget {
-  opacity: 0.95;
-}
-
-/* Prevent widget hover effects from interfering with selection */
-body.editor-active .widget:not(.selected):not(:hover) {
-  transition: none;
-}
-
-/* Ensure selected widget stays on top */
-body.editor-active .widget.selected {
-  z-index: 100;
-}
 
 /* ===========================================================================
  * NEW WIDGET STYLES FOR VISUAL SHOWCASE
