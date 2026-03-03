@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="/css/dashboard.css?v=12">
-  <link rel="stylesheet" href="/css/studio.css?v=3">
+  <link rel="stylesheet" href="/css/studio.css?v=4">
 </head>
 <body class="studio-body">
 
@@ -296,29 +296,37 @@
   <!-- GCP Metric Browser Modal -->
   <div id="metric-browser-modal" class="studio-modal" style="display:none">
     <div class="studio-modal-content mb-modal-content">
-      <div class="studio-modal-header">
-        <h2>Browse GCP Metrics</h2>
+
+      <!-- Top bar: title + project + search + close -->
+      <div class="mb-topbar">
+        <span class="mb-title">GCP Metrics</span>
+        <select id="mb-project" class="mb-project-select"></select>
+        <input id="mb-search" type="text" placeholder="Search 9000+ metrics by name, type, or description…" autocomplete="off">
         <button id="mb-close" class="modal-close">&#215;</button>
       </div>
+
+      <!-- Two-panel body -->
       <div class="mb-body">
-        <div class="mb-controls">
-          <div class="mb-controls-row">
-            <select id="mb-project" class="mb-project-select"></select>
-            <input id="mb-search" type="text" placeholder="Search metrics by name or type…" autocomplete="off">
-          </div>
-          <div id="mb-ns-chips" class="mb-ns-chips"></div>
+
+        <!-- Left: service list -->
+        <div class="mb-services-panel">
+          <div class="mb-services-label">SERVICES</div>
+          <div id="mb-services" class="mb-services"></div>
         </div>
-        <div id="mb-list" class="mb-list">
-          <div class="mb-status">Select a project to load metrics</div>
-        </div>
-        <div id="mb-config-panel" class="mb-config-panel" style="display:none">
-          <div class="mb-selected-info">
-            <div id="mb-sel-type" class="mb-sel-type"></div>
-            <div id="mb-sel-name" class="mb-sel-name"></div>
-            <div id="mb-sel-desc" class="mb-sel-desc"></div>
+
+        <!-- Right: metric list + config strip -->
+        <div class="mb-right">
+          <div id="mb-list" class="mb-list">
+            <div class="mb-status">Select a service or search to browse metrics</div>
           </div>
-          <div class="mb-config-row">
-            <label>Time Window
+
+          <!-- Config strip — shown when metric selected -->
+          <div id="mb-config-panel" class="mb-config-strip" style="display:none">
+            <div class="mb-sel-info">
+              <div id="mb-sel-type" class="mb-sel-type"></div>
+              <div id="mb-sel-name" class="mb-sel-name"></div>
+            </div>
+            <label class="mb-cfg-label">Time Window
               <select id="mb-time-window">
                 <option value="5">Last 5 min</option>
                 <option value="15">Last 15 min</option>
@@ -327,7 +335,7 @@
                 <option value="1440">Last 24 hours</option>
               </select>
             </label>
-            <label>Aggregation
+            <label class="mb-cfg-label">Aggregation
               <select id="mb-aggregation">
                 <option value="ALIGN_MEAN">Mean</option>
                 <option value="ALIGN_SUM">Sum</option>
@@ -336,9 +344,10 @@
                 <option value="ALIGN_RATE">Rate / s</option>
               </select>
             </label>
+            <button id="mb-apply" class="studio-btn primary">Apply to Widget</button>
           </div>
-          <button id="mb-apply" class="studio-btn primary">Apply to Widget</button>
         </div>
+
       </div>
     </div>
   </div>
@@ -348,6 +357,6 @@
   <script src="/js/widgets.js?v=11"></script>
   <script src="/js/query-editor.js?v=1"></script>
   <script src="/js/studio-canvas.js?v=2"></script>
-  <script src="/js/studio.js?v=2"></script>
+  <script src="/js/studio.js?v=3"></script>
 </body>
 </html>

@@ -954,6 +954,44 @@
      GCP Metric Browser
   ───────────────────────────────────────────── */
 
+  // Human-friendly names for common GCP service namespaces
+  const GCP_SERVICE_LABELS = {
+    'run':                'Cloud Run',
+    'bigquery':           'BigQuery',
+    'pubsub':             'Pub/Sub',
+    'compute':            'Compute Engine',
+    'storage':            'Cloud Storage',
+    'logging':            'Cloud Logging',
+    'monitoring':         'Cloud Monitoring',
+    'cloudsql':           'Cloud SQL',
+    'kubernetes':         'Kubernetes',
+    'container':          'GKE',
+    'bigtable':           'Cloud Bigtable',
+    'spanner':            'Cloud Spanner',
+    'firestore':          'Firestore',
+    'dataflow':           'Dataflow',
+    'dataproc':           'Dataproc',
+    'composer':           'Cloud Composer',
+    'cloudfunctions':     'Cloud Functions',
+    'appengine':          'App Engine',
+    'loadbalancing':      'Load Balancing',
+    'networking':         'Networking',
+    'dns':                'Cloud DNS',
+    'redis':              'Memorystore',
+    'serviceruntime':     'API Usage',
+    'custom':             'Custom Metrics',
+    'agent':              'Ops Agent',
+    'external':           'External',
+  };
+
+  // Priority order for the sidebar (most useful for MadHive first)
+  const GCP_SERVICE_PRIORITY = [
+    'run', 'bigquery', 'pubsub', 'storage', 'logging',
+    'kubernetes', 'container', 'compute', 'bigtable',
+    'cloudsql', 'spanner', 'dataflow', 'cloudfunctions',
+    'appengine', 'monitoring', 'serviceruntime', 'custom',
+  ];
+
   class MetricBrowser {
     constructor(studio) {
       this.studio         = studio;
@@ -972,8 +1010,12 @@
         if (e.key === 'Escape' && modal.style.display !== 'none') this.close();
       });
       document.getElementById('mb-project').addEventListener('change', () => this._load());
-      document.getElementById('mb-search').addEventListener('input',  () => this._filterList());
-      document.getElementById('mb-apply').addEventListener('click',   () => this._apply());
+      document.getElementById('mb-search').addEventListener('input', () => {
+        this.activeNs = null;
+        document.querySelectorAll('.mb-svc-item').forEach(el => el.classList.remove('active'));
+        this._filterAndRender();
+      });
+      document.getElementById('mb-apply').addEventListener('click', () => this._apply());
     }
 
     open(widgetConfig) {
@@ -993,7 +1035,7 @@
 
       document.getElementById('mb-search').value = '';
       document.getElementById('mb-config-panel').style.display = 'none';
-      document.getElementById('mb-ns-chips').textContent = '';
+      document.getElementById('mb-services').textContent = '';
       this._setStatus('Loading metrics\u2026');
       document.getElementById('metric-browser-modal').style.display = 'flex';
       this._load();
@@ -1011,82 +1053,136 @@
         const data = await res.json();
         if (!data.success) throw new Error(data.hint || data.error);
         this.allDescriptors = data.descriptors || [];
-        this._renderChips(data.namespaces || []);
-        this._filterList();
+        this._renderServiceSidebar();
+        this._setStatus('Select a service or search to browse metrics');
       } catch (e) {
         this._setStatus('Error: ' + e.message);
       }
     }
 
-    _renderChips(namespaces) {
-      const container = document.getElementById('mb-ns-chips');
-      container.textContent = '';
-      this.activeNs = null;
-      namespaces.forEach(ns => {
-        const btn = document.createElement('button');
-        btn.className = 'mb-chip';
-        btn.textContent = ns;
-        btn.addEventListener('click', () => {
-          if (this.activeNs === ns) {
-            this.activeNs = null;
-            btn.classList.remove('active');
-          } else {
-            container.querySelectorAll('.mb-chip').forEach(c => c.classList.remove('active'));
-            btn.classList.add('active');
-            this.activeNs = ns;
-          }
-          this._filterList();
-        });
-        container.appendChild(btn);
-      });
+    // Extract short service key from full GCP namespace (e.g. "run.googleapis.com" → "run")
+    _svcKey(ns) {
+      return ns.replace('.googleapis.com', '').replace('.google.com', '');
     }
 
-    _filterList() {
+    _renderServiceSidebar() {
+      const container = document.getElementById('mb-services');
+      container.textContent = '';
+
+      // Build namespace → count map using short keys
+      const counts = {};
+      this.allDescriptors.forEach(d => {
+        const ns = d.type.split('/')[0];
+        const key = this._svcKey(ns);
+        counts[key] = (counts[key] || 0) + 1;
+      });
+
+      // Render priority services first, then a divider, then the rest
+      const priorityKeys = GCP_SERVICE_PRIORITY.filter(k => counts[k]);
+      const otherKeys = Object.keys(counts)
+        .filter(k => !GCP_SERVICE_PRIORITY.includes(k))
+        .sort((a, b) => counts[b] - counts[a]);
+
+      const addItem = (key, label) => {
+        const item = document.createElement('div');
+        item.className = 'mb-svc-item';
+        const nameEl = document.createElement('span');
+        nameEl.className = 'mb-svc-name';
+        nameEl.textContent = label;
+        const countEl = document.createElement('span');
+        countEl.className = 'mb-svc-count';
+        countEl.textContent = counts[key] || 0;
+        item.appendChild(nameEl);
+        item.appendChild(countEl);
+        item.addEventListener('click', () => {
+          document.querySelectorAll('.mb-svc-item').forEach(el => el.classList.remove('active'));
+          item.classList.add('active');
+          document.getElementById('mb-search').value = '';
+          this.activeNs = key;
+          this._filterAndRender();
+        });
+        container.appendChild(item);
+      };
+
+      priorityKeys.forEach(k => addItem(k, GCP_SERVICE_LABELS[k] || k));
+
+      if (otherKeys.length) {
+        const div = document.createElement('div');
+        div.className = 'mb-svc-divider';
+        div.textContent = 'Other Services';
+        container.appendChild(div);
+        otherKeys.forEach(k => addItem(k, GCP_SERVICE_LABELS[k] || k));
+      }
+    }
+
+    _filterAndRender() {
       const q  = (document.getElementById('mb-search').value || '').toLowerCase();
       const ns = this.activeNs;
       const filtered = this.allDescriptors.filter(d => {
-        if (ns && !d.type.startsWith(ns + '/')) return false;
+        const key = this._svcKey(d.type.split('/')[0]);
+        if (ns && key !== ns) return false;
         if (q && !d.type.toLowerCase().includes(q) &&
                  !d.displayName.toLowerCase().includes(q) &&
                  !d.description.toLowerCase().includes(q)) return false;
         return true;
       });
-      this._renderList(filtered);
+      this._renderCards(filtered);
     }
 
-    _renderList(descriptors) {
+    _renderCards(descriptors) {
       const list = document.getElementById('mb-list');
       list.textContent = '';
       if (!descriptors.length) { this._setStatus('No metrics match'); return; }
+
+      // Limit render to 200 at a time for performance
+      const toShow = descriptors.slice(0, 200);
       const frag = document.createDocumentFragment();
-      descriptors.forEach(d => {
-        const item    = document.createElement('div');
+
+      toShow.forEach(d => {
+        const card    = document.createElement('div');
+        const header  = document.createElement('div');
+        const nameEl  = document.createElement('span');
+        const kindEl  = document.createElement('span');
         const typeEl  = document.createElement('div');
-        const kindEl  = document.createElement('div');
-        const nameEl  = document.createElement('div');
-        item.className   = 'mb-item' + (this.selected && this.selected.type === d.type ? ' selected' : '');
-        typeEl.className = 'mb-item-type';
-        kindEl.className = 'mb-item-kind';
-        nameEl.className = 'mb-item-name';
-        typeEl.textContent = d.type;
-        kindEl.textContent = d.metricKind || '';
+        const descEl  = document.createElement('div');
+
+        card.className   = 'mb-card' + (this.selected && this.selected.type === d.type ? ' selected' : '');
+        header.className = 'mb-card-header';
+        nameEl.className = 'mb-card-name';
+        kindEl.className = 'mb-card-kind';
+        typeEl.className = 'mb-card-type';
+        descEl.className = 'mb-card-desc';
+
         nameEl.textContent = d.displayName || d.type.split('/').pop();
-        item.appendChild(typeEl);
-        item.appendChild(kindEl);
-        item.appendChild(nameEl);
-        item.addEventListener('click', () => this._select(d, item));
-        frag.appendChild(item);
+        kindEl.textContent = d.metricKind || '';
+        typeEl.textContent = d.type;
+        descEl.textContent = d.description || '';
+
+        header.appendChild(nameEl);
+        if (d.metricKind) header.appendChild(kindEl);
+        card.appendChild(header);
+        card.appendChild(typeEl);
+        if (d.description) card.appendChild(descEl);
+        card.addEventListener('click', () => this._select(d, card));
+        frag.appendChild(card);
       });
+
       list.appendChild(frag);
+
+      if (descriptors.length > 200) {
+        const more = document.createElement('div');
+        more.className = 'mb-status';
+        more.textContent = (descriptors.length - 200) + ' more — refine your search to see them';
+        list.appendChild(more);
+      }
     }
 
-    _select(descriptor, itemEl) {
-      document.querySelectorAll('#mb-list .mb-item').forEach(el => el.classList.remove('selected'));
-      itemEl.classList.add('selected');
+    _select(descriptor, cardEl) {
+      document.querySelectorAll('#mb-list .mb-card').forEach(el => el.classList.remove('selected'));
+      cardEl.classList.add('selected');
       this.selected = descriptor;
       document.getElementById('mb-sel-type').textContent = descriptor.type;
       document.getElementById('mb-sel-name').textContent = descriptor.displayName || descriptor.type.split('/').pop();
-      document.getElementById('mb-sel-desc').textContent = descriptor.description || '';
       document.getElementById('mb-config-panel').style.display = 'flex';
     }
 
