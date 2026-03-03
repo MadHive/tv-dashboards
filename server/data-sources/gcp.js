@@ -45,10 +45,26 @@ export class GCPDataSource extends DataSource {
     }
 
     try {
-      if (!widgetConfig.queryId) {
-        throw new Error(`GCP widget "${widgetConfig.id}" has no queryId — assign a saved query in the studio`);
+      // Check if widget uses a saved query
+      if (widgetConfig.queryId) {
+        return await this.executeQuery(widgetConfig);
       }
-      return await this.executeQuery(widgetConfig);
+
+      // For backward compatibility, fetch entire dashboard metrics via legacy path
+      const dashboardId = widgetConfig.dashboardId || 'platform-overview';
+      const allMetrics = await this.gcpMetrics.getMetrics(dashboardId, widgetConfig);
+
+      // Extract widget-specific data if available
+      const widgetId = widgetConfig.id;
+      const widgetData = allMetrics[widgetId] || allMetrics;
+
+      return {
+        timestamp: new Date().toISOString(),
+        source: 'gcp',
+        data: widgetData,
+        widgetId: widgetId,
+        dashboardId: dashboardId
+      };
     } catch (error) {
       return this.handleError(error, widgetConfig.type);
     }

@@ -11,7 +11,9 @@ import {
   waitForDashboard
 } from '../helpers/browser-helpers.js';
 
-describe('E2E: Authentication Flow', () => {
+// Google OAuth is disabled in this deployment — auth is handled at the
+// network layer. These E2E tests are permanently skipped.
+describe.skip('E2E: Authentication Flow', () => {
   let browser, page;
   const BASE_URL = 'http://tv.madhive.local:3000';
 

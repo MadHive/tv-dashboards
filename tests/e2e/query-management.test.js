@@ -14,7 +14,9 @@ import {
   takeScreenshot
 } from '../helpers/browser-helpers.js';
 
-describe('E2E: Query Management', () => {
+// The query editor (Ctrl+Q) was removed from the TV display — queries are
+// now managed in the studio at /admin. These E2E tests are permanently skipped.
+describe.skip('E2E: Query Management', () => {
   let browser, page;
   const BASE_URL = 'http://tv.madhive.local:3000';
 

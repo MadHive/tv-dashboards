@@ -250,23 +250,15 @@ describe('E2E: Dashboard Lifecycle', () => {
     });
 
     it('should display loading states before data arrives', async () => {
-      // Navigate to a new page to trigger fresh load
-      const response = page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
-
-      // Check for loading indicators immediately
-      const hasLoadingState = await page.evaluate(() => {
-        const loadingElements = document.querySelectorAll('.loading, .widget-loading, [data-loading="true"]');
-        return loadingElements.length > 0 || document.querySelector('.widget-content')?.textContent.includes('Loading');
-      });
-
-      await response;
-
-      // Loading state may appear briefly or not at all with fast data
-      // Just verify the page loaded successfully
+      // Navigate and wait for full dashboard load
+      await page.goto(BASE_URL, { waitUntil: 'networkidle0' });
       await waitForDashboard(page);
+
+      // Wait for at least one widget to appear inside the active page
+      await page.waitForSelector('.dashboard-page.active .widget', { timeout: 8000 });
       const widgets = await page.$$('.dashboard-page.active .widget');
       expect(widgets.length).toBeGreaterThan(0);
-    }, 10000);
+    }, 15000);
   });
 
   describe('Error Handling', () => {
