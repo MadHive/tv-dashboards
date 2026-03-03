@@ -17,6 +17,7 @@ dashboards:
           col: 1
           row: 1
           colSpan: 2
+        unit: /min
       - id: impressions-delivered
         type: stat-card
         title: Impressions Delivered
@@ -28,7 +29,7 @@ dashboards:
           colSpan: 1
           rowSpan: 1
       - id: bid-qps
-        type: gauge
+        type: stat-card
         title: Bid QPS
         source: gcp
         queryId: bidder-winner-candidates
@@ -37,7 +38,7 @@ dashboards:
           row: 1
           colSpan: 1
           rowSpan: 1
-        unit: /s
+        unit: /min
         min: 0
         max: 5000000
       - id: platform-uptime
