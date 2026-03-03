@@ -1540,6 +1540,24 @@ window.Charts = (function () {
 
     ctx.restore();  // end map clip
 
+    // ── Zoom region label ──
+    if (curRegion.label) {
+      var labelAlpha = 1;
+      if (mapZoomFrom && zoomElapsed < MAP_ZOOM_TRANS_MS) {
+        labelAlpha = zoomElapsed / MAP_ZOOM_TRANS_MS;
+      }
+      ctx.globalAlpha = labelAlpha * 0.9;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'bottom';
+      ctx.font = "700 18px 'Space Grotesk', sans-serif";
+      ctx.fillStyle = BRAND.pink;
+      ctx.fillText('\u25C2 ' + curRegion.label, origMapX + 10, origMapY + origMapH - 10);
+      ctx.font = "500 11px 'Space Grotesk', sans-serif";
+      ctx.fillStyle = BRAND.text3;
+      ctx.fillText('ZOOMED VIEW', origMapX + 10, origMapY + origMapH - 30);
+      ctx.globalAlpha = 1;
+    }
+
     // ── Leaderboard sidebar (right side) — 4K scaled ──
     var lbX = w - leaderboardW - 6;
     var lbY = 100;
