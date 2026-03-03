@@ -137,6 +137,21 @@
       dashes.forEach((dash, i) => {
         const item = document.createElement('div');
         item.className = 'dashboard-nav-item' + (i === this.activeDashIdx ? ' active' : '');
+        item.setAttribute('draggable', 'true');
+        item.dataset.idx = i;
+
+        // Thumbnail
+        const thumb = document.createElement('canvas');
+        thumb.className = 'dash-thumb';
+        thumb.width  = 40;
+        thumb.height = 24;
+        this._drawThumbnail(thumb, dash);
+
+        // Drag handle
+        const handle = document.createElement('span');
+        handle.className   = 'nav-drag-handle';
+        handle.textContent = '\u2807';
+        handle.title       = 'Drag to reorder';
 
         const name = document.createElement('span');
         name.className = 'nav-name';
@@ -151,6 +166,8 @@
         delBtn.textContent = '\u2715';
         delBtn.title = 'Delete';
 
+        item.appendChild(handle);
+        item.appendChild(thumb);
         item.appendChild(name);
         item.appendChild(count);
         item.appendChild(delBtn);
@@ -165,7 +182,91 @@
           this.deleteDashboard(i);
         });
 
+        item.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('dashIdx', String(i));
+          item.classList.add('dragging');
+        });
+        item.addEventListener('dragend', () => item.classList.remove('dragging'));
+        item.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          list.querySelectorAll('.dashboard-nav-item').forEach(el => el.classList.remove('drag-over'));
+          item.classList.add('drag-over');
+        });
+        item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+        item.addEventListener('drop', (e) => {
+          e.preventDefault();
+          item.classList.remove('drag-over');
+          const fromIdx = parseInt(e.dataTransfer.getData('dashIdx'));
+          const toIdx   = parseInt(item.dataset.idx);
+          if (fromIdx === toIdx || isNaN(fromIdx) || isNaN(toIdx)) return;
+          this._reorderDashboard(fromIdx, toIdx);
+        });
+
         list.appendChild(item);
+      });
+    }
+
+    async _reorderDashboard(fromIdx, toIdx) {
+      const dashes = this.modifiedConfig.dashboards;
+      const moved  = dashes.splice(fromIdx, 1)[0];
+      dashes.splice(toIdx, 0, moved);
+      const order = dashes.map(d => d.id);
+      try {
+        await fetch('/api/dashboards/reorder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ order }),
+        });
+        this.showToast('Dashboard order saved', 'success');
+      } catch (e) {
+        this.showToast('Reorder failed: ' + e.message, 'error');
+      }
+      const activeId = this.modifiedConfig.dashboards[this.activeDashIdx]
+        ? this.modifiedConfig.dashboards[this.activeDashIdx].id
+        : null;
+      const newActive = activeId
+        ? dashes.findIndex(d => d.id === activeId)
+        : 0;
+      this.activeDashIdx = newActive >= 0 ? newActive : 0;
+      this.renderSidebar();
+    }
+
+    _drawThumbnail(canvas, dash) {
+      const ctx  = canvas.getContext('2d');
+      const w    = canvas.width;
+      const h    = canvas.height;
+      const cols = (dash.grid && dash.grid.columns) ? dash.grid.columns : 4;
+      const rows = (dash.grid && dash.grid.rows)    ? dash.grid.rows    : 2;
+      const cw   = w / cols;
+      const rh   = h / rows;
+
+      ctx.fillStyle = '#0E0320';
+      ctx.fillRect(0, 0, w, h);
+
+      const TYPE_COLORS = {
+        'big-number':         '#FDA4D4',
+        'stat-card':          '#FDA4D4',
+        'gauge':              '#FBBF24',
+        'gauge-row':          '#FBBF24',
+        'bar-chart':          '#60A5FA',
+        'progress-bar':       '#60A5FA',
+        'status-grid':        '#4ADE80',
+        'alert-list':         '#FB7185',
+        'service-heatmap':    '#4ADE80',
+        'pipeline-flow':      '#67E8F9',
+        'usa-map':            '#4ADE80',
+        'security-scorecard': '#FB7185',
+      };
+
+      (dash.widgets || []).forEach(wc => {
+        const x  = (wc.position.col - 1) * cw;
+        const y  = (wc.position.row - 1) * rh;
+        const bw = (wc.position.colSpan || 1) * cw - 1;
+        const bh = (wc.position.rowSpan || 1) * rh - 1;
+        ctx.fillStyle   = TYPE_COLORS[wc.type] || '#8B75B0';
+        ctx.globalAlpha = 0.75;
+        ctx.fillRect(x + 1, y + 1, bw - 1, bh - 1);
+        ctx.globalAlpha = 1;
       });
     }
 

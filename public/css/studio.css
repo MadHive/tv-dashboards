@@ -1600,3 +1600,28 @@ body.studio-body {
   flex-direction: column;
   gap: 8px;
 }
+
+/* ── Dashboard sidebar drag-sort ── */
+.nav-drag-handle {
+  color: var(--t3);
+  cursor: grab;
+  font-size: 12px;
+  padding: 0 2px;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s;
+  user-select: none;
+}
+
+.dashboard-nav-item:hover .nav-drag-handle { opacity: 1; }
+.dashboard-nav-item.dragging  { opacity: 0.4; }
+.dashboard-nav-item.drag-over {
+  border-top: 2px solid var(--mh-pink);
+}
+
+/* ── Dashboard thumbnail ── */
+.dash-thumb {
+  border-radius: 2px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
