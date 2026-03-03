@@ -208,25 +208,33 @@
 
     async _reorderDashboard(fromIdx, toIdx) {
       const dashes = this.modifiedConfig.dashboards;
-      const moved  = dashes.splice(fromIdx, 1)[0];
+      // Capture active dashboard ID BEFORE mutating the array
+      const activeId = dashes[this.activeDashIdx] ? dashes[this.activeDashIdx].id : null;
+
+      // Mutate in-memory array
+      const moved = dashes.splice(fromIdx, 1)[0];
       dashes.splice(toIdx, 0, moved);
       const order = dashes.map(d => d.id);
+
       try {
-        await fetch('/api/dashboards/reorder', {
+        const res = await fetch('/api/dashboards/reorder', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ order }),
         });
+        if (!res.ok) throw new Error('Server returned ' + res.status);
         this.showToast('Dashboard order saved', 'success');
       } catch (e) {
+        // Rollback: reverse the splice
+        const rolledBack = dashes.splice(toIdx, 1)[0];
+        dashes.splice(fromIdx, 0, rolledBack);
         this.showToast('Reorder failed: ' + e.message, 'error');
+        this.renderSidebar();
+        return;
       }
-      const activeId = this.modifiedConfig.dashboards[this.activeDashIdx]
-        ? this.modifiedConfig.dashboards[this.activeDashIdx].id
-        : null;
-      const newActive = activeId
-        ? dashes.findIndex(d => d.id === activeId)
-        : 0;
+
+      // Update active index to track the same dashboard
+      const newActive = activeId ? dashes.findIndex(d => d.id === activeId) : 0;
       this.activeDashIdx = newActive >= 0 ? newActive : 0;
       this.renderSidebar();
     }
