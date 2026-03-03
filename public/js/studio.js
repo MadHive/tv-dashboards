@@ -173,7 +173,7 @@
         item.appendChild(delBtn);
 
         item.addEventListener('click', (e) => {
-          if (e.target === delBtn) return;
+          if (e.target === delBtn || e.target === handle) return;
           this.selectDashboard(i);
         });
 
