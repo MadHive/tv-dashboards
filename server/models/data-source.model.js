@@ -12,7 +12,7 @@ export const dataSourceModels = new Elysia({ name: 'datasource.models' })
         name:        t.String(),
         isConnected: t.Boolean(),
         isReady:     t.Boolean(),
-        lastError:   t.Optional(t.String()),
+        lastError:   t.Optional(t.Nullable(t.String())),
       })),
     }),
     'datasource.test-response': t.Object({

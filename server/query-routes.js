@@ -21,7 +21,7 @@ import logger from './logger.js';
  * Supports: bigquery, gcp, aws, datadog, elasticsearch, etc.
  */
 export const queryRoutes = new Elysia({ prefix: '/api/queries' })
-  // List all queries (all sources)
+  // List all queries (all sources) — returns queries grouped by source { bigquery: [...], gcp: [...] }
   .get('/', async () => {
     try {
       const queries = await listAllQueries();
@@ -33,7 +33,7 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       };
     }
   }, {
-    response: { 200: 'query.list' },
+    response: { 200: t.Object({ success: t.Boolean(), queries: t.Record(t.String(), t.Array(t.Any())) }) },
     detail: {
       tags: ['queries'],
       summary: 'List all queries',
