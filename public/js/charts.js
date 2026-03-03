@@ -568,14 +568,16 @@ window.Charts = (function () {
       id: 'northeast',
       label: 'NORTHEAST',
       duration: 7000,
-      x0: 0.76, y0: 0.03, x1: 1.03, y1: 0.50,
+      // Real Albers bounds: x 0.710-0.827, y 0.175-0.493. Add padding + widen for context.
+      x0: 0.65, y0: 0.10, x1: 0.88, y1: 0.56,
       states: ['ME','VT','NH','MA','RI','CT','NY','NJ','PA','DE','MD','DC','VA','WV'],
     },
     {
       id: 'southeast',
       label: 'SOUTHEAST',
       duration: 7000,
-      x0: 0.62, y0: 0.42, x1: 0.98, y1: 0.90,
+      // Real Albers bounds: x 0.594-0.741, y 0.512-0.803. Add padding.
+      x0: 0.52, y0: 0.44, x1: 0.80, y1: 0.88,
       states: ['NC','SC','GA','FL','AL','MS','TN','KY'],
     },
   ];
