@@ -561,6 +561,11 @@ window.Charts = (function () {
     southeast: { x0: 0.52, y0: 0.44, x1: 0.80, y1: 0.88 },
   };
 
+  var REGION_STATES = {
+    northeast: new Set(['ME','VT','NH','MA','RI','CT','NY','NJ','PA','DE','MD','DC','VA','WV']),
+    southeast: new Set(['NC','SC','GA','FL','AL','MS','TN','KY']),
+  };
+
   // Preload official Google Cloud icon (served locally from /img/gcp-icon.png)
   let gcpIconImg = null;
   (function () {
@@ -1018,6 +1023,22 @@ window.Charts = (function () {
       return { id: dc.id, label: dc.label, x: mapX + xy[0] * mapW, y: mapY + xy[1] * mapH };
     });
 
+    // Visible data centers — only render icons for DCs in viewport
+    var visibleDcPositions = dcPositions;
+    if (data.region && REGION_VIEWPORTS[data.region]) {
+      var rv = REGION_VIEWPORTS[data.region];
+      visibleDcPositions = dcPositions.filter(function(dc) {
+        var dcEntry = DATA_CENTERS.find(function(d) { return d.id === dc.id; });
+        if (!dcEntry) return true;
+        var nxy = US.project(dcEntry.lon, dcEntry.lat);
+        return nxy[0] >= rv.x0 - 0.05 && nxy[0] <= rv.x1 + 0.05 &&
+               nxy[1] >= rv.y0 - 0.05 && nxy[1] <= rv.y1 + 0.05;
+      });
+      if (visibleDcPositions.length === 0) {
+        visibleDcPositions = [dcPositions[2] || dcPositions[0]]; // fallback to EAST DC
+      }
+    }
+
     topStates.forEach(function (entry) {
       var stDef = US.states.find(function (s) { return s.id === entry[0]; });
       if (!stDef) return;
@@ -1040,6 +1061,14 @@ window.Charts = (function () {
       });
     });
     hotspotPositions.sort(function(a, b) { return b.imp - a.imp; });
+
+    // Filter to region hotspots only in regional views
+    if (data.region && REGION_STATES[data.region]) {
+      var regionStateSet = REGION_STATES[data.region];
+      hotspotPositions = hotspotPositions.filter(function(h) {
+        return regionStateSet.has(h.state);
+      });
+    }
 
     // ── Proportional bubble overlay (sized by bid volume) ──
     topCenters.forEach(function (tc) {
@@ -1205,7 +1234,7 @@ window.Charts = (function () {
       });
 
       // Draw GCP data center markers — official Google Cloud icon
-      dcPositions.forEach(function (dc) {
+      visibleDcPositions.forEach(function (dc) {
         var iconSize = 40; // icon render size (4K scale)
 
         // Large outer glow
