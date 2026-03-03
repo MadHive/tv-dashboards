@@ -555,6 +555,12 @@ window.Charts = (function () {
     { id: 'us-east4',    label: 'EAST',    lon: -77.5,  lat: 39.0 },   // Ashburn, Virginia
   ];
 
+  // Regional viewport bounds in normalized Albers [0,1] coordinates
+  var REGION_VIEWPORTS = {
+    northeast: { x0: 0.65, y0: 0.10, x1: 0.88, y1: 0.56 },
+    southeast: { x0: 0.52, y0: 0.44, x1: 0.80, y1: 0.88 },
+  };
+
   // Preload official Google Cloud icon (served locally from /img/gcp-icon.png)
   let gcpIconImg = null;
   (function () {
@@ -731,6 +737,16 @@ window.Charts = (function () {
     var mapX = 12 + (w - leaderboardW - 24) * 0.16;
     var mapY = h * 0.15;
 
+    // Apply regional viewport — expands coords so region fills canvas naturally
+    var mapRegion = data.region && REGION_VIEWPORTS[data.region];
+    if (mapRegion) {
+      var rWFrac = Math.max(0.05, mapRegion.x1 - mapRegion.x0);
+      var rHFrac = Math.max(0.05, mapRegion.y1 - mapRegion.y0);
+      mapW = mapW / rWFrac;
+      mapH = mapH / rHFrac;
+      mapX = mapX - mapRegion.x0 * mapW;
+      mapY = mapY - mapRegion.y0 * mapH;
+    }
 
     // ── Subtle radial glow ──
     var grad = ctx.createRadialGradient(mapX + mapW * 0.5, mapY + mapH * 0.5, 0, mapX + mapW * 0.5, mapY + mapH * 0.5, mapW * 0.55);
@@ -1588,6 +1604,16 @@ window.Charts = (function () {
     ctx.fillStyle = BRAND.text3;
     ctx.font = "500 13px 'Space Grotesk', sans-serif";
     ctx.fillText('\u25CB = bid volume', legX + legW + 18, legY + 8);
+
+    // Regional view label
+    if (data.region && REGION_VIEWPORTS[data.region]) {
+      var rlabel = data.region === 'northeast' ? 'NORTHEAST' : 'SOUTHEAST';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.font = "700 16px 'Space Grotesk', sans-serif";
+      ctx.fillStyle = hexToRgba(BRAND.pink, 0.8);
+      ctx.fillText(rlabel + ' MARKETS', 16, 16);
+    }
   }
 
   // ===========================================================================
