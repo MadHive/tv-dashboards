@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="/css/dashboard.css?v=12">
-  <link rel="stylesheet" href="/css/studio.css?v=9">
+  <link rel="stylesheet" href="/css/studio.css?v=11">
 </head>
 <body class="studio-body">
 
@@ -337,7 +337,18 @@
         <div class="qe-results">
           <div class="qe-results-toolbar">
             <button id="qe-run" class="studio-btn primary small">&#9654; Run</button>
+            <label class="qe-type-label">
+              <select id="qe-preview-type" class="qe-select">
+                <option value="big-number">Big Number</option>
+                <option value="stat-card">Stat Card</option>
+                <option value="gauge">Gauge</option>
+                <option value="bar-chart">Bar Chart</option>
+              </select>
+            </label>
             <span id="qe-run-status" class="qe-run-status"></span>
+          </div>
+          <div id="qe-preview-canvas-container" class="qe-preview-canvas-container" style="display:none">
+            <canvas id="qe-preview-canvas" class="qe-preview-canvas"></canvas>
           </div>
           <div id="qe-results-body" class="qe-results-body">
             <div class="mb-status">Run query to see results</div>
@@ -352,7 +363,7 @@
         </div>
       </div>
 
-      <!-- Data source editor panel -->
+      <!-- Data source editor panel — two views: query list (default) + credentials -->
       <div id="datasource-editor-panel" style="display:none" class="datasource-editor-panel">
         <div class="qe-header">
           <div>
@@ -361,11 +372,26 @@
           </div>
           <button id="dse-close" class="modal-close">&#215;</button>
         </div>
-        <div id="dse-fields" class="dse-fields"></div>
-        <div class="qe-actions">
-          <button id="dse-save" class="studio-btn primary small">Save Credentials</button>
-          <button id="dse-test" class="studio-btn secondary small">&#9654; Test Connection</button>
-          <span id="dse-test-result" class="qe-run-status"></span>
+
+        <!-- View 1: Query list (default) -->
+        <div id="dse-query-view">
+          <div id="dse-query-list" class="dse-query-list">
+            <div class="mb-status">Loading queries&#8230;</div>
+          </div>
+          <div class="qe-actions">
+            <button id="dse-edit-creds" class="studio-btn ghost small">&#9998; Edit Credentials</button>
+          </div>
+        </div>
+
+        <!-- View 2: Credential form (toggled) -->
+        <div id="dse-cred-view" style="display:none">
+          <div id="dse-fields" class="dse-fields"></div>
+          <div class="qe-actions">
+            <button id="dse-save" class="studio-btn primary small">Save Credentials</button>
+            <button id="dse-test" class="studio-btn secondary small">&#9654; Test Connection</button>
+            <span id="dse-test-result" class="qe-run-status"></span>
+            <button id="dse-back" class="studio-btn ghost small">&#8592; Back</button>
+          </div>
         </div>
       </div>
 
@@ -474,6 +500,6 @@
   <script src="/js/widgets.js?v=11"></script>
   <script src="/js/query-editor.js?v=1"></script>
   <script src="/js/studio-canvas.js?v=5"></script>
-  <script src="/js/studio.js?v=18"></script>
+  <script src="/js/studio.js?v=20"></script>
 </body>
 </html>

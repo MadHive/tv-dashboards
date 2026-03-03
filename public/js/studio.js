@@ -1252,6 +1252,15 @@
       document.getElementById('qe-assign').onclick = () => {
         this._assignQueryToWidget();
       };
+
+      const previewTypeSel = document.getElementById('qe-preview-type');
+      if (previewTypeSel) {
+        previewTypeSel.onchange = () => {
+          if (this._lastPreviewData) {
+            this._renderQueryPreview(this._lastPreviewData, previewTypeSel.value);
+          }
+        };
+      }
     }
 
     /* ─────────────────────────────────────────────
@@ -1262,107 +1271,97 @@
       const runBtn    = document.getElementById('qe-run');
       const statusEl  = document.getElementById('qe-run-status');
       const bodyEl    = document.getElementById('qe-results-body');
-      const source    = this._activeSource;
-      const queryId   = this._activeQuery && this._activeQuery.id;
+      const canvasCtr = document.getElementById('qe-preview-canvas-container');
+
+      if (!this._activeQuery || !this._activeSource) return;
 
       runBtn.setAttribute('disabled', '');
-      runBtn.textContent = 'Running\u2026';
-      statusEl.textContent = '';
-      bodyEl.textContent = '';
+      statusEl.textContent = 'Running\u2026';
+      statusEl.style.color = 'var(--t3)';
+      if (canvasCtr) canvasCtr.style.display = 'none';
 
+      const previewType = document.getElementById('qe-preview-type')?.value || 'big-number';
       const t0 = Date.now();
+
       try {
-        // Build body from saved query fields — NOT just queryId
-        const q    = this._activeQuery || {};
-        const body = source === 'bigquery'
-          ? { sql: q.sql }
-          : source === 'gcp'
-            ? { metric: q.metricType, metricType: q.metricType,
-                project: q.project, timeWindow: q.timeWindow,
-                aggregation: q.aggregation }
-            : { queryId };
-
-        const res = await fetch('/api/queries/' + source + '/test', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
+        const res  = await fetch(
+          '/api/queries/' + encodeURIComponent(this._activeSource) +
+          '/' + encodeURIComponent(this._activeQuery.id) +
+          '/preview?type=' + encodeURIComponent(previewType)
+        );
         const data = await res.json();
-        const ms = Date.now() - t0;
+        const ms   = Date.now() - t0;
 
-        if (!res.ok || !data.success) throw new Error(data.error || 'Query failed');
-
-        // Render results — format varies by source
-        const result   = data.result   || null;
-        const results  = data.results  || null;  // BigQuery rows array
-        const rowCount = data.rowCount !== undefined ? data.rowCount : null;
-
-        const addRow = (label, value) => {
-          const row = document.createElement('div');
-          row.className = 'qe-result-row';
-          const k = document.createElement('span');
-          k.className   = 'qe-result-key';
-          k.textContent = label;
-          const v = document.createElement('span');
-          v.className   = 'qe-result-value';
-          v.textContent = Array.isArray(value)
-            ? '[' + value.length + ' values]'
-            : typeof value === 'object' && value !== null
-              ? JSON.stringify(value)
-              : String(value === null || value === undefined ? '—' : value);
-          row.appendChild(k);
-          row.appendChild(v);
-          bodyEl.appendChild(row);
-        };
-
-        if (result && typeof result === 'object') {
-          // GCP execution result: {value, sparkline, seriesCount}
-          if (result.value !== undefined || result.seriesCount !== undefined) {
-            addRow('Current value', result.value !== null ? result.value : '—');
-            addRow('Time series', result.seriesCount + ' series');
-            if (Array.isArray(result.sparkline) && result.sparkline.length) {
-              addRow('Trend (last ' + result.sparkline.length + ' pts)',
-                '[' + result.sparkline.map(v => (v !== null ? Number(v).toFixed(2) : '—')).join(', ') + ']');
-            }
-          } else {
-            Object.entries(result).slice(0, 10).forEach(([k, v]) => addRow(k, v));
-          }
-          if (data.message) addRow('Info', data.message);
-        } else if (Array.isArray(results)) {
-          // BigQuery rows
-          addRow('Rows returned', rowCount !== null ? rowCount : results.length);
-          if (results.length) {
-            const cols = Object.keys(results[0]);
-            results.slice(0, 5).forEach((row, i) => {
-              addRow('Row ' + (i + 1), cols.map(c => c + '=' + row[c]).join(', '));
-            });
-            if (results.length > 5) addRow('…', (results.length - 5) + ' more rows');
-          }
-        } else if (data.message) {
-          addRow('Result', data.message);
-          if (data.metric) addRow('Metric', data.metric);
-        } else {
-          const msg = document.createElement('div');
-          msg.className   = 'mb-status';
-          msg.textContent = 'No data returned';
-          bodyEl.appendChild(msg);
+        if (!data.success || !data.widgetData) {
+          statusEl.textContent = 'No data';
+          statusEl.style.color = 'var(--red)';
+          bodyEl.textContent = '';
+          const errDiv = document.createElement('div');
+          errDiv.className = 'mb-status';
+          errDiv.textContent = data.error || 'Query returned no data';
+          bodyEl.appendChild(errDiv);
+          return;
         }
 
-        // Show execution time
-        statusEl.textContent = ms + 'ms' + (rowCount !== null ? ' · ' + rowCount + ' rows' : '');
+        statusEl.textContent = ms + 'ms';
+        statusEl.style.color = 'var(--green)';
+
+        // Store for re-render on type change
+        this._lastPreviewData = data.widgetData;
+
+        // Render widget preview in canvas
+        this._renderQueryPreview(data.widgetData, previewType);
+
+        // Show raw value summary in results body
+        bodyEl.textContent = '';
+        const val = data.widgetData.value;
+        const summary = document.createElement('div');
+        summary.className = 'mb-status';
+        summary.textContent = val !== null && val !== undefined
+          ? 'Value: ' + (typeof val === 'number' ? val.toLocaleString() : val)
+          : 'No value returned';
+        bodyEl.appendChild(summary);
       } catch (e) {
         statusEl.textContent = 'Error';
         statusEl.style.color = 'var(--red)';
         const err = document.createElement('div');
-        err.style.color   = 'var(--red)';
-        err.style.padding = '8px';
+        err.style.color      = 'var(--red)';
+        err.style.padding    = '8px';
         err.style.fontFamily = 'var(--font-mono)';
         err.style.fontSize   = '11px';
         err.textContent = e.message;
         bodyEl.appendChild(err);
       } finally {
         runBtn.removeAttribute('disabled');
-        runBtn.textContent = '\u25B6 Run';
+      }
+    }
+
+    _renderQueryPreview(widgetData, widgetType) {
+      const container = document.getElementById('qe-preview-canvas-container');
+      const canvas    = document.getElementById('qe-preview-canvas');
+      if (!container || !canvas || !window.Widgets) return;
+
+      container.style.display = 'block';
+
+      // Clear previous widget
+      if (this._previewWidget && this._previewWidget.destroy) {
+        this._previewWidget.destroy();
+      }
+      canvas.width  = canvas.offsetWidth  || 280;
+      canvas.height = canvas.offsetHeight || 120;
+
+      // Create a temporary container div for the widget
+      const tmpDiv = document.createElement('div');
+      tmpDiv.style.cssText = 'width:100%;height:120px;overflow:hidden;';
+
+      try {
+        this._previewWidget = window.Widgets.create(widgetType, tmpDiv, { type: widgetType });
+        if (this._previewWidget && this._previewWidget.update) {
+          this._previewWidget.update(widgetData);
+        }
+      } catch (e) {
+        // Widget type not supported for preview — clear canvas
+        canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
       }
     }
 
@@ -1783,32 +1782,135 @@
       [props, content, qe].forEach(el => { if (el) el.style.display = 'none'; });
       if (dse) dse.style.display = 'flex';
 
-      document.getElementById('dse-name').textContent   = src.name;
+      document.getElementById('dse-name').textContent = src.name;
       const statusEl = document.getElementById('dse-status');
       statusEl.textContent = src.isConnected ? 'connected' : 'not connected';
       statusEl.style.color = src.isConnected ? 'var(--green)' : 'var(--red)';
 
-      // Load schema to know which fields to show
+      // Default view: query list
+      this._showDseQueryView();
+      await this._loadSourceQueries(src);
+
+      // Close button
+      document.getElementById('dse-close').onclick = () => {
+        if (dse) dse.style.display = 'none';
+        this.showDashboardProps();
+      };
+
+      // Toggle to credential form
+      const editCredsBtn = document.getElementById('dse-edit-creds');
+      if (editCredsBtn) {
+        editCredsBtn.onclick = () => {
+          this._showDseCredView();
+          this._loadCredentialForm(src);
+        };
+      }
+
+      // Back button
+      const backBtn = document.getElementById('dse-back');
+      if (backBtn) {
+        backBtn.onclick = () => {
+          this._showDseQueryView();
+        };
+      }
+    }
+
+    _showDseQueryView() {
+      const qv = document.getElementById('dse-query-view');
+      const cv = document.getElementById('dse-cred-view');
+      if (qv) qv.style.display = 'flex';
+      if (cv) cv.style.display = 'none';
+    }
+
+    _showDseCredView() {
+      const qv = document.getElementById('dse-query-view');
+      const cv = document.getElementById('dse-cred-view');
+      if (qv) qv.style.display = 'none';
+      if (cv) cv.style.display = 'flex';
+    }
+
+    async _loadSourceQueries(src) {
+      const listEl = document.getElementById('dse-query-list');
+      if (!listEl) return;
+      listEl.textContent = '';
+
+      try {
+        const res  = await fetch('/api/queries/' + encodeURIComponent(src.name));
+        const data = await res.json();
+        const queries = data.queries || [];
+
+        if (!queries.length) {
+          const empty = document.createElement('div');
+          empty.className = 'mb-status';
+          empty.textContent = src.isConnected
+            ? 'No saved queries for this source'
+            : 'Configure credentials to enable queries';
+          listEl.appendChild(empty);
+          return;
+        }
+
+        queries.forEach(q => {
+          const row    = document.createElement('div');
+          row.className = 'dse-query-row';
+
+          const nameEl = document.createElement('span');
+          nameEl.className = 'dse-query-row-name';
+          nameEl.textContent = q.name;
+
+          const runBtn = document.createElement('button');
+          runBtn.className = 'dse-query-row-run';
+          runBtn.textContent = '\u25b6 Run';
+
+          row.appendChild(nameEl);
+          row.appendChild(runBtn);
+
+          // Click row \u2192 open in query editor panel
+          row.addEventListener('click', (e) => {
+            if (e.target === runBtn) return;
+            document.getElementById('datasource-editor-panel').style.display = 'none';
+            this.openQueryEditor(q, src.name);
+          });
+
+          // Run button \u2192 open query editor and auto-run
+          runBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('datasource-editor-panel').style.display = 'none';
+            this.openQueryEditor(q, src.name);
+            // Auto-run after a short delay so the panel is ready
+            setTimeout(() => this._runQuery(), 200);
+          });
+
+          listEl.appendChild(row);
+        });
+      } catch (e) {
+        const err = document.createElement('div');
+        err.className = 'mb-status';
+        err.textContent = 'Failed to load queries';
+        listEl.appendChild(err);
+      }
+    }
+
+    async _loadCredentialForm(src) {
       const fieldsEl = document.getElementById('dse-fields');
+      if (!fieldsEl) return;
       fieldsEl.textContent = '';
+
       try {
         const schemaRes  = await fetch('/api/data-sources/schemas');
         const schemaData = await schemaRes.json().catch(() => ({ schemas: {} }));
-        // schemas is a dict keyed by source name; each value has .fields[]{name,secure,envVar}
         const schema = (schemaData.schemas && schemaData.schemas[src.name]) || { fields: [] };
         (schema.fields || []).forEach(field => {
           const label = document.createElement('label');
           label.className = 'qe-label';
-          const titleEl = document.createTextNode(field.description || field.name);
+          label.appendChild(document.createTextNode(field.description || field.name));
           const input = document.createElement('input');
-          input.className = 'qe-input';
-          input.type = field.secure ? 'password' : 'text';
-          input.dataset.field = field.name;
+          input.className      = 'qe-input';
+          input.type           = field.secure ? 'password' : 'text';
+          input.dataset.field  = field.name;
           input.dataset.envVar = field.envVar || '';
-          input.placeholder = field.secure
+          input.placeholder    = field.secure
             ? '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (stored)'
             : (field.default || '');
-          label.appendChild(titleEl);
           label.appendChild(input);
           if (field.envVar) {
             const hint = document.createElement('div');
@@ -1825,93 +1927,77 @@
         fieldsEl.appendChild(err);
       }
 
-      document.getElementById('dse-close').onclick = () => {
-        if (dse) dse.style.display = 'none';
-        this.showDashboardProps();
-      };
+      // Wire test + save buttons
+      const resultEl = document.getElementById('dse-test-result');
 
       document.getElementById('dse-test').onclick = async () => {
-        const btn    = document.getElementById('dse-test');
-        const result = document.getElementById('dse-test-result');
+        const btn = document.getElementById('dse-test');
         btn.setAttribute('disabled', '');
-        result.textContent = 'Testing\u2026';
-        result.style.color = 'var(--t3)';
+        resultEl.textContent = 'Testing\u2026';
+        resultEl.style.color = 'var(--t3)';
         const t0 = Date.now();
         try {
           const res  = await fetch('/api/data-sources/' + encodeURIComponent(src.name) + '/test', { method: 'POST' });
           const data = await res.json();
           const ms   = Date.now() - t0;
           if (data.connected || data.success) {
-            result.textContent = '\u2713 Connected (' + ms + 'ms)';
-            result.style.color = 'var(--green)';
+            resultEl.textContent = '\u2713 Connected (' + ms + 'ms)';
+            resultEl.style.color = 'var(--green)';
           } else {
-            result.textContent = '\u2717 Failed \u2014 ' + (data.error || 'Unknown error');
-            result.style.color = 'var(--red)';
+            resultEl.textContent = '\u2717 Failed \u2014 ' + (data.error || 'Unknown');
+            resultEl.style.color = 'var(--red)';
           }
         } catch (e) {
-          result.textContent = '\u2717 ' + e.message;
-          result.style.color = 'var(--red)';
+          resultEl.textContent = '\u2717 ' + e.message;
+          resultEl.style.color = 'var(--red)';
         } finally {
           btn.removeAttribute('disabled');
         }
       };
 
-    document.getElementById('dse-save').onclick = async () => {
-      const saveBtn  = document.getElementById('dse-save');
-      const resultEl = document.getElementById('dse-test-result');
-      const inputs   = document.querySelectorAll('#dse-fields input[data-field]');
-
-      const body = {};
-      inputs.forEach(input => {
-        if (input.value.trim() && input.dataset.envVar) {
-          body[input.dataset.envVar] = input.value.trim();
-        }
-      });
-
-      if (!Object.keys(body).length) {
-        resultEl.textContent = 'No credentials entered';
-        resultEl.style.color = 'var(--amber)';
-        return;
-      }
-
-      saveBtn.setAttribute('disabled', '');
-      resultEl.textContent = 'Saving\u2026';
-      resultEl.style.color = 'var(--t3)';
-
-      try {
-        const res  = await fetch('/api/data-sources/' + encodeURIComponent(src.name) + '/credentials', {
-          method:  'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify(body),
+      document.getElementById('dse-save').onclick = async () => {
+        const saveBtn = document.getElementById('dse-save');
+        const inputs  = document.querySelectorAll('#dse-fields input[data-field]');
+        const body    = {};
+        inputs.forEach(inp => {
+          if (inp.value.trim() && inp.dataset.envVar) body[inp.dataset.envVar] = inp.value.trim();
         });
-        const data = await res.json();
-
-        if (!res.ok) {
-          resultEl.textContent = '\u2717 ' + (data.error || 'Save failed');
-          resultEl.style.color = 'var(--red)';
+        if (!Object.keys(body).length) {
+          resultEl.textContent = 'No credentials entered';
+          resultEl.style.color = 'var(--amber)';
           return;
         }
-
-        if (data.connected) {
-          resultEl.textContent = '\u2713 Saved and connected';
-          resultEl.style.color = 'var(--green)';
-        } else {
-          resultEl.textContent = '\u2713 Saved \u2014 ' + (data.message || 'not yet connected');
-          resultEl.style.color = 'var(--amber)';
+        saveBtn.setAttribute('disabled', '');
+        resultEl.textContent = 'Saving\u2026';
+        resultEl.style.color = 'var(--t3)';
+        try {
+          const res  = await fetch('/api/data-sources/' + encodeURIComponent(src.name) + '/credentials', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            resultEl.textContent = '\u2717 ' + (data.error || 'Save failed');
+            resultEl.style.color = 'var(--red)';
+            return;
+          }
+          if (data.connected) {
+            resultEl.textContent = '\u2713 Saved and connected';
+            resultEl.style.color = 'var(--green)';
+          } else {
+            resultEl.textContent = '\u2713 Saved \u2014 ' + (data.message || 'not yet connected');
+            resultEl.style.color = 'var(--amber)';
+          }
+          inputs.forEach(inp => { if (inp.type === 'password') inp.value = ''; });
+          this.renderDatasourceList();
+        } catch (e) {
+          resultEl.textContent = '\u2717 ' + e.message;
+          resultEl.style.color = 'var(--red)';
+        } finally {
+          saveBtn.removeAttribute('disabled');
         }
-
-        inputs.forEach(input => {
-          if (input.type === 'password') input.value = '';
-        });
-
-        this.renderDatasourceList();
-      } catch (e) {
-        resultEl.textContent = '\u2717 ' + e.message;
-        resultEl.style.color = 'var(--red)';
-      } finally {
-        saveBtn.removeAttribute('disabled');
-      }
-    };
+      };
     }
 
     _setStatus(msg) {

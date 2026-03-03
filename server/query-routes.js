@@ -87,6 +87,70 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
     }
   })
 
+  // Run a saved query by ID and return widget-ready transformed data
+  .get('/:source/:id/preview', async ({ params, query }) => {
+    try {
+      const savedQuery = await getQuery(params.source, params.id);
+      if (!savedQuery) {
+        return new Response(
+          JSON.stringify({ success: false, error: `Query not found: ${params.id}` }),
+          { status: 404, headers: { 'content-type': 'application/json' } }
+        );
+      }
+
+      const widgetType = query.type || 'big-number';
+
+      if (params.source === 'gcp') {
+        const gcpSource = dataSourceRegistry.getSource('gcp');
+        const result = await gcpSource.executeQuery({
+          id:      'preview',
+          queryId: params.id,
+          type:    widgetType,
+        });
+        return {
+          success:    true,
+          source:     'gcp',
+          queryId:    params.id,
+          widgetType,
+          widgetData: result.data || null,
+          metricType: savedQuery.metricType,
+        };
+      }
+
+      if (params.source === 'bigquery') {
+        const bqSource = dataSourceRegistry.getSource('bigquery');
+        const result = await bqSource.fetchMetrics({
+          id:      'preview',
+          queryId: params.id,
+          type:    widgetType,
+        });
+        return {
+          success:    true,
+          source:     'bigquery',
+          queryId:    params.id,
+          widgetType,
+          widgetData: result.data || null,
+        };
+      }
+
+      // Other sources: return mock structure
+      return {
+        success:    true,
+        source:     params.source,
+        queryId:    params.id,
+        widgetType,
+        widgetData: { value: 0 },
+      };
+    } catch (err) {
+      return new Response(
+        JSON.stringify({ success: false, error: err.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  }, {
+    detail: { tags: ['queries'], summary: 'Preview a saved query as widget data' },
+  })
+
   // Create or update a query
   .post('/:source', async ({ params, body }) => {
     try {
