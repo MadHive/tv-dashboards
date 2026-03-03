@@ -538,7 +538,7 @@ window.Charts = (function () {
   // Bubbles, callouts, leaderboard, grid, metro markers, directional arcs,
   // regional borders, animated counters, richer panels
   // ===========================================================================
-  let mapAnimId = null;
+  // mapAnimId is now stored per-canvas as canvas._mapAnimId
   let mapSparkHistory = {};
   let mapParticles = [];
   let mapPrevTotals = {};  // for animated counter
@@ -633,12 +633,15 @@ window.Charts = (function () {
       }
     }
 
-    if (!mapAnimId) {
-      function animate() {
-        drawMap(canvas);
-        mapAnimId = requestAnimationFrame(animate);
-      }
-      animate();
+    // Each canvas gets its own RAF loop so multiple usa-map instances
+    // (nationwide, northeast, southeast) all animate independently
+    if (!canvas._mapAnimId) {
+      (function startLoop() {
+        canvas._mapAnimId = requestAnimationFrame(function tick() {
+          drawMap(canvas);
+          canvas._mapAnimId = requestAnimationFrame(tick);
+        });
+      })();
     }
   }
 
@@ -1491,6 +1494,9 @@ window.Charts = (function () {
     });
 
     // ── Richer regional panels — 4K scaled ──
+    // Skip in regional views (NE/SE) to avoid overlapping text clutter
+    var showRegionalPanels = !data.region || data.region === 'full';
+    if (showRegionalPanels) {
     var panelW = 220;
     var panelH = 150;
     var regionLayout = {
@@ -1557,7 +1563,7 @@ window.Charts = (function () {
         drawMiniSparkline(ctx, regionSpark, pos.x + 14, pos.y + 86, panelW - 28, 48, BRAND.pink);
       }
     });
-
+    } // end showRegionalPanels guard
 
     // ── Leaderboard sidebar (right side) — 4K scaled ──
     var lbX = w - leaderboardW - 6;
