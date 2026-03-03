@@ -856,6 +856,42 @@ gcp:
     widgetTypes: []
     updatedAt: '2026-03-03T18:37:21.840Z'
     createdAt: '2026-03-03T18:36:57.829Z'
+  - id: stan-bids-in
+    name: Stan Bidder — Bids In (Total Requests)
+    description: 'Log-based metric: total SSP bid requests received by the stan-bidder service'
+    widgetTypes: []
+    metricType: logging.googleapis.com/user/stan-bidder-bids-in
+    project: mad-master
+    timeWindow: 10
+    aggregation:
+      perSeriesAligner: ALIGN_RATE
+      crossSeriesReducer: REDUCE_SUM
+    updatedAt: '2026-03-03T22:20:09.052Z'
+    createdAt: '2026-03-03T22:20:09.052Z'
+  - id: stan-bids-won
+    name: Stan Bidder — Bids Won (Responses Yes)
+    description: 'Log-based metric: bid responses where the bidder submitted a bid'
+    widgetTypes: []
+    metricType: logging.googleapis.com/user/stan-bidder-bids-response-yes
+    project: mad-master
+    timeWindow: 10
+    aggregation:
+      perSeriesAligner: ALIGN_RATE
+      crossSeriesReducer: REDUCE_SUM
+    updatedAt: '2026-03-03T22:20:09.062Z'
+    createdAt: '2026-03-03T22:20:09.062Z'
+  - id: stan-bids-no
+    name: Stan Bidder — Bids No (No Bid Responses)
+    description: 'Log-based metric: bid requests where the bidder did not bid'
+    widgetTypes: []
+    metricType: logging.googleapis.com/user/stan-bidder-bids-response-no
+    project: mad-master
+    timeWindow: 10
+    aggregation:
+      perSeriesAligner: ALIGN_RATE
+      crossSeriesReducer: REDUCE_SUM
+    updatedAt: '2026-03-03T22:20:09.069Z'
+    createdAt: '2026-03-03T22:20:09.069Z'
 vulntrack:
   - id: vulntrack-security-posture
     name: Security Posture Overview

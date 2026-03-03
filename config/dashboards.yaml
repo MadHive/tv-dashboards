@@ -12,12 +12,12 @@ dashboards:
         type: big-number
         title: Bids Served
         source: gcp
-        queryId: bidder-winner-candidates
+        queryId: stan-bids-in
         position:
           col: 1
           row: 1
           colSpan: 2
-        unit: /min
+        unit: /s
       - id: impressions-delivered
         type: stat-card
         title: Impressions Delivered
@@ -32,13 +32,13 @@ dashboards:
         type: stat-card
         title: Bid QPS
         source: gcp
-        queryId: bidder-winner-candidates
+        queryId: stan-bids-won
         position:
           col: 4
           row: 1
           colSpan: 1
           rowSpan: 1
-        unit: /min
+        unit: /s
         min: 0
         max: 5000000
       - id: platform-uptime
