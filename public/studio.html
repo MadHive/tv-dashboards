@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="/css/dashboard.css?v=12">
-  <link rel="stylesheet" href="/css/studio.css?v=9">
+  <link rel="stylesheet" href="/css/studio.css?v=10">
 </head>
 <body class="studio-body">
 
@@ -337,7 +337,18 @@
         <div class="qe-results">
           <div class="qe-results-toolbar">
             <button id="qe-run" class="studio-btn primary small">&#9654; Run</button>
+            <label class="qe-type-label">
+              <select id="qe-preview-type" class="qe-select">
+                <option value="big-number">Big Number</option>
+                <option value="stat-card">Stat Card</option>
+                <option value="gauge">Gauge</option>
+                <option value="bar-chart">Bar Chart</option>
+              </select>
+            </label>
             <span id="qe-run-status" class="qe-run-status"></span>
+          </div>
+          <div id="qe-preview-canvas-container" class="qe-preview-canvas-container" style="display:none">
+            <canvas id="qe-preview-canvas" class="qe-preview-canvas"></canvas>
           </div>
           <div id="qe-results-body" class="qe-results-body">
             <div class="mb-status">Run query to see results</div>
