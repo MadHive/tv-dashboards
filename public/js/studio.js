@@ -926,37 +926,14 @@
     ───────────────────────────────────────────── */
 
     showToast(msg, type) {
-      type = type || 'info';
-
-      const colorMap = {
-        success: '#1a7a3a',
-        error: '#7a1a1a',
-        info: '#1a3a7a',
-      };
-
       const toast = document.createElement('div');
-      toast.style.cssText = [
-        'position:fixed',
-        'bottom:24px',
-        'right:24px',
-        'padding:12px 20px',
-        'border-radius:6px',
-        'background:' + (colorMap[type] || colorMap.info),
-        'color:#fff',
-        'font-family:Rajdhani,sans-serif',
-        'font-size:14px',
-        'font-weight:600',
-        'z-index:9999',
-        'pointer-events:none',
-        'box-shadow:0 4px 16px rgba(0,0,0,0.5)',
-        'transition:opacity 0.3s',
-      ].join(';');
-
+      toast.className = 'studio-toast ' + (type || 'info');
       toast.textContent = msg;
       document.body.appendChild(toast);
 
       setTimeout(() => {
         toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px)';
         setTimeout(() => {
           if (toast.parentNode) toast.parentNode.removeChild(toast);
         }, 300);
