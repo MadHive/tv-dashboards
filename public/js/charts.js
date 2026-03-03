@@ -631,6 +631,7 @@ window.Charts = (function () {
     });
 
     canvas._mapData = data;
+    canvas._mapZoomEnabled = data.zoom !== false;
 
     // Reset leaderboard scroll if the top state changed
     var sortedForCheck = Object.entries(data.states || {})
@@ -774,7 +775,11 @@ window.Charts = (function () {
     var curRegion = MAP_ZOOM_REGIONS[mapZoomIdx];
     var zoomElapsed = zoomNow - mapZoomSince;
 
-    if (zoomElapsed > curRegion.duration + MAP_ZOOM_TRANS_MS) {
+    var zoomEnabled = canvas._mapZoomEnabled !== false;
+    if (!zoomEnabled) {
+      // Stay on full view
+      if (mapZoomIdx !== 0) { mapZoomIdx = 0; mapZoomFrom = null; mapZoomSince = zoomNow; }
+    } else if (zoomElapsed > curRegion.duration + MAP_ZOOM_TRANS_MS) {
       mapZoomFrom  = curRegion;
       mapZoomIdx   = (mapZoomIdx + 1) % MAP_ZOOM_REGIONS.length;
       mapZoomSince = zoomNow;
