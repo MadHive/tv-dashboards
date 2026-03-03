@@ -32,6 +32,7 @@
       this.bindCollapsibles();
       this.bindSettings();
       this.bindWidgetPaletteModal();
+      this.bindSidebarTabs();
 
       if (this.modifiedConfig && this.modifiedConfig.dashboards && this.modifiedConfig.dashboards.length > 0) {
         this.selectDashboard(0);
@@ -927,6 +928,26 @@
         if (e.key === 'Escape' && modal && modal.style.display !== 'none') {
           modal.style.display = 'none';
         }
+      });
+    }
+
+    /* ─────────────────────────────────────────────
+       Sidebar Tabs
+    ───────────────────────────────────────────── */
+
+    bindSidebarTabs() {
+      const tabs = document.querySelectorAll('.sidebar-tab');
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          const name = tab.dataset.tab;
+          document.querySelectorAll('.sidebar-panel').forEach(p => {
+            p.style.display = p.id === 'panel-' + name ? 'flex' : 'none';
+          });
+          if (name === 'queries') this.renderQueryList();
+          if (name === 'datasources') this.renderDatasourceList();
+        });
       });
     }
 

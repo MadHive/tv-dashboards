@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="/css/dashboard.css?v=12">
-  <link rel="stylesheet" href="/css/studio.css?v=6">
+  <link rel="stylesheet" href="/css/studio.css?v=7">
 </head>
 <body class="studio-body">
 
@@ -30,71 +30,91 @@
 
     <!-- Left Sidebar -->
     <aside class="studio-sidebar">
-
-      <!-- Dashboards Section -->
-      <div class="sidebar-section">
-        <div class="sidebar-section-header">
-          <span>DASHBOARDS</span>
-          <button id="new-dashboard-btn" class="sidebar-add-btn" title="New dashboard">+</button>
-        </div>
-        <div id="dashboard-list"></div>
-        <form id="new-dashboard-form" class="new-dashboard-form" style="display:none">
-          <input id="new-dash-name" type="text" placeholder="Dashboard name" required>
-          <input id="new-dash-subtitle" type="text" placeholder="Subtitle (optional)">
-          <div style="display:flex;gap:8px;">
-            <input id="new-dash-cols" type="number" placeholder="Cols" value="4" min="1" max="12" style="flex:1">
-            <input id="new-dash-rows" type="number" placeholder="Rows" value="2" min="1" max="12" style="flex:1">
-          </div>
-          <div class="icon-picker">
-            <span class="icon-opt selected" data-icon="bolt" title="Bolt">&#9889;</span>
-            <span class="icon-opt" data-icon="grid" title="Grid">&#9783;</span>
-            <span class="icon-opt" data-icon="server" title="Server">&#128421;</span>
-            <span class="icon-opt" data-icon="flow" title="Flow">&#10608;</span>
-            <span class="icon-opt" data-icon="data" title="Data">&#128202;</span>
-            <span class="icon-opt" data-icon="shield" title="Shield">&#128737;</span>
-            <span class="icon-opt" data-icon="map" title="Map">&#128506;</span>
-          </div>
-          <div style="display:flex;gap:6px;">
-            <button type="submit" class="studio-btn primary small" style="flex:1">Create</button>
-            <button type="button" id="cancel-new-dash-btn" class="studio-btn secondary small" style="flex:1">Cancel</button>
-          </div>
-        </form>
+      <div class="sidebar-tabs">
+        <button class="sidebar-tab active" data-tab="dashboards">Dashboards</button>
+        <button class="sidebar-tab" data-tab="queries">Queries</button>
+        <button class="sidebar-tab" data-tab="datasources">Sources</button>
       </div>
 
-      <!-- Themes Section (collapsible) -->
-      <div class="sidebar-section">
-        <div class="sidebar-section-header collapsible" data-target="themes-content">
-          <span>THEMES</span>
-          <span class="collapse-arrow">&#9656;</span>
-        </div>
-        <div id="themes-content" class="sidebar-collapsible-content" style="display:none">
-          <div id="theme-swatches" class="theme-swatch-grid"></div>
-        </div>
-      </div>
+      <!-- Dashboards panel (existing content, wrap in div) -->
+      <div class="sidebar-panel" id="panel-dashboards">
 
-      <!-- Settings Section (collapsible) -->
-      <div class="sidebar-section">
-        <div class="sidebar-section-header collapsible" data-target="settings-content">
-          <span>SETTINGS</span>
-          <span class="collapse-arrow">&#9656;</span>
-        </div>
-        <div id="settings-content" class="sidebar-collapsible-content" style="display:none">
-          <form id="settings-form" class="settings-form">
-            <label>
-              Title
-              <input id="setting-title" type="text" placeholder="Dashboard title">
-            </label>
-            <label>
-              Rotation (s)
-              <input id="setting-rotation" type="number" placeholder="30" min="0">
-            </label>
-            <label>
-              Refresh (s)
-              <input id="setting-refresh" type="number" placeholder="60" min="0">
-            </label>
-            <button type="submit" class="studio-btn primary small">Save Settings</button>
+        <!-- Dashboards Section -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-header">
+            <span>DASHBOARDS</span>
+            <button id="new-dashboard-btn" class="sidebar-add-btn" title="New dashboard">+</button>
+          </div>
+          <div id="dashboard-list"></div>
+          <form id="new-dashboard-form" class="new-dashboard-form" style="display:none">
+            <input id="new-dash-name" type="text" placeholder="Dashboard name" required>
+            <input id="new-dash-subtitle" type="text" placeholder="Subtitle (optional)">
+            <div style="display:flex;gap:8px;">
+              <input id="new-dash-cols" type="number" placeholder="Cols" value="4" min="1" max="12" style="flex:1">
+              <input id="new-dash-rows" type="number" placeholder="Rows" value="2" min="1" max="12" style="flex:1">
+            </div>
+            <div class="icon-picker">
+              <span class="icon-opt selected" data-icon="bolt" title="Bolt">&#9889;</span>
+              <span class="icon-opt" data-icon="grid" title="Grid">&#9783;</span>
+              <span class="icon-opt" data-icon="server" title="Server">&#128421;</span>
+              <span class="icon-opt" data-icon="flow" title="Flow">&#10608;</span>
+              <span class="icon-opt" data-icon="data" title="Data">&#128202;</span>
+              <span class="icon-opt" data-icon="shield" title="Shield">&#128737;</span>
+              <span class="icon-opt" data-icon="map" title="Map">&#128506;</span>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button type="submit" class="studio-btn primary small" style="flex:1">Create</button>
+              <button type="button" id="cancel-new-dash-btn" class="studio-btn secondary small" style="flex:1">Cancel</button>
+            </div>
           </form>
         </div>
+
+        <!-- Themes Section (collapsible) -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-header collapsible" data-target="themes-content">
+            <span>THEMES</span>
+            <span class="collapse-arrow">&#9656;</span>
+          </div>
+          <div id="themes-content" class="sidebar-collapsible-content" style="display:none">
+            <div id="theme-swatches" class="theme-swatch-grid"></div>
+          </div>
+        </div>
+
+        <!-- Settings Section (collapsible) -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-header collapsible" data-target="settings-content">
+            <span>SETTINGS</span>
+            <span class="collapse-arrow">&#9656;</span>
+          </div>
+          <div id="settings-content" class="sidebar-collapsible-content" style="display:none">
+            <form id="settings-form" class="settings-form">
+              <label>
+                Title
+                <input id="setting-title" type="text" placeholder="Dashboard title">
+              </label>
+              <label>
+                Rotation (s)
+                <input id="setting-rotation" type="number" placeholder="30" min="0">
+              </label>
+              <label>
+                Refresh (s)
+                <input id="setting-refresh" type="number" placeholder="60" min="0">
+              </label>
+              <button type="submit" class="studio-btn primary small">Save Settings</button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Queries panel -->
+      <div class="sidebar-panel" id="panel-queries" style="display:none">
+        <div id="query-list" class="query-list"></div>
+      </div>
+
+      <!-- Data Sources panel -->
+      <div class="sidebar-panel" id="panel-datasources" style="display:none">
+        <div id="datasource-list" class="datasource-list"></div>
       </div>
 
     </aside>
