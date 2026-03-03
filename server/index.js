@@ -40,6 +40,7 @@ import DashboardManager from './dashboard-manager.js';
 import { getSchema, getAllSchemas, validateConnection } from './data-source-schemas.js';
 import { themeManager } from './theme-manager.js';
 import { metricsCollector } from './metrics.js';
+import { models } from './models/index.js';
 import { smartRateLimit, addCacheHeaders, cachePresets } from './rate-limiter.js';
 import { getConfig, updateConfig, toggleEnabled, getAuditLog, exportConfigs } from './data-source-config.js';
 import { initDatabase } from './db.js';
@@ -154,6 +155,7 @@ const app = new Elysia()
       persistAuthorization: true,
     },
   }))
+  .use(models)           // model registry — all t.* schemas available to routes
   .use(cors())
   .use(cookie())
   // Performance monitoring middleware
