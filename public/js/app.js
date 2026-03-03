@@ -63,6 +63,12 @@
       this.startRefresh();
       this.bindKeys();
 
+      // Pause button in bottom bar
+      const pauseBtn = document.getElementById('pause-btn');
+      if (pauseBtn) {
+        pauseBtn.addEventListener('click', () => this.togglePause());
+      }
+
       // Click anywhere on dashboard (not top-bar or bottom-bar) to pause/resume
       document.addEventListener('click', (e) => {
         if (e.target.closest('#top-bar') || e.target.closest('#bottom-bar')) return;
@@ -160,7 +166,10 @@
 
     resetRotation() {
       clearInterval(this.rotationTimer);
-      this.startRotation();
+      this.rotationTimer = null;
+      if (!this.paused) {
+        this.startRotation();
+      }
       this.resetRotationBar();
     }
 
@@ -168,29 +177,29 @@
       const bar = document.getElementById('rotation-progress');
       bar.classList.remove('running');
       bar.style.width = '0%';
-      // force reflow
-      void bar.offsetWidth;
-      bar.classList.add('running');
-      bar.style.transitionDuration = this.rotationMs + 'ms';
-      bar.style.width = '100%';
+      if (!this.paused) {
+        // force reflow then animate
+        void bar.offsetWidth;
+        bar.classList.add('running');
+        bar.style.transitionDuration = this.rotationMs + 'ms';
+        bar.style.width = '100%';
+      }
     }
 
     togglePause() {
       this.paused = !this.paused;
-      const bar = document.getElementById('rotation-progress');
-      const indicator = document.getElementById('pause-indicator');
+      const btn = document.getElementById('pause-btn');
       if (this.paused) {
         clearInterval(this.rotationTimer);
         this.rotationTimer = null;
         clearInterval(this.refreshTimer);
         this.refreshTimer = null;
-        if (bar) bar.style.animationPlayState = 'paused';
-        if (indicator) indicator.style.display = 'block';
+        if (btn) { btn.textContent = '▶'; btn.classList.add('paused'); btn.title = 'Resume slideshow (Space)'; }
       } else {
         this.startRotation();
         this.startRefresh();
-        if (bar) bar.style.animationPlayState = 'running';
-        if (indicator) indicator.style.display = 'none';
+        this.resetRotationBar();
+        if (btn) { btn.textContent = '⏸'; btn.classList.remove('paused'); btn.title = 'Pause slideshow (Space)'; }
       }
     }
 
