@@ -33,6 +33,7 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       };
     }
   }, {
+    response: { 200: 'query.list' },
     detail: {
       tags: ['Queries'],
       summary: 'List all queries',
@@ -52,6 +53,7 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       };
     }
   }, {
+    response: { 200: 'query.list', 404: 'common.error' },
     detail: {
       tags: ['Queries'],
       summary: 'List queries by source',
@@ -77,6 +79,7 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       };
     }
   }, {
+    response: { 200: 'query.response', 404: 'common.error' },
     detail: {
       tags: ['Queries'],
       summary: 'Get specific query',
@@ -154,6 +157,8 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       );
     }
   }, {
+    body: t.Any(),
+    response: { 200: 'query.response', 400: 'common.error' },
     detail: {
       tags: ['Queries'],
       summary: 'Create or update query',
@@ -192,6 +197,8 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       );
     }
   }, {
+    body: t.Any(),
+    response: { 200: 'query.response', 400: 'common.error', 404: 'common.error' },
     detail: {
       tags: ['Queries'],
       summary: 'Update query',
@@ -214,6 +221,7 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       );
     }
   }, {
+    response: { 200: 'common.success', 404: 'common.error' },
     detail: {
       tags: ['Queries'],
       summary: 'Delete query',
@@ -350,6 +358,8 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       };
     }
   }, {
+    body: t.Any(),
+    response: { 200: 'query.test-response', 400: 'query.test-response' },
     detail: {
       tags: ['Queries'],
       summary: 'Test query',
@@ -369,6 +379,7 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       };
     }
   }, {
+    response: { 200: t.Object({ success: t.Boolean(), backups: t.Array(t.String()) }) },
     detail: {
       tags: ['Queries'],
       summary: 'List backups',
@@ -402,6 +413,8 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       );
     }
   }, {
+    body: t.Object({ filename: t.String() }),
+    response: { 200: 'common.success', 400: 'common.error' },
     detail: {
       tags: ['Queries'],
       summary: 'Restore backup',
