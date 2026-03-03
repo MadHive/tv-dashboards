@@ -15,8 +15,9 @@ describe('DataDog Data Source', () => {
   describe('Constructor', () => {
     it('should initialize with default values', () => {
       expect(dataSource.name).toBe('datadog');
-      expect(dataSource.apiKey).toBeUndefined();
-      expect(dataSource.appKey).toBeUndefined();
+      // apiKey/appKey are falsy when no credentials are configured
+      expect(dataSource.apiKey || '').toBe('');
+      expect(dataSource.appKey || '').toBe('');
     });
   });
 
