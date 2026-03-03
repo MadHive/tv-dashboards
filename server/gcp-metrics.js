@@ -23,7 +23,7 @@ function interval(minutes) {
 
 export async function query(project, metricType, extra, minutes, aggregation) {
   let filter = `metric.type = "${metricType}"`;
-  if (extra) filter += ` AND ${extra}`;
+  if (extra && typeof extra === 'string' && extra.trim()) filter += ` AND ${extra}`;
   try {
     const req = {
       name: `projects/${project}`,
