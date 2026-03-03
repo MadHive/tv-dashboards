@@ -1562,7 +1562,17 @@ window.Charts = (function () {
     var lbX = w - leaderboardW - 6;
     var lbY = 100;
     var lbEntryH = 42;
-    var lbCount = Math.min(15, sorted.length);
+    // During zoom, show only states in the current region
+    var lbSorted = sorted;
+    if (curRegion.states) {
+      var regionSet = new Set(curRegion.states);
+      var regionSorted = sorted.filter(function(e) { return regionSet.has(e[0]); });
+      if (regionSorted.length > 0) {
+        var blendT = mapZoomFrom ? Math.min(1, zoomElapsed / MAP_ZOOM_TRANS_MS) : 1;
+        lbSorted = blendT >= 0.5 ? regionSorted : sorted;
+      }
+    }
+    var lbCount = Math.min(15, lbSorted.length);
 
     // Leaderboard header
     ctx.fillStyle = hexToRgba(BRAND.surface, 0.75);
@@ -1577,7 +1587,8 @@ window.Charts = (function () {
     ctx.textBaseline = 'middle';
     ctx.font = "600 15px 'Space Grotesk', sans-serif";
     ctx.fillStyle = BRAND.text2;
-    ctx.fillText('TOP STATES', lbX + leaderboardW / 2, lbY - 19);
+    var lbTitle = curRegion.states ? 'TOP ' + curRegion.label : 'TOP STATES';
+    ctx.fillText(lbTitle, lbX + leaderboardW / 2, lbY - 19);
 
     // Auto-scroll: offset based on time
     var scrollElapsed = now - mapScrollResetTime;
@@ -1586,7 +1597,7 @@ window.Charts = (function () {
 
     for (var li = 0; li < visibleCount; li++) {
       var si2 = (li + scrollOffset) % lbCount;
-      var lEntry = sorted[si2];
+      var lEntry = lbSorted[si2];
       if (!lEntry) continue;
       var leY = lbY + li * lbEntryH;
 
