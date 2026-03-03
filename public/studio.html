@@ -261,6 +261,62 @@
 
         </div>
       </div>
+
+      <!-- Query editor panel (shown when a query is open) -->
+      <div id="query-editor-panel" style="display:none" class="query-editor-panel">
+        <div class="qe-header">
+          <div>
+            <div id="qe-name" class="qe-name"></div>
+            <div id="qe-source-badge" class="qe-source-badge"></div>
+          </div>
+          <button id="qe-close" class="modal-close">&#215;</button>
+        </div>
+
+        <!-- Config strip -->
+        <div class="qe-config">
+          <label class="qe-label">Metric / SQL
+            <input id="qe-metric" type="text" class="qe-input" placeholder="metric.type or SQL">
+          </label>
+          <div class="qe-row">
+            <label class="qe-label">Time Window
+              <select id="qe-time-window" class="qe-select">
+                <option value="5">5 min</option>
+                <option value="15">15 min</option>
+                <option value="60" selected>1 hour</option>
+                <option value="360">6 hours</option>
+                <option value="1440">24 hours</option>
+              </select>
+            </label>
+            <label class="qe-label">Aggregation
+              <select id="qe-aggregation" class="qe-select">
+                <option value="ALIGN_MEAN">Mean</option>
+                <option value="ALIGN_SUM">Sum</option>
+                <option value="ALIGN_MAX">Max</option>
+                <option value="ALIGN_RATE">Rate/s</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <!-- Results preview -->
+        <div class="qe-results">
+          <div class="qe-results-toolbar">
+            <button id="qe-run" class="studio-btn primary small">&#9654; Run</button>
+            <span id="qe-run-status" class="qe-run-status"></span>
+          </div>
+          <div id="qe-results-body" class="qe-results-body">
+            <div class="mb-status">Run query to see results</div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="qe-actions">
+          <button id="qe-save"        class="studio-btn primary small">Save Query</button>
+          <button id="qe-save-as-new" class="studio-btn secondary small">Save as New</button>
+          <button id="qe-assign"      class="studio-btn secondary small">Assign to Widget</button>
+        </div>
+      </div>
+
     </aside>
 
   </div>
@@ -366,6 +422,6 @@
   <script src="/js/widgets.js?v=11"></script>
   <script src="/js/query-editor.js?v=1"></script>
   <script src="/js/studio-canvas.js?v=3"></script>
-  <script src="/js/studio.js?v=4"></script>
+  <script src="/js/studio.js?v=5"></script>
 </body>
 </html>

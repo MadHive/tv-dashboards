@@ -952,6 +952,95 @@
     }
 
     /* ─────────────────────────────────────────────
+       Query List + Editor
+    ───────────────────────────────────────────── */
+
+    async renderQueryList() {
+      const list = document.getElementById('query-list');
+      if (!list) return;
+      list.textContent = '';
+      try {
+        const res  = await fetch('/api/queries/');
+        const data = await res.json();
+        const all  = data.queries || {};
+        const sources = Object.keys(all);
+        if (!sources.length) {
+          const empty = document.createElement('div');
+          empty.className = 'mb-status';
+          empty.textContent = 'No saved queries';
+          list.appendChild(empty);
+          return;
+        }
+        sources.forEach(source => {
+          const queries = all[source] || [];
+          const hdr = document.createElement('div');
+          hdr.className = 'sidebar-section-header';
+          hdr.textContent = source.toUpperCase();
+          list.appendChild(hdr);
+          queries.forEach(q => {
+            const row = document.createElement('div');
+            row.className = 'query-row';
+            const nameEl = document.createElement('span');
+            nameEl.className = 'query-row-name';
+            nameEl.textContent = q.name;
+            const badge = document.createElement('span');
+            badge.className = 'query-row-badge';
+            badge.textContent = source;
+            row.appendChild(nameEl);
+            row.appendChild(badge);
+            row.addEventListener('click', () => this.openQueryEditor(q, source));
+            list.appendChild(row);
+          });
+        });
+      } catch (e) {
+        this.showToast('Failed to load queries: ' + e.message, 'error');
+      }
+    }
+
+    openQueryEditor(query, source) {
+      // Show query editor, hide properties
+      const props = document.getElementById('properties-placeholder');
+      const content = document.getElementById('properties-content');
+      const qe = document.getElementById('query-editor-panel');
+      if (props)   props.style.display   = 'none';
+      if (content) content.style.display = 'none';
+      if (qe)      qe.style.display      = 'flex';
+
+      this._activeQuery  = { ...query };
+      this._activeSource = source;
+
+      document.getElementById('qe-name').textContent         = query.name;
+      document.getElementById('qe-source-badge').textContent = source;
+      document.getElementById('qe-metric').value             = query.metricType || query.sql || '';
+      document.getElementById('qe-time-window').value        = query.timeWindow || 60;
+      document.getElementById('qe-aggregation').value        =
+        (query.aggregation && query.aggregation.perSeriesAligner) || 'ALIGN_MEAN';
+
+      this._bindQueryEditorActions();
+    }
+
+    _bindQueryEditorActions() {
+      document.getElementById('qe-close').onclick = () => {
+        document.getElementById('query-editor-panel').style.display = 'none';
+        this.showDashboardProps();
+      };
+
+      document.getElementById('qe-run').onclick = () => this._runQuery();
+
+      document.getElementById('qe-save').onclick = async () => {
+        await this._saveQuery(false);
+      };
+
+      document.getElementById('qe-save-as-new').onclick = async () => {
+        await this._saveQuery(true);
+      };
+
+      document.getElementById('qe-assign').onclick = () => {
+        this._assignQueryToWidget();
+      };
+    }
+
+    /* ─────────────────────────────────────────────
        Toast Notifications
     ───────────────────────────────────────────── */
 
