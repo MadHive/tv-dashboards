@@ -1284,30 +1284,30 @@ body.studio-body {
   z-index: 20;
 }
 
-.studio-grid-cell {
+.grid-cell {
   border: 1px dashed var(--border-lit);
   border-radius: 3px;
   transition: background 0.1s, border-color 0.1s;
 }
 
-.studio-grid-cell.drag-target {
+.grid-cell.drag-target {
   background: rgba(253, 164, 212, 0.15);
   border-color: var(--mh-pink);
 }
 
-.studio-grid-cell.drag-blocked {
+.grid-cell.drag-blocked {
   background: rgba(251, 113, 133, 0.15);
   border-color: var(--red);
 }
 
 /* ── Drag Ghost ── */
 .studio-drag-ghost {
-  position: relative;
   border: 2px solid var(--mh-pink);
   border-radius: 4px;
   background: rgba(253, 164, 212, 0.12);
   pointer-events: none;
   z-index: 19;
+  transition: grid-column 0.05s, grid-row 0.05s;
 }
 
 .studio-drag-ghost.blocked {
