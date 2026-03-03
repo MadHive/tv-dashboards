@@ -239,8 +239,20 @@ const app = new Elysia()
     });
   })
 
-  // Studio JS/CSS: served dynamically so file edits take effect on restart
-  // without the static plugin's in-memory file cache getting in the way
+  // Actively-edited JS/CSS files: served dynamically so edits take effect
+  // on the next restart without the static plugin's in-memory cache interfering
+  .get('/js/app.js', () => new Response(readFileSync(join(publicDir, 'js/app.js'), 'utf8'), {
+    headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }
+  }))
+  .get('/js/charts.js', () => new Response(readFileSync(join(publicDir, 'js/charts.js'), 'utf8'), {
+    headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }
+  }))
+  .get('/js/widgets.js', () => new Response(readFileSync(join(publicDir, 'js/widgets.js'), 'utf8'), {
+    headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }
+  }))
+  .get('/css/dashboard.css', () => new Response(readFileSync(join(publicDir, 'css/dashboard.css'), 'utf8'), {
+    headers: { 'content-type': 'text/css; charset=utf-8', 'Cache-Control': 'no-cache' }
+  }))
   .get('/js/studio.js', () => new Response(readFileSync(join(publicDir, 'js/studio.js'), 'utf8'), {
     headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }
   }))
