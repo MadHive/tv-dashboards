@@ -1728,8 +1728,9 @@
       const fieldsEl = document.getElementById('dse-fields');
       fieldsEl.textContent = '';
       try {
-        const schemaRes  = await fetch('/api/data-sources/schemas/detailed');
+        const schemaRes  = await fetch('/api/data-sources/schemas');
         const schemaData = await schemaRes.json().catch(() => ({ schemas: {} }));
+        // schemas is a dict keyed by source name; each value has .fields[]{name,secure,envVar}
         const schema = (schemaData.schemas && schemaData.schemas[src.name]) || { fields: [] };
         (schema.fields || []).forEach(field => {
           const label = document.createElement('label');
