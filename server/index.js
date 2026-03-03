@@ -2,8 +2,8 @@
 // MadHive Dashboard Server — Bun + ElysiaJS
 // ---------------------------------------------------------------------------
 
-import { Elysia } from 'elysia';
-import { swagger } from '@elysiajs/swagger';
+import { Elysia, t } from 'elysia';
+import { openapi } from '@elysiajs/openapi';
 import { staticPlugin } from '@elysiajs/static';
 import { cookie } from '@elysiajs/cookie';
 import { cors } from '@elysiajs/cors';
@@ -40,6 +40,7 @@ import DashboardManager from './dashboard-manager.js';
 import { getSchema, getAllSchemas, validateConnection } from './data-source-schemas.js';
 import { themeManager } from './theme-manager.js';
 import { metricsCollector } from './metrics.js';
+import { models } from './models/index.js';
 import { smartRateLimit, addCacheHeaders, cachePresets } from './rate-limiter.js';
 import { getConfig, updateConfig, toggleEnabled, getAuditLog, exportConfigs } from './data-source-config.js';
 import { initDatabase } from './db.js';
@@ -132,7 +133,7 @@ const dashboardManager = new DashboardManager('./config/dashboards.yaml');
 await themeManager.loadThemes();
 
 const app = new Elysia()
-  .use(swagger({
+  .use(openapi({
     documentation: {
       info: {
         title:       'MadHive TV Dashboards API',
@@ -144,16 +145,20 @@ const app = new Elysia()
         { name: 'dashboards',   description: 'Dashboard CRUD and management' },
         { name: 'data-sources', description: 'Data source configuration and health' },
         { name: 'queries',      description: 'Saved query management' },
+        { name: 'bigquery',     description: 'BigQuery saved query management' },
         { name: 'templates',    description: 'Dashboard template library' },
         { name: 'themes',       description: 'Visual theme management' },
         { name: 'backups',      description: 'Configuration backup and restore' },
         { name: 'metrics',      description: 'Performance and widget metrics' },
+        { name: 'tv-apps',      description: 'Apple TV and external app widget endpoints' },
+        { name: 'auth',         description: 'Google OAuth authentication' },
       ],
     },
     swaggerOptions: {
       persistAuthorization: true,
     },
   }))
+  .use(models)           // model registry — all t.* schemas available to routes
   .use(cors())
   .use(cookie())
   // Performance monitoring middleware
@@ -259,7 +264,10 @@ const app = new Elysia()
   })
 
   // Config endpoints
-  .get('/api/config', () => loadConfig())
+  .get('/api/config', () => loadConfig(), {
+    response: { 200: 'dashboard.list' },
+    detail: { tags: ['dashboards'], summary: 'Get full dashboard configuration' },
+  })
   .put('/api/config/global', ({ body }) => {
     try {
       const cfg = loadConfig();
@@ -270,10 +278,17 @@ const app = new Elysia()
     } catch (e) {
       return new Response(JSON.stringify({ error: e.message }), { status: 500 });
     }
-  }, { detail: { tags: ['config'], summary: 'Update global config settings' } })
+  }, {
+    body: t.Object({ title: t.Optional(t.String()), rotation_interval: t.Optional(t.Number()), refresh_interval: t.Optional(t.Number()) }),
+    response: { 200: 'common.success', 400: 'common.error' },
+    detail: { tags: ['dashboards'], summary: 'Update global config settings' },
+  })
   .get('/api/metrics/:dashboardId', async ({ params }) => {
     return getData(params.dashboardId);
-  }, { detail: { tags: ['metrics'], summary: 'Get metrics for a dashboard' } })
+  }, {
+    response: { 200: 'metrics.dashboard' },
+    detail: { tags: ['metrics'], summary: 'Get metrics for a dashboard' },
+  })
 
   // Browse GCP metric descriptors across projects
   .get('/api/gcp/metrics/descriptors', async ({ query }) => {
@@ -298,7 +313,10 @@ const app = new Elysia()
         { status: permDenied ? 403 : 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['metrics'], summary: 'Browse GCP metric descriptors for a project' } })
+  }, {
+    response: { 200: 'metrics.descriptor-list', 403: 'metrics.descriptor-error', 500: 'metrics.descriptor-error' },
+    detail: { tags: ['metrics'], summary: 'Browse GCP metric descriptors for a project' },
+  })
 
   // Single widget data endpoint
   .get('/api/data/:widgetId', async ({ params }) => {
@@ -360,6 +378,10 @@ const app = new Elysia()
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
     }
+  }, {
+    body: t.Any(),
+    response: { 200: 'dashboard.list', 400: 'common.error' },
+    detail: { tags: ['dashboards'], summary: 'Update dashboard config' },
   })
 
   // Dashboard management endpoints
@@ -398,7 +420,11 @@ const app = new Elysia()
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['dashboards'], summary: 'Update dashboard' } })
+  }, {
+    body: 'dashboard.update',
+    response: { 200: 'dashboard.response', 400: 'common.error' },
+    detail: { tags: ['dashboards'], summary: 'Update dashboard' },
+  })
 
   .post('/api/dashboards', async ({ body }) => {
     try {
@@ -411,7 +437,11 @@ const app = new Elysia()
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['dashboards'], summary: 'Create new dashboard' } })
+  }, {
+    body: 'dashboard.create',
+    response: { 200: 'dashboard.response', 400: 'common.error' },
+    detail: { tags: ['dashboards'], summary: 'Create new dashboard' },
+  })
 
   .delete('/api/dashboards/:id', async ({ params }) => {
     try {
@@ -424,7 +454,10 @@ const app = new Elysia()
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['dashboards'], summary: 'Delete dashboard' } })
+  }, {
+    response: { 200: 'common.success', 404: 'common.error' },
+    detail: { tags: ['dashboards'], summary: 'Delete dashboard' },
+  })
 
   .post('/api/dashboards/:id/duplicate', async ({ params }) => {
     try {
@@ -437,7 +470,10 @@ const app = new Elysia()
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['dashboards'], summary: 'Duplicate dashboard' } })
+  }, {
+    response: { 200: 'dashboard.response', 404: 'common.error' },
+    detail: { tags: ['dashboards'], summary: 'Duplicate dashboard' },
+  })
 
   .post('/api/dashboards/reorder', async ({ body }) => {
     try {
@@ -450,7 +486,11 @@ const app = new Elysia()
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['dashboards'], summary: 'Reorder dashboards' } })
+  }, {
+    body: 'dashboard.reorder',
+    response: { 200: 'dashboard.list' },
+    detail: { tags: ['dashboards'], summary: 'Reorder dashboards' },
+  })
 
   // Backup management endpoints
   .get('/api/backups', () => {
@@ -462,7 +502,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['backups'], summary: 'List configuration backups' } })
+  }, {
+    response: { 200: t.Object({ success: t.Boolean(), backups: t.Array(t.String()) }) },
+    detail: { tags: ['backups'], summary: 'List configuration backups' },
+  })
 
   .post('/api/backups/restore', async ({ body }) => {
     try {
@@ -475,7 +518,11 @@ const app = new Elysia()
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['backups'], summary: 'Restore from backup' } })
+  }, {
+    body: t.Object({ filename: t.String() }),
+    response: { 200: 'common.success', 400: 'common.error' },
+    detail: { tags: ['backups'], summary: 'Restore from backup' },
+  })
 
   // Data source management endpoints
   .get('/api/data-sources', () => {
@@ -495,7 +542,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['data-sources'], summary: 'List all data sources' } })
+  }, {
+    response: { 200: 'datasource.list' },
+    detail: { tags: ['data-sources'], summary: 'List all data sources' },
+  })
 
   .get('/api/data-sources/schemas', () => {
     try {
@@ -529,7 +579,10 @@ const app = new Elysia()
         { status: 404, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['data-sources'], summary: 'Get available metrics for a data source' } })
+  }, {
+    response: { 200: t.Object({ success: t.Boolean(), metrics: t.Array(t.Any()) }) },
+    detail: { tags: ['data-sources'], summary: 'Get available metrics for a data source' },
+  })
 
   .post('/api/data-sources/:name/test', async ({ params }) => {
     try {
@@ -541,7 +594,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['data-sources'], summary: 'Test data source connection' } })
+  }, {
+    response: { 200: 'datasource.test-response' },
+    detail: { tags: ['data-sources'], summary: 'Test data source connection' },
+  })
 
   // Data source schema endpoints (detailed field definitions)
   .get('/api/data-sources/schemas/detailed', () => {
@@ -643,7 +699,11 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['data-sources'], summary: 'Update data source config' } })
+  }, {
+    body: 'datasource.config',
+    response: { 200: 'common.success', 400: 'common.error' },
+    detail: { tags: ['data-sources'], summary: 'Update data source config' },
+  })
 
   .post('/api/data-sources/:name/toggle', async ({ params, body }) => {
     try {
@@ -686,7 +746,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['data-sources'], summary: 'Get audit log for data source' } })
+  }, {
+    response: { 200: t.Object({ success: t.Boolean(), history: t.Array(t.Any()) }) },
+    detail: { tags: ['data-sources'], summary: 'Get audit log for data source' },
+  })
 
   .get('/api/data-sources/export', () => {
     try {
@@ -721,7 +784,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['templates'], summary: 'List dashboard templates' } })
+  }, {
+    response: { 200: 'template.list' },
+    detail: { tags: ['templates'], summary: 'List dashboard templates' },
+  })
 
   .get('/api/templates/:id', ({ params }) => {
     try {
@@ -753,7 +819,10 @@ const app = new Elysia()
         { status: error.message.includes('not found') ? 404 : 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['templates'], summary: 'Get template by ID' } })
+  }, {
+    response: { 200: 'template.response', 404: 'common.error' },
+    detail: { tags: ['templates'], summary: 'Get template by ID' },
+  })
 
   .post('/api/templates', async ({ body }) => {
     try {
@@ -794,7 +863,11 @@ const app = new Elysia()
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['templates'], summary: 'Create new template' } })
+  }, {
+    body: 'template.create',
+    response: { 201: 'template.response', 400: 'common.error' },
+    detail: { tags: ['templates'], summary: 'Create new template' },
+  })
 
   .put('/api/templates/:id', async ({ params, body }) => {
     try {
@@ -851,7 +924,11 @@ const app = new Elysia()
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['templates'], summary: 'Update template' } })
+  }, {
+    body: 'template.update',
+    response: { 200: 'template.response', 404: 'common.error' },
+    detail: { tags: ['templates'], summary: 'Update template' },
+  })
 
   .delete('/api/templates/:id', ({ params }) => {
     try {
@@ -883,7 +960,10 @@ const app = new Elysia()
         { status: error.message.includes('not found') ? 404 : 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['templates'], summary: 'Delete template' } })
+  }, {
+    response: { 200: 'common.success', 404: 'common.error' },
+    detail: { tags: ['templates'], summary: 'Delete template' },
+  })
 
   .post('/api/dashboards/export', ({ body }) => {
     try {
@@ -904,7 +984,11 @@ const app = new Elysia()
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['dashboards'], summary: 'Export dashboard as JSON' } })
+  }, {
+    body: 'dashboard.export',
+    response: { 200: 'dashboard.item' },
+    detail: { tags: ['dashboards'], summary: 'Export dashboard as JSON' },
+  })
 
   .post('/api/dashboards/import', async ({ body }) => {
     try {
@@ -920,7 +1004,11 @@ const app = new Elysia()
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['dashboards'], summary: 'Import dashboard from JSON' } })
+  }, {
+    body: 'dashboard.import',
+    response: { 200: 'dashboard.response', 400: 'common.error' },
+    detail: { tags: ['dashboards'], summary: 'Import dashboard from JSON' },
+  })
 
   // Theme management endpoints
   .get('/api/themes', ({ query }) => {
@@ -935,7 +1023,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['themes'], summary: 'List all themes' } })
+  }, {
+    response: { 200: 'theme.list' },
+    detail: { tags: ['themes'], summary: 'List all themes' },
+  })
 
   .get('/api/themes/categories', () => {
     try {
@@ -946,7 +1037,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['themes'], summary: 'List theme categories' } })
+  }, {
+    response: { 200: 'theme.list' },
+    detail: { tags: ['themes'], summary: 'List theme categories' },
+  })
 
   .get('/api/themes/default', ({ set }) => {
     try {
@@ -962,7 +1056,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['themes'], summary: 'Get default theme' } })
+  }, {
+    response: { 200: 'theme.list' },
+    detail: { tags: ['themes'], summary: 'Get default theme' },
+  })
 
   .get('/api/themes/:id', ({ params, set }) => {
     try {
@@ -978,7 +1075,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['themes'], summary: 'Get theme by ID' } })
+  }, {
+    response: { 200: 'theme.response', 404: 'common.error' },
+    detail: { tags: ['themes'], summary: 'Get theme by ID' },
+  })
 
   .post('/api/themes', async ({ body, set }) => {
     try {
@@ -989,7 +1089,11 @@ const app = new Elysia()
       set.status = 400;
       return { error: error.message };
     }
-  }, { detail: { tags: ['themes'], summary: 'Create new theme' } })
+  }, {
+    body: 'theme.create',
+    response: { 201: 'theme.response', 400: 'common.error' },
+    detail: { tags: ['themes'], summary: 'Create new theme' },
+  })
 
   .put('/api/themes/:id', async ({ params, body, set }) => {
     try {
@@ -1001,7 +1105,11 @@ const app = new Elysia()
       set.status = 400;
       return { error: error.message };
     }
-  }, { detail: { tags: ['themes'], summary: 'Update theme' } })
+  }, {
+    body: 'theme.update',
+    response: { 200: 'theme.response', 404: 'common.error' },
+    detail: { tags: ['themes'], summary: 'Update theme' },
+  })
 
   .delete('/api/themes/:id', async ({ params, set }) => {
     try {
@@ -1015,7 +1123,10 @@ const app = new Elysia()
       set.status = 400;
       return { error: error.message };
     }
-  }, { detail: { tags: ['themes'], summary: 'Delete theme' } })
+  }, {
+    response: { 200: 'common.success', 404: 'common.error' },
+    detail: { tags: ['themes'], summary: 'Delete theme' },
+  })
 
   // Health check endpoint for Cloud Run
   .get('/health', () => {
@@ -1025,7 +1136,10 @@ const app = new Elysia()
       version: '2.0.0',
       service: 'tv-dashboards'
     };
-  }, { detail: { tags: ['health'], summary: 'Health check for Cloud Run' } })
+  }, {
+    response: { 200: t.Object({ status: t.String(), timestamp: t.String(), version: t.String(), service: t.String() }) },
+    detail: { tags: ['health'], summary: 'Health check for Cloud Run' },
+  })
 
   // Performance metrics endpoint
   .get('/api/metrics', () => {
@@ -1040,7 +1154,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['metrics'], summary: 'Get server performance metrics' } })
+  }, {
+    response: { 200: t.Object({ success: t.Boolean(), metrics: t.Any() }) },
+    detail: { tags: ['metrics'], summary: 'Get server performance metrics' },
+  })
 
   // Apply rate limiting
   .use(smartRateLimit)
@@ -1062,12 +1179,16 @@ const app = new Elysia()
         'Expires': '0'
       }
     });
-  })
+  });
 
-  .listen({ port: PORT, hostname: HOST });
+export { app };
 
-logger.info(`Dashboard server running at http://${HOST}:${PORT}`);
-logger.info('Config loaded from config/dashboards.yaml');
-logger.info({ dataMode: LIVE ? 'LIVE' : 'MOCK' }, 'Data mode configured');
-logger.info(`Numerics widgets: http://${HOST}:${PORT}/api/numerics/<widget>`);
-logger.info(`AnyBoard config: http://${HOST}:${PORT}/api/anyboard/config.json`);
+// Only start listening when this file is the entry point (not when imported by tests)
+if (import.meta.main) {
+  app.listen({ port: PORT, hostname: HOST });
+  logger.info(`Dashboard server running at http://${HOST}:${PORT}`);
+  logger.info('Config loaded from config/dashboards.yaml');
+  logger.info({ dataMode: LIVE ? 'LIVE' : 'MOCK' }, 'Data mode configured');
+  logger.info(`Numerics widgets: http://${HOST}:${PORT}/api/numerics/<widget>`);
+  logger.info(`AnyBoard config: http://${HOST}:${PORT}/api/anyboard/config.json`);
+}

@@ -33,8 +33,9 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       };
     }
   }, {
+    response: { 200: 'query.list' },
     detail: {
-      tags: ['Queries'],
+      tags: ['queries'],
       summary: 'List all queries',
       description: 'Retrieve all saved queries grouped by data source'
     }
@@ -52,8 +53,9 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       };
     }
   }, {
+    response: { 200: 'query.list', 404: 'common.error' },
     detail: {
-      tags: ['Queries'],
+      tags: ['queries'],
       summary: 'List queries by source',
       description: 'Retrieve all saved queries for a specific data source'
     }
@@ -77,8 +79,9 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       };
     }
   }, {
+    response: { 200: 'query.response', 404: 'common.error' },
     detail: {
-      tags: ['Queries'],
+      tags: ['queries'],
       summary: 'Get specific query',
       description: 'Retrieve a specific saved query by source and ID'
     }
@@ -154,8 +157,10 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       );
     }
   }, {
+    body: t.Any(),
+    response: { 200: 'query.response', 400: 'common.error' },
     detail: {
-      tags: ['Queries'],
+      tags: ['queries'],
       summary: 'Create or update query',
       description: 'Save a new query or update an existing one'
     }
@@ -192,8 +197,10 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       );
     }
   }, {
+    body: t.Any(),
+    response: { 200: 'query.response', 400: 'common.error', 404: 'common.error' },
     detail: {
-      tags: ['Queries'],
+      tags: ['queries'],
       summary: 'Update query',
       description: 'Update an existing query'
     }
@@ -214,8 +221,9 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       );
     }
   }, {
+    response: { 200: 'common.success', 404: 'common.error' },
     detail: {
-      tags: ['Queries'],
+      tags: ['queries'],
       summary: 'Delete query',
       description: 'Delete a saved query'
     }
@@ -350,8 +358,10 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       };
     }
   }, {
+    body: t.Any(),
+    response: { 200: 'query.test-response', 400: 'query.test-response' },
     detail: {
-      tags: ['Queries'],
+      tags: ['queries'],
       summary: 'Test query',
       description: 'Test query execution without saving (dry run). Executes BigQuery queries with LIMIT 10, validates structure for other sources.'
     }
@@ -369,8 +379,9 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       };
     }
   }, {
+    response: { 200: t.Object({ success: t.Boolean(), backups: t.Array(t.String()) }) },
     detail: {
-      tags: ['Queries'],
+      tags: ['queries'],
       summary: 'List backups',
       description: 'List available query backup files'
     }
@@ -402,8 +413,10 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
       );
     }
   }, {
+    body: t.Object({ filename: t.String() }),
+    response: { 200: 'common.success', 400: 'common.error' },
     detail: {
-      tags: ['Queries'],
+      tags: ['queries'],
       summary: 'Restore backup',
       description: 'Restore queries from a backup file'
     }

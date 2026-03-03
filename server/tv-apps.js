@@ -3,7 +3,7 @@
 // Serves dashboard data in formats consumable by Apple TV apps — ElysiaJS
 // ---------------------------------------------------------------------------
 
-import { Elysia } from 'elysia';
+import { Elysia, t } from 'elysia';
 
 const LIVE = process.env.USE_REAL_DATA === 'true';
 
@@ -70,6 +70,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
         },
       },
     };
+  }, {
+    response: { 200: t.Any() },
+    detail: { tags: ['tv-apps'], summary: 'List all Numerics widget endpoints' },
   })
 
   // ── Platform Overview widgets ──
@@ -81,6 +84,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
       color: '#200847',
       data: (w.sparkline || []).slice(-20).map(v => ({ value: v })),
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Bids served sparkline widget' },
   })
 
   .get('/impressions', async () => {
@@ -92,6 +98,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
       color: '#200847',
       data: [{ value: val }],
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Impressions delivered widget' },
   })
 
   .get('/active-services', async () => {
@@ -102,6 +111,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
       color: '#200847',
       data: { value: String(w.value || '0/0') },
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Active services label widget' },
   })
 
   .get('/platform-uptime', async () => {
@@ -112,6 +124,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
       color: '#200847',
       data: { minValue: 99, value: w.value || 99.97, maxValue: 100 },
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Platform uptime gauge widget' },
   })
 
   .get('/events-processed', async () => {
@@ -122,6 +137,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
       color: '#200847',
       data: (w.sparkline || []).slice(-20).map(v => ({ value: v })),
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Events processed sparkline widget' },
   })
 
   .get('/cloud-services', async () => {
@@ -131,6 +149,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
       color: '#200847',
       data: { value: String(w.value || '—') },
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Cloud services label widget' },
   })
 
   .get('/storage-volume', async () => {
@@ -141,6 +162,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
       color: '#200847',
       data: { value: String(w.value || '—') },
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Storage volume label widget' },
   })
 
   // ── Services Health widgets ──
@@ -152,6 +176,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
       color: '#200847',
       data: { value: String(w.value || '—') },
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Services online label widget' },
   })
 
   .get('/requests-served', async () => {
@@ -162,6 +189,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
       color: '#200847',
       data: (w.sparkline || []).slice(-20).map(v => ({ value: v })),
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Requests served sparkline widget' },
   })
 
   .get('/response-time', async () => {
@@ -172,6 +202,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
       color: '#200847',
       data: { minValue: 0, value: w.value || 0, maxValue: 500 },
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Response time gauge widget' },
   })
 
   .get('/top-services', async () => {
@@ -182,6 +215,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
       color: '#200847',
       data: (w.bars || []).map(b => ({ name: b.label, value: b.value })),
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Top services funnel widget' },
   })
 
   .get('/fastest-services', async () => {
@@ -192,6 +228,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
       color: '#200847',
       data: (w.bars || []).map(b => ({ name: b.label, value: b.value })),
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Fastest services funnel widget' },
   })
 
   // ── Data Processing widgets ──
@@ -203,6 +242,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
       color: '#200847',
       data: (w.sparkline || []).slice(-20).map(v => ({ value: v })),
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Analytics queries sparkline widget' },
   })
 
   .get('/compute-utilization', async () => {
@@ -213,6 +255,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
       color: '#200847',
       data: { minValue: 0, value: w.value || 0, maxValue: 2000 },
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Compute utilization gauge widget' },
   })
 
   .get('/storage-volume-dp', async () => {
@@ -223,6 +268,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
       color: '#200847',
       data: { value: String(w.value || '—') },
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Data processing storage volume widget' },
   })
 
   .get('/messages-queued', async () => {
@@ -233,6 +281,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
       color: '#200847',
       data: (w.sparkline || []).slice(-20).map(v => ({ value: v })),
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Messages queued sparkline widget' },
   })
 
   .get('/ingestion-topics', async () => {
@@ -243,6 +294,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
       color: '#200847',
       data: (w.bars || []).map(b => ({ name: b.label, value: b.value })),
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Ingestion by topic funnel widget' },
   })
 
   // ── Campaign Delivery summary ──
@@ -255,6 +309,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
       color: '#200847',
       data: [{ value: totals.impressions || 0 }, { value: Math.round((totals.impressions || 0) * 0.97) }],
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Delivery total number+delta widget' },
   })
 
   .get('/delivery-by-region', async () => {
@@ -270,6 +327,9 @@ export const numericsRoutes = new Elysia({ prefix: '/api/numerics' })
         { name: 'West Coast', value: regions.west?.impressions || 0 },
       ],
     };
+  }, {
+    response: { 200: 'metrics.numerics-value' },
+    detail: { tags: ['tv-apps'], summary: 'Delivery by region pie widget' },
   });
 
 
@@ -358,6 +418,9 @@ export const anyboardRoutes = new Elysia({ prefix: '/api/anyboard' })
         { name: 'West Coast',  value: fmtNum(regions.west?.impressions || 0) },
       ],
     };
+  }, {
+    response: { 200: t.Any() },
+    detail: { tags: ['tv-apps'], summary: 'AnyBoard live data feed' },
   })
 
   // ── AnyBoard dashboard configuration ──
@@ -567,4 +630,7 @@ export const anyboardRoutes = new Elysia({ prefix: '/api/anyboard' })
         },
       ],
     };
+  }, {
+    response: { 200: t.Any() },
+    detail: { tags: ['tv-apps'], summary: 'AnyBoard dashboard configuration' },
   });
