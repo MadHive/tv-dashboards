@@ -3,6 +3,7 @@
 // ===========================================================================
 
 import { DataSource } from './base.js';
+import logger from '../logger.js';
 
 const SEGMENT_API_BASE = 'https://api.segmentapis.com';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -37,7 +38,7 @@ export class SegmentDataSource extends DataSource {
   async initialize() {
     try {
       if (!this.accessToken) {
-        console.warn('[segment] No Segment access token found - data source will use mock data');
+        logger.warn('[segment] No Segment access token found - data source will use mock data');
         this.isConnected = false;
         return;
       }
@@ -46,12 +47,12 @@ export class SegmentDataSource extends DataSource {
       this.isConnected = await this.testConnection();
 
       if (this.isConnected) {
-        console.log('[segment] Segment client initialized');
+        logger.info('[segment] Segment client initialized');
       } else {
-        console.warn('[segment] Connection test failed - will use mock data');
+        logger.warn('[segment] Connection test failed - will use mock data');
       }
     } catch (error) {
-      console.error('[segment] Failed to initialize:', error.message);
+      logger.error('[segment] Failed to initialize:', error.message);
       this.lastError = error;
       this.isConnected = false;
     }
@@ -118,7 +119,7 @@ export class SegmentDataSource extends DataSource {
   async fetchMetrics(widgetConfig) {
     try {
       if (!this.accessToken) {
-        console.warn('[segment] Segment access token not configured - using mock data');
+        logger.warn('[segment] Segment access token not configured - using mock data');
         return {
           timestamp: new Date().toISOString(),
           source: 'segment',
@@ -138,7 +139,7 @@ export class SegmentDataSource extends DataSource {
       if (this.metricCache.has(cacheKey)) {
         const cached = this.metricCache.get(cacheKey);
         if (Date.now() - cached.timestamp < CACHE_TTL) {
-          console.log('[segment] Cache hit for metric:', metric);
+          logger.info('[segment] Cache hit for metric:', metric);
           return {
             timestamp: new Date().toISOString(),
             source: 'segment',
@@ -194,7 +195,7 @@ export class SegmentDataSource extends DataSource {
         metric
       };
     } catch (error) {
-      console.error('[segment] Fetch metrics error:', error.message);
+      logger.error('[segment] Fetch metrics error:', error.message);
       return this.handleError(error, widgetConfig.type);
     }
   }
@@ -385,10 +386,10 @@ export class SegmentDataSource extends DataSource {
 
       // Test by fetching workspaces
       await this.request('/workspaces');
-      console.log('[segment] Connection test successful');
+      logger.info('[segment] Connection test successful');
       return true;
     } catch (error) {
-      console.error('[segment] Connection test failed:', error.message);
+      logger.error('[segment] Connection test failed:', error.message);
       this.lastError = error;
       return false;
     }

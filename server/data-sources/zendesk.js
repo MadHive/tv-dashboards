@@ -37,7 +37,7 @@ export class ZendeskDataSource extends DataSource {
     try {
       // Check if credentials are available
       if (!this.subdomain || !this.apiToken || !this.email) {
-        console.warn('No Zendesk credentials found - data source will use mock data');
+        logger.warn('No Zendesk credentials found - data source will use mock data');
         this.isConnected = false;
         return;
       }
@@ -50,9 +50,9 @@ export class ZendeskDataSource extends DataSource {
       });
 
       this.isConnected = true;
-      console.log(`[zendesk] Client initialized for ${this.subdomain}`);
+      logger.info(`[zendesk] Client initialized for ${this.subdomain}`);
     } catch (error) {
-      console.error('[zendesk] Failed to initialize:', error.message);
+      logger.error('[zendesk] Failed to initialize:', error.message);
       this.lastError = error;
       this.isConnected = false;
     }
@@ -88,7 +88,7 @@ export class ZendeskDataSource extends DataSource {
 
     // Return cached data if still fresh
     if (this.cache && now - this.cacheTime < CACHE_TTL) {
-      console.debug('Cache hit for Zendesk metrics');
+      logger.info('Cache hit for Zendesk metrics');
       // Using cached data
       return this.cache;
     }
@@ -155,10 +155,10 @@ export class ZendeskDataSource extends DataSource {
 
       return metrics;
     } catch (error) {
-      console.error('[zendesk] Failed to fetch metrics:', error.message);
+      logger.error('[zendesk] Failed to fetch metrics:', error.message);
       // Return cached data if available, even if stale
       if (this.cache) {
-        console.warn('Returning stale cached data due to fetch error');
+        logger.warn('Returning stale cached data due to fetch error');
         return this.cache;
       }
       throw error;
@@ -175,7 +175,7 @@ export class ZendeskDataSource extends DataSource {
       }
 
       if (!this.zendeskClient) {
-        console.warn('Zendesk client not initialized - using mock data');
+        logger.warn('Zendesk client not initialized - using mock data');
         return {
           timestamp: new Date().toISOString(),
           source: 'zendesk',
@@ -201,7 +201,7 @@ export class ZendeskDataSource extends DataSource {
       };
     } catch (error) {
       const queryDuration = Date.now() - (Date.now());
-      console.error('[zendesk] Fetch metrics error:', error.message);
+      logger.error('[zendesk] Fetch metrics error:', error.message);
       return this.handleError(error, widgetConfig.type);
     }
     logger.warn('[zendesk] Using mock data - Zendesk API not yet implemented');
@@ -230,17 +230,17 @@ export class ZendeskDataSource extends DataSource {
       return new Promise((resolve) => {
         this.zendeskClient.tickets.count((err, req, result) => {
           if (err) {
-            console.error('[zendesk] Connection test failed:', err.message);
+            logger.error('[zendesk] Connection test failed:', err.message);
             this.lastError = err;
             resolve(false);
           } else {
-            console.log('Zendesk connection test successful');
+            logger.info('Zendesk connection test successful');
             resolve(true);
           }
         });
       });
     } catch (error) {
-      console.error('[zendesk] Connection test failed:', error.message);
+      logger.error('[zendesk] Connection test failed:', error.message);
       this.lastError = error;
       return false;
     }

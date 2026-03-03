@@ -3,6 +3,7 @@
 // ===========================================================================
 
 import { DataSource } from './base.js';
+import logger from '../logger.js';
 
 const ROLLBAR_BASE_URL = 'https://api.rollbar.com/api/1';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -83,7 +84,7 @@ export class RollbarDataSource extends DataSource {
   async initialize() {
     try {
       if (!this.accessToken) {
-        console.warn('[rollbar] No access token found - data source will use mock data');
+        logger.warn('[rollbar] No access token found - data source will use mock data');
         this.isConnected = false;
         return;
       }
@@ -92,12 +93,12 @@ export class RollbarDataSource extends DataSource {
       this.isConnected = await this.testConnection();
 
       if (this.isConnected) {
-        console.log('[rollbar] Rollbar client initialized');
+        logger.info('[rollbar] Rollbar client initialized');
       } else {
-        console.warn('[rollbar] Connection test failed');
+        logger.warn('[rollbar] Connection test failed');
       }
     } catch (error) {
-      console.error('[rollbar] Failed to initialize:', error.message);
+      logger.error('[rollbar] Failed to initialize:', error.message);
       this.lastError = error;
       this.isConnected = false;
     }
@@ -115,7 +116,7 @@ export class RollbarDataSource extends DataSource {
   async fetchMetrics(widgetConfig) {
     try {
       if (!this.accessToken) {
-        console.warn('[rollbar] Access token not configured - using mock data');
+        logger.warn('[rollbar] Access token not configured - using mock data');
         return {
           timestamp: new Date().toISOString(),
           source: 'rollbar',
@@ -137,7 +138,7 @@ export class RollbarDataSource extends DataSource {
       if (this.metricCache.has(cacheKey)) {
         const cached = this.metricCache.get(cacheKey);
         if (Date.now() - cached.timestamp < CACHE_TTL) {
-          console.log('[rollbar] Cache hit for metric:', metricType);
+          logger.info('[rollbar] Cache hit for metric:', metricType);
           return {
             timestamp: new Date().toISOString(),
             source: 'rollbar',
@@ -178,7 +179,7 @@ export class RollbarDataSource extends DataSource {
         widgetId: widgetConfig.id
       };
     } catch (error) {
-      console.error('[rollbar] Fetch metrics error:', error.message);
+      logger.error('[rollbar] Fetch metrics error:', error.message);
       return this.handleError(error, widgetConfig.type);
     }
   }
@@ -265,16 +266,16 @@ export class RollbarDataSource extends DataSource {
 
       // Use the ping endpoint or try fetching projects
       await this.makeRequest('/status/ping');
-      console.log('[rollbar] Connection test successful');
+      logger.info('[rollbar] Connection test successful');
       return true;
     } catch (error) {
       // Fallback: try to fetch items as connection test
       try {
         await this.makeRequest('/items/', { status: 'active' });
-        console.log('[rollbar] Connection test successful (via items endpoint)');
+        logger.info('[rollbar] Connection test successful (via items endpoint)');
         return true;
       } catch (itemsError) {
-        console.error('[rollbar] Connection test failed:', error.message);
+        logger.error('[rollbar] Connection test failed:', error.message);
         this.lastError = error;
         return false;
       }

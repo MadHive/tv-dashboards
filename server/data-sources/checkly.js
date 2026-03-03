@@ -3,6 +3,7 @@
 // ===========================================================================
 
 import { DataSource } from './base.js';
+import logger from '../logger.js';
 
 const CHECKLY_API_BASE = 'https://api.checklyhq.com';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -36,7 +37,7 @@ export class ChecklyDataSource extends DataSource {
   async initialize() {
     try {
       if (!this.apiKey || !this.accountId) {
-        console.warn('[checkly] API key or account ID not found - data source will use mock data');
+        logger.warn('[checkly] API key or account ID not found - data source will use mock data');
         this.isConnected = false;
         return;
       }
@@ -45,12 +46,12 @@ export class ChecklyDataSource extends DataSource {
       this.isConnected = await this.testConnection();
 
       if (this.isConnected) {
-        console.log('[checkly] Checkly client initialized');
+        logger.info('[checkly] Checkly client initialized');
       } else {
-        console.warn('[checkly] Connection test failed - will use mock data');
+        logger.warn('[checkly] Connection test failed - will use mock data');
       }
     } catch (error) {
-      console.error('[checkly] Failed to initialize:', error.message);
+      logger.error('[checkly] Failed to initialize:', error.message);
       this.lastError = error;
       this.isConnected = false;
     }
@@ -119,7 +120,7 @@ export class ChecklyDataSource extends DataSource {
   async fetchMetrics(widgetConfig) {
     try {
       if (!this.apiKey || !this.accountId) {
-        console.warn('[checkly] Checkly credentials not configured - using mock data');
+        logger.warn('[checkly] Checkly credentials not configured - using mock data');
         return {
           timestamp: new Date().toISOString(),
           source: 'checkly',
@@ -140,7 +141,7 @@ export class ChecklyDataSource extends DataSource {
       if (this.metricCache.has(cacheKey)) {
         const cached = this.metricCache.get(cacheKey);
         if (Date.now() - cached.timestamp < CACHE_TTL) {
-          console.log('[checkly] Cache hit for metric:', metric);
+          logger.info('[checkly] Cache hit for metric:', metric);
           return {
             timestamp: new Date().toISOString(),
             source: 'checkly',
@@ -198,7 +199,7 @@ export class ChecklyDataSource extends DataSource {
         metric
       };
     } catch (error) {
-      console.error('[checkly] Fetch metrics error:', error.message);
+      logger.error('[checkly] Fetch metrics error:', error.message);
       return this.handleError(error, widgetConfig.type);
     }
   }
@@ -468,10 +469,10 @@ export class ChecklyDataSource extends DataSource {
 
       // Test by fetching checks
       await this.request('/v1/checks?limit=1');
-      console.log('[checkly] Connection test successful');
+      logger.info('[checkly] Connection test successful');
       return true;
     } catch (error) {
-      console.error('[checkly] Connection test failed:', error.message);
+      logger.error('[checkly] Connection test failed:', error.message);
       this.lastError = error;
       return false;
     }

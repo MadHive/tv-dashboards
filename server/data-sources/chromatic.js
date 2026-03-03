@@ -3,6 +3,7 @@
 // ===========================================================================
 
 import { DataSource } from './base.js';
+import logger from '../logger.js';
 
 const CHROMATIC_API_URL = 'https://www.chromatic.com/api/v1';
 const CHROMATIC_GRAPHQL_URL = 'https://index.chromatic.com/graphql';
@@ -30,7 +31,7 @@ export class ChromaticDataSource extends DataSource {
   async initialize() {
     try {
       if (!this.projectToken) {
-        console.warn('[chromatic] No project token found - data source will use mock data');
+        logger.warn('[chromatic] No project token found - data source will use mock data');
         this.isConnected = false;
         return;
       }
@@ -39,12 +40,12 @@ export class ChromaticDataSource extends DataSource {
       this.isConnected = await this.testConnection();
 
       if (this.isConnected) {
-        console.log('[chromatic] Chromatic data source initialized');
+        logger.info('[chromatic] Chromatic data source initialized');
       } else {
-        console.warn('[chromatic] Connection test failed - using mock data');
+        logger.warn('[chromatic] Connection test failed - using mock data');
       }
     } catch (error) {
-      console.error('[chromatic] Failed to initialize:', error.message);
+      logger.error('[chromatic] Failed to initialize:', error.message);
       this.lastError = error;
       this.isConnected = false;
     }
@@ -113,14 +114,14 @@ export class ChromaticDataSource extends DataSource {
       });
 
       if (!response.ok) {
-        console.error(`[chromatic] API error: ${response.status}`);
+        logger.error(`[chromatic] API error: ${response.status}`);
         return this.cache || null;
       }
 
       const result = await response.json();
 
       if (result.errors) {
-        console.error('[chromatic] GraphQL errors:', result.errors);
+        logger.error('[chromatic] GraphQL errors:', result.errors);
         return this.cache || null;
       }
 
@@ -129,7 +130,7 @@ export class ChromaticDataSource extends DataSource {
 
       return this.cache;
     } catch (error) {
-      console.error('[chromatic] Fetch error:', error.message);
+      logger.error('[chromatic] Fetch error:', error.message);
       return this.cache || null;
     }
   }
@@ -140,7 +141,7 @@ export class ChromaticDataSource extends DataSource {
   async fetchMetrics(widgetConfig) {
     try {
       if (!this.projectToken) {
-        console.warn('[chromatic] Project token not configured - using mock data');
+        logger.warn('[chromatic] Project token not configured - using mock data');
         return {
           timestamp: new Date().toISOString(),
           source: 'chromatic',
@@ -198,21 +199,21 @@ export class ChromaticDataSource extends DataSource {
       });
 
       if (!response.ok) {
-        console.error('[chromatic] Connection test failed:', response.status);
+        logger.error('[chromatic] Connection test failed:', response.status);
         return false;
       }
 
       const result = await response.json();
 
       if (result.errors) {
-        console.error('[chromatic] Connection test failed:', result.errors);
+        logger.error('[chromatic] Connection test failed:', result.errors);
         return false;
       }
 
-      console.log('[chromatic] Connection test successful');
+      logger.info('[chromatic] Connection test successful');
       return true;
     } catch (error) {
-      console.error('[chromatic] Connection test failed:', error.message);
+      logger.error('[chromatic] Connection test failed:', error.message);
       return false;
     }
   }

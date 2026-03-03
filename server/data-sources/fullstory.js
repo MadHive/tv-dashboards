@@ -32,7 +32,7 @@ export class FullStoryDataSource extends DataSource {
   async initialize() {
     try {
       if (!this.apiKey) {
-        console.warn('[fullstory] No FullStory API key found - data source will use mock data');
+        logger.warn('[fullstory] No FullStory API key found - data source will use mock data');
         this.isConnected = false;
         return;
       }
@@ -41,12 +41,12 @@ export class FullStoryDataSource extends DataSource {
       this.isConnected = await this.testConnection();
 
       if (this.isConnected) {
-        console.log('[fullstory] FullStory client initialized');
+        logger.info('[fullstory] FullStory client initialized');
       } else {
-        console.warn('[fullstory] Connection test failed - will use mock data');
+        logger.warn('[fullstory] Connection test failed - will use mock data');
       }
     } catch (error) {
-      console.error('[fullstory] Failed to initialize:', error.message);
+      logger.error('[fullstory] Failed to initialize:', error.message);
       this.lastError = error;
       this.isConnected = false;
     }
@@ -91,7 +91,7 @@ export class FullStoryDataSource extends DataSource {
   async fetchMetrics(widgetConfig) {
     try {
       if (!this.apiKey) {
-        console.warn('[fullstory] FullStory API key not configured - using mock data');
+        logger.warn('[fullstory] FullStory API key not configured - using mock data');
         return {
           timestamp: new Date().toISOString(),
           source: 'fullstory',
@@ -113,7 +113,7 @@ export class FullStoryDataSource extends DataSource {
       if (this.metricCache.has(cacheKey)) {
         const cached = this.metricCache.get(cacheKey);
         if (Date.now() - cached.timestamp < CACHE_TTL) {
-          console.log('[fullstory] Cache hit for metric:', metric);
+          logger.info('[fullstory] Cache hit for metric:', metric);
           return {
             timestamp: new Date().toISOString(),
             source: 'fullstory',
@@ -155,7 +155,7 @@ export class FullStoryDataSource extends DataSource {
         metric
       };
     } catch (error) {
-      console.error('[fullstory] Fetch metrics error:', error.message);
+      logger.error('[fullstory] Fetch metrics error:', error.message);
       return this.handleError(error, widgetConfig.type);
     }
   }
@@ -261,10 +261,10 @@ export class FullStoryDataSource extends DataSource {
 
       // Try to fetch a small number of sessions
       await this.request('/sessions/v2?limit=1');
-      console.log('[fullstory] Connection test successful');
+      logger.info('[fullstory] Connection test successful');
       return true;
     } catch (error) {
-      console.error('[fullstory] Connection test failed:', error.message);
+      logger.error('[fullstory] Connection test failed:', error.message);
       this.lastError = error;
       return false;
     }
