@@ -1607,8 +1607,14 @@ window.Charts = (function () {
 
     // Auto-scroll: offset based on time
     var scrollElapsed = now - mapScrollResetTime;
-    var scrollOffset  = Math.floor((scrollElapsed / 3500) % Math.max(1, lbCount - 8));
     var visibleCount = Math.min(lbCount, Math.floor((h - lbY - 50) / lbEntryH));
+    // Scroll down one step at a time, pause 2s at bottom, then snap back to top
+    var scrollMax    = Math.max(0, lbCount - visibleCount);
+    var cyclePeriod  = scrollMax * 3500 + 2000;   // 3.5s/step + 2s pause at top
+    var cyclePos     = scrollElapsed % cyclePeriod;
+    var scrollOffset = cyclePos < scrollMax * 3500
+      ? Math.min(scrollMax, Math.floor(cyclePos / 3500))
+      : 0;  // back to top (highest-volume states visible)
 
     for (var li = 0; li < visibleCount; li++) {
       var si2 = (li + scrollOffset) % lbCount;
