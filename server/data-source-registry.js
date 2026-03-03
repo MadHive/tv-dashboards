@@ -203,6 +203,27 @@ class DataSourceRegistry {
     const source = this.getSource(sourceName);
     source.isConnected = false;
     source.lastError   = null;
+
+    // Refresh credential fields from process.env so the in-memory instance
+    // picks up values written to .env by the credentials endpoint.
+    // This handles module-level constants that were evaluated at startup.
+    const ENV_CREDENTIAL_MAP = {
+      vulntrack:     { apiKey: 'VULNTRACK_API_KEY', apiUrl: 'VULNTRACK_API_URL' },
+      bigquery:      { credentials: 'GOOGLE_APPLICATION_CREDENTIALS' },
+      gcp:           { credentials: 'GOOGLE_APPLICATION_CREDENTIALS' },
+      datadog:       { apiKey: 'DATADOG_API_KEY', appKey: 'DATADOG_APP_KEY' },
+      elasticsearch: { apiKey: 'ELASTICSEARCH_API_KEY', host: 'ELASTICSEARCH_HOST' },
+      aws:           { accessKeyId: 'AWS_ACCESS_KEY_ID', secretAccessKey: 'AWS_SECRET_ACCESS_KEY' },
+    };
+
+    const credMap = ENV_CREDENTIAL_MAP[sourceName];
+    if (credMap) {
+      for (const [field, envVar] of Object.entries(credMap)) {
+        const val = process.env[envVar];
+        if (val !== undefined) source[field] = val;
+      }
+    }
+
     await source.initialize();
     logger.info({ sourceName, isConnected: source.isConnected }, 'Data source reinitialized');
     return source;
