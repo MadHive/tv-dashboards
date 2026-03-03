@@ -532,14 +532,6 @@ window.Charts = (function () {
     return String(n);
   }
 
-  function lerpZoom(a, b, t) {
-    return {
-      x0: a.x0 + (b.x0 - a.x0) * t,
-      y0: a.y0 + (b.y0 - a.y0) * t,
-      x1: a.x1 + (b.x1 - a.x1) * t,
-      y1: a.y1 + (b.y1 - a.y1) * t,
-    };
-  }
 
   // ===========================================================================
   // USA MAP V2 — Dramatically more info-dense and visually striking
@@ -555,36 +547,6 @@ window.Charts = (function () {
   let mapScrollResetTime = 0;  // epoch ms — leaderboard resets scroll here
   let mapPrevTopState    = '';  // id of #1 state on last data update
 
-  // ── Map zoom cycle ──
-  var MAP_ZOOM_REGIONS = [
-    {
-      id: 'full',
-      label: '',
-      duration: 12000,
-      x0: 0, y0: 0, x1: 1, y1: 1,
-      states: null,
-    },
-    {
-      id: 'northeast',
-      label: 'NORTHEAST',
-      duration: 7000,
-      // Real Albers bounds: x 0.710-0.827, y 0.175-0.493. Add padding + widen for context.
-      x0: 0.65, y0: 0.10, x1: 0.88, y1: 0.56,
-      states: ['ME','VT','NH','MA','RI','CT','NY','NJ','PA','DE','MD','DC','VA','WV'],
-    },
-    {
-      id: 'southeast',
-      label: 'SOUTHEAST',
-      duration: 7000,
-      // Real Albers bounds: x 0.594-0.741, y 0.512-0.803. Add padding.
-      x0: 0.52, y0: 0.44, x1: 0.80, y1: 0.88,
-      states: ['NC','SC','GA','FL','AL','MS','TN','KY'],
-    },
-  ];
-  var MAP_ZOOM_TRANS_MS = 1500;
-  var mapZoomIdx   = 0;
-  var mapZoomSince = 0;
-  var mapZoomFrom  = null;
 
   // GCP Data Center locations — delivery arc origins (real infrastructure)
   const DATA_CENTERS = [
@@ -633,7 +595,6 @@ window.Charts = (function () {
     });
 
     canvas._mapData = data;
-    canvas._mapZoomEnabled = data.zoom !== false;
 
     // Reset leaderboard scroll if the top state changed
     var sortedForCheck = Object.entries(data.states || {})
@@ -770,49 +731,6 @@ window.Charts = (function () {
     var mapX = 12 + (w - leaderboardW - 24) * 0.16;
     var mapY = h * 0.15;
 
-    // ── Zoom cycle: advance state + compute current zoom rect ──
-    var zoomNow = Date.now();
-    if (mapZoomSince === 0) mapZoomSince = zoomNow;
-
-    var curRegion = MAP_ZOOM_REGIONS[mapZoomIdx];
-    var zoomElapsed = zoomNow - mapZoomSince;
-
-    var zoomEnabled = canvas._mapZoomEnabled !== false;
-    if (!zoomEnabled) {
-      // Stay on full view
-      if (mapZoomIdx !== 0) { mapZoomIdx = 0; mapZoomFrom = null; mapZoomSince = zoomNow; }
-    } else if (zoomElapsed > curRegion.duration + MAP_ZOOM_TRANS_MS) {
-      mapZoomFrom  = curRegion;
-      mapZoomIdx   = (mapZoomIdx + 1) % MAP_ZOOM_REGIONS.length;
-      mapZoomSince = zoomNow;
-      curRegion    = MAP_ZOOM_REGIONS[mapZoomIdx];
-      zoomElapsed  = 0;
-    }
-
-    var zoomRect;
-    if (mapZoomFrom && zoomElapsed < MAP_ZOOM_TRANS_MS) {
-      var zt = zoomElapsed / MAP_ZOOM_TRANS_MS;
-      zt = zt < 0.5 ? 4 * zt * zt * zt : 1 - Math.pow(-2 * zt + 2, 3) / 2;
-      zoomRect = lerpZoom(mapZoomFrom, curRegion, zt);
-    } else {
-      zoomRect = curRegion;
-      if (zoomElapsed >= MAP_ZOOM_TRANS_MS) mapZoomFrom = null;
-    }
-
-    // Expand map coords so zoomed region fills the original map area
-    var origMapX = mapX, origMapY = mapY, origMapW = mapW, origMapH = mapH;
-    var wFrac = Math.max(0.05, zoomRect.x1 - zoomRect.x0);
-    var hFrac = Math.max(0.05, zoomRect.y1 - zoomRect.y0);
-    mapW = origMapW / wFrac;
-    mapH = origMapH / hFrac;
-    mapX = origMapX - zoomRect.x0 * mapW;
-    mapY = origMapY - zoomRect.y0 * mapH;
-
-    // Clip all subsequent map drawing to the original map area
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(origMapX, origMapY, origMapW, origMapH);
-    ctx.clip();
 
     // ── Subtle radial glow ──
     var grad = ctx.createRadialGradient(mapX + mapW * 0.5, mapY + mapH * 0.5, 0, mapX + mapW * 0.5, mapY + mapH * 0.5, mapW * 0.55);
@@ -1545,40 +1463,12 @@ window.Charts = (function () {
       }
     });
 
-    ctx.restore();  // end map clip
-
-    // ── Zoom region label ──
-    if (curRegion.label) {
-      var labelAlpha = 1;
-      if (mapZoomFrom && zoomElapsed < MAP_ZOOM_TRANS_MS) {
-        labelAlpha = zoomElapsed / MAP_ZOOM_TRANS_MS;
-      }
-      ctx.globalAlpha = labelAlpha * 0.9;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'bottom';
-      ctx.font = "700 18px 'Space Grotesk', sans-serif";
-      ctx.fillStyle = BRAND.pink;
-      ctx.fillText('\u25C2 ' + curRegion.label, origMapX + 10, origMapY + origMapH - 10);
-      ctx.font = "500 11px 'Space Grotesk', sans-serif";
-      ctx.fillStyle = BRAND.text3;
-      ctx.fillText('ZOOMED VIEW', origMapX + 10, origMapY + origMapH - 30);
-      ctx.globalAlpha = 1;
-    }
 
     // ── Leaderboard sidebar (right side) — 4K scaled ──
     var lbX = w - leaderboardW - 6;
     var lbY = 100;
     var lbEntryH = 42;
-    // During zoom, show only states in the current region
     var lbSorted = sorted;
-    if (curRegion.states) {
-      var regionSet = new Set(curRegion.states);
-      var regionSorted = sorted.filter(function(e) { return regionSet.has(e[0]); });
-      if (regionSorted.length > 0) {
-        var blendT = mapZoomFrom ? Math.min(1, zoomElapsed / MAP_ZOOM_TRANS_MS) : 1;
-        lbSorted = blendT >= 0.5 ? regionSorted : sorted;
-      }
-    }
     var lbCount = Math.min(15, lbSorted.length);
 
     // Leaderboard header
@@ -1594,8 +1484,7 @@ window.Charts = (function () {
     ctx.textBaseline = 'middle';
     ctx.font = "600 15px 'Space Grotesk', sans-serif";
     ctx.fillStyle = BRAND.text2;
-    var lbTitle = curRegion.states ? 'TOP ' + curRegion.label : 'TOP STATES';
-    ctx.fillText(lbTitle, lbX + leaderboardW / 2, lbY - 19);
+    ctx.fillText('TOP STATES', lbX + leaderboardW / 2, lbY - 19);
 
     // Auto-scroll: offset based on time
     var scrollElapsed = now - mapScrollResetTime;
