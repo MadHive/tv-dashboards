@@ -1284,24 +1284,25 @@ body.studio-body {
   z-index: 20;
 }
 
-.grid-cell {
+.studio-grid-cell {
   border: 1px dashed var(--border-lit);
   border-radius: 3px;
   transition: background 0.1s, border-color 0.1s;
 }
 
-.grid-cell.drag-target {
+.studio-grid-cell.drag-target {
   background: rgba(253, 164, 212, 0.15);
   border-color: var(--mh-pink);
 }
 
-.grid-cell.drag-blocked {
+.studio-grid-cell.drag-blocked {
   background: rgba(251, 113, 133, 0.15);
   border-color: var(--red);
 }
 
 /* ── Drag Ghost ── */
 .studio-drag-ghost {
+  position: relative;
   border: 2px solid var(--mh-pink);
   border-radius: 4px;
   background: rgba(253, 164, 212, 0.12);
