@@ -705,7 +705,7 @@ dashboards:
     title: Bigtable Requests
     type: big-number
   - id: bigtable-latency
-    max: 500
+    max: 1000
     min: 0
     position:
       col: 3
