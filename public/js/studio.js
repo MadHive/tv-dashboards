@@ -1730,6 +1730,7 @@
           input.className = 'qe-input';
           input.type = field.secure ? 'password' : 'text';
           input.dataset.field = field.name;
+          input.dataset.envVar = field.envVar || '';
           input.placeholder = field.secure
             ? '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (stored)'
             : (field.default || '');
@@ -1780,6 +1781,63 @@
           btn.removeAttribute('disabled');
         }
       };
+
+    document.getElementById('dse-save').onclick = async () => {
+      const saveBtn  = document.getElementById('dse-save');
+      const resultEl = document.getElementById('dse-test-result');
+      const inputs   = document.querySelectorAll('#dse-fields input[data-field]');
+
+      const body = {};
+      inputs.forEach(input => {
+        if (input.value.trim() && input.dataset.envVar) {
+          body[input.dataset.envVar] = input.value.trim();
+        }
+      });
+
+      if (!Object.keys(body).length) {
+        resultEl.textContent = 'No credentials entered';
+        resultEl.style.color = 'var(--amber)';
+        return;
+      }
+
+      saveBtn.setAttribute('disabled', '');
+      resultEl.textContent = 'Saving\u2026';
+      resultEl.style.color = 'var(--t3)';
+
+      try {
+        const res  = await fetch('/api/data-sources/' + encodeURIComponent(src.name) + '/credentials', {
+          method:  'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(body),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          resultEl.textContent = '\u2717 ' + (data.error || 'Save failed');
+          resultEl.style.color = 'var(--red)';
+          return;
+        }
+
+        if (data.connected) {
+          resultEl.textContent = '\u2713 Saved and connected';
+          resultEl.style.color = 'var(--green)';
+        } else {
+          resultEl.textContent = '\u2713 Saved \u2014 ' + (data.message || 'not yet connected');
+          resultEl.style.color = 'var(--amber)';
+        }
+
+        inputs.forEach(input => {
+          if (input.type === 'password') input.value = '';
+        });
+
+        this.renderDatasourceList();
+      } catch (e) {
+        resultEl.textContent = '\u2717 ' + e.message;
+        resultEl.style.color = 'var(--red)';
+      } finally {
+        saveBtn.removeAttribute('disabled');
+      }
+    };
     }
 
     _setStatus(msg) {
