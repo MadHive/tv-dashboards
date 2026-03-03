@@ -286,7 +286,15 @@ const app = new Elysia()
     detail: { tags: ['dashboards'], summary: 'Update global config settings' },
   })
   .get('/api/metrics/:dashboardId', async ({ params }) => {
-    return getData(params.dashboardId);
+    try {
+      return await getData(params.dashboardId);
+    } catch (err) {
+      logger.error({ dashboardId: params.dashboardId, error: err.message }, 'Failed to get metrics');
+      return new Response(
+        JSON.stringify({ error: err.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
   }, {
     response: { 200: 'metrics.dashboard' },
     detail: { tags: ['metrics'], summary: 'Get metrics for a dashboard' },
@@ -338,8 +346,6 @@ const app = new Elysia()
         try {
           // Get all metrics for this dashboard
           const dashboardData = await getData(dashboard.id);
-
-          logger.warn({ widgetId }, 'Widget not found in any dashboard');
 
           // Return just this widget's data
           if (dashboardData && dashboardData[widgetId]) {

@@ -309,25 +309,39 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
           executionTime: duration
         };
       } else if (source === 'gcp') {
-        // For GCP Monitoring, validate the metric query structure
-        // Accept both 'metric' and 'metricType' for backward compatibility
         const metricField = body.metric || body.metricType;
         if (!body || !metricField) {
-          return {
-            success: false,
-            error: 'Missing required field: metric'
-          };
+          return { success: false, error: 'Missing required field: metric' };
         }
 
-        result = {
-          success: true,
-          source,
-          message: 'GCP metric query structure is valid',
-          metric: metricField,
-          metricType: metricField,
-          filters: body.filters || {},
-          aggregation: body.aggregation || 'mean'
-        };
+        const project    = body.project || (process.env.GCP_PROJECTS || 'mad-master').split(',')[0].trim();
+        const timeWindow = body.timeWindow || 10;
+        const aggr       = body.aggregation || {};
+        const t0         = Date.now();
+
+        try {
+          const { query: gcpQuery, latest, spark } = await import('./gcp-metrics.js');
+          const timeSeries = await gcpQuery(project, metricField, body.filters || '', timeWindow, aggr);
+          const lastValue  = latest(timeSeries);
+          const sparkline  = spark(timeSeries, 10);
+
+          result = {
+            success:       true,
+            source,
+            metric:        metricField,
+            project,
+            executionTime: Date.now() - t0,
+            result:        { value: lastValue, sparkline, seriesCount: timeSeries.length },
+          };
+        } catch (gcpErr) {
+          result = {
+            success:       false,
+            source,
+            error:         gcpErr.message,
+            metric:        metricField,
+            executionTime: Date.now() - t0,
+          };
+        }
       } else if (source === 'mock') {
         // For mock, just validate structure
         result = {
