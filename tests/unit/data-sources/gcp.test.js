@@ -109,20 +109,20 @@ describe('GCP Data Source', () => {
     });
   });
 
-  describe('fetchMetrics() - legacy dashboard mode', () => {
+  describe('fetchMetrics() - requires queryId', () => {
     it('should initialize if gcpMetrics is null', async () => {
       expect(dataSource.gcpMetrics).toBeNull();
 
+      // fetchMetrics without queryId now returns an error result (not throws)
       await dataSource.fetchMetrics({
         id: 'test-widget',
         type: 'big-number',
-        dashboardId: 'platform-overview'
       });
 
       expect(dataSource.gcpMetrics).not.toBeNull();
     });
 
-    it('should use default dashboard if not specified', async () => {
+    it('should return error result when no queryId is provided', async () => {
       await dataSource.initialize();
 
       const result = await dataSource.fetchMetrics({
@@ -130,14 +130,12 @@ describe('GCP Data Source', () => {
         type: 'big-number'
       });
 
-      expect(result).toHaveProperty('timestamp');
-      expect(result).toHaveProperty('source');
-      expect(result).toHaveProperty('dashboardId');
+      // Without a queryId the widget gets an error result from handleError()
+      expect(result).toBeDefined();
       expect(result.source).toBe('gcp');
-      expect(result.dashboardId).toBe('platform-overview');
     });
 
-    it('should extract widget-specific data from dashboard metrics', async () => {
+    it('should return error result when dashboardId is set but no queryId', async () => {
       await dataSource.initialize();
 
       const result = await dataSource.fetchMetrics({
@@ -146,9 +144,9 @@ describe('GCP Data Source', () => {
         dashboardId: 'platform-overview'
       });
 
-      expect(result).toHaveProperty('data');
-      expect(result).toHaveProperty('widgetId');
-      expect(result.widgetId).toBe('test-widget');
+      // Legacy dashboard-level fetch is removed — error result returned
+      expect(result).toBeDefined();
+      expect(result.source).toBe('gcp');
     });
 
     it('should throw error when initialization fails', async () => {

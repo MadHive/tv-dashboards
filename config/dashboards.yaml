@@ -148,24 +148,25 @@ dashboards:
           row: 2
           colSpan: 1
           rowSpan: 1
-  - grid:
-      columns: 1
-      gap: 0
-      rows: 1
-    icon: map
-    id: campaign-delivery
+  - id: campaign-delivery
     name: Campaign Delivery
     subtitle: Nationwide Reach
+    icon: map
+    grid:
+      columns: 1
+      rows: 1
+      gap: 0
     widgets:
       - id: usa-delivery-map
+        type: usa-map
+        title: ''
+        source: bigquery
+        queryId: delivery-geo-map
         position:
           col: 1
-          colSpan: 1
           row: 1
+          colSpan: 1
           rowSpan: 1
-        source: gcp
-        title: ''
-        type: usa-map
   - id: data-processing
     name: Data Processing
     subtitle: Analytics & Compute
@@ -838,24 +839,25 @@ dashboards:
         source: gcp
         title: API Calls by Client
         type: bar-chart
-  - grid:
-      columns: 1
-      gap: 0
-      rows: 1
-    icon: shield
-    id: security-posture
+  - id: security-posture
     name: Security Posture
     subtitle: VulnTrack Findings
+    icon: shield
+    grid:
+      columns: 1
+      rows: 1
+      gap: 0
     widgets:
       - id: vulntrack-overview
+        type: security-scorecard
+        title: ''
+        source: vulntrack
+        queryId: vulntrack-security-posture
         position:
           col: 1
-          colSpan: 1
           row: 1
+          colSpan: 1
           rowSpan: 1
-        source: vulntrack
-        title: ''
-        type: security-scorecard
   - id: visual-showcase
     name: Visual Showcase
     subtitle: All 14 Widget Types
