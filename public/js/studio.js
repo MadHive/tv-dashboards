@@ -455,12 +455,23 @@
       set('prop-max', wc.max !== undefined ? wc.max : '');
       set('prop-warn', wc.thresholds && wc.thresholds.warning !== undefined ? wc.thresholds.warning : '');
       set('prop-crit', wc.thresholds && wc.thresholds.critical !== undefined ? wc.thresholds.critical : '');
+      if (wc.type === 'usa-map') {
+        const mc = wc.mapConfig || {};
+        set('prop-map-timewindow',     mc.timeWindow     !== undefined ? mc.timeWindow     : 7);
+        set('prop-map-minimpressions', mc.minImpressions !== undefined ? mc.minImpressions : 100);
+        set('prop-map-metric',         mc.metric         || 'impressions');
+        set('prop-map-zoom',           mc.zoom           || 'on');
+      }
 
       // Show/hide Display section based on type
       const displaySection = document.getElementById('display-section');
       if (displaySection) {
         const showDisplayTypes = ['gauge', 'gauge-row', 'progress-bar', 'big-number', 'stat-card'];
         displaySection.style.display = showDisplayTypes.includes(wc.type) ? '' : 'none';
+      }
+      const mapSection = document.getElementById('map-config-section');
+      if (mapSection) {
+        mapSection.style.display = wc.type === 'usa-map' ? '' : 'none';
       }
 
       // Always load queries for current source (even if no queryId assigned yet)
@@ -491,6 +502,8 @@
           const showDisplayTypes = ['gauge', 'gauge-row', 'progress-bar', 'big-number', 'stat-card'];
           displaySection.style.display = showDisplayTypes.includes(v) ? '' : 'none';
         }
+        const mapSec = document.getElementById('map-config-section');
+        if (mapSec) mapSec.style.display = v === 'usa-map' ? '' : 'none';
       });
       bind('prop-col', (v) => { wc.position.col = parseInt(v) || wc.position.col; });
       bind('prop-row', (v) => { wc.position.row = parseInt(v) || wc.position.row; });
@@ -550,6 +563,23 @@
         newQueryBtn.onclick = () => {
           if (window.queryEditor) window.queryEditor.open();
         };
+      }
+
+      // Map-specific config (usa-map type only)
+      if (wc.type === 'usa-map') {
+        function bindMap(id, applyFn) {
+          const el = document.getElementById(id);
+          if (!el) return;
+          el.onchange = el.oninput = function() {
+            if (!wc.mapConfig) wc.mapConfig = {};
+            applyFn(el.value);
+            self.markDirty();
+          };
+        }
+        bindMap('prop-map-timewindow',     function(v) { wc.mapConfig.timeWindow = parseInt(v) || 7; });
+        bindMap('prop-map-minimpressions', function(v) { wc.mapConfig.minImpressions = parseInt(v) || 0; });
+        bindMap('prop-map-metric',         function(v) { wc.mapConfig.metric = v; });
+        bindMap('prop-map-zoom',           function(v) { wc.mapConfig.zoom = v; });
       }
     }
 

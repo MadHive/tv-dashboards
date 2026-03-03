@@ -52,7 +52,7 @@ export class GCPDataSource extends DataSource {
 
       // For backward compatibility, fetch entire dashboard metrics
       const dashboardId = widgetConfig.dashboardId || 'platform-overview';
-      const allMetrics = await this.gcpMetrics.getMetrics(dashboardId);
+      const allMetrics = await this.gcpMetrics.getMetrics(dashboardId, widgetConfig);
 
       // Extract widget-specific data if available
       const widgetId = widgetConfig.id;

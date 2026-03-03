@@ -151,12 +151,12 @@ const STATE_WEIGHTS = {
 };
 
 // ── BigQuery delivery data cache (zip-level geo) ──
-let _bqGeoCache = null;
-let _bqGeoCacheTime = 0;
+let _bqGeoCache = null; // { key, time, data }
 const BQ_GEO_CACHE_TTL = 5 * 60 * 1000; // 5 minutes (BQ queries are expensive)
 
-async function getDeliveryGeo() {
-  if (_bqGeoCache && (Date.now() - _bqGeoCacheTime) < BQ_GEO_CACHE_TTL) return _bqGeoCache;
+async function getDeliveryGeo(days = 7, minImpressions = 100) {
+  const geoCacheKey = days + ':' + minImpressions;
+  if (_bqGeoCache && _bqGeoCache.key === geoCacheKey && Date.now() - _bqGeoCache.time < BQ_GEO_CACHE_TTL) return _bqGeoCache.data;
 
   try {
     // Query top zip codes by impressions in the last 7 days, with lat/lon + city/DMA
@@ -177,19 +177,19 @@ async function getDeliveryGeo() {
         ON b.postal = mg.postal_code AND mg.country_code = 'US'
       LEFT JOIN \`mad-data.public_data.zip_codes\` z
         ON b.postal = z.zip_code
-      WHERE b.date_nyc >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
+      WHERE b.date_nyc >= DATE_SUB(CURRENT_DATE(), INTERVAL ${days} DAY)
         AND b.country = 'US'
         AND b.postal IS NOT NULL AND b.postal != ''
         AND z.internal_point_lat IS NOT NULL
       GROUP BY 1, 2
-      HAVING impressions > 100
+      HAVING impressions > ${minImpressions}
       ORDER BY impressions DESC
       LIMIT 500
     `;
 
     const [rows] = await bq.query({ query: sql, location: 'US' });
 
-    _bqGeoCache = rows.map(r => ({
+    const results = rows.map(r => ({
       zip3: r.zip3,
       state: r.state,
       lat: r.lat,
@@ -200,12 +200,12 @@ async function getDeliveryGeo() {
       city: r.city || null,
       dma: r.dma || null,
     }));
-    _bqGeoCacheTime = Date.now();
-    logger.info(`[bq] Delivery geo: ${_bqGeoCache.length} zip3 prefixes loaded`);
-    return _bqGeoCache;
+    _bqGeoCache = { key: geoCacheKey, time: Date.now(), data: results };
+    logger.info(`[bq] Delivery geo: ${results.length} zip3 prefixes loaded`);
+    return _bqGeoCache.data;
   } catch (err) {
     logger.error(`[bq] Delivery geo query failed: ${err.message}`);
-    return _bqGeoCache || [];
+    return _bqGeoCache ? _bqGeoCache.data : [];
   }
 }
 
@@ -315,10 +315,15 @@ async function servicesHealth() {
 // ──────────────────────────────────────────────
 // Campaign Delivery Map
 // ──────────────────────────────────────────────
-async function campaignDeliveryMap() {
+async function campaignDeliveryMap(widgetConfig = {}) {
+  const mc           = widgetConfig.mapConfig || {};
+  const timeWindow   = Math.max(1, Math.min(90, parseInt(mc.timeWindow)   || 7));
+  const minImp       = parseInt(mc.minImpressions) >= 0 ? parseInt(mc.minImpressions) : 100;
+  const metric       = mc.metric === 'clicks' ? 'clicks' : 'impressions';
+
   // Fetch real delivery data from BigQuery + Cloud Run service count
   const [geoData, crData] = await Promise.all([
-    getDeliveryGeo(),
+    getDeliveryGeo(timeWindow, minImp),
     getCloudRunData(),
   ]);
 
@@ -333,7 +338,7 @@ async function campaignDeliveryMap() {
     const st = z.state;
     if (st) {
       if (!stateActivity[st]) stateActivity[st] = { impressions: 0, bids: 0, campaigns: 0 };
-      stateActivity[st].impressions += z.impressions;
+      stateActivity[st].impressions += metric === 'clicks' ? z.clicks : z.impressions;
       stateActivity[st].bids += z.clicks * 50; // approximate bid volume from clicks
       stateActivity[st].campaigns += z.zips;
     }
@@ -376,10 +381,11 @@ async function campaignDeliveryMap() {
 
   return {
     'usa-delivery-map': {
-      states: stateActivity,
-      totals: { impressions: totalImpressions, bids: totalBids, campaigns: withTraffic },
-      regions: regions,
-      hotspots: hotspots, // zip3-level lat/lon data for map plotting
+      states:   stateActivity,
+      totals:   { impressions: totalImpressions, bids: totalBids, campaigns: withTraffic },
+      regions:  regions,
+      hotspots: hotspots,
+      zoom:     mc.zoom !== 'off',
     },
   };
 }
@@ -1112,11 +1118,11 @@ async function securityPosture() {
   };
 }
 
-export async function getMetrics(dashboardId) {
+export async function getMetrics(dashboardId, widgetConfig = {}) {
   switch (dashboardId) {
     case 'platform-overview':  return platformOverview();
     case 'services-health':    return servicesHealth();
-    case 'campaign-delivery':  return campaignDeliveryMap();
+    case 'campaign-delivery':  return campaignDeliveryMap(widgetConfig);
     case 'data-processing':    return dataProcessing();
     case 'data-pipeline':      return dataPipeline();
     case 'bidder-cluster':     return bidderCluster();
