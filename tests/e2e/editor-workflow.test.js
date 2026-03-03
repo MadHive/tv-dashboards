@@ -19,7 +19,9 @@ import {
   takeScreenshot
 } from '../helpers/browser-helpers.js';
 
-describe('E2E: Editor Workflow', () => {
+// The live inline editor (Ctrl+E) was removed — all editing now happens in
+// the studio at /admin. These E2E tests are permanently skipped.
+describe.skip('E2E: Editor Workflow', () => {
   let browser, page;
   const BASE_URL = 'http://tv.madhive.local:3000';
 
