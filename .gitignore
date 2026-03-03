@@ -71,3 +71,4 @@ data/*.db-shm
 data/*.db-wal
 
 # Drizzle Kit introspection snapshots (meta/ is tracked alongside migrations)
+config/*.backup.*
