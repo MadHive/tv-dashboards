@@ -150,41 +150,56 @@ export class VulnTrackDataSource extends DataSource {
     switch (widgetType) {
       case 'security-scorecard': {
         // Calculate security score
-        const total = s.openFindings || s.total || 0;
+        const total    = s.openFindings || s.total || 0;
         const critical = s.criticalOpen || s.critical || 0;
-        const high = s.highOpen || s.high || 0;
-        const medium = s.mediumOpen || s.medium || 0;
-        const low = s.lowOpen || s.low || 0;
+        const high     = s.highOpen     || s.high     || 0;
+        const medium   = s.mediumOpen   || s.medium   || 0;
+        const low      = s.lowOpen      || s.low      || 0;
 
         // Score formula: 100 - weighted severity impact
         const score = Math.max(0, 100 - (critical * 10 + high * 3 + medium * 1));
 
-        // Source breakdown
+        // Source breakdown — clean up key names
         const bySource = {};
         if (stats.bySource) {
           Object.entries(stats.bySource).forEach(([k, v]) => {
-            const label = k.replace('github_', '').replace('_', ' ')
+            const label = k.replace('github_', '').replace(/_/g, ' ')
               .replace(/\b\w/g, c => c.toUpperCase());
             bySource[label] = v;
           });
         }
 
+        // Historical open-findings array (charts.js reads data.openHistory)
+        const openHistory = (dash.history || []).map(h => h.total || 0);
+
+        // Top at-risk teams — pass through API fields directly
+        const topRiskTeams = (dash.topRiskTeams || []).map(t => ({
+          name:         t.name || t.teamId || 'Unknown',
+          riskScore:    t.riskScore    || 0,
+          trend:        t.trend        || 'stable',
+          openFindings: t.openFindings || (t.stats && t.stats.openFindings) || 0,
+        }));
+
         return {
-          score: Math.round(score),
-          total: total,
-          // charts.js securityScorecard expects the *Open suffix
+          score:        Math.round(score),
+          total,
+          // *Open suffix — required by charts.js securityScorecard
           criticalOpen: critical,
-          highOpen: high,
-          mediumOpen: medium,
-          lowOpen: low,
-          // also expose bare names for other widget types
-          critical: critical,
-          high: high,
-          medium: medium,
-          low: low,
-          bySource: bySource,
-          history: (dash.history || []).map(h => h.total || 0),
-          trend: total < (dash.history?.[dash.history.length - 2]?.total || total) ? 'down' : 'up'
+          highOpen:     high,
+          mediumOpen:   medium,
+          lowOpen:      low,
+          // bare names for other widget types
+          critical, high, medium, low,
+          bySource,
+          history:     openHistory,   // legacy name
+          openHistory,                // name charts.js actually reads
+          trend: total < (dash.history?.[dash.history.length - 2]?.total || total) ? 'down' : 'up',
+          // detail cards rendered by charts.js
+          exploitableOpen: stats.exploitableOpen || s.exploitableFindings || 0,
+          runtimeFindings: s.runtimeFindings     || stats.inRuntimeOpen   || 0,
+          threats:  s.threats  || { total: 0, open: 0 },
+          secrets:  s.secrets  || { total: 0, open: 0 },
+          topRiskTeams,
         };
       }
 
