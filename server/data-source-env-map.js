@@ -15,15 +15,26 @@ export const ENV_MAP = {
     VULNTRACK_API_KEY: { secure: true  },
   },
   elasticsearch: {
-    ELASTICSEARCH_URL:     { secure: false },
-    ELASTICSEARCH_API_KEY: { secure: true  },
+    // Aligned to getConfigSchema() in server/data-sources/elasticsearch.js
+    ELASTICSEARCH_HOST:     { secure: false }, // was ELASTICSEARCH_URL (wrong name)
+    ELASTICSEARCH_API_KEY:  { secure: true  },
+    ELASTICSEARCH_USERNAME: { secure: false }, // added — schema field
+    ELASTICSEARCH_PASSWORD: { secure: true  }, // added — schema field
   },
   salesforce: {
+    // Aligned to getConfigSchema() in server/data-sources/salesforce.js
     SALESFORCE_INSTANCE_URL:  { secure: false },
-    SALESFORCE_CLIENT_ID:     { secure: false },
+    SALESFORCE_SANDBOX:       { secure: false }, // added — schema field (isSandbox)
+    SALESFORCE_ACCESS_TOKEN:  { secure: true  }, // added — schema field
+    SALESFORCE_CLIENT_ID:     { secure: true  }, // corrected secure flag (was false)
     SALESFORCE_CLIENT_SECRET: { secure: true  },
     SALESFORCE_USERNAME:      { secure: false },
     SALESFORCE_PASSWORD:      { secure: true  },
+    SALESFORCE_SECURITY_TOKEN: { secure: true }, // added — schema field
+  },
+  bigquery: {
+    // Aligned to getConfigSchema() in server/data-sources/bigquery.js
+    GOOGLE_APPLICATION_CREDENTIALS: { secure: true }, // added — only envVar in schema
   },
   checkly: {
     CHECKLY_API_KEY:    { secure: true  },
@@ -48,15 +59,17 @@ export const ENV_MAP = {
     LOOKER_CLIENT_SECRET: { secure: true  },
   },
   rollbar: {
-    ROLLBAR_ACCESS_TOKEN:  { secure: true },
-    ROLLBAR_ACCOUNT_TOKEN: { secure: true },
+    // Aligned to getConfigSchema() in server/data-sources/rollbar.js
+    ROLLBAR_ACCESS_TOKEN: { secure: true  }, // kept
+    ROLLBAR_PROJECT_ID:   { secure: false }, // was ROLLBAR_ACCOUNT_TOKEN (wrong name)
   },
   rootly: {
     ROOTLY_API_KEY: { secure: true },
   },
   segment: {
-    SEGMENT_WRITE_KEY:    { secure: true  },
-    SEGMENT_WORKSPACE_ID: { secure: false },
+    // Aligned to getConfigSchema() in server/data-sources/segment.js
+    SEGMENT_ACCESS_TOKEN: { secure: true  }, // was SEGMENT_WRITE_KEY (wrong name)
+    SEGMENT_WORKSPACE_ID: { secure: false }, // kept
   },
   chromatic: {
     CHROMATIC_PROJECT_TOKEN: { secure: true  },

@@ -708,6 +708,10 @@ const app = new Elysia()
     detail: { tags: ['data-sources'], summary: 'Update data source config' },
   })
 
+  // NOTE: This endpoint is intentionally unauthenticated.
+  // The studio at /admin is open to the internal network only — there is no
+  // per-user auth in this project (Google OAuth is disabled). Access control
+  // is handled at the network/firewall layer.
   // Save credentials to .env and hot-reload the data source
   .put('/api/data-sources/:name/credentials', async ({ params, body }) => {
     try {
