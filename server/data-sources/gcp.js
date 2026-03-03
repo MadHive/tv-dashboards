@@ -219,6 +219,26 @@ export class GCPDataSource extends DataSource {
           timestamps: [],
           ...(options.timePeriod && { timePeriod: options.timePeriod })
         };
+      },
+      // bar-chart: each time series becomes one bar, labeled by resource/metric labels
+      'bar-chart': (ts) => {
+        const { latest } = require('../gcp-metrics.js');
+        if (!Array.isArray(ts) || ts.length === 0) return { bars: [] };
+
+        // Multi-series: extract label from resource labels (service_name, subscription, etc.)
+        const bars = ts.map(series => {
+          const labels = (series.resource && series.resource.labels) || {};
+          // Pick the most descriptive resource label
+          const label = labels.service_name || labels.subscription_id ||
+                        labels.topic_id || labels.instance_id ||
+                        labels.cluster_name || Object.values(labels)[0] || 'Unknown';
+          const val = latest([series]);
+          return { label: String(label).replace(/^projects\/[^/]+\//, ''), value: val || 0 };
+        });
+
+        // Sort by value descending, take top 10
+        bars.sort((a, b) => b.value - a.value);
+        return { bars: bars.slice(0, 10), ...(options.timePeriod && { timePeriod: options.timePeriod }) };
       }
     };
 
