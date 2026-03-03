@@ -614,10 +614,10 @@ window.Charts = (function () {
     // Init directional arc particles (from data centers outward to states)
     // Stagger initial `t` widely and vary speeds for organic feel
     if (mapParticles.length === 0) {
-      for (var p = 0; p < 80; p++) {  // More particles for richer visualization
+      for (var p = 0; p < 120; p++) {  // More particles for richer visualization
         mapParticles.push({
           dc: Math.floor(Math.random() * DATA_CENTERS.length),
-          target: Math.floor(Math.random() * 10),
+          target: Math.floor(Math.random() * Math.min(50, Math.max(1, hotspotPositions.length || 10))),
           t: Math.random(),                        // well-distributed initial phase
           speed: 0.003 + Math.random() * 0.006,    // Faster and more varied
           delay: Math.random() * 100,               // frame delay before first appearance
@@ -1025,6 +1025,22 @@ window.Charts = (function () {
       topCenters.push({ id: entry[0], x: mapX + cxy[0] * mapW, y: mapY + cxy[1] * mapH, imp: entry[1].impressions, bids: entry[1].bids });
     });
 
+    // Project delivery hotspots to canvas coords for particle targeting
+    var hotspotPositions = [];
+    var rawHotspots = (data.hotspots || []).slice(0, 80);
+    rawHotspots.forEach(function(h) {
+      if (!h.lat || !h.lon) return;
+      var xy = US.project(h.lon, h.lat);
+      hotspotPositions.push({
+        x: mapX + xy[0] * mapW,
+        y: mapY + xy[1] * mapH,
+        imp: h.impressions || 0,
+        state: h.state,
+        city: h.city || h.zip3,
+      });
+    });
+    hotspotPositions.sort(function(a, b) { return b.imp - a.imp; });
+
     // ── Proportional bubble overlay (sized by bid volume) ──
     topCenters.forEach(function (tc) {
       var bidRatio = tc.bids / maxBids;
@@ -1046,7 +1062,9 @@ window.Charts = (function () {
       mapParticles.slice(0, 15).forEach(function(p) {
         if (p.age < p.delay) return;
         var dc = dcPositions[p.dc % dcPositions.length];
-        var target = topCenters[p.target % topCenters.length];
+        var target = hotspotPositions.length > 0
+          ? hotspotPositions[p.target % hotspotPositions.length]
+          : (topCenters.length > 0 ? topCenters[p.target % topCenters.length] : null);
         if (!dc || !target) return;
 
         var dist = Math.sqrt(Math.pow(target.x - dc.x, 2) + Math.pow(target.y - dc.y, 2));
@@ -1079,7 +1097,9 @@ window.Charts = (function () {
           // Create burst effect at arrival
           if (prevT < 1) {
             var dc = dcPositions[p.dc % dcPositions.length];
-            var target = topCenters[p.target % topCenters.length];
+            var target = hotspotPositions.length > 0
+              ? hotspotPositions[p.target % hotspotPositions.length]
+              : (topCenters.length > 0 ? topCenters[p.target % topCenters.length] : null);
             if (target) {
               mapBursts.push({
                 x: target.x,
@@ -1091,7 +1111,7 @@ window.Charts = (function () {
           }
           p.t = -Math.random() * 0.2; // random pause before next arc
           p.dc = Math.floor(Math.random() * dcPositions.length);
-          p.target = Math.floor(Math.random() * Math.min(topCenters.length, 10));
+          p.target = Math.floor(Math.random() * Math.min(50, Math.max(1, hotspotPositions.length || 10)));
           p.speed = 0.003 + Math.random() * 0.006;
           p.type = Math.random() > 0.7 ? 'fast' : 'normal';
           p.size = 1 + Math.random() * 2;
@@ -1099,7 +1119,9 @@ window.Charts = (function () {
         if (p.t < 0) return; // in pause phase
 
         var dc = dcPositions[p.dc % dcPositions.length];
-        var target = topCenters[p.target % topCenters.length];
+        var target = hotspotPositions.length > 0
+          ? hotspotPositions[p.target % hotspotPositions.length]
+          : (topCenters.length > 0 ? topCenters[p.target % topCenters.length] : null);
         if (!dc || !target) return;
 
         // Ease-out cubic for smooth deceleration at destination
