@@ -1058,7 +1058,7 @@ async function fetchVulnTrack() {
   ]);
 
   if (!dashRes.ok || !statsRes.ok) {
-    logger.error('[vulntrack] API error: dashboard=${dashRes.status} stats=${statsRes.status}');
+    logger.error(`[vulntrack] API error: dashboard=${dashRes.status} stats=${statsRes.status}`);
     return _vtCache || null;
   }
 

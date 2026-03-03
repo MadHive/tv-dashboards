@@ -27,6 +27,7 @@ const VALID_WIDGET_TYPES = [
 
 const VALID_DATA_SOURCES = [
   'gcp',
+  'bigquery',
   'aws',
   'datadog',
   'elasticsearch',

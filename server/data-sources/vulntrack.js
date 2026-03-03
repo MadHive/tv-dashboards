@@ -42,7 +42,7 @@ export class VulnTrackDataSource extends DataSource {
       ]);
 
       if (!dashRes.ok || !statsRes.ok) {
-        logger.error('[vulntrack] API error: dashboard=${dashRes.status} stats=${statsRes.status}');
+        logger.error(`[vulntrack] API error: dashboard=${dashRes.status} stats=${statsRes.status}`);
         return this.cache || null;
       }
 

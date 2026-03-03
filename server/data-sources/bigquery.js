@@ -52,7 +52,7 @@ export class BigQueryDataSource extends DataSource {
 
       this.client = new BigQuery(clientConfig);
       this.isConnected = true;
-      logger.info('[bigquery] Initialized for project: ${this.projectId}');
+      logger.info(`[bigquery] Initialized for project: ${this.projectId}`);
     } catch (error) {
       logger.error({ error: error.message }, 'BigQuery initialization failed');
       this.lastError = error;
@@ -107,7 +107,7 @@ export class BigQueryDataSource extends DataSource {
       };
 
       const [job] = await this.client.createQueryJob(options);
-      logger.info('[bigquery] Job ${job.id} started');
+      logger.info(`[bigquery] Job ${job.id} started`);
 
       const [rows] = await job.getQueryResults();
 
@@ -508,6 +508,50 @@ export class BigQueryDataSource extends DataSource {
       default:
         // Return raw rows for custom widget types
         return { rows };
+
+      case 'usa-map': {
+        // Transform zip3-level rows into the map format expected by charts.js usaMap
+        const states = {};
+        const hotspots = [];
+        let totalImpressions = 0, totalBids = 0;
+
+        rows.forEach(r => {
+          const impressions = Number(r.impressions) || 0;
+          const clicks      = Number(r.clicks)      || 0;
+          const state       = r.state;
+
+          totalImpressions += impressions;
+          totalBids        += clicks;
+
+          if (state) {
+            if (!states[state]) states[state] = { impressions: 0, bids: 0, campaigns: 0 };
+            states[state].impressions += impressions;
+            states[state].bids        += clicks;
+            states[state].campaigns   += 1;
+          }
+
+          if (r.lat && r.lon) {
+            hotspots.push({
+              zip3:        r.zip3,
+              state:       r.state,
+              lat:         Number(r.lat),
+              lon:         Number(r.lon),
+              impressions,
+              clicks,
+              zips:        Number(r.zip_count) || 1,
+              city:        r.city  || null,
+              dma:         r.dma   || null,
+            });
+          }
+        });
+
+        return {
+          states,
+          totals:   { impressions: totalImpressions, bids: totalBids, campaigns: Object.keys(states).length },
+          regions:  {},
+          hotspots,
+        };
+      }
     }
   }
 
