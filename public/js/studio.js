@@ -1252,6 +1252,15 @@
       document.getElementById('qe-assign').onclick = () => {
         this._assignQueryToWidget();
       };
+
+      const previewTypeSel = document.getElementById('qe-preview-type');
+      if (previewTypeSel) {
+        previewTypeSel.onchange = () => {
+          if (this._lastPreviewData) {
+            this._renderQueryPreview(this._lastPreviewData, previewTypeSel.value);
+          }
+        };
+      }
     }
 
     /* ─────────────────────────────────────────────
@@ -1262,107 +1271,97 @@
       const runBtn    = document.getElementById('qe-run');
       const statusEl  = document.getElementById('qe-run-status');
       const bodyEl    = document.getElementById('qe-results-body');
-      const source    = this._activeSource;
-      const queryId   = this._activeQuery && this._activeQuery.id;
+      const canvasCtr = document.getElementById('qe-preview-canvas-container');
+
+      if (!this._activeQuery || !this._activeSource) return;
 
       runBtn.setAttribute('disabled', '');
-      runBtn.textContent = 'Running\u2026';
-      statusEl.textContent = '';
-      bodyEl.textContent = '';
+      statusEl.textContent = 'Running\u2026';
+      statusEl.style.color = 'var(--t3)';
+      if (canvasCtr) canvasCtr.style.display = 'none';
 
+      const previewType = document.getElementById('qe-preview-type')?.value || 'big-number';
       const t0 = Date.now();
+
       try {
-        // Build body from saved query fields — NOT just queryId
-        const q    = this._activeQuery || {};
-        const body = source === 'bigquery'
-          ? { sql: q.sql }
-          : source === 'gcp'
-            ? { metric: q.metricType, metricType: q.metricType,
-                project: q.project, timeWindow: q.timeWindow,
-                aggregation: q.aggregation }
-            : { queryId };
-
-        const res = await fetch('/api/queries/' + source + '/test', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
+        const res  = await fetch(
+          '/api/queries/' + encodeURIComponent(this._activeSource) +
+          '/' + encodeURIComponent(this._activeQuery.id) +
+          '/preview?type=' + encodeURIComponent(previewType)
+        );
         const data = await res.json();
-        const ms = Date.now() - t0;
+        const ms   = Date.now() - t0;
 
-        if (!res.ok || !data.success) throw new Error(data.error || 'Query failed');
-
-        // Render results — format varies by source
-        const result   = data.result   || null;
-        const results  = data.results  || null;  // BigQuery rows array
-        const rowCount = data.rowCount !== undefined ? data.rowCount : null;
-
-        const addRow = (label, value) => {
-          const row = document.createElement('div');
-          row.className = 'qe-result-row';
-          const k = document.createElement('span');
-          k.className   = 'qe-result-key';
-          k.textContent = label;
-          const v = document.createElement('span');
-          v.className   = 'qe-result-value';
-          v.textContent = Array.isArray(value)
-            ? '[' + value.length + ' values]'
-            : typeof value === 'object' && value !== null
-              ? JSON.stringify(value)
-              : String(value === null || value === undefined ? '—' : value);
-          row.appendChild(k);
-          row.appendChild(v);
-          bodyEl.appendChild(row);
-        };
-
-        if (result && typeof result === 'object') {
-          // GCP execution result: {value, sparkline, seriesCount}
-          if (result.value !== undefined || result.seriesCount !== undefined) {
-            addRow('Current value', result.value !== null ? result.value : '—');
-            addRow('Time series', result.seriesCount + ' series');
-            if (Array.isArray(result.sparkline) && result.sparkline.length) {
-              addRow('Trend (last ' + result.sparkline.length + ' pts)',
-                '[' + result.sparkline.map(v => (v !== null ? Number(v).toFixed(2) : '—')).join(', ') + ']');
-            }
-          } else {
-            Object.entries(result).slice(0, 10).forEach(([k, v]) => addRow(k, v));
-          }
-          if (data.message) addRow('Info', data.message);
-        } else if (Array.isArray(results)) {
-          // BigQuery rows
-          addRow('Rows returned', rowCount !== null ? rowCount : results.length);
-          if (results.length) {
-            const cols = Object.keys(results[0]);
-            results.slice(0, 5).forEach((row, i) => {
-              addRow('Row ' + (i + 1), cols.map(c => c + '=' + row[c]).join(', '));
-            });
-            if (results.length > 5) addRow('…', (results.length - 5) + ' more rows');
-          }
-        } else if (data.message) {
-          addRow('Result', data.message);
-          if (data.metric) addRow('Metric', data.metric);
-        } else {
-          const msg = document.createElement('div');
-          msg.className   = 'mb-status';
-          msg.textContent = 'No data returned';
-          bodyEl.appendChild(msg);
+        if (!data.success || !data.widgetData) {
+          statusEl.textContent = 'No data';
+          statusEl.style.color = 'var(--red)';
+          bodyEl.textContent = '';
+          const errDiv = document.createElement('div');
+          errDiv.className = 'mb-status';
+          errDiv.textContent = data.error || 'Query returned no data';
+          bodyEl.appendChild(errDiv);
+          return;
         }
 
-        // Show execution time
-        statusEl.textContent = ms + 'ms' + (rowCount !== null ? ' · ' + rowCount + ' rows' : '');
+        statusEl.textContent = ms + 'ms';
+        statusEl.style.color = 'var(--green)';
+
+        // Store for re-render on type change
+        this._lastPreviewData = data.widgetData;
+
+        // Render widget preview in canvas
+        this._renderQueryPreview(data.widgetData, previewType);
+
+        // Show raw value summary in results body
+        bodyEl.textContent = '';
+        const val = data.widgetData.value;
+        const summary = document.createElement('div');
+        summary.className = 'mb-status';
+        summary.textContent = val !== null && val !== undefined
+          ? 'Value: ' + (typeof val === 'number' ? val.toLocaleString() : val)
+          : 'No value returned';
+        bodyEl.appendChild(summary);
       } catch (e) {
         statusEl.textContent = 'Error';
         statusEl.style.color = 'var(--red)';
         const err = document.createElement('div');
-        err.style.color   = 'var(--red)';
-        err.style.padding = '8px';
+        err.style.color      = 'var(--red)';
+        err.style.padding    = '8px';
         err.style.fontFamily = 'var(--font-mono)';
         err.style.fontSize   = '11px';
         err.textContent = e.message;
         bodyEl.appendChild(err);
       } finally {
         runBtn.removeAttribute('disabled');
-        runBtn.textContent = '\u25B6 Run';
+      }
+    }
+
+    _renderQueryPreview(widgetData, widgetType) {
+      const container = document.getElementById('qe-preview-canvas-container');
+      const canvas    = document.getElementById('qe-preview-canvas');
+      if (!container || !canvas || !window.Widgets) return;
+
+      container.style.display = 'block';
+
+      // Clear previous widget
+      if (this._previewWidget && this._previewWidget.destroy) {
+        this._previewWidget.destroy();
+      }
+      canvas.width  = canvas.offsetWidth  || 280;
+      canvas.height = canvas.offsetHeight || 120;
+
+      // Create a temporary container div for the widget
+      const tmpDiv = document.createElement('div');
+      tmpDiv.style.cssText = 'width:100%;height:120px;overflow:hidden;';
+
+      try {
+        this._previewWidget = window.Widgets.create(widgetType, tmpDiv, { type: widgetType });
+        if (this._previewWidget && this._previewWidget.update) {
+          this._previewWidget.update(widgetData);
+        }
+      } catch (e) {
+        // Widget type not supported for preview — clear canvas
+        canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
       }
     }
 
