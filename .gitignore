@@ -53,9 +53,9 @@ temp/
 # Git worktrees
 .worktrees/
 
-# Backups (keep config backups but exclude others)
+# Backups — all auto-generated backup files are local-only
 *.backup.*
-!config/*.backup.*
+config/*.backup.*
 
 # Build artifacts
 *.tsbuildinfo
