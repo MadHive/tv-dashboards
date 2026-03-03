@@ -465,14 +465,8 @@
 
       // Always load queries for current source (even if no queryId assigned yet)
       this.loadQueryOptions(wc.source || 'gcp', wc.queryId || '');
+      this.updateDataSummary(wc.source, wc.queryId);
       this.bindWidgetPropListeners(wc);
-
-      // Ensure the Data section is open so source/query are visible
-      const dataSections = document.querySelectorAll('#widget-props .props-section');
-      dataSections.forEach(function (s) {
-        const sum = s.querySelector('summary');
-        if (sum && sum.textContent.trim() === 'Data') s.setAttribute('open', '');
-      });
     }
 
     bindWidgetPropListeners(wc) {
@@ -529,6 +523,7 @@
           wc.queryId = '';
           if (browseBtn) browseBtn.style.display = (wc.source === 'gcp') ? '' : 'none';
           await self.loadQueryOptions(wc.source, '');
+          self.updateDataSummary(wc.source, wc.queryId);
           self.markDirty();
         };
       }
@@ -538,6 +533,7 @@
       if (queryEl) {
         queryEl.onchange = function () {
           wc.queryId = queryEl.value;
+          self.updateDataSummary(wc.source, wc.queryId);
           self.markDirty();
         };
       }
@@ -560,6 +556,31 @@
     /* ─────────────────────────────────────────────
        Query Options
     ───────────────────────────────────────────── */
+
+    updateDataSummary(source, queryId) {
+      const SOURCE_LABELS = {
+        'gcp':       'GCP Cloud Monitoring',
+        'bigquery':  'BigQuery',
+        'vulntrack': 'VulnTrack',
+        'mock':      'Mock',
+      };
+      const srcEl   = document.getElementById('data-summary-source');
+      const queryEl = document.getElementById('data-summary-query');
+      if (!srcEl || !queryEl) return;
+
+      srcEl.textContent = SOURCE_LABELS[source] || source || 'Unknown';
+
+      if (queryId) {
+        // Try to find query name in the loaded dropdown
+        const sel = document.getElementById('prop-query');
+        const opt = sel && sel.querySelector('option[value="' + queryId + '"]');
+        queryEl.textContent   = opt ? opt.textContent : queryId;
+        queryEl.className     = 'data-summary-query';
+      } else {
+        queryEl.textContent = source === 'gcp' ? 'Built-in metrics (no saved query)' : 'No query selected';
+        queryEl.className   = 'data-summary-query none';
+      }
+    }
 
     async loadQueryOptions(source, selectedId) {
       const sel = document.getElementById('prop-query');
@@ -588,6 +609,11 @@
       } catch (_) {
         // Empty dropdown is fine
       }
+
+      // Refresh summary now that query names are loaded in the dropdown
+      const srcSelect = document.getElementById('prop-source');
+      const currentSource = srcSelect ? srcSelect.value : source;
+      this.updateDataSummary(currentSource, selectedId);
     }
 
     /* ─────────────────────────────────────────────
