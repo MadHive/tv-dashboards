@@ -25,7 +25,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
   }, {
     response: { 200: 'query.list' },
     detail: {
-      tags: ['BigQuery'],
+      tags: ['bigquery'],
       summary: 'List saved queries',
       description: 'Retrieve all saved BigQuery queries'
     }
@@ -51,7 +51,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
   }, {
     response: { 200: 'query.response', 404: 'common.error' },
     detail: {
-      tags: ['BigQuery'],
+      tags: ['bigquery'],
       summary: 'Get saved query',
       description: 'Retrieve a specific saved query by ID'
     }
@@ -92,7 +92,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
     body: 'query.bigquery',
     response: { 200: 'query.response', 400: 'common.error' },
     detail: {
-      tags: ['BigQuery'],
+      tags: ['bigquery'],
       summary: 'Save query',
       description: 'Save a new BigQuery query for reuse'
     }
@@ -123,8 +123,9 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
       );
     }
   }, {
+    body: 'query.bigquery',
     detail: {
-      tags: ['BigQuery'],
+      tags: ['bigquery'],
       summary: 'Update query',
       description: 'Update an existing saved query'
     }
@@ -150,7 +151,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
   }, {
     response: { 200: 'common.success', 404: 'common.error' },
     detail: {
-      tags: ['BigQuery'],
+      tags: ['bigquery'],
       summary: 'Delete query',
       description: 'Delete a saved query'
     }
@@ -189,7 +190,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
     body: t.Object({ sql: t.String(), params: t.Optional(t.Any()) }),
     response: { 200: 'query.test-response', 400: 'query.test-response' },
     detail: {
-      tags: ['BigQuery'],
+      tags: ['bigquery'],
       summary: 'Execute query',
       description: 'Execute a BigQuery SQL query (for testing/preview)'
     }
@@ -221,7 +222,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
     }
   }, {
     detail: {
-      tags: ['BigQuery'],
+      tags: ['bigquery'],
       summary: 'Validate query',
       description: 'Validate SQL syntax and estimate query cost'
     },
@@ -288,7 +289,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
     }
   }, {
     detail: {
-      tags: ['BigQuery'],
+      tags: ['bigquery'],
       summary: 'Get schema',
       description: 'Get complete BigQuery schema (datasets, tables, and columns)'
     }
@@ -307,7 +308,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
     }
   }, {
     detail: {
-      tags: ['BigQuery'],
+      tags: ['bigquery'],
       summary: 'List datasets',
       description: 'List all BigQuery datasets in the project'
     }
@@ -326,7 +327,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
     }
   }, {
     detail: {
-      tags: ['BigQuery'],
+      tags: ['bigquery'],
       summary: 'List tables',
       description: 'List all tables in a dataset'
     }
@@ -356,7 +357,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
     }
   }, {
     detail: {
-      tags: ['BigQuery'],
+      tags: ['bigquery'],
       summary: 'Get table schema',
       description: 'Get schema for a specific table'
     }
@@ -379,7 +380,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
     }
   }, {
     detail: {
-      tags: ['BigQuery'],
+      tags: ['bigquery'],
       summary: 'Test connection',
       description: 'Test BigQuery connection'
     }

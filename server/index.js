@@ -145,6 +145,7 @@ const app = new Elysia()
         { name: 'dashboards',   description: 'Dashboard CRUD and management' },
         { name: 'data-sources', description: 'Data source configuration and health' },
         { name: 'queries',      description: 'Saved query management' },
+        { name: 'bigquery',     description: 'BigQuery saved query management' },
         { name: 'templates',    description: 'Dashboard template library' },
         { name: 'themes',       description: 'Visual theme management' },
         { name: 'backups',      description: 'Configuration backup and restore' },
@@ -265,7 +266,7 @@ const app = new Elysia()
   // Config endpoints
   .get('/api/config', () => loadConfig(), {
     response: { 200: 'dashboard.list' },
-    detail: { tags: ['config'], summary: 'Get full dashboard configuration' },
+    detail: { tags: ['dashboards'], summary: 'Get full dashboard configuration' },
   })
   .put('/api/config/global', ({ body }) => {
     try {
@@ -280,7 +281,7 @@ const app = new Elysia()
   }, {
     body: t.Object({ title: t.Optional(t.String()), rotation_interval: t.Optional(t.Number()), refresh_interval: t.Optional(t.Number()) }),
     response: { 200: 'common.success', 400: 'common.error' },
-    detail: { tags: ['config'], summary: 'Update global config settings' },
+    detail: { tags: ['dashboards'], summary: 'Update global config settings' },
   })
   .get('/api/metrics/:dashboardId', async ({ params }) => {
     return getData(params.dashboardId);
@@ -377,6 +378,10 @@ const app = new Elysia()
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
     }
+  }, {
+    body: t.Any(),
+    response: { 200: 'dashboard.list', 400: 'common.error' },
+    detail: { tags: ['dashboards'], summary: 'Update dashboard config' },
   })
 
   // Dashboard management endpoints
@@ -860,7 +865,7 @@ const app = new Elysia()
     }
   }, {
     body: 'template.create',
-    response: { 200: 'template.response', 400: 'common.error' },
+    response: { 201: 'template.response', 400: 'common.error' },
     detail: { tags: ['templates'], summary: 'Create new template' },
   })
 
@@ -1086,7 +1091,7 @@ const app = new Elysia()
     }
   }, {
     body: 'theme.create',
-    response: { 200: 'theme.response', 400: 'common.error' },
+    response: { 201: 'theme.response', 400: 'common.error' },
     detail: { tags: ['themes'], summary: 'Create new theme' },
   })
 
@@ -1132,7 +1137,7 @@ const app = new Elysia()
       service: 'tv-dashboards'
     };
   }, {
-    response: { 200: t.Object({ status: t.String(), timestamp: t.String(), uptime: t.Number() }) },
+    response: { 200: t.Object({ status: t.String(), timestamp: t.String(), version: t.String(), service: t.String() }) },
     detail: { tags: ['health'], summary: 'Health check for Cloud Run' },
   })
 
