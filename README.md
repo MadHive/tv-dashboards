@@ -1,408 +1,394 @@
 # MadHive TV Dashboards
 
-A real-time dashboard system with a powerful WYSIWYG editor for visualizing platform metrics across multiple data sources.
+Real-time engineering dashboard system running on a dedicated display (TV) in the MadHive office. Metrics from GCP Cloud Monitoring, BigQuery, and VulnTrack are displayed on rotating dashboards. A built-in studio at `/admin` lets engineers configure dashboards, assign metrics to widgets, and manage data source credentials — all from the browser.
 
-## Features
-
-### 📊 Dashboard System
-- **11 Pre-built Dashboards** - Platform overview, services health, campaign delivery, data processing, and more
-- **20 Widget Types** - Big numbers, gauges, sparklines, charts, tables, maps, heatmaps, sankey diagrams, treemaps, and specialized visualizations
-- **Live Data** - Real-time metrics from GCP, VulnTrack, and other data sources
-- **Auto-Rotation** - Configurable dashboard rotation for TV displays
-- **Responsive Design** - Optimized for large displays and TV screens
-
-### ✨ WYSIWYG Editor
-- **Visual Dashboard Editing** - No YAML editing required
-- **Drag & Drop** - Intuitive widget positioning with grid snapping
-- **Widget Resize** - Visual resizing with 8 handles (corners + edges)
-- **Widget Palette** - 20 widget types with drag-from-palette creation
-- **Property Panel** - Easy configuration of all widget properties
-- **Auto-Backup** - Automatic timestamped backups (keeps last 10)
-- **Templates** - 30+ pre-configured widget templates
-- **Export/Import** - Share dashboards as JSON files
-
-### 🔍 Data Explorer (React Frontend)
-- **Visual Query Builder** - Build BigQuery SQL queries with no-code interface
-- **Saved Queries** - Save and reuse queries across dashboards
-- **Query Execution** - Test and preview query results
-- **WCAG 2.1 AA Compliant** - Full keyboard navigation and screen reader support
-- **Performance Optimized** - Query caching, debounced search, code splitting
-- **Accessible** - Focus rings, ARIA labels, and contrast compliance
-
-### 🔌 Data Sources
-- **GCP** - Google Cloud Platform (Cloud Run, BigQuery, Pub/Sub)
-- **VulnTrack** - Security vulnerability tracking
-- **Mock** - Testing and development
-- **AWS CloudWatch** - (stub, ready for integration)
-- **DataDog** - (stub, ready for integration)
-- **Elasticsearch** - (stub, ready for integration)
-- **Salesforce** - (stub, ready for integration)
-- **HotJar** - (stub, ready for integration)
-- **FullStory** - (stub, ready for integration)
-- **Zendesk** - (stub, ready for integration)
+---
 
 ## Quick Start
 
-### Prerequisites
-- [Bun](https://bun.sh) runtime
-- GCP credentials (for live data)
-- VulnTrack API key (optional)
-
-### Installation
+**Requirements:** Bun runtime, GCP service account credentials
 
 ```bash
-# Clone repository
 git clone https://github.com/MadHive/tv-dashboards.git
 cd tv-dashboards
-
-# Install dependencies
 bun install
-
-# Start development server
-bun run start
+cp .env.example .env   # fill in credentials
+bun run start          # server on port 3000
 ```
 
-Server runs at: **http://tv.madhive.local** (port 80)
+Open **http://tv:3000** for the TV display and **http://tv:3000/admin** for the studio.
 
-### Environment Variables
+---
+
+## Environment Setup
+
+Copy `.env.example` to `.env` and fill in the values:
 
 ```bash
-# Optional - defaults to mock data if not set
-export USE_REAL_DATA=true
-export VULNTRACK_API_URL=https://vulntrack.madhive.dev
-export VULNTRACK_API_KEY=your-api-key
+# Required for live GCP data
+USE_REAL_DATA=true
+GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account-key.json
+GCP_PROJECT_ID=mad-master
+GCP_PROJECTS=mad-master,mad-data,mad-audit,mad-looker-enterprise
+
+# Required for security dashboard
+VULNTRACK_API_URL=https://vulntrack.madhive.dev
+VULNTRACK_API_KEY=your-key-here
+
+# Optional — fill via Sources tab in the studio UI instead
+DATADOG_API_KEY=
+DATADOG_APP_KEY=
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_REGION=us-east-1
 ```
 
-## Interfaces
+### GCP Service Account Permissions
 
-The system provides two primary interfaces for different purposes:
+The service account needs these roles on each GCP project:
 
-### Dashboard Viewer (`/`)
+```bash
+# Required for metric data (dashboards)
+gcloud projects add-iam-policy-binding PROJECT_ID \
+  --member="serviceAccount:SA_EMAIL" \
+  --role="roles/monitoring.viewer"
 
-**URL:** `http://tv.madhive.local`
+# Required for BigQuery data (campaign delivery map)
+gcloud projects add-iam-policy-binding mad-data \
+  --member="serviceAccount:SA_EMAIL" \
+  --role="roles/bigquery.jobUser"
+gcloud projects add-iam-policy-binding mad-data \
+  --member="serviceAccount:SA_EMAIL" \
+  --role="roles/bigquery.dataViewer"
+```
 
-**Purpose:** Real-time dashboard display for TV screens
+---
 
-**Features:**
-- View rotating dashboards with live metrics
-- Keyboard navigation (arrow keys, number keys)
-- **Ctrl+E** - Enter visual edit mode (drag, resize, configure widgets)
-- **Ctrl+Q** - Open query editor (create/manage data queries)
+## Running as a Service (systemd)
 
-**Use when:** Displaying dashboards on TV screens or viewing live data
+The server runs as a systemd service on the TV display machine:
 
-### Admin Panel (`/admin`)
+```ini
+# /etc/systemd/system/tv-dashboards.service
+[Unit]
+Description=TV Dashboards - Bun server
+After=network.target
 
-**URL:** `http://tv.madhive.local/admin`
+[Service]
+Type=simple
+User=tech
+WorkingDirectory=/home/tech/dev-dashboards
+EnvironmentFile=/home/tech/dev-dashboards/.env
+ExecStart=/home/tech/.bun/bin/bun run server/index.js
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
 
-**Purpose:** Configuration and management interface
+[Install]
+WantedBy=multi-user.target
+```
 
-**Features:**
-- Create/edit/delete dashboards
-- Browse and apply templates
-- Manage themes and styling
-- Configure data sources (credentials, connection testing)
-- Import/export dashboards
+```bash
+sudo systemctl enable tv-dashboards
+sudo systemctl start tv-dashboards
+sudo systemctl restart tv-dashboards  # after config changes
+```
 
-**Use when:** Creating new dashboards, managing templates, or configuring data sources
+---
 
-## Using the WYSIWYG Editor
+## TV Display (`/`)
 
-### Enter Edit Mode
-1. Open dashboard in browser: `http://tv.madhive.local`
-2. Press `Ctrl+E` (or click "Edit Mode" button)
-3. Grid overlay appears with widget palette
+The TV display auto-rotates through all configured dashboards. It is read-only — all editing happens in the studio.
 
-### Edit Widgets
-- **Select:** Click any widget
-- **Move:** Drag widget to new position
-- **Resize:** Drag the 8 resize handles (corners + edges)
-- **Configure:** Edit properties in right panel
-- **Save:** Click "Save Changes" button
+| Control | Action |
+|---------|--------|
+| `⏸` button (bottom bar) | Pause/resume rotation |
+| `Space` | Pause/resume rotation |
+| `→` / `↓` | Next dashboard |
+| `←` / `↑` | Previous dashboard |
+| Nav dots (bottom bar) | Jump to specific dashboard |
 
-### Create New Widgets
-1. Open widget palette (left side)
-2. Drag widget type to grid
-3. Drop where you want it (green = valid, red = collision)
-4. Widget created and auto-selected
-5. Configure in property panel
+The rotation interval and refresh interval are configured in the studio's Settings panel.
 
-### Use Templates
-- Choose from 30+ pre-configured widget templates
-- Apply template with one click
-- Customize as needed
+---
 
-### Save & Restore
-- **Auto-Backup:** Automatic backup before each save
-- **Restore:** Rollback to any of last 10 backups
-- **Export:** Download dashboard as JSON
-- **Import:** Upload JSON to restore dashboard
+## Studio (`/admin`)
 
-## Architecture
+The studio is a three-panel WYSIWYG editor. No authentication required — access is controlled at the network level.
 
-### Frontend
-- **Dual System** - Vanilla JS (main dashboards) + React (Data Explorer)
-- **Vanilla JavaScript** - No frameworks, lightweight and fast for TV displays
-- **React + TypeScript** - Modern stack for admin tools and data exploration
-- **CSS Grid** - Flexible dashboard layouts
-- **Canvas API** - Complex visualizations (maps, charts)
-- **Modular Design** - Clean separation of concerns
+```
+┌──────────────┬──────────────────────────────┬──────────────────┐
+│  SIDEBAR     │  CANVAS                      │  PROPERTIES      │
+│              │                              │                  │
+│  Dashboards  │  Live preview of the         │  Click any       │
+│  Queries     │  selected dashboard.         │  widget to       │
+│  Sources     │  Click/drag/resize widgets.  │  configure it.   │
+└──────────────┴──────────────────────────────┴──────────────────┘
+```
 
-### Backend
-- **Bun Runtime** - Fast JavaScript runtime
-- **Elysia.js** - Lightweight web framework
-- **YAML Config** - Human-readable, version-control friendly
-- **Plugin System** - Extensible data source architecture
+### Dashboards Tab
 
-### Editor Components
-- `editor.js` - Core editor state management
-- `editor-panel.js` - Property configuration panel
-- `editor-drag.js` - Drag & drop with grid snapping
-- `editor-resize.js` - Widget resizing with handles
-- `editor-palette.js` - Widget type palette
-- `editor-utils.js` - Grid calculations & utilities
-- `widget-templates.js` - 30+ pre-configured templates
+- Lists all 12 dashboards with miniature grid thumbnail previews
+- Click a dashboard to load it in the canvas
+- Drag the `⠿` handle to reorder the TV rotation
+- `+` button to create a new blank dashboard
 
-## File Structure
+### Canvas
+
+- **Click** a widget to select it and open its properties
+- **Drag** to reposition (grid snaps, collision detection prevents overlaps)
+- **Drag the pink handles** (appear on hover) to resize
+- **Add Widget** button in the footer opens the widget type picker
+
+### Properties Panel
+
+When a widget is selected, four sections appear:
+
+| Section | What you can change |
+|---------|-------------------|
+| **Basic** | Title, widget type |
+| **Data** | Source (GCP/BigQuery/VulnTrack/Mock), query assignment |
+| **Position** | Col, Row, ColSpan, RowSpan — type values or drag |
+| **Display** | Unit, Min, Max, warning/critical thresholds (gauges/numbers only) |
+
+### Saving
+
+The **Save** button in the top bar becomes active after any change. Click it to write to `dashboards.yaml`. The TV display picks up changes within the next refresh cycle (default 8s) — no restart required.
+
+---
+
+## Queries Tab
+
+The Queries tab lists all 46+ saved GCP metric queries grouped by source. Each query defines a specific GCP metric type, project, time window, and aggregation.
+
+### Assign a Metric to a Widget
+
+1. Select a widget in the canvas
+2. In the Properties panel → **Data** section, click **Browse GCP Metrics**
+3. A searchable modal opens with all 9,000+ metrics from your GCP projects, organized by service (Cloud Run, BigQuery, Pub/Sub, Bigtable, etc.)
+4. Click a metric → configure time window and aggregation → **Apply to Widget**
+5. The query is saved and the widget is updated — click **Save** to persist
+
+### Direct Query Assignment
+
+Use the **Change Query** dropdown in the Data section to assign any existing saved query to a widget.
+
+---
+
+## Sources Tab
+
+The Sources tab shows all 17 data sources with live connection status:
+
+| Status | Meaning |
+|--------|---------|
+| 🟢 Green | Connected and serving data |
+| 🟡 Amber | Configured but untested |
+| 🔴 Red | Connection error |
+| ⚫ Grey | Not configured (no credentials) |
+
+Click any source to open the credential editor. Fill in API keys and click **Save Credentials** — credentials are written to `.env` and the data source reconnects immediately without a server restart.
+
+### Currently Active
+
+| Source | Data |
+|--------|------|
+| GCP Cloud Monitoring | Cloud Run, K8s, Bigtable, Pub/Sub, Load Balancer, and all custom MadHive metrics |
+| BigQuery | Campaign delivery geographic data |
+| VulnTrack | Security vulnerability counts and scorecard |
+| Mock | Fallback for unconfigured widgets |
+
+### Ready for Configuration
+
+AWS CloudWatch, DataDog, Elasticsearch, Salesforce, HotJar, FullStory, Zendesk, Checkly, Chromatic, Looker, Rollbar, Rootly, Segment — all have full implementations, just need credentials.
+
+---
+
+## Dashboards
+
+| Dashboard | Widgets | Data Source |
+|-----------|---------|-------------|
+| Platform Overview | 7 | GCP (bidder metrics, Kafka, Cloud Run) |
+| Services Health | 5 | GCP Cloud Run |
+| Campaign Delivery | 1 | BigQuery (geographic delivery data) |
+| Data Processing | 5 | GCP BigQuery + Pub/Sub |
+| Data Pipeline | 1 | GCP (multi-metric pipeline stages) |
+| RTB Infrastructure | 11 | GCP Kubernetes, Load Balancer |
+| Bidder Cluster | 9 | GCP Load Balancer |
+| Campaign & Pacing | 9 | GCP Roger/MadServer metrics |
+| Data Infrastructure | 11 | GCP Managed Kafka + Bigtable |
+| API & Services | 9 | GCP Mozart/Planner/Gary2/MadServer |
+| Security Posture | 1 | VulnTrack |
+| Visual Showcase | 12 | Mock (testing/demo) |
+
+---
+
+## Widget Types
+
+| Type | Description |
+|------|-------------|
+| `big-number` | Large numeric value with sparkline and trend |
+| `stat-card` | Metric with label, value, and sparkline |
+| `gauge` | Circular gauge with configurable min/max/thresholds |
+| `gauge-row` | Horizontal row of multiple gauge values |
+| `bar-chart` | Vertical bar chart with color-coded bars |
+| `progress-bar` | Horizontal progress indicator |
+| `status-grid` | Grid of named status items |
+| `alert-list` | Scrollable list of alerts |
+| `service-heatmap` | Services arranged in a heatmap |
+| `pipeline-flow` | Multi-stage data pipeline visualization |
+| `usa-map` | Geographic choropleth of impression/bid data |
+| `security-scorecard` | VulnTrack security posture overview |
+
+---
+
+## API Reference
+
+Full interactive documentation at **http://tv:3000/openapi** (Scalar UI).
+
+### Key Endpoints
+
+```
+GET  /api/config                          Full dashboard config (all dashboards + widgets)
+GET  /api/metrics/:dashboardId            Live metric data for all widgets in a dashboard
+
+GET  /api/dashboards                      List dashboards
+POST /api/dashboards                      Create dashboard
+PUT  /api/dashboards/:id                  Update dashboard
+DELETE /api/dashboards/:id                Delete dashboard
+POST /api/dashboards/reorder              Reorder TV rotation
+
+GET  /api/queries/                        All saved queries (grouped by source)
+GET  /api/queries/:source                 Queries for a specific source
+POST /api/queries/:source                 Create query (GCP requires metricType, BigQuery requires sql)
+PUT  /api/queries/:source/:id             Update query
+DELETE /api/queries/:source/:id           Delete query
+
+GET  /api/data-sources                    List all sources with connection status
+POST /api/data-sources/:name/test         Test connection
+PUT  /api/data-sources/:name/credentials  Save credentials to .env + hot-reload
+
+GET  /api/gcp/metrics/descriptors         Browse all GCP metric types for a project
+```
+
+---
+
+## Database
+
+SQLite database at `data/tv-dashboards.db` (WAL mode). Stores:
+- Data source configuration (non-sensitive settings)
+- Configuration audit log
+
+```bash
+# View and manage via Drizzle Studio
+bun run db:studio     # opens at http://tv:4983
+
+# Schema management
+bun run db:generate   # generate migration from schema changes
+bun run db:migrate    # apply pending migrations
+```
+
+---
+
+## Development
+
+### Running Tests
+
+```bash
+bun run test                    # 1,550+ tests (unit + integration + components)
+bun test tests/unit             # unit tests only
+bun test tests/integration      # integration tests only
+```
+
+### File Structure
 
 ```
 dev-dashboards/
 ├── public/
-│   ├── index.html
+│   ├── index.html              TV display shell
+│   ├── studio.html             Studio editor shell
 │   ├── css/
-│   │   ├── dashboard.css
-│   │   └── editor.css
+│   │   ├── dashboard.css       TV display styles (MadHive brand palette)
+│   │   └── studio.css          Studio editor styles
 │   └── js/
-│       ├── app.js
-│       ├── charts.js
-│       ├── widgets.js
-│       ├── editor.js
-│       ├── editor-panel.js
-│       ├── editor-drag.js
-│       ├── editor-resize.js
-│       ├── editor-palette.js
-│       ├── editor-utils.js
-│       └── widget-templates.js
+│       ├── app.js              TV display runtime (rotation, pause, data refresh)
+│       ├── charts.js           Canvas-based chart renderers
+│       ├── widgets.js          Widget factory (creates all widget types)
+│       ├── studio.js           Studio controller (sidebar, properties, tabs)
+│       └── studio-canvas.js    Studio canvas (render, drag, resize, grid overlay)
 ├── server/
-│   ├── index.js
-│   ├── config-validator.js
-│   ├── config-manager.js
-│   ├── template-manager.js
-│   ├── data-source-registry.js
-│   ├── mock-data.js
-│   ├── gcp-metrics.js
-│   └── data-sources/
-│       ├── base.js
-│       ├── gcp.js
-│       ├── mock.js
-│       ├── vulntrack.js
-│       └── ... (7 more stubs)
+│   ├── index.js                Elysia server + all API routes
+│   ├── gcp-metrics.js          Legacy hardcoded GCP metric functions
+│   ├── query-manager.js        YAML-based saved query persistence
+│   ├── data-source-registry.js Central registry for all data source plugins
+│   ├── env-writer.js           Safe in-place .env file updater
+│   ├── data-source-env-map.js  Whitelist of writable env vars per data source
+│   ├── models/                 TypeBox schema models for OpenAPI
+│   │   ├── dashboard.model.js
+│   │   ├── query.model.js
+│   │   ├── data-source.model.js
+│   │   └── ...
+│   └── data-sources/           Data source plugin implementations
+│       ├── base.js             Abstract base class
+│       ├── gcp.js              GCP Cloud Monitoring
+│       ├── bigquery.js         BigQuery
+│       ├── vulntrack.js        VulnTrack security
+│       ├── mock.js             Mock/fallback
+│       └── ...                 14 more (aws, datadog, elasticsearch, etc.)
 ├── config/
-│   ├── dashboards.yaml
-│   └── templates/
-└── package.json
+│   ├── dashboards.yaml         Dashboard + widget definitions
+│   └── queries.yaml            Saved metric queries
+├── migrations/                 Drizzle SQL migrations
+├── scripts/
+│   └── auto-assign-queries.js  One-time script: assign saved queries to widgets
+└── tests/
+    ├── unit/
+    ├── integration/
+    └── components/
 ```
 
-## API Endpoints
+### Adding a Data Source
 
-### Configuration
-- `GET /api/config` - Get dashboard configuration
-- `POST /api/config` - Save configuration
-- `GET /api/backups` - List backups
-- `POST /api/backups/restore` - Restore from backup
+1. Create `server/data-sources/your-source.js` extending `DataSource`
+2. Implement `fetchMetrics()`, `testConnection()`, `getConfigSchema()`
+3. Register in `server/data-source-registry.js`
+4. Add env var whitelist entry in `server/data-source-env-map.js`
 
-### Dashboards
-- `GET /api/dashboards/:id` - Get dashboard
-- `POST /api/dashboards` - Create dashboard
-- `PUT /api/dashboards/:id` - Update dashboard
-- `DELETE /api/dashboards/:id` - Delete dashboard
-- `POST /api/dashboards/export` - Export to JSON
-- `POST /api/dashboards/import` - Import from JSON
+See `server/data-sources/vulntrack.js` for a complete example.
 
-### Data Sources
-- `GET /api/data-sources` - List all sources
-- `GET /api/data-sources/health` - Health status
-- `GET /api/data-sources/schemas` - Configuration schemas
-- `GET /api/data-sources/:name/metrics` - Available metrics
-- `POST /api/data-sources/:name/test` - Test connection
+### Adding a Widget Type
 
-### Templates
-- `GET /api/templates` - List templates
-- `GET /api/templates/:filename` - Load template
-- `POST /api/templates` - Save template
-- `DELETE /api/templates/:filename` - Delete template
-
-## Widget Types
-
-1. **Big Number** - Large numeric display with trend
-2. **Stat Card** - Metric with sparkline graph
-3. **Gauge** - Circular gauge meter
-4. **Gauge Row** - Horizontal gauge bars
-5. **Bar Chart** - Vertical bar chart
-6. **Progress Bar** - Horizontal progress indicator
-7. **Status Grid** - Grid of status items
-8. **Alert List** - List of alerts/notifications
-9. **Service Heatmap** - Service health heatmap
-10. **Pipeline Flow** - Data pipeline visualization
-11. **USA Map** - Geographic distribution map
-12. **Security Scorecard** - Security posture overview
-
-## Development
-
-### Run Tests
-```bash
-# Run all automated tests (1,551 tests - unit, integration, helpers, components)
-# IMPORTANT: Use 'bun run test' (NOT 'bun test') to exclude E2E tests
-bun run test
-
-# Run specific test suites
-bun test tests/unit/          # Unit tests
-bun test tests/integration/   # Integration tests
-bun test tests/helpers/       # Helper tests
-bun test tests/components/    # Component tests
-
-# Run E2E tests (requires running server - manual only)
-bun run dev &                 # Start server first
-bun run test:e2e:manual       # Then run E2E tests
-
-# Run ALL tests including E2E
-bun run test:all
-
-# Run with coverage
-bun run test:coverage
-
-# Watch mode for development
-bun test --watch
-```
-
-**Test Status:**
-- **Automated Tests:** 1,551/1,551 passing (100%) ✅
-- **E2E Tests:** 10/78 passing (require manual server startup)
-- **Total Coverage:** 99.87% for automated tests
-
-**Note:** E2E tests are excluded from CI/CD pipeline as they require a running HTTP server. Use `test:e2e:manual` for local testing
-
-# Watch mode for development
-bun test --watch
-```
-
-**Test Status:**
-- **Automated Tests:** 1,540/1,540 passing (100%) ✅
-- **E2E Tests:** 10/78 passing (require manual server startup)
-- **Total Coverage:** 99.87% for automated tests
-
-**Note:** E2E tests are excluded from CI/CD pipeline as they require a running HTTP server. Use `test:e2e:manual` for local testing.
-
-### Add New Data Source
-
-1. Create plugin in `server/data-sources/your-source.js`
-2. Extend `DataSource` base class
-3. Implement required methods: `fetchMetrics()`, `testConnection()`, etc.
-4. Register in `data-source-registry.js`
-5. Add to config validator
-
-See `server/data-sources/base.js` for full interface.
-
-### Add New Widget Type
-
-1. Add widget renderer in `public/js/charts.js`
-2. Add to palette in `editor-palette.js`
-3. Add template in `widget-templates.js`
-4. Update schema in `config-validator.js`
-
-## Configuration
-
-Dashboard configuration is stored in `config/dashboards.yaml`:
-
-```yaml
-global:
-  rotation_interval: 30
-  refresh_interval: 8
-  title: "MADHIVE PLATFORM"
-
-dashboards:
-  - id: platform-overview
-    name: Platform Overview
-    grid:
-      columns: 6
-      rows: 4
-      gap: 12
-    widgets:
-      - id: bids-served
-        type: big-number
-        title: "Bids Served"
-        source: gcp
-        position: { col: 1, row: 1, colSpan: 2, rowSpan: 1 }
-```
-
-## Data Source Management
-
-Configure and monitor all 17 data source integrations through the web UI.
-
-### Access
-
-Navigate to: `http://tv.madhive.local:3000/data-sources.html`
-
-Or via Admin panel → Data Sources button
-
-### Features
-
-- **View Status**: Real-time connection status for all data sources
-- **Configure**: Edit non-sensitive settings (regions, timeouts, project IDs)
-- **Test Connections**: Verify credentials before deployment
-- **Enable/Disable**: Toggle data sources on/off without deleting config
-- **Audit Trail**: Track all configuration changes with user attribution
-
-### Security
-
-- **Credentials**: Sensitive data (API keys, tokens, passwords) remain in `.env` file
-- **Access Control**: Admin-only via Google OAuth
-- **Validation**: Automatically rejects attempts to save sensitive fields to database
-
-### Configuration Storage
-
-- **Sensitive**: `.env` file (API keys, tokens, passwords)
-- **Non-Sensitive**: SQLite database (`data/tv-dashboards.db`)
-
-### Supported Data Sources
-
-GCP, BigQuery, AWS, Salesforce, DataDog, Elasticsearch, HotJar, FullStory, Zendesk, Checkly, Chromatic, Looker, Rollbar, Rootly, Segment, VulnTrack, Mock
-
-## Documentation
-
-- `COMPLETE_SUMMARY.md` - Full project summary
-- `EDITOR_STATUS.md` - Implementation status
-- `PHASE5_COMPLETE.md` - Phase 5 details
-- `TESTING.md` - Browser testing guide
-
-## Statistics
-
-- **6,076 lines of code**
-- **17 new files created**
-- **24 API endpoints**
-- **12 widget types**
-- **30+ widget templates**
-- **10 data sources**
-- **100% tests passing**
-
-## License
-
-Internal MadHive project
-
-## Contributing
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Make changes
-4. Test thoroughly
-5. Commit (`git commit -m 'Add amazing feature'`)
-6. Push (`git push origin feature/amazing-feature`)
-7. Open Pull Request
-
-## Support
-
-For issues or questions, contact the MadHive Platform team.
+1. Add renderer function in `public/js/charts.js`
+2. Register in the `Widgets.create()` factory in `public/js/widgets.js`
+3. Add option to the type selector in `public/studio.html`
 
 ---
 
-**Built with ❤️ by the MadHive Platform Team**
+## Architecture Notes
+
+**Data flow for a widget with a saved query:**
+```
+Dashboard YAML (widget.queryId)
+  → GET /api/metrics/:dashboardId
+  → dataSourceRegistry.fetchDashboardMetrics()
+  → gcp.executeQuery(widgetConfig)
+    → getQuery('gcp', queryId)          loads from queries.yaml
+    → gcp-metrics.query(metricType, ...)  calls Cloud Monitoring API
+    → transformData(timeSeries, widgetType)  converts to { value, sparkline, ... }
+  → browser receives { widgetId: data }
+  → widget.update(data)                 renders the value
+```
+
+**Data flow for a widget WITHOUT a saved query (legacy):**
+```
+  → gcp.fetchMetrics({ dashboardId })
+  → gcp-metrics.getMetrics(dashboardId)  hardcoded per-dashboard function
+  → returns pre-processed data for all widgets in that dashboard
+```
+
+58 of 81 widgets use the saved query path. 23 use the legacy path (complex multi-metric widgets, static values, and mock widgets).
+
+---
+
+## License
+
+Internal MadHive project — not for external distribution.
