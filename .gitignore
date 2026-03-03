@@ -70,5 +70,4 @@ data/*.db
 data/*.db-shm
 data/*.db-wal
 
-# Drizzle Kit — introspection output (informational only, not source of truth)
-migrations/
+# Drizzle Kit introspection snapshots (meta/ is tracked alongside migrations)
