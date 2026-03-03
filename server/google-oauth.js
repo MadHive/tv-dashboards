@@ -62,8 +62,8 @@ export const googleOAuthRoutes = new Elysia({ prefix: '/auth/google' })
     });
   }, {
     detail: {
-      tags: ['Authentication'],
-      summary: 'Initiate Google OAuth',
+      tags: ['auth'],
+      summary: 'Redirect to Google OAuth consent screen',
       description: 'Redirects to Google OAuth consent screen'
     }
   })
@@ -132,8 +132,8 @@ export const googleOAuthRoutes = new Elysia({ prefix: '/auth/google' })
     }
   }, {
     detail: {
-      tags: ['Authentication'],
-      summary: 'OAuth callback',
+      tags: ['auth'],
+      summary: 'Google OAuth callback — sets session cookie',
       description: 'Handles OAuth callback from Google'
     }
   })
@@ -154,8 +154,8 @@ export const googleOAuthRoutes = new Elysia({ prefix: '/auth/google' })
     });
   }, {
     detail: {
-      tags: ['Authentication'],
-      summary: 'Logout',
+      tags: ['auth'],
+      summary: 'Clear session and redirect to /',
       description: 'Clears session and logs out user'
     }
   })
@@ -194,9 +194,13 @@ export const googleOAuthRoutes = new Elysia({ prefix: '/auth/google' })
       picture: session.picture
     };
   }, {
+    response: {
+      200: t.Object({ email: t.String(), name: t.String(), picture: t.Optional(t.String()) }),
+      401: t.Object({ error: t.String() }),
+    },
     detail: {
-      tags: ['Authentication'],
-      summary: 'Get current user',
+      tags: ['auth'],
+      summary: 'Get current authenticated user',
       description: 'Returns current authenticated user info'
     }
   });

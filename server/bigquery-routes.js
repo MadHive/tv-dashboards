@@ -23,6 +23,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
       };
     }
   }, {
+    response: { 200: 'query.list' },
     detail: {
       tags: ['BigQuery'],
       summary: 'List saved queries',
@@ -48,6 +49,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
       };
     }
   }, {
+    response: { 200: 'query.response', 404: 'common.error' },
     detail: {
       tags: ['BigQuery'],
       summary: 'Get saved query',
@@ -87,20 +89,13 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
       );
     }
   }, {
+    body: 'query.bigquery',
+    response: { 200: 'query.response', 400: 'common.error' },
     detail: {
       tags: ['BigQuery'],
       summary: 'Save query',
       description: 'Save a new BigQuery query for reuse'
-    },
-    body: t.Object({
-      id: t.String(),
-      name: t.String(),
-      description: t.Optional(t.String()),
-      sql: t.String(),
-      params: t.Optional(t.Any()),
-      transform: t.Optional(t.Any()),
-      widgetTypes: t.Optional(t.Array(t.String()))
-    })
+    }
   })
 
   // Update an existing query
@@ -153,6 +148,7 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
       );
     }
   }, {
+    response: { 200: 'common.success', 404: 'common.error' },
     detail: {
       tags: ['BigQuery'],
       summary: 'Delete query',
@@ -190,16 +186,13 @@ export const bigQueryRoutes = new Elysia({ prefix: '/api/bigquery' })
       );
     }
   }, {
+    body: t.Object({ sql: t.String(), params: t.Optional(t.Any()) }),
+    response: { 200: 'query.test-response', 400: 'query.test-response' },
     detail: {
       tags: ['BigQuery'],
       summary: 'Execute query',
       description: 'Execute a BigQuery SQL query (for testing/preview)'
-    },
-    body: t.Object({
-      sql: t.String(),
-      params: t.Optional(t.Any()),
-      useCache: t.Optional(t.Boolean())
-    })
+    }
   })
 
   // Validate query syntax

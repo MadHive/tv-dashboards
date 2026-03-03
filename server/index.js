@@ -149,6 +149,8 @@ const app = new Elysia()
         { name: 'themes',       description: 'Visual theme management' },
         { name: 'backups',      description: 'Configuration backup and restore' },
         { name: 'metrics',      description: 'Performance and widget metrics' },
+        { name: 'tv-apps',      description: 'Apple TV and external app widget endpoints' },
+        { name: 'auth',         description: 'Google OAuth authentication' },
       ],
     },
     swaggerOptions: {
