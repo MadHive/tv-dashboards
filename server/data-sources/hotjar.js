@@ -4,6 +4,7 @@
 
 import { DataSource } from './base.js';
 import axios from 'axios';
+import logger from '../logger.js';
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 const HOTJAR_API_BASE = 'https://api.hotjar.com/v1';
@@ -30,15 +31,15 @@ export class HotJarDataSource extends DataSource {
     try {
       // Check if credentials are available
       if (!this.apiKey || !this.siteId) {
-        console.warn('[hotjar] No HotJar credentials found - data source will use mock data');
+        logger.warn('[hotjar] No HotJar credentials found - data source will use mock data');
         this.isConnected = false;
         return;
       }
 
       this.isConnected = true;
-      console.log('[hotjar] HotJar client initialized for site:', this.siteId);
+      logger.info('[hotjar] HotJar client initialized for site:', this.siteId);
     } catch (error) {
-      console.error('[hotjar] Failed to initialize:', error.message);
+      logger.error('[hotjar] Failed to initialize:', error.message);
       this.lastError = error;
       this.isConnected = false;
     }
@@ -55,7 +56,7 @@ export class HotJarDataSource extends DataSource {
   async fetchMetrics(widgetConfig) {
     try {
       if (!this.apiKey || !this.siteId) {
-        console.warn('[hotjar] HotJar client not initialized - using mock data');
+        logger.warn('[hotjar] HotJar client not initialized - using mock data');
         return {
           timestamp: new Date().toISOString(),
           source: 'hotjar',
@@ -80,7 +81,7 @@ export class HotJarDataSource extends DataSource {
       if (this.metricCache.has(cacheKey)) {
         const cached = this.metricCache.get(cacheKey);
         if (Date.now() - cached.timestamp < CACHE_TTL) {
-          console.log('[hotjar] Cache hit for metric:', metric);
+          logger.info('[hotjar] Cache hit for metric:', metric);
           return {
             timestamp: new Date().toISOString(),
             source: 'hotjar',
@@ -117,7 +118,7 @@ export class HotJarDataSource extends DataSource {
         widgetId: widgetConfig.id
       };
     } catch (error) {
-      console.error('[hotjar] Fetch metrics error:', error.message);
+      logger.error('[hotjar] Fetch metrics error:', error.message);
       return this.handleError(error, widgetConfig.type);
     }
   }
@@ -140,10 +141,10 @@ export class HotJarDataSource extends DataSource {
         }
       });
 
-      console.log('[hotjar] Connection test successful');
+      logger.info('[hotjar] Connection test successful');
       return true;
     } catch (error) {
-      console.error('[hotjar] Connection test failed:', error.message);
+      logger.error('[hotjar] Connection test failed:', error.message);
       this.lastError = error;
       return false;
     }

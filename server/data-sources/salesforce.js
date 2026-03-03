@@ -4,6 +4,7 @@
 
 import { DataSource } from './base.js';
 import jsforce from 'jsforce';
+import logger from '../logger.js';
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -65,7 +66,7 @@ export class SalesforceDataSource extends DataSource {
       const hasToken = this.accessToken && this.instanceUrl;
 
       if (!hasOAuth && !hasToken) {
-        console.warn('[salesforce] No Salesforce credentials found - data source will use mock data');
+        logger.warn('[salesforce] No Salesforce credentials found - data source will use mock data');
         this.isConnected = false;
         return;
       }
@@ -81,7 +82,7 @@ export class SalesforceDataSource extends DataSource {
           instanceUrl: this.instanceUrl,
           accessToken: this.accessToken
         });
-        console.log({ instanceUrl: this.instanceUrl }, 'Salesforce connection initialized with access token');
+        logger.info({ instanceUrl: this.instanceUrl }, 'Salesforce connection initialized with access token');
       }
       // Otherwise use OAuth username/password flow
       else if (hasOAuth) {
@@ -99,7 +100,7 @@ export class SalesforceDataSource extends DataSource {
         // Login
         const userInfo = await this.connection.login(this.username, fullPassword);
 
-        console.log({
+        logger.info({
           userId: userInfo.id,
           orgId: userInfo.organizationId,
           isSandbox: this.isSandbox
@@ -108,7 +109,7 @@ export class SalesforceDataSource extends DataSource {
 
       this.isConnected = true;
     } catch (error) {
-      console.error('[salesforce] Failed to initialize:', error.message);
+      logger.error('[salesforce] Failed to initialize:', error.message);
       this.lastError = error;
       this.isConnected = false;
     }
@@ -128,10 +129,10 @@ export class SalesforceDataSource extends DataSource {
    * - timeRange: Time range in days (default: 30)
    */
   async fetchMetrics(widgetConfig) {
-    console.warn('[salesforce] Using mock data - fetchMetrics not yet implemented');
+    logger.warn('[salesforce] Using mock data - fetchMetrics not yet implemented');
     try {
       if (!this.connection) {
-        console.warn('[salesforce] Salesforce connection not initialized - using mock data');
+        logger.warn('[salesforce] Salesforce connection not initialized - using mock data');
         return {
           timestamp: new Date().toISOString(),
           source: 'salesforce',
@@ -171,7 +172,7 @@ export class SalesforceDataSource extends DataSource {
       if (this.metricCache.has(cacheKey)) {
         const cached = this.metricCache.get(cacheKey);
         if (Date.now() - cached.timestamp < CACHE_TTL) {
-          console.log({ query }, 'Cache hit for Salesforce query');
+          logger.info({ query }, 'Cache hit for Salesforce query');
           return {
             timestamp: new Date().toISOString(),
             source: 'salesforce',
@@ -187,7 +188,7 @@ export class SalesforceDataSource extends DataSource {
       const result = await this.connection.query(query);
       const queryDuration = Date.now() - queryStart;
 
-      console.log({ query, duration: queryDuration }, 'Salesforce query executed');
+      logger.info({ query, duration: queryDuration }, 'Salesforce query executed');
 
       // Cache the result
       this.metricCache.set(cacheKey, {
@@ -202,7 +203,7 @@ export class SalesforceDataSource extends DataSource {
         widgetId: widgetConfig.id
       };
     } catch (error) {
-      console.error({ error: error.message }, 'Salesforce fetch metrics error');
+      logger.error({ error: error.message }, 'Salesforce fetch metrics error');
       return this.handleError(error, widgetConfig.type);
     }
   }
@@ -283,10 +284,10 @@ export class SalesforceDataSource extends DataSource {
       // Try a simple query
       await this.connection.query('SELECT Id FROM Organization LIMIT 1');
 
-      console.log('[salesforce] Connection test successful');
+      logger.info('[salesforce] Connection test successful');
       return true;
     } catch (error) {
-      console.error({ error: error.message }, 'Salesforce connection test failed');
+      logger.error({ error: error.message }, 'Salesforce connection test failed');
       this.lastError = error;
       return false;
     }

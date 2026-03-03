@@ -3,6 +3,7 @@
 // ===========================================================================
 
 import { DataSource } from './base.js';
+import logger from '../logger.js';
 
 const ROOTLY_API_URL = process.env.ROOTLY_API_URL || 'https://api.rootly.com/v1';
 const ROOTLY_API_KEY = process.env.ROOTLY_API_KEY || '';
@@ -57,7 +58,7 @@ export class RootlyDataSource extends DataSource {
     }
 
     if (!this.apiKey) {
-      console.warn('[rootly] No API key configured - using mock data');
+      logger.warn('[rootly] No API key configured - using mock data');
       return null;
     }
 
@@ -77,7 +78,7 @@ export class RootlyDataSource extends DataSource {
       ]);
 
       if (!incidentsRes.ok) {
-        console.error(`[rootly] API error: incidents=${incidentsRes.status}`);
+        logger.error(`[rootly] API error: incidents=${incidentsRes.status}`);
         return this.cache || null;
       }
 
@@ -99,7 +100,7 @@ export class RootlyDataSource extends DataSource {
 
       return this.cache;
     } catch (error) {
-      console.error('[rootly] Fetch error:', error.message);
+      logger.error('[rootly] Fetch error:', error.message);
       return this.cache || null;
     }
   }
@@ -182,7 +183,7 @@ export class RootlyDataSource extends DataSource {
       const data = await this.fetchFromAPI();
 
       if (!data) {
-        console.warn('[rootly] Using mock data');
+        logger.warn('[rootly] Using mock data');
         return {
           timestamp: new Date().toISOString(),
           source: 'rootly',
@@ -211,7 +212,7 @@ export class RootlyDataSource extends DataSource {
   async testConnection() {
     try {
       if (!this.apiKey) {
-        console.warn('[rootly] No API key configured');
+        logger.warn('[rootly] No API key configured');
         return false;
       }
 
@@ -227,14 +228,14 @@ export class RootlyDataSource extends DataSource {
       });
 
       if (response.ok) {
-        console.log('[rootly] Connection test successful');
+        logger.info('[rootly] Connection test successful');
         return true;
       }
 
-      console.error(`[rootly] Connection test failed: ${response.status}`);
+      logger.error(`[rootly] Connection test failed: ${response.status}`);
       return false;
     } catch (error) {
-      console.error('[rootly] Connection test failed:', error.message);
+      logger.error('[rootly] Connection test failed:', error.message);
       return false;
     }
   }

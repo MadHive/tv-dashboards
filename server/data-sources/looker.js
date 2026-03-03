@@ -3,6 +3,7 @@
 // ===========================================================================
 
 import { DataSource } from './base.js';
+import logger from '../logger.js';
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -47,7 +48,7 @@ export class LookerDataSource extends DataSource {
 
       // Check if credentials are available
       if (!this.baseUrl || !this.clientId || !this.clientSecret) {
-        console.warn('[looker] No Looker credentials found - data source will use mock data');
+        logger.warn('[looker] No Looker credentials found - data source will use mock data');
         this.isConnected = false;
         return;
       }
@@ -55,10 +56,10 @@ export class LookerDataSource extends DataSource {
       // Authenticate
       await this.authenticate();
 
-      console.log('[looker] Looker client initialized');
+      logger.info('[looker] Looker client initialized');
       this.isConnected = true;
     } catch (error) {
-      console.error('[looker] Failed to initialize:', error.message);
+      logger.error('[looker] Failed to initialize:', error.message);
       this.lastError = error;
       this.isConnected = false;
     }
@@ -95,9 +96,9 @@ export class LookerDataSource extends DataSource {
       // Token expiry is in seconds, convert to timestamp
       this.tokenExpiry = Date.now() + (data.expires_in * 1000);
 
-      console.log('[looker] Authentication successful');
+      logger.info('[looker] Authentication successful');
     } catch (error) {
-      console.error('[looker] Authentication error:', error.message);
+      logger.error('[looker] Authentication error:', error.message);
       throw error;
     }
   }
@@ -151,7 +152,7 @@ export class LookerDataSource extends DataSource {
   async fetchMetrics(widgetConfig) {
     try {
       if (!this.accessToken && !this.baseUrl) {
-        console.warn('[looker] Looker client not initialized - using mock data');
+        logger.warn('[looker] Looker client not initialized - using mock data');
         return {
           timestamp: new Date().toISOString(),
           source: 'looker',
@@ -175,7 +176,7 @@ export class LookerDataSource extends DataSource {
       if (this.metricCache.has(cacheKey)) {
         const cached = this.metricCache.get(cacheKey);
         if (Date.now() - cached.timestamp < CACHE_TTL) {
-          console.log('[looker] Cache hit for metric:', metric);
+          logger.info('[looker] Cache hit for metric:', metric);
           return {
             timestamp: new Date().toISOString(),
             source: 'looker',
@@ -255,7 +256,7 @@ export class LookerDataSource extends DataSource {
         widgetId: widgetConfig.id
       };
     } catch (error) {
-      console.error('[looker] Fetch metrics error:', error.message);
+      logger.error('[looker] Fetch metrics error:', error.message);
       return this.handleError(error, widgetConfig.type);
     }
   }
@@ -281,10 +282,10 @@ export class LookerDataSource extends DataSource {
       await this.ensureAuthenticated();
       await this.makeRequest('/user');
 
-      console.log('[looker] Connection test successful');
+      logger.info('[looker] Connection test successful');
       return true;
     } catch (error) {
-      console.error('[looker] Connection test failed:', error.message);
+      logger.error('[looker] Connection test failed:', error.message);
       this.lastError = error;
       return false;
     }
