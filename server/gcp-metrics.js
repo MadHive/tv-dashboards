@@ -320,6 +320,13 @@ async function campaignDeliveryMap(widgetConfig = {}) {
   const timeWindow   = Math.max(1, Math.min(90, parseInt(mc.timeWindow)   || 7));
   const minImp       = parseInt(mc.minImpressions) >= 0 ? parseInt(mc.minImpressions) : 100;
   const metric       = mc.metric === 'clicks' ? 'clicks' : 'impressions';
+  const region = mc.region || 'full';
+
+  const REGION_STATE_SETS = {
+    northeast: new Set(['ME','VT','NH','MA','RI','CT','NY','NJ','PA','DE','MD','DC','VA','WV']),
+    southeast: new Set(['NC','SC','GA','FL','AL','MS','TN','KY']),
+  };
+  const regionStates = REGION_STATE_SETS[region] || null;
 
   // Fetch real delivery data from BigQuery + Cloud Run service count
   const [geoData, crData] = await Promise.all([
@@ -344,15 +351,17 @@ async function campaignDeliveryMap(widgetConfig = {}) {
     }
     // Include as hotspot for zip-level rendering
     if (z.lat && z.lon) {
-      hotspots.push({
-        zip3: z.zip3,
-        lat: z.lat,
-        lon: z.lon,
-        impressions: z.impressions,
-        clicks: z.clicks,
-        state: z.state,
-        city: z.city || null,
-      });
+      if (!regionStates || regionStates.has(z.state)) {
+        hotspots.push({
+          zip3: z.zip3,
+          lat: z.lat,
+          lon: z.lon,
+          impressions: z.impressions,
+          clicks: z.clicks,
+          state: z.state,
+          city: z.city || null,
+        });
+      }
     }
   });
 
@@ -379,13 +388,15 @@ async function campaignDeliveryMap(widgetConfig = {}) {
     };
   });
 
+  const widgetId = widgetConfig.id || 'usa-delivery-map';
+
   return {
-    'usa-delivery-map': {
+    [widgetId]: {
       states:   stateActivity,
       totals:   { impressions: totalImpressions, bids: totalBids, campaigns: withTraffic },
       regions:  regions,
       hotspots: hotspots,
-      zoom:     mc.zoom !== 'off',
+      region:   region,
     },
   };
 }
