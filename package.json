@@ -34,7 +34,7 @@
     "@libsql/client": "^0.17.0",
     "axios": "^1.13.6",
     "drizzle-orm": "^0.38.0",
-    "drizzle-typebox": "^0.1.1",
+    "drizzle-typebox": "^0.3.3",
     "elysia": "^1.2",
     "elysia-rate-limit": "^4.5.0",
     "google-auth-library": "^10.6.1",
