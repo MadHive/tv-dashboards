@@ -261,6 +261,35 @@
             </div>
           </details>
 
+          <details class="props-section" id="map-config-section" style="display:none">
+            <summary>Map Config</summary>
+            <div>
+              <label>Time Window
+                <select id="prop-map-timewindow">
+                  <option value="1">Last 1 day</option>
+                  <option value="7" selected>Last 7 days</option>
+                  <option value="14">Last 14 days</option>
+                  <option value="30">Last 30 days</option>
+                </select>
+              </label>
+              <label>Min Impressions
+                <input id="prop-map-minimpressions" type="number" min="0" value="100" placeholder="100">
+              </label>
+              <label>Primary Metric
+                <select id="prop-map-metric">
+                  <option value="impressions" selected>Impressions</option>
+                  <option value="clicks">Clicks</option>
+                </select>
+              </label>
+              <label>Zoom Cycle
+                <select id="prop-map-zoom">
+                  <option value="on" selected>On (auto-zoom regions)</option>
+                  <option value="off">Off (full USA only)</option>
+                </select>
+              </label>
+            </div>
+          </details>
+
           <div class="props-danger-zone">
             <button id="delete-widget-btn" class="studio-btn danger">Delete Widget</button>
           </div>
@@ -445,6 +474,6 @@
   <script src="/js/widgets.js?v=11"></script>
   <script src="/js/query-editor.js?v=1"></script>
   <script src="/js/studio-canvas.js?v=5"></script>
-  <script src="/js/studio.js?v=17"></script>
+  <script src="/js/studio.js?v=18"></script>
 </body>
 </html>
