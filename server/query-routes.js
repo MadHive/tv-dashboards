@@ -318,33 +318,46 @@ export const queryRoutes = new Elysia({ prefix: '/api/queries' })
         const timeWindow = body.timeWindow || 10;
         const aggr       = body.aggregation || {};
         const t0         = Date.now();
+        const hasCreds   = !!(process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+                              process.env.GOOGLE_CLOUD_KEYFILE_JSON);
 
-        try {
-          const { query: gcpQuery, latest, spark } = await import('./gcp-metrics.js');
-          const timeSeries = await gcpQuery(project, metricField, body.filters || '', timeWindow, aggr);
-          const lastValue  = latest(timeSeries);
-          const sparkline  = spark(timeSeries, 10);
-
+        if (!hasCreds) {
+          // No credentials — return structure-valid response without touching
+          // the GCP client (avoids async gRPC auth errors in test environments)
           result = {
             success:       true,
             source,
-            message:       'GCP metric query is valid and returned data',
-            metric:        metricField,
-            project,
-            executionTime: Date.now() - t0,
-            result:        { value: lastValue, sparkline, seriesCount: timeSeries.length },
-          };
-        } catch (gcpErr) {
-          // If execution failed (e.g. no credentials in CI/test), fall back to
-          // structure validation so callers still get a useful success response
-          result = {
-            success:       true,
-            source,
-            message:       'GCP metric query structure is valid (execution unavailable: ' + gcpErr.message + ')',
+            message:       'GCP metric query structure is valid',
             metric:        metricField,
             metricType:    metricField,
             executionTime: Date.now() - t0,
           };
+        } else {
+          try {
+            const { query: gcpQuery, latest, spark } = await import('./gcp-metrics.js');
+            const timeSeries = await gcpQuery(project, metricField, body.filters || '', timeWindow, aggr);
+            const lastValue  = latest(timeSeries);
+            const sparkline  = spark(timeSeries, 10);
+
+            result = {
+              success:       true,
+              source,
+              message:       'GCP metric query is valid and returned data',
+              metric:        metricField,
+              project,
+              executionTime: Date.now() - t0,
+              result:        { value: lastValue, sparkline, seriesCount: timeSeries.length },
+            };
+          } catch (gcpErr) {
+            result = {
+              success:       true,
+              source,
+              message:       'GCP metric query structure is valid (execution error: ' + gcpErr.message + ')',
+              metric:        metricField,
+              metricType:    metricField,
+              executionTime: Date.now() - t0,
+            };
+          }
         }
       } else if (source === 'mock') {
         // For mock, just validate structure
