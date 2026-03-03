@@ -1242,11 +1242,20 @@
 
       const t0 = Date.now();
       try {
-        // Use the query-test endpoint
+        // Build body from saved query fields — NOT just queryId
+        const q    = this._activeQuery || {};
+        const body = source === 'bigquery'
+          ? { sql: q.sql }
+          : source === 'gcp'
+            ? { metric: q.metricType, metricType: q.metricType,
+                project: q.project, timeWindow: q.timeWindow,
+                aggregation: q.aggregation }
+            : { queryId };
+
         const res = await fetch('/api/queries/' + source + '/test', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ queryId }),
+          body: JSON.stringify(body),
         });
         const data = await res.json();
         const ms = Date.now() - t0;

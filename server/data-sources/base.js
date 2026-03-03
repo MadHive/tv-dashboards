@@ -73,9 +73,9 @@ export class DataSource {
     try {
       this.isConnected = await this.testConnection();
       if (this.isConnected) {
-        logger.info('[${this.name}] Connected successfully');
+        logger.info(`[${this.name}] Connected successfully`);
       } else {
-        logger.warn('[${this.name}] Connection test failed');
+        logger.warn(`[${this.name}] Connection test failed`);
       }
     } catch (error) {
       this.lastError = error;
