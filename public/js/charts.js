@@ -728,7 +728,11 @@ window.Charts = (function () {
     // Find max impressions & bids for scaling
     var maxImp = 0;
     var maxBids = 0;
-    Object.values(stateData).forEach(function (s) {
+    // In regional views, scale to regional max so visible states use full color range
+    var scaleStates = (data.region && REGION_STATES[data.region])
+      ? Object.entries(stateData).filter(function(e) { return REGION_STATES[data.region].has(e[0]); }).map(function(e) { return e[1]; })
+      : Object.values(stateData);
+    scaleStates.forEach(function (s) {
       if (s.impressions > maxImp) maxImp = s.impressions;
       if (s.bids > maxBids) maxBids = s.bids;
     });
