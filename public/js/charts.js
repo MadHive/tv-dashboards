@@ -1559,7 +1559,17 @@ window.Charts = (function () {
     var lbX = w - leaderboardW - 6;
     var lbY = 100;
     var lbEntryH = 42;
+    // Filter leaderboard to region states in regional views
     var lbSorted = sorted;
+    var lbRegionLabel = 'TOP STATES';
+    if (data.region && REGION_STATES[data.region]) {
+      var lbRegionSet = REGION_STATES[data.region];
+      var lbFiltered = sorted.filter(function(e) { return lbRegionSet.has(e[0]); });
+      if (lbFiltered.length > 0) {
+        lbSorted = lbFiltered;
+        lbRegionLabel = 'TOP ' + data.region.toUpperCase();
+      }
+    }
     var lbCount = Math.min(15, lbSorted.length);
 
     // Leaderboard header
@@ -1575,7 +1585,7 @@ window.Charts = (function () {
     ctx.textBaseline = 'middle';
     ctx.font = "600 15px 'Space Grotesk', sans-serif";
     ctx.fillStyle = BRAND.text2;
-    ctx.fillText('TOP STATES', lbX + leaderboardW / 2, lbY - 19);
+    ctx.fillText(lbRegionLabel, lbX + leaderboardW / 2, lbY - 19);
 
     // Auto-scroll: offset based on time
     var scrollElapsed = now - mapScrollResetTime;
