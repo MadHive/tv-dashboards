@@ -1,863 +1,848 @@
 bigquery:
-  - id: example-count
-    name: Example Row Count
-    description: Simple count query for testing
-    sql: SELECT COUNT(*) as value FROM `mad-master.dataset.table`
-    widgetTypes:
-      - big-number
-      - stat-card
-    createdAt: '2026-02-26T12:00:00Z'
-    updatedAt: '2026-02-26T12:00:00Z'
-  - id: active-users-30d
-    name: Active Users (30 Days)
-    description: Count of unique active users in the last 30 days
-    sql: |
-      SELECT COUNT(DISTINCT user_id) as value
-      FROM `mad-master.analytics.user_activity`
-      WHERE activity_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
-    widgetTypes:
-      - big-number
-      - stat-card
-    createdAt: '2026-02-26T17:30:00Z'
-    updatedAt: '2026-02-26T17:30:00Z'
-  - id: revenue-trend
-    name: Daily Revenue Trend
-    description: Revenue by day for the last 30 days
-    sql: |
-      SELECT
-        FORMAT_DATE('%Y-%m-%d', revenue_date) as timestamp,
-        SUM(amount) as value,
-        'Revenue' as series
-      FROM `mad-master.analytics.revenue`
-      WHERE revenue_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
-      GROUP BY revenue_date
-      ORDER BY revenue_date
-    widgetTypes:
-      - line-chart
-      - bar-chart
-    createdAt: '2026-02-26T17:30:00Z'
-    updatedAt: '2026-02-26T17:30:00Z'
-  - id: test-bq-query
-    name: Test BigQuery Query
-    description: A test query
-    sql: SELECT COUNT(*) as value FROM test_table
-    widgetTypes:
-      - big-number
-    updatedAt: '2026-03-03T19:28:04.405Z'
-    createdAt: '2026-02-26T17:39:15.018Z'
-  - id: update-test
-    name: Updated Name
-    sql: SELECT 2
-    widgetTypes:
-      - big-number
-      - stat-card
-    updatedAt: '2026-03-03T19:28:04.412Z'
-    createdAt: '2026-02-26T17:39:15.024Z'
-  - id: retrieve-test
-    name: Retrieve Test
-    sql: SELECT * FROM test
-    widgetTypes:
-      - big-number
-    updatedAt: '2026-03-03T19:28:04.415Z'
-    createdAt: '2026-02-26T17:39:15.026Z'
-  - id: list-test-1
-    name: List Test 1
-    sql: SELECT 1
-    widgetTypes:
-      - big-number
-    updatedAt: '2026-03-03T19:28:04.419Z'
-    createdAt: '2026-02-26T17:39:15.028Z'
-  - id: list-test-2
-    name: List Test 2
-    sql: SELECT 2
-    widgetTypes:
-      - stat-card
-    updatedAt: '2026-03-03T19:28:04.421Z'
-    createdAt: '2026-02-26T17:39:15.028Z'
-  - id: backup-test
-    name: Backup Test
-    sql: SELECT 1
-    widgetTypes:
-      - big-number
-    updatedAt: '2026-03-03T19:28:04.434Z'
-    createdAt: '2026-02-26T17:39:15.032Z'
-  - id: persist-test
-    name: Persistence Test
-    sql: SELECT COUNT(*) as value
-    widgetTypes:
-      - big-number
-    updatedAt: '2026-03-03T19:28:04.437Z'
-    createdAt: '2026-02-26T17:39:15.033Z'
-  - id: delivery-geo-map
-    name: Campaign Delivery Geo Map
-    description: Zip-level impression data for USA delivery heatmap — last 7 days
-    widgetTypes:
-      - usa-map
-    sql: |-
-      SELECT
-        SUBSTR(b.postal, 1, 3) AS zip3,
-        mg.region.code AS state,
-        ROUND(AVG(z.internal_point_lat), 3) AS lat,
-        ROUND(AVG(z.internal_point_lon), 3) AS lon,
-        SUM(b.IM) AS impressions,
-        SUM(b.CL) AS clicks,
-        COUNT(DISTINCT b.postal) AS zip_count,
-        ANY_VALUE(mg.city.name) AS city,
-        ANY_VALUE(mg.dma.name) AS dma
-      FROM `mad-data.reporting.billable_agg` b
-      LEFT JOIN `mad-data.reporting.meta_geo` mg
-        ON b.postal = mg.postal_code AND mg.country_code = 'US'
-      LEFT JOIN `mad-data.public_data.zip_codes` z
-        ON b.postal = z.zip_code
-      WHERE b.date_nyc >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
-        AND b.country = 'US'
-        AND b.postal IS NOT NULL AND b.postal != ''
-        AND z.internal_point_lat IS NOT NULL
-      GROUP BY 1, 2
-      HAVING impressions > 100
-      ORDER BY impressions DESC
-      LIMIT 500
-    updatedAt: '2026-03-03T19:33:12.960Z'
-    createdAt: '2026-03-03T19:33:12.960Z'
+- id: example-count
+  name: Example Row Count
+  description: Simple count query for testing
+  sql: SELECT COUNT(*) as value FROM `mad-master.dataset.table`
+  widgetTypes:
+  - big-number
+  - stat-card
+  createdAt: '2026-02-26T12:00:00Z'
+  updatedAt: '2026-02-26T12:00:00Z'
+- id: active-users-30d
+  name: Active Users (30 Days)
+  description: Count of unique active users in the last 30 days
+  sql: 'SELECT COUNT(DISTINCT user_id) as value
+
+    FROM `mad-master.analytics.user_activity`
+
+    WHERE activity_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
+
+    '
+  widgetTypes:
+  - big-number
+  - stat-card
+  createdAt: '2026-02-26T17:30:00Z'
+  updatedAt: '2026-02-26T17:30:00Z'
+- id: revenue-trend
+  name: Daily Revenue Trend
+  description: Revenue by day for the last 30 days
+  sql: "SELECT\n  FORMAT_DATE('%Y-%m-%d', revenue_date) as timestamp,\n  SUM(amount)\
+    \ as value,\n  'Revenue' as series\nFROM `mad-master.analytics.revenue`\nWHERE\
+    \ revenue_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)\nGROUP BY revenue_date\n\
+    ORDER BY revenue_date\n"
+  widgetTypes:
+  - line-chart
+  - bar-chart
+  createdAt: '2026-02-26T17:30:00Z'
+  updatedAt: '2026-02-26T17:30:00Z'
+- id: test-bq-query
+  name: Test BigQuery Query
+  description: A test query
+  sql: SELECT COUNT(*) as value FROM test_table
+  widgetTypes:
+  - big-number
+  updatedAt: '2026-03-03T19:28:04.405Z'
+  createdAt: '2026-02-26T17:39:15.018Z'
+- id: update-test
+  name: Updated Name
+  sql: SELECT 2
+  widgetTypes:
+  - big-number
+  - stat-card
+  updatedAt: '2026-03-03T19:28:04.412Z'
+  createdAt: '2026-02-26T17:39:15.024Z'
+- id: retrieve-test
+  name: Retrieve Test
+  sql: SELECT * FROM test
+  widgetTypes:
+  - big-number
+  updatedAt: '2026-03-03T19:28:04.415Z'
+  createdAt: '2026-02-26T17:39:15.026Z'
+- id: list-test-1
+  name: List Test 1
+  sql: SELECT 1
+  widgetTypes:
+  - big-number
+  updatedAt: '2026-03-03T19:28:04.419Z'
+  createdAt: '2026-02-26T17:39:15.028Z'
+- id: list-test-2
+  name: List Test 2
+  sql: SELECT 2
+  widgetTypes:
+  - stat-card
+  updatedAt: '2026-03-03T19:28:04.421Z'
+  createdAt: '2026-02-26T17:39:15.028Z'
+- id: backup-test
+  name: Backup Test
+  sql: SELECT 1
+  widgetTypes:
+  - big-number
+  updatedAt: '2026-03-03T19:28:04.434Z'
+  createdAt: '2026-02-26T17:39:15.032Z'
+- id: persist-test
+  name: Persistence Test
+  sql: SELECT COUNT(*) as value
+  widgetTypes:
+  - big-number
+  updatedAt: '2026-03-03T19:28:04.437Z'
+  createdAt: '2026-02-26T17:39:15.033Z'
+- id: delivery-geo-map
+  name: Campaign Delivery Geo Map
+  description: Zip-level impression data for USA delivery heatmap — last 7 days
+  widgetTypes:
+  - usa-map
+  sql: "SELECT\n  SUBSTR(b.postal, 1, 3) AS zip3,\n  mg.region.code AS state,\n  ROUND(AVG(z.internal_point_lat),\
+    \ 3) AS lat,\n  ROUND(AVG(z.internal_point_lon), 3) AS lon,\n  SUM(b.IM) AS impressions,\n\
+    \  SUM(b.CL) AS clicks,\n  COUNT(DISTINCT b.postal) AS zip_count,\n  ANY_VALUE(mg.city.name)\
+    \ AS city,\n  ANY_VALUE(mg.dma.name) AS dma\nFROM `mad-data.reporting.billable_agg`\
+    \ b\nLEFT JOIN `mad-data.reporting.meta_geo` mg\n  ON b.postal = mg.postal_code\
+    \ AND mg.country_code = 'US'\nLEFT JOIN `mad-data.public_data.zip_codes` z\n \
+    \ ON b.postal = z.zip_code\nWHERE b.date_nyc >= DATE_SUB(CURRENT_DATE(), INTERVAL\
+    \ 7 DAY)\n  AND b.country = 'US'\n  AND b.postal IS NOT NULL AND b.postal != ''\n\
+    \  AND z.internal_point_lat IS NOT NULL\nGROUP BY 1, 2\nHAVING impressions > 100\n\
+    ORDER BY impressions DESC\nLIMIT 500"
+  updatedAt: '2026-03-03T19:33:12.960Z'
+  createdAt: '2026-03-03T19:33:12.960Z'
 gcp:
-  - id: cloudrun-requests
-    name: Cloud Run Request Count
-    description: Total requests to Cloud Run services
-    metricType: run.googleapis.com/request_count
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      alignmentPeriod: 60s
-      perSeriesAligner: ALIGN_RATE
-    widgetTypes:
-      - big-number
-      - line-chart
-    createdAt: '2026-02-26T12:00:00Z'
-    updatedAt: '2026-02-26T12:00:00Z'
-  - id: cloudrun-latency
-    name: Cloud Run Request Latency
-    description: Average request latency for Cloud Run services
-    metricType: run.googleapis.com/request_latencies
-    project: mad-master
-    timeWindow: 15
-    aggregation:
-      alignmentPeriod: 120s
-      perSeriesAligner: ALIGN_MEAN
-    widgetTypes:
-      - gauge
-      - stat-card
-    createdAt: '2026-02-26T17:30:00Z'
-    updatedAt: '2026-02-26T17:30:00Z'
-  - id: cloudrun-container-cpu
-    name: Cloud Run Container CPU
-    description: CPU utilization for Cloud Run containers
-    metricType: run.googleapis.com/container/cpu/utilizations
-    project: mad-master
-    timeWindow: 20
-    aggregation:
-      alignmentPeriod: 60s
-      perSeriesAligner: ALIGN_MEAN
-    widgetTypes:
-      - gauge
-      - line-chart
-    createdAt: '2026-02-26T17:30:00Z'
-    updatedAt: '2026-02-26T17:30:00Z'
-  - id: pubsub-undelivered
-    name: Pub/Sub Undelivered Messages
-    description: Number of undelivered messages in Pub/Sub
-    metricType: pubsub.googleapis.com/subscription/num_undelivered_messages
-    project: mad-master
-    timeWindow: 10
-    widgetTypes:
-      - big-number
-      - gauge
-    createdAt: '2026-02-26T17:30:00Z'
-    updatedAt: '2026-02-26T17:30:00Z'
-  - id: test-gcp-query
-    name: Test GCP Query
-    description: A test GCP metric query
-    metricType: run.googleapis.com/request_count
-    project: mad-master
-    timeWindow: 10
-    widgetTypes:
-      - big-number
-      - line-chart
-    updatedAt: '2026-03-03T19:28:04.407Z'
-    createdAt: '2026-02-26T17:39:15.022Z'
-  - id: monitoring-googleapis-com-uptime-check-request-latency-1772562367145
-    name: Request latency
-    description: The request latency in milliseconds measured by Uptime Monitoring when executing the request.
-    widgetTypes: []
-    metricType: monitoring.googleapis.com/uptime_check/request_latency
-    project: mad-master
-    timeWindow: 60
-    aggregation:
-      perSeriesAligner: ALIGN_MEAN
-      crossSeriesReducer: REDUCE_MEAN
-    updatedAt: '2026-03-03T18:26:07.181Z'
-    createdAt: '2026-03-03T18:26:07.181Z'
-  - id: compute-googleapis-com-capacity-slices-1772562437166
-    name: Capacity State
-    description: >-
-      The state of capacity per topology of an accelerator slice. The value indicates the count of topologies in that
-      state at a given instant in time.
-    widgetTypes: []
-    metricType: compute.googleapis.com/capacity/slices
-    project: mad-master
-    timeWindow: 60
-    aggregation:
-      perSeriesAligner: ALIGN_MEAN
-      crossSeriesReducer: REDUCE_MEAN
-    updatedAt: '2026-03-03T18:27:17.180Z'
-    createdAt: '2026-03-03T18:27:17.180Z'
-  - id: bidder-winner-candidates
-    name: Bidder Winner Candidates
-    metricType: custom.googleapis.com/opencensus/mhive/bidder/winner_candidates_count
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.659Z'
-    createdAt: '2026-03-03T18:36:57.702Z'
-  - id: cloudrun-request-count-madmaster
-    name: Cloud Run Request Count (mad-master)
-    metricType: run.googleapis.com/request_count
-    project: mad-master
-    timeWindow: 30
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.669Z'
-    createdAt: '2026-03-03T18:36:57.707Z'
-  - id: kafka-writes-madmaster
-    name: Kafka Writes (mad-master)
-    metricType: custom.googleapis.com/opencensus/mhive/kafka/writes
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.673Z'
-    createdAt: '2026-03-03T18:36:57.710Z'
-  - id: cloudrun-latencies-madmaster
-    name: Cloud Run Latencies (mad-master)
-    metricType: run.googleapis.com/request_latencies
-    project: mad-master
-    timeWindow: 30
-    aggregation:
-      perSeriesAligner: ALIGN_DELTA
-      crossSeriesReducer: REDUCE_PERCENTILE_95
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.677Z'
-    createdAt: '2026-03-03T18:36:57.712Z'
-  - id: bigquery-query-count
-    name: BigQuery Query Count
-    metricType: bigquery.googleapis.com/query/count
-    project: mad-data
-    timeWindow: 60
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.681Z'
-    createdAt: '2026-03-03T18:36:57.714Z'
-  - id: bigquery-slots-allocated
-    name: BigQuery Slots Allocated
-    metricType: bigquery.googleapis.com/slots/allocated_for_project
-    project: mad-data
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_MEAN
-      crossSeriesReducer: REDUCE_MEAN
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.685Z'
-    createdAt: '2026-03-03T18:36:57.717Z'
-  - id: pubsub-undelivered-maddata
-    name: Pub/Sub Undelivered Messages (mad-data)
-    metricType: pubsub.googleapis.com/subscription/num_undelivered_messages
-    project: mad-data
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_MEAN
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.688Z'
-    createdAt: '2026-03-03T18:36:57.719Z'
-  - id: pubsub-topic-send-maddata
-    name: Pub/Sub Topic Send Rate (mad-data)
-    metricType: pubsub.googleapis.com/topic/send_message_operation_count
-    project: mad-data
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.692Z'
-    createdAt: '2026-03-03T18:36:57.721Z'
-  - id: k8s-uptime-bidder
-    name: K8s Container Uptime — Bidder
-    metricType: kubernetes.io/container/uptime
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_MEAN
-      crossSeriesReducer: REDUCE_COUNT
-      alignmentPeriod:
-        seconds: 60
-    filters: resource.labels.container_name = "bidder"
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.696Z'
-    createdAt: '2026-03-03T18:36:57.724Z'
-  - id: k8s-uptime-roger
-    name: K8s Container Uptime — Roger
-    metricType: kubernetes.io/container/uptime
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_MEAN
-      crossSeriesReducer: REDUCE_COUNT
-      alignmentPeriod:
-        seconds: 60
-    filters: resource.labels.container_name = "roger"
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.700Z'
-    createdAt: '2026-03-03T18:36:57.727Z'
-  - id: k8s-uptime-memcached
-    name: K8s Container Uptime — Memcached
-    metricType: kubernetes.io/container/uptime
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_MEAN
-      crossSeriesReducer: REDUCE_COUNT
-      alignmentPeriod:
-        seconds: 60
-    filters: resource.labels.container_name = "memcached"
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.703Z'
-    createdAt: '2026-03-03T18:36:57.730Z'
-  - id: k8s-cpu-bidder
-    name: K8s CPU Utilization — Bidder
-    metricType: kubernetes.io/container/cpu/request_utilization
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_DELTA
-      crossSeriesReducer: REDUCE_PERCENTILE_95
-      alignmentPeriod:
-        seconds: 60
-    filters: resource.labels.container_name = "bidder"
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.707Z'
-    createdAt: '2026-03-03T18:36:57.733Z'
-  - id: k8s-memory-bidder
-    name: K8s Memory Utilization — Bidder
-    metricType: kubernetes.io/container/memory/request_utilization
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_DELTA
-      crossSeriesReducer: REDUCE_PERCENTILE_95
-      alignmentPeriod:
-        seconds: 60
-    filters: resource.labels.container_name = "bidder"
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.710Z'
-    createdAt: '2026-03-03T18:36:57.737Z'
-  - id: k8s-restart-bidder
-    name: K8s Container Restarts — Bidder
-    metricType: kubernetes.io/container/restart_count
-    project: mad-master
-    timeWindow: 60
-    aggregation:
-      perSeriesAligner: ALIGN_DELTA
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: resource.labels.container_name = "bidder"
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.715Z'
-    createdAt: '2026-03-03T18:36:57.740Z'
-  - id: lb-request-count-bidder
-    name: LB Request Count — Bidder
-    metricType: loadbalancing.googleapis.com/https/request_count
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.719Z'
-    createdAt: '2026-03-03T18:36:57.743Z'
-  - id: lb-backend-latencies
-    name: LB Backend Latencies
-    metricType: loadbalancing.googleapis.com/https/backend_latencies
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_DELTA
-      crossSeriesReducer: REDUCE_PERCENTILE_50
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.723Z'
-    createdAt: '2026-03-03T18:36:57.745Z'
-  - id: lb-503-count
-    name: LB 503 Error Count
-    metricType: loadbalancing.googleapis.com/https/request_count
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: metric.labels.response_code = "503"
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.726Z'
-    createdAt: '2026-03-03T18:36:57.747Z'
-  - id: pipe-bytes-written
-    name: Pipe Bytes Written
-    metricType: custom.googleapis.com/opencensus/mhive/pipe/bytes_written
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.729Z'
-    createdAt: '2026-03-03T18:36:57.748Z'
-  - id: pubsub-wins-topic
-    name: Pub/Sub Wins Topic Rate
-    metricType: pubsub.googleapis.com/topic/send_message_operation_count
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: resource.labels.topic_id = "wins"
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.733Z'
-    createdAt: '2026-03-03T18:36:57.750Z'
-  - id: roger-campaigns
-    name: Roger Active Campaigns
-    metricType: workload.googleapis.com/mhive/roger/campaigns
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_MEAN
-      crossSeriesReducer: REDUCE_MEAN
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.736Z'
-    createdAt: '2026-03-03T18:36:57.752Z'
-  - id: roger-global-win-rate
-    name: Roger Global Win Rate
-    metricType: workload.googleapis.com/mhive/roger/global_win_rate
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_MEAN
-      crossSeriesReducer: REDUCE_MEAN
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.740Z'
-    createdAt: '2026-03-03T18:36:57.753Z'
-  - id: roger-campaign-metas
-    name: Roger Campaign Metas
-    metricType: workload.googleapis.com/mhive/roger/campaign_metas
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_MEAN
-      crossSeriesReducer: REDUCE_MEAN
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.743Z'
-    createdAt: '2026-03-03T18:36:57.755Z'
-  - id: roger-pacing-ratio
-    name: Roger Pacing Ratio P50
-    metricType: workload.googleapis.com/mhive/roger/pacing_ratio
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_DELTA
-      crossSeriesReducer: REDUCE_PERCENTILE_50
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.758Z'
-    createdAt: '2026-03-03T18:36:57.757Z'
-  - id: roger-send-count
-    name: Roger Send Count
-    metricType: workload.googleapis.com/mhive/roger/send_count
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.761Z'
-    createdAt: '2026-03-03T18:36:57.759Z'
-  - id: roger-ebrake
-    name: Roger EBrake P50
-    metricType: workload.googleapis.com/mhive/roger/ebrake
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_DELTA
-      crossSeriesReducer: REDUCE_PERCENTILE_50
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.764Z'
-    createdAt: '2026-03-03T18:36:57.763Z'
-  - id: roger-send-latency
-    name: Roger Send Latency P95
-    metricType: workload.googleapis.com/mhive/roger/send_latency
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_DELTA
-      crossSeriesReducer: REDUCE_PERCENTILE_95
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.767Z'
-    createdAt: '2026-03-03T18:36:57.765Z'
-  - id: impressionrater-row-updates
-    name: ImpressionRater Row Updates
-    metricType: workload.googleapis.com/mhive/impressionrater/row_updates
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.770Z'
-    createdAt: '2026-03-03T18:36:57.767Z'
-  - id: kafka-managed-request-count
-    name: Managed Kafka Request Count
-    metricType: managedkafka.googleapis.com/request_count
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.774Z'
-    createdAt: '2026-03-03T18:36:57.769Z'
-  - id: kafka-managed-offset-lag
-    name: Managed Kafka Offset Lag
-    metricType: managedkafka.googleapis.com/offset_lag
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_MEAN
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.777Z'
-    createdAt: '2026-03-03T18:36:57.771Z'
-  - id: kafka-managed-latency
-    name: Managed Kafka Request Latencies P95
-    metricType: managedkafka.googleapis.com/request_latencies
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_DELTA
-      crossSeriesReducer: REDUCE_PERCENTILE_95
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.780Z'
-    createdAt: '2026-03-03T18:36:57.774Z'
-  - id: bigtable-returned-rows
-    name: Bigtable Returned Rows Rate
-    metricType: bigtable.googleapis.com/server/returned_rows_count
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.785Z'
-    createdAt: '2026-03-03T18:36:57.776Z'
-  - id: bigtable-request-count
-    name: Bigtable Request Count
-    metricType: bigtable.googleapis.com/server/request_count
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.789Z'
-    createdAt: '2026-03-03T18:36:57.778Z'
-  - id: bigtable-latency
-    name: Bigtable Server Latencies P95
-    metricType: bigtable.googleapis.com/server/latencies
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_DELTA
-      crossSeriesReducer: REDUCE_PERCENTILE_95
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.793Z'
-    createdAt: '2026-03-03T18:36:57.780Z'
-  - id: bigtable-cpu-load
-    name: Bigtable Cluster CPU Load
-    metricType: bigtable.googleapis.com/cluster/cpu_load
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_MEAN
-      crossSeriesReducer: REDUCE_MAX
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.798Z'
-    createdAt: '2026-03-03T18:36:57.783Z'
-  - id: pubsub-events-primary-unacked
-    name: Pub/Sub Events-Primary Unacked
-    metricType: pubsub.googleapis.com/subscription/num_undelivered_messages
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_MEAN
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: resource.labels.subscription_id = "events-primary"
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.802Z'
-    createdAt: '2026-03-03T18:36:57.785Z'
-  - id: pubsub-wins-unacked
-    name: Pub/Sub Wins Unacked
-    metricType: pubsub.googleapis.com/subscription/num_undelivered_messages
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_MEAN
-      crossSeriesReducer: REDUCE_MEAN
-      alignmentPeriod:
-        seconds: 60
-    filters: resource.labels.subscription_id = "wins"
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.807Z'
-    createdAt: '2026-03-03T18:36:57.787Z'
-  - id: bigtable-table-bytes
-    name: Bigtable Table Bytes Used
-    metricType: bigtable.googleapis.com/table/bytes_used
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_MEAN
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.811Z'
-    createdAt: '2026-03-03T18:36:57.790Z'
-  - id: mozart-total-requests
-    name: Mozart Total Requests
-    metricType: workload.googleapis.com/mhive/mozart/totalRequests
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.816Z'
-    createdAt: '2026-03-03T18:36:57.793Z'
-  - id: mozart-total-impressions
-    name: Mozart Total Impressions
-    metricType: workload.googleapis.com/mhive/mozart/totalImpressions
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.820Z'
-    createdAt: '2026-03-03T18:36:57.796Z'
-  - id: mozart-errors
-    name: Mozart Errors Per Resource
-    metricType: workload.googleapis.com/mhive/mozart/errorsPerResource
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.823Z'
-    createdAt: '2026-03-03T18:36:57.798Z'
-  - id: planner-impressions
-    name: Planner 3 Impressions
-    metricType: custom.googleapis.com/opencensus/mhive/planner_3/impressions
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_DELTA
-      crossSeriesReducer: REDUCE_PERCENTILE_50
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.827Z'
-    createdAt: '2026-03-03T18:36:57.806Z'
-  - id: planner-reach
-    name: Planner 3 Reach
-    metricType: custom.googleapis.com/opencensus/mhive/planner_3/reach
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_DELTA
-      crossSeriesReducer: REDUCE_PERCENTILE_50
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.830Z'
-    createdAt: '2026-03-03T18:36:57.811Z'
-  - id: madserver-sql-latency
-    name: MadServer SQL Latency P95
-    metricType: workload.googleapis.com/madserver/sql/latency_ms
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_DELTA
-      crossSeriesReducer: REDUCE_PERCENTILE_95
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.833Z'
-    createdAt: '2026-03-03T18:36:57.816Z'
-  - id: gary2-segments-processed
-    name: Gary2 Segments Processed
-    metricType: workload.googleapis.com/mhive/gary2/segmentsProcessed
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.835Z'
-    createdAt: '2026-03-03T18:36:57.821Z'
-  - id: gary2-pubsub-backlog
-    name: Gary2 Pub/Sub Backlog
-    metricType: pubsub.googleapis.com/subscription/num_undelivered_messages
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_MEAN
-      crossSeriesReducer: REDUCE_MEAN
-      alignmentPeriod:
-        seconds: 60
-    filters: resource.labels.subscription_id = "gary2-input"
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.838Z'
-    createdAt: '2026-03-03T18:36:57.825Z'
-  - id: madserver-rpc-calls
-    name: MadServer RPC Client Calls
-    metricType: workload.googleapis.com/madserver/rpc/client_call
-    project: mad-master
-    timeWindow: 10
-    aggregation:
-      perSeriesAligner: ALIGN_RATE
-      crossSeriesReducer: REDUCE_SUM
-      alignmentPeriod:
-        seconds: 60
-    filters: ''
-    widgetTypes: []
-    updatedAt: '2026-03-03T18:37:21.840Z'
-    createdAt: '2026-03-03T18:36:57.829Z'
+- id: cloudrun-requests
+  name: Cloud Run Request Count
+  description: Total requests to Cloud Run services
+  metricType: run.googleapis.com/request_count
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    alignmentPeriod: 60s
+    perSeriesAligner: ALIGN_RATE
+  widgetTypes:
+  - big-number
+  - line-chart
+  createdAt: '2026-02-26T12:00:00Z'
+  updatedAt: '2026-02-26T12:00:00Z'
+- id: cloudrun-latency
+  name: Cloud Run Request Latency
+  description: Average request latency for Cloud Run services
+  metricType: run.googleapis.com/request_latencies
+  project: mad-master
+  timeWindow: 15
+  aggregation:
+    alignmentPeriod: 120s
+    perSeriesAligner: ALIGN_MEAN
+  widgetTypes:
+  - gauge
+  - stat-card
+  createdAt: '2026-02-26T17:30:00Z'
+  updatedAt: '2026-02-26T17:30:00Z'
+- id: cloudrun-container-cpu
+  name: Cloud Run Container CPU
+  description: CPU utilization for Cloud Run containers
+  metricType: run.googleapis.com/container/cpu/utilizations
+  project: mad-master
+  timeWindow: 20
+  aggregation:
+    alignmentPeriod: 60s
+    perSeriesAligner: ALIGN_MEAN
+  widgetTypes:
+  - gauge
+  - line-chart
+  createdAt: '2026-02-26T17:30:00Z'
+  updatedAt: '2026-02-26T17:30:00Z'
+- id: pubsub-undelivered
+  name: Pub/Sub Undelivered Messages
+  description: Number of undelivered messages in Pub/Sub
+  metricType: pubsub.googleapis.com/subscription/num_undelivered_messages
+  project: mad-master
+  timeWindow: 10
+  widgetTypes:
+  - big-number
+  - gauge
+  createdAt: '2026-02-26T17:30:00Z'
+  updatedAt: '2026-02-26T17:30:00Z'
+- id: test-gcp-query
+  name: Test GCP Query
+  description: A test GCP metric query
+  metricType: run.googleapis.com/request_count
+  project: mad-master
+  timeWindow: 10
+  widgetTypes:
+  - big-number
+  - line-chart
+  updatedAt: '2026-03-03T19:28:04.407Z'
+  createdAt: '2026-02-26T17:39:15.022Z'
+- id: monitoring-googleapis-com-uptime-check-request-latency-1772562367145
+  name: Request latency
+  description: The request latency in milliseconds measured by Uptime Monitoring when
+    executing the request.
+  widgetTypes: []
+  metricType: monitoring.googleapis.com/uptime_check/request_latency
+  project: mad-master
+  timeWindow: 60
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_MEAN
+  updatedAt: '2026-03-03T18:26:07.181Z'
+  createdAt: '2026-03-03T18:26:07.181Z'
+- id: compute-googleapis-com-capacity-slices-1772562437166
+  name: Capacity State
+  description: The state of capacity per topology of an accelerator slice. The value
+    indicates the count of topologies in that state at a given instant in time.
+  widgetTypes: []
+  metricType: compute.googleapis.com/capacity/slices
+  project: mad-master
+  timeWindow: 60
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_MEAN
+  updatedAt: '2026-03-03T18:27:17.180Z'
+  createdAt: '2026-03-03T18:27:17.180Z'
+- id: bidder-winner-candidates
+  name: Bidder Winner Candidates
+  metricType: custom.googleapis.com/opencensus/mhive/bidder/winner_candidates_count
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_DELTA
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.659Z'
+  createdAt: '2026-03-03T18:36:57.702Z'
+- id: cloudrun-request-count-madmaster
+  name: Cloud Run Request Count (mad-master)
+  metricType: run.googleapis.com/request_count
+  project: mad-master
+  timeWindow: 30
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.669Z'
+  createdAt: '2026-03-03T18:36:57.707Z'
+- id: kafka-writes-madmaster
+  name: Kafka Writes (mad-master)
+  metricType: custom.googleapis.com/opencensus/mhive/kafka/writes
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.673Z'
+  createdAt: '2026-03-03T18:36:57.710Z'
+- id: cloudrun-latencies-madmaster
+  name: Cloud Run Latencies (mad-master)
+  metricType: run.googleapis.com/request_latencies
+  project: mad-master
+  timeWindow: 30
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_PERCENTILE_95
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.677Z'
+  createdAt: '2026-03-03T18:36:57.712Z'
+- id: bigquery-query-count
+  name: BigQuery Query Count
+  metricType: bigquery.googleapis.com/query/count
+  project: mad-data
+  timeWindow: 60
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.681Z'
+  createdAt: '2026-03-03T18:36:57.714Z'
+- id: bigquery-slots-allocated
+  name: BigQuery Slots Allocated
+  metricType: bigquery.googleapis.com/slots/allocated_for_project
+  project: mad-data
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_MEAN
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.685Z'
+  createdAt: '2026-03-03T18:36:57.717Z'
+- id: pubsub-undelivered-maddata
+  name: Pub/Sub Undelivered Messages (mad-data)
+  metricType: pubsub.googleapis.com/subscription/num_undelivered_messages
+  project: mad-data
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.688Z'
+  createdAt: '2026-03-03T18:36:57.719Z'
+- id: pubsub-topic-send-maddata
+  name: Pub/Sub Topic Send Rate (mad-data)
+  metricType: pubsub.googleapis.com/topic/send_message_operation_count
+  project: mad-data
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.692Z'
+  createdAt: '2026-03-03T18:36:57.721Z'
+- id: k8s-uptime-bidder
+  name: K8s Container Uptime — Bidder
+  metricType: kubernetes.io/container/uptime
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_COUNT
+    alignmentPeriod:
+      seconds: 60
+  filters: resource.labels.container_name = "bidder"
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.696Z'
+  createdAt: '2026-03-03T18:36:57.724Z'
+- id: k8s-uptime-roger
+  name: K8s Container Uptime — Roger
+  metricType: kubernetes.io/container/uptime
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_COUNT
+    alignmentPeriod:
+      seconds: 60
+  filters: resource.labels.container_name = "roger"
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.700Z'
+  createdAt: '2026-03-03T18:36:57.727Z'
+- id: k8s-uptime-memcached
+  name: K8s Container Uptime — Memcached
+  metricType: kubernetes.io/container/uptime
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_COUNT
+    alignmentPeriod:
+      seconds: 60
+  filters: resource.labels.container_name = "memcached"
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.703Z'
+  createdAt: '2026-03-03T18:36:57.730Z'
+- id: k8s-cpu-bidder
+  name: K8s CPU Utilization — Bidder
+  metricType: kubernetes.io/container/cpu/request_utilization
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_PERCENTILE_95
+    alignmentPeriod:
+      seconds: 60
+  filters: resource.labels.container_name = "bidder"
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.707Z'
+  createdAt: '2026-03-03T18:36:57.733Z'
+- id: k8s-memory-bidder
+  name: K8s Memory Utilization — Bidder
+  metricType: kubernetes.io/container/memory/request_utilization
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_PERCENTILE_95
+    alignmentPeriod:
+      seconds: 60
+  filters: resource.labels.container_name = "bidder"
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.710Z'
+  createdAt: '2026-03-03T18:36:57.737Z'
+- id: k8s-restart-bidder
+  name: K8s Container Restarts — Bidder
+  metricType: kubernetes.io/container/restart_count
+  project: mad-master
+  timeWindow: 60
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: resource.labels.container_name = "bidder"
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.715Z'
+  createdAt: '2026-03-03T18:36:57.740Z'
+- id: lb-request-count-bidder
+  name: LB Request Count — Bidder
+  metricType: loadbalancing.googleapis.com/https/request_count
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.719Z'
+  createdAt: '2026-03-03T18:36:57.743Z'
+- id: lb-backend-latencies
+  name: LB Backend Latencies
+  metricType: loadbalancing.googleapis.com/https/backend_latencies
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_PERCENTILE_50
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.723Z'
+  createdAt: '2026-03-03T18:36:57.745Z'
+- id: lb-503-count
+  name: LB 503 Error Count
+  metricType: loadbalancing.googleapis.com/https/request_count
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: metric.labels.response_code = "503"
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.726Z'
+  createdAt: '2026-03-03T18:36:57.747Z'
+- id: pipe-bytes-written
+  name: Pipe Bytes Written
+  metricType: custom.googleapis.com/opencensus/mhive/pipe/bytes_written
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.729Z'
+  createdAt: '2026-03-03T18:36:57.748Z'
+- id: pubsub-wins-topic
+  name: Pub/Sub Wins Topic Rate
+  metricType: pubsub.googleapis.com/topic/send_message_operation_count
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: resource.labels.topic_id = "wins"
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.733Z'
+  createdAt: '2026-03-03T18:36:57.750Z'
+- id: roger-campaigns
+  name: Roger Active Campaigns
+  metricType: workload.googleapis.com/mhive/roger/campaigns
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_MEAN
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.736Z'
+  createdAt: '2026-03-03T18:36:57.752Z'
+- id: roger-global-win-rate
+  name: Roger Global Win Rate
+  metricType: workload.googleapis.com/mhive/roger/global_win_rate
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_MEAN
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.740Z'
+  createdAt: '2026-03-03T18:36:57.753Z'
+- id: roger-campaign-metas
+  name: Roger Campaign Metas
+  metricType: workload.googleapis.com/mhive/roger/campaign_metas
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_MEAN
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.743Z'
+  createdAt: '2026-03-03T18:36:57.755Z'
+- id: roger-pacing-ratio
+  name: Roger Pacing Ratio P50
+  metricType: workload.googleapis.com/mhive/roger/pacing_ratio
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_PERCENTILE_50
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.758Z'
+  createdAt: '2026-03-03T18:36:57.757Z'
+- id: roger-send-count
+  name: Roger Send Count
+  metricType: workload.googleapis.com/mhive/roger/send_count
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.761Z'
+  createdAt: '2026-03-03T18:36:57.759Z'
+- id: roger-ebrake
+  name: Roger EBrake P50
+  metricType: workload.googleapis.com/mhive/roger/ebrake
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_PERCENTILE_50
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.764Z'
+  createdAt: '2026-03-03T18:36:57.763Z'
+- id: roger-send-latency
+  name: Roger Send Latency P95
+  metricType: workload.googleapis.com/mhive/roger/send_latency
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_PERCENTILE_95
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.767Z'
+  createdAt: '2026-03-03T18:36:57.765Z'
+- id: impressionrater-row-updates
+  name: ImpressionRater Row Updates
+  metricType: workload.googleapis.com/mhive/impressionrater/row_updates
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.770Z'
+  createdAt: '2026-03-03T18:36:57.767Z'
+- id: kafka-managed-request-count
+  name: Managed Kafka Request Count
+  metricType: managedkafka.googleapis.com/request_count
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.774Z'
+  createdAt: '2026-03-03T18:36:57.769Z'
+- id: kafka-managed-offset-lag
+  name: Managed Kafka Offset Lag
+  metricType: managedkafka.googleapis.com/offset_lag
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.777Z'
+  createdAt: '2026-03-03T18:36:57.771Z'
+- id: kafka-managed-latency
+  name: Managed Kafka Request Latencies P95
+  metricType: managedkafka.googleapis.com/request_latencies
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_PERCENTILE_95
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.780Z'
+  createdAt: '2026-03-03T18:36:57.774Z'
+- id: bigtable-returned-rows
+  name: Bigtable Returned Rows Rate
+  metricType: bigtable.googleapis.com/server/returned_rows_count
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.785Z'
+  createdAt: '2026-03-03T18:36:57.776Z'
+- id: bigtable-request-count
+  name: Bigtable Request Count
+  metricType: bigtable.googleapis.com/server/request_count
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.789Z'
+  createdAt: '2026-03-03T18:36:57.778Z'
+- id: bigtable-latency
+  name: Bigtable Server Latencies P95
+  metricType: bigtable.googleapis.com/server/latencies
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_PERCENTILE_95
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.793Z'
+  createdAt: '2026-03-03T18:36:57.780Z'
+- id: bigtable-cpu-load
+  name: Bigtable Cluster CPU Load
+  metricType: bigtable.googleapis.com/cluster/cpu_load
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_MAX
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.798Z'
+  createdAt: '2026-03-03T18:36:57.783Z'
+- id: pubsub-events-primary-unacked
+  name: Pub/Sub Events-Primary Unacked
+  metricType: pubsub.googleapis.com/subscription/num_undelivered_messages
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: resource.labels.subscription_id = "events-primary"
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.802Z'
+  createdAt: '2026-03-03T18:36:57.785Z'
+- id: pubsub-wins-unacked
+  name: Pub/Sub Wins Unacked
+  metricType: pubsub.googleapis.com/subscription/num_undelivered_messages
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_MEAN
+    alignmentPeriod:
+      seconds: 60
+  filters: resource.labels.subscription_id = "wins"
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.807Z'
+  createdAt: '2026-03-03T18:36:57.787Z'
+- id: bigtable-table-bytes
+  name: Bigtable Table Bytes Used
+  metricType: bigtable.googleapis.com/table/bytes_used
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.811Z'
+  createdAt: '2026-03-03T18:36:57.790Z'
+- id: mozart-total-requests
+  name: Mozart Total Requests
+  metricType: workload.googleapis.com/mhive/mozart/totalRequests
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.816Z'
+  createdAt: '2026-03-03T18:36:57.793Z'
+- id: mozart-total-impressions
+  name: Mozart Total Impressions
+  metricType: workload.googleapis.com/mhive/mozart/totalImpressions
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.820Z'
+  createdAt: '2026-03-03T18:36:57.796Z'
+- id: mozart-errors
+  name: Mozart Errors Per Resource
+  metricType: workload.googleapis.com/mhive/mozart/errorsPerResource
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.823Z'
+  createdAt: '2026-03-03T18:36:57.798Z'
+- id: planner-impressions
+  name: Planner 3 Impressions
+  metricType: custom.googleapis.com/opencensus/mhive/planner_3/impressions
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_PERCENTILE_50
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.827Z'
+  createdAt: '2026-03-03T18:36:57.806Z'
+- id: planner-reach
+  name: Planner 3 Reach
+  metricType: custom.googleapis.com/opencensus/mhive/planner_3/reach
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_PERCENTILE_50
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.830Z'
+  createdAt: '2026-03-03T18:36:57.811Z'
+- id: madserver-sql-latency
+  name: MadServer SQL Latency P95
+  metricType: workload.googleapis.com/madserver/sql/latency_ms
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_PERCENTILE_95
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.833Z'
+  createdAt: '2026-03-03T18:36:57.816Z'
+- id: gary2-segments-processed
+  name: Gary2 Segments Processed
+  metricType: workload.googleapis.com/mhive/gary2/segmentsProcessed
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.835Z'
+  createdAt: '2026-03-03T18:36:57.821Z'
+- id: gary2-pubsub-backlog
+  name: Gary2 Pub/Sub Backlog
+  metricType: pubsub.googleapis.com/subscription/num_undelivered_messages
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_MEAN
+    crossSeriesReducer: REDUCE_MEAN
+    alignmentPeriod:
+      seconds: 60
+  filters: resource.labels.subscription_id = "gary2-input"
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.838Z'
+  createdAt: '2026-03-03T18:36:57.825Z'
+- id: madserver-rpc-calls
+  name: MadServer RPC Client Calls
+  metricType: workload.googleapis.com/madserver/rpc/client_call
+  project: mad-master
+  timeWindow: 10
+  aggregation:
+    perSeriesAligner: ALIGN_RATE
+    crossSeriesReducer: REDUCE_SUM
+    alignmentPeriod:
+      seconds: 60
+  filters: ''
+  widgetTypes: []
+  updatedAt: '2026-03-03T18:37:21.840Z'
+  createdAt: '2026-03-03T18:36:57.829Z'
 vulntrack:
-  - id: vulntrack-security-posture
-    name: Security Posture Overview
-    description: Full security posture from VulnTrack — critical/high/medium/low findings, secrets, threats, team risk ranking
-    widgetTypes: []
-    updatedAt: '2026-03-03T19:32:58.568Z'
-    createdAt: '2026-03-03T19:32:58.568Z'
+- id: vulntrack-security-posture
+  name: Security Posture Overview
+  description: Full security posture from VulnTrack — critical/high/medium/low findings,
+    secrets, threats, team risk ranking
+  widgetTypes: []
+  updatedAt: '2026-03-03T19:32:58.568Z'
+  createdAt: '2026-03-03T19:32:58.568Z'
