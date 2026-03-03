@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="/css/dashboard.css?v=12">
-  <link rel="stylesheet" href="/css/studio.css?v=4">
+  <link rel="stylesheet" href="/css/studio.css?v=8">
 </head>
 <body class="studio-body">
 
@@ -30,71 +30,91 @@
 
     <!-- Left Sidebar -->
     <aside class="studio-sidebar">
-
-      <!-- Dashboards Section -->
-      <div class="sidebar-section">
-        <div class="sidebar-section-header">
-          <span>DASHBOARDS</span>
-          <button id="new-dashboard-btn" class="sidebar-add-btn" title="New dashboard">+</button>
-        </div>
-        <div id="dashboard-list"></div>
-        <form id="new-dashboard-form" class="new-dashboard-form" style="display:none">
-          <input id="new-dash-name" type="text" placeholder="Dashboard name" required>
-          <input id="new-dash-subtitle" type="text" placeholder="Subtitle (optional)">
-          <div style="display:flex;gap:8px;">
-            <input id="new-dash-cols" type="number" placeholder="Cols" value="4" min="1" max="12" style="flex:1">
-            <input id="new-dash-rows" type="number" placeholder="Rows" value="2" min="1" max="12" style="flex:1">
-          </div>
-          <div class="icon-picker">
-            <span class="icon-opt selected" data-icon="bolt" title="Bolt">&#9889;</span>
-            <span class="icon-opt" data-icon="grid" title="Grid">&#9783;</span>
-            <span class="icon-opt" data-icon="server" title="Server">&#128421;</span>
-            <span class="icon-opt" data-icon="flow" title="Flow">&#10608;</span>
-            <span class="icon-opt" data-icon="data" title="Data">&#128202;</span>
-            <span class="icon-opt" data-icon="shield" title="Shield">&#128737;</span>
-            <span class="icon-opt" data-icon="map" title="Map">&#128506;</span>
-          </div>
-          <div style="display:flex;gap:6px;">
-            <button type="submit" class="studio-btn primary small" style="flex:1">Create</button>
-            <button type="button" id="cancel-new-dash-btn" class="studio-btn secondary small" style="flex:1">Cancel</button>
-          </div>
-        </form>
+      <div class="sidebar-tabs">
+        <button class="sidebar-tab active" data-tab="dashboards">Dashboards</button>
+        <button class="sidebar-tab" data-tab="queries">Queries</button>
+        <button class="sidebar-tab" data-tab="datasources">Sources</button>
       </div>
 
-      <!-- Themes Section (collapsible) -->
-      <div class="sidebar-section">
-        <div class="sidebar-section-header collapsible" data-target="themes-content">
-          <span>THEMES</span>
-          <span class="collapse-arrow">&#9656;</span>
-        </div>
-        <div id="themes-content" class="sidebar-collapsible-content" style="display:none">
-          <div id="theme-swatches" class="theme-swatch-grid"></div>
-        </div>
-      </div>
+      <!-- Dashboards panel (existing content, wrap in div) -->
+      <div class="sidebar-panel" id="panel-dashboards">
 
-      <!-- Settings Section (collapsible) -->
-      <div class="sidebar-section">
-        <div class="sidebar-section-header collapsible" data-target="settings-content">
-          <span>SETTINGS</span>
-          <span class="collapse-arrow">&#9656;</span>
-        </div>
-        <div id="settings-content" class="sidebar-collapsible-content" style="display:none">
-          <form id="settings-form" class="settings-form">
-            <label>
-              Title
-              <input id="setting-title" type="text" placeholder="Dashboard title">
-            </label>
-            <label>
-              Rotation (s)
-              <input id="setting-rotation" type="number" placeholder="30" min="0">
-            </label>
-            <label>
-              Refresh (s)
-              <input id="setting-refresh" type="number" placeholder="60" min="0">
-            </label>
-            <button type="submit" class="studio-btn primary small">Save Settings</button>
+        <!-- Dashboards Section -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-header">
+            <span>DASHBOARDS</span>
+            <button id="new-dashboard-btn" class="sidebar-add-btn" title="New dashboard">+</button>
+          </div>
+          <div id="dashboard-list"></div>
+          <form id="new-dashboard-form" class="new-dashboard-form" style="display:none">
+            <input id="new-dash-name" type="text" placeholder="Dashboard name" required>
+            <input id="new-dash-subtitle" type="text" placeholder="Subtitle (optional)">
+            <div style="display:flex;gap:8px;">
+              <input id="new-dash-cols" type="number" placeholder="Cols" value="4" min="1" max="12" style="flex:1">
+              <input id="new-dash-rows" type="number" placeholder="Rows" value="2" min="1" max="12" style="flex:1">
+            </div>
+            <div class="icon-picker">
+              <span class="icon-opt selected" data-icon="bolt" title="Bolt">&#9889;</span>
+              <span class="icon-opt" data-icon="grid" title="Grid">&#9783;</span>
+              <span class="icon-opt" data-icon="server" title="Server">&#128421;</span>
+              <span class="icon-opt" data-icon="flow" title="Flow">&#10608;</span>
+              <span class="icon-opt" data-icon="data" title="Data">&#128202;</span>
+              <span class="icon-opt" data-icon="shield" title="Shield">&#128737;</span>
+              <span class="icon-opt" data-icon="map" title="Map">&#128506;</span>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button type="submit" class="studio-btn primary small" style="flex:1">Create</button>
+              <button type="button" id="cancel-new-dash-btn" class="studio-btn secondary small" style="flex:1">Cancel</button>
+            </div>
           </form>
         </div>
+
+        <!-- Themes Section (collapsible) -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-header collapsible" data-target="themes-content">
+            <span>THEMES</span>
+            <span class="collapse-arrow">&#9656;</span>
+          </div>
+          <div id="themes-content" class="sidebar-collapsible-content" style="display:none">
+            <div id="theme-swatches" class="theme-swatch-grid"></div>
+          </div>
+        </div>
+
+        <!-- Settings Section (collapsible) -->
+        <div class="sidebar-section">
+          <div class="sidebar-section-header collapsible" data-target="settings-content">
+            <span>SETTINGS</span>
+            <span class="collapse-arrow">&#9656;</span>
+          </div>
+          <div id="settings-content" class="sidebar-collapsible-content" style="display:none">
+            <form id="settings-form" class="settings-form">
+              <label>
+                Title
+                <input id="setting-title" type="text" placeholder="Dashboard title">
+              </label>
+              <label>
+                Rotation (s)
+                <input id="setting-rotation" type="number" placeholder="30" min="0">
+              </label>
+              <label>
+                Refresh (s)
+                <input id="setting-refresh" type="number" placeholder="60" min="0">
+              </label>
+              <button type="submit" class="studio-btn primary small">Save Settings</button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Queries panel -->
+      <div class="sidebar-panel" id="panel-queries" style="display:none">
+        <div id="query-list" class="query-list"></div>
+      </div>
+
+      <!-- Data Sources panel -->
+      <div class="sidebar-panel" id="panel-datasources" style="display:none">
+        <div id="datasource-list" class="datasource-list"></div>
       </div>
 
     </aside>
@@ -194,26 +214,15 @@
             </div>
           </details>
 
-          <details class="props-section">
+          <details class="props-section" id="display-section">
             <summary>Position</summary>
             <div>
+              <p class="props-hint">Drag widget to reposition · drag handles to resize</p>
               <div class="props-grid-2">
-                <label>
-                  Col
-                  <input id="prop-col" type="number" min="1">
-                </label>
-                <label>
-                  Row
-                  <input id="prop-row" type="number" min="1">
-                </label>
-                <label>
-                  Col Span
-                  <input id="prop-colspan" type="number" min="1">
-                </label>
-                <label>
-                  Row Span
-                  <input id="prop-rowspan" type="number" min="1">
-                </label>
+                <label>Col <input id="prop-col"     type="number" min="1" readonly></label>
+                <label>Row <input id="prop-row"     type="number" min="1" readonly></label>
+                <label>Col Span <input id="prop-colspan" type="number" min="1" readonly></label>
+                <label>Row Span <input id="prop-rowspan" type="number" min="1" readonly></label>
               </div>
             </div>
           </details>
@@ -252,6 +261,78 @@
 
         </div>
       </div>
+
+      <!-- Query editor panel (shown when a query is open) -->
+      <div id="query-editor-panel" style="display:none" class="query-editor-panel">
+        <div class="qe-header">
+          <div>
+            <div id="qe-name" class="qe-name"></div>
+            <div id="qe-source-badge" class="qe-source-badge"></div>
+          </div>
+          <button id="qe-close" class="modal-close">&#215;</button>
+        </div>
+
+        <!-- Config strip -->
+        <div class="qe-config">
+          <label class="qe-label">Metric / SQL
+            <input id="qe-metric" type="text" class="qe-input" placeholder="metric.type or SQL">
+          </label>
+          <div class="qe-row">
+            <label class="qe-label">Time Window
+              <select id="qe-time-window" class="qe-select">
+                <option value="5">5 min</option>
+                <option value="15">15 min</option>
+                <option value="60" selected>1 hour</option>
+                <option value="360">6 hours</option>
+                <option value="1440">24 hours</option>
+              </select>
+            </label>
+            <label class="qe-label">Aggregation
+              <select id="qe-aggregation" class="qe-select">
+                <option value="ALIGN_MEAN">Mean</option>
+                <option value="ALIGN_SUM">Sum</option>
+                <option value="ALIGN_MAX">Max</option>
+                <option value="ALIGN_RATE">Rate/s</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <!-- Results preview -->
+        <div class="qe-results">
+          <div class="qe-results-toolbar">
+            <button id="qe-run" class="studio-btn primary small">&#9654; Run</button>
+            <span id="qe-run-status" class="qe-run-status"></span>
+          </div>
+          <div id="qe-results-body" class="qe-results-body">
+            <div class="mb-status">Run query to see results</div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="qe-actions">
+          <button id="qe-save"        class="studio-btn primary small">Save Query</button>
+          <button id="qe-save-as-new" class="studio-btn secondary small">Save as New</button>
+          <button id="qe-assign"      class="studio-btn secondary small">Assign to Widget</button>
+        </div>
+      </div>
+
+      <!-- Data source editor panel -->
+      <div id="datasource-editor-panel" style="display:none" class="datasource-editor-panel">
+        <div class="qe-header">
+          <div>
+            <div id="dse-name" class="qe-name"></div>
+            <div id="dse-status" class="qe-source-badge"></div>
+          </div>
+          <button id="dse-close" class="modal-close">&#215;</button>
+        </div>
+        <div id="dse-fields" class="dse-fields"></div>
+        <div class="qe-actions">
+          <button id="dse-test" class="studio-btn secondary small">&#9654; Test Connection</button>
+          <span id="dse-test-result" class="qe-run-status"></span>
+        </div>
+      </div>
+
     </aside>
 
   </div>
@@ -356,7 +437,7 @@
   <script src="/js/charts.js?v=11"></script>
   <script src="/js/widgets.js?v=11"></script>
   <script src="/js/query-editor.js?v=1"></script>
-  <script src="/js/studio-canvas.js?v=2"></script>
-  <script src="/js/studio.js?v=4"></script>
+  <script src="/js/studio-canvas.js?v=4"></script>
+  <script src="/js/studio.js?v=6"></script>
 </body>
 </html>

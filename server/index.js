@@ -533,7 +533,8 @@ const app = new Elysia()
         sources: sources.map(s => ({
           name: s.name,
           isConnected: s.isConnected,
-          isReady: s.isReady()
+          isReady: s.isReady(),
+          lastError: s.lastError ? s.lastError.message : null
         }))
       };
     } catch (error) {
