@@ -18,7 +18,7 @@
     "test:coverage": "bun test --coverage tests/unit tests/integration tests/helpers tests/components",
     "db:generate": "bunx drizzle-kit generate",
     "db:migrate": "bunx drizzle-kit migrate",
-    "db:studio": "bunx drizzle-kit studio",
+    "db:studio": "bunx drizzle-kit studio --port 4983",
     "build": "echo 'No build step required for vanilla JS' && exit 0"
   },
   "dependencies": {
@@ -27,8 +27,8 @@
     "@elastic/elasticsearch": "^9.3.2",
     "@elysiajs/cookie": "^0.8.0",
     "@elysiajs/cors": "^1.4.1",
+    "@elysiajs/openapi": "^1.4.14",
     "@elysiajs/static": "^1.2",
-    "@elysiajs/swagger": "^1.1.0",
     "@google-cloud/bigquery": "^8.1.1",
     "@google-cloud/monitoring": "^5.3.1",
     "axios": "^1.13.6",

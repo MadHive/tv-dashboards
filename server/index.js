@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { Elysia } from 'elysia';
-import { swagger } from '@elysiajs/swagger';
+import { openapi } from '@elysiajs/openapi';
 import { staticPlugin } from '@elysiajs/static';
 import { cookie } from '@elysiajs/cookie';
 import { cors } from '@elysiajs/cors';
@@ -132,7 +132,7 @@ const dashboardManager = new DashboardManager('./config/dashboards.yaml');
 await themeManager.loadThemes();
 
 const app = new Elysia()
-  .use(swagger({
+  .use(openapi({
     documentation: {
       info: {
         title:       'MadHive TV Dashboards API',
