@@ -532,6 +532,15 @@ window.Charts = (function () {
     return String(n);
   }
 
+  function lerpZoom(a, b, t) {
+    return {
+      x0: a.x0 + (b.x0 - a.x0) * t,
+      y0: a.y0 + (b.y0 - a.y0) * t,
+      x1: a.x1 + (b.x1 - a.x1) * t,
+      y1: a.y1 + (b.y1 - a.y1) * t,
+    };
+  }
+
   // ===========================================================================
   // USA MAP V2 — Dramatically more info-dense and visually striking
   // Bubbles, callouts, leaderboard, grid, metro markers, directional arcs,
@@ -545,6 +554,35 @@ window.Charts = (function () {
   let mapBursts = [];       // particle arrival bursts { x, y, born, color }
   let mapScrollResetTime = 0;  // epoch ms — leaderboard resets scroll here
   let mapPrevTopState    = '';  // id of #1 state on last data update
+
+  // ── Map zoom cycle ──
+  var MAP_ZOOM_REGIONS = [
+    {
+      id: 'full',
+      label: '',
+      duration: 12000,
+      x0: 0, y0: 0, x1: 1, y1: 1,
+      states: null,
+    },
+    {
+      id: 'northeast',
+      label: 'NORTHEAST',
+      duration: 7000,
+      x0: 0.76, y0: 0.03, x1: 1.03, y1: 0.50,
+      states: ['ME','VT','NH','MA','RI','CT','NY','NJ','PA','DE','MD','DC','VA','WV'],
+    },
+    {
+      id: 'southeast',
+      label: 'SOUTHEAST',
+      duration: 7000,
+      x0: 0.62, y0: 0.42, x1: 0.98, y1: 0.90,
+      states: ['NC','SC','GA','FL','AL','MS','TN','KY'],
+    },
+  ];
+  var MAP_ZOOM_TRANS_MS = 1500;
+  var mapZoomIdx   = 0;
+  var mapZoomSince = 0;
+  var mapZoomFrom  = null;
 
   // GCP Data Center locations — delivery arc origins (real infrastructure)
   const DATA_CENTERS = [
