@@ -1330,3 +1330,17 @@ body.studio-body {
   z-index: 30;
   display: none;
 }
+
+.props-hint {
+  font-size: 10px;
+  color: var(--t3);
+  font-family: var(--font-display);
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.studio-properties input[readonly] {
+  opacity: 0.5;
+  cursor: default;
+  background: var(--bg);
+}

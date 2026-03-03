@@ -285,6 +285,11 @@ window.StudioCanvas = (function () {
     card.appendChild(rightHandle);
     card.appendChild(bottomHandle);
 
+    var badge = document.createElement('div');
+    badge.className = 'resize-badge';
+    badge.id = 'resize-badge-' + wc.id;
+    card.appendChild(badge);
+
     // Show/hide handles on hover
     card.addEventListener('mouseenter', function () {
       rightHandle.style.opacity = '1';
@@ -311,11 +316,14 @@ window.StudioCanvas = (function () {
         const spanDelta = Math.round(delta / colWidth);
         wc.position.colSpan = Math.max(1, Math.min(maxSpan, startSpan + spanDelta));
         card.style.gridColumn = wc.position.col + ' / span ' + wc.position.colSpan;
+        badge.style.display = 'block';
+        badge.textContent = wc.position.colSpan + '\u00D7' + (wc.position.rowSpan || 1);
       }
 
       function onUp() {
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
+        badge.style.display = 'none';
         app.markDirty();
         app.renderCanvas();
         app.showWidgetProps(wc.id);
@@ -341,11 +349,14 @@ window.StudioCanvas = (function () {
         const spanDelta = Math.round(delta / rowHeight);
         wc.position.rowSpan = Math.max(1, Math.min(maxSpan, startSpan + spanDelta));
         card.style.gridRow = wc.position.row + ' / span ' + wc.position.rowSpan;
+        badge.style.display = 'block';
+        badge.textContent = (wc.position.colSpan || 1) + '\u00D7' + wc.position.rowSpan;
       }
 
       function onUp() {
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
+        badge.style.display = 'none';
         app.markDirty();
         app.renderCanvas();
         app.showWidgetProps(wc.id);
