@@ -1542,3 +1542,15 @@ body.studio-body {
   flex-shrink: 0;
   flex-wrap: wrap;
 }
+
+
+.studio-canvas.assign-mode .widget {
+  outline: 2px solid var(--mh-pink) !important;
+  cursor: crosshair !important;
+  animation: assignPulse 1s ease-in-out infinite;
+}
+
+@keyframes assignPulse {
+  0%, 100% { outline-color: var(--mh-pink); }
+  50%       { outline-color: var(--mh-hot-pink); box-shadow: 0 0 12px rgba(253,164,212,0.3); }
+}

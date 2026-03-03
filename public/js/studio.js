@@ -1041,6 +1041,149 @@
     }
 
     /* ─────────────────────────────────────────────
+       Query Run / Save / Assign
+    ───────────────────────────────────────────── */
+
+    async _runQuery() {
+      const runBtn    = document.getElementById('qe-run');
+      const statusEl  = document.getElementById('qe-run-status');
+      const bodyEl    = document.getElementById('qe-results-body');
+      const source    = this._activeSource;
+      const queryId   = this._activeQuery && this._activeQuery.id;
+
+      runBtn.setAttribute('disabled', '');
+      runBtn.textContent = 'Running\u2026';
+      statusEl.textContent = '';
+      bodyEl.textContent = '';
+
+      const t0 = Date.now();
+      try {
+        // Use the query-test endpoint
+        const res = await fetch('/api/queries/' + source + '/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ queryId }),
+        });
+        const data = await res.json();
+        const ms = Date.now() - t0;
+        statusEl.textContent = ms + 'ms';
+
+        if (!res.ok || !data.success) throw new Error(data.error || 'Query failed');
+
+        // Render result rows
+        const result = data.result || data.data || {};
+        const entries = Object.entries(result).slice(0, 50);
+        if (!entries.length) {
+          const msg = document.createElement('div');
+          msg.className = 'mb-status';
+          msg.textContent = 'No data returned';
+          bodyEl.appendChild(msg);
+        } else {
+          entries.forEach(([key, val]) => {
+            const row = document.createElement('div');
+            row.className = 'qe-result-row';
+            const k = document.createElement('span');
+            k.className   = 'qe-result-key';
+            k.textContent = key;
+            const v = document.createElement('span');
+            v.className   = 'qe-result-value';
+            v.textContent = typeof val === 'object' ? JSON.stringify(val) : String(val);
+            row.appendChild(k);
+            row.appendChild(v);
+            bodyEl.appendChild(row);
+          });
+        }
+      } catch (e) {
+        statusEl.textContent = 'Error';
+        statusEl.style.color = 'var(--red)';
+        const err = document.createElement('div');
+        err.style.color   = 'var(--red)';
+        err.style.padding = '8px';
+        err.style.fontFamily = 'var(--font-mono)';
+        err.style.fontSize   = '11px';
+        err.textContent = e.message;
+        bodyEl.appendChild(err);
+      } finally {
+        runBtn.removeAttribute('disabled');
+        runBtn.textContent = '\u25B6 Run';
+      }
+    }
+
+    async _saveQuery(asNew) {
+      const q      = this._activeQuery;
+      const source = this._activeSource;
+      if (!q) return;
+
+      const metricOrSql = document.getElementById('qe-metric').value.trim();
+      const timeWindow  = parseInt(document.getElementById('qe-time-window').value)  || 60;
+      const aligner     = document.getElementById('qe-aggregation').value;
+
+      const body = {
+        id:   asNew ? (q.id + '-' + Date.now()) : q.id,
+        name: asNew ? (q.name + ' (copy)') : q.name,
+      };
+
+      if (source === 'bigquery') {
+        body.sql = metricOrSql;
+      } else {
+        body.metricType  = metricOrSql;
+        body.timeWindow  = timeWindow;
+        body.aggregation = { perSeriesAligner: aligner, crossSeriesReducer: 'REDUCE_MEAN' };
+      }
+
+      try {
+        const url    = asNew ? ('/api/queries/' + source) : ('/api/queries/' + source + '/' + q.id);
+        const method = asNew ? 'POST' : 'PUT';
+        const res    = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+        this.showToast(asNew ? 'Saved as new query' : 'Query saved', 'success');
+        this.renderQueryList();
+      } catch (e) {
+        this.showToast('Save failed: ' + e.message, 'error');
+      }
+    }
+
+    _assignQueryToWidget() {
+      const q      = this._activeQuery;
+      const source = this._activeSource;
+      if (!q || this.activeDashIdx < 0) return;
+
+      // Dim canvas and highlight all widgets for selection
+      const canvas = document.getElementById('studio-canvas');
+      if (!canvas) return;
+      canvas.classList.add('assign-mode');
+
+      const widgets = canvas.querySelectorAll('.widget');
+      widgets.forEach(card => {
+        card.addEventListener('click', function handler(e) {
+          e.stopPropagation();
+          card.removeEventListener('click', handler);
+          canvas.classList.remove('assign-mode');
+          // Reset all card outlines
+          canvas.querySelectorAll('.widget').forEach(c => c.style.outline = '2px solid transparent');
+
+          const widgetId = card.dataset.widgetId;
+          const dash = window.studio.modifiedConfig.dashboards[window.studio.activeDashIdx];
+          const wc   = dash && dash.widgets.find(w => w.id === widgetId);
+          if (wc) {
+            wc.source  = source;
+            wc.queryId = q.id;
+            window.studio.markDirty();
+            window.studio.renderCanvas();
+            window.studio.showWidgetProps(widgetId);
+            window.studio.showToast('Query assigned to ' + (wc.title || widgetId), 'success');
+          }
+        }, { once: true });
+      });
+
+      this.showToast('Click a widget to assign this query', 'info');
+    }
+
+    /* ─────────────────────────────────────────────
        Toast Notifications
     ───────────────────────────────────────────── */
 
