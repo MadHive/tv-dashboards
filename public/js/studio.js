@@ -355,6 +355,10 @@
       const content = document.getElementById('properties-content');
       const dashProps = document.getElementById('dashboard-props');
       const widgetProps = document.getElementById('widget-props');
+      const qe  = document.getElementById('query-editor-panel');
+      const dse = document.getElementById('datasource-editor-panel');
+      if (qe)  qe.style.display  = 'none';
+      if (dse) dse.style.display = 'none';
 
       if (placeholder) placeholder.style.display = 'none';
       if (content) content.style.display = 'flex';
@@ -421,6 +425,12 @@
       const content = document.getElementById('properties-content');
       const dashProps = document.getElementById('dashboard-props');
       const widgetProps = document.getElementById('widget-props');
+
+      // Hide all alternate right-panel views before showing widget props
+      const qe  = document.getElementById('query-editor-panel');
+      const dse = document.getElementById('datasource-editor-panel');
+      if (qe)  qe.style.display  = 'none';
+      if (dse) dse.style.display = 'none';
 
       if (placeholder) placeholder.style.display = 'none';
       if (content) content.style.display = 'flex';
