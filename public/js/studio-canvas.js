@@ -20,8 +20,9 @@ window.StudioCanvas = (function () {
     }
 
     // Create dashboard page div
+    // 'active' class is required — dashboard.css hides .dashboard-page until active
     const page = document.createElement('div');
-    page.className = 'dashboard-page';
+    page.className = 'dashboard-page active';
     page.style.gridTemplateColumns = 'repeat(' + dash.grid.columns + ', 1fr)';
     page.style.gridTemplateRows = 'repeat(' + dash.grid.rows + ', 1fr)';
     page.style.gap = (dash.grid.gap || 12) + 'px';
@@ -38,7 +39,7 @@ window.StudioCanvas = (function () {
       card.style.gridRow = wc.position.row + ' / span ' + (wc.position.rowSpan || 1);
       card.style.cursor = 'pointer';
       card.style.position = 'relative';
-      card.style.outline = '2px solid ' + (wc.id === app.selectedWidgetId ? '#00d4ff' : 'transparent');
+      card.style.outline = '2px solid ' + (wc.id === app.selectedWidgetId ? '#FDA4D4' : 'transparent');
       card.style.borderRadius = '4px';
       card.style.transition = 'outline 0.1s';
       card.style.overflow = 'hidden';
@@ -71,7 +72,7 @@ window.StudioCanvas = (function () {
         // Update all outlines
         page.querySelectorAll('.widget').forEach(function (el) {
           el.style.outline = '2px solid ' +
-            (el.dataset.widgetId === wc.id ? '#00d4ff' : 'transparent');
+            (el.dataset.widgetId === wc.id ? '#FDA4D4' : 'transparent');
         });
         app.showWidgetProps(wc.id);
       });
@@ -79,7 +80,7 @@ window.StudioCanvas = (function () {
       // Hover highlight
       card.addEventListener('mouseenter', function () {
         if (wc.id !== app.selectedWidgetId) {
-          card.style.outline = '2px solid rgba(0,212,255,0.4)';
+          card.style.outline = '2px solid rgba(253,164,212,0.5)';
         }
       });
       card.addEventListener('mouseleave', function () {
@@ -150,7 +151,7 @@ window.StudioCanvas = (function () {
     const rightHandle = document.createElement('div');
     rightHandle.style.cssText = [
       'position:absolute', 'right:-4px', 'top:20%', 'height:60%', 'width:8px',
-      'cursor:ew-resize', 'background:rgba(0,212,255,0.6)', 'border-radius:4px',
+      'cursor:ew-resize', 'background:rgba(253,164,212,0.7)', 'border-radius:4px',
       'opacity:0', 'transition:opacity 0.15s', 'z-index:10'
     ].join(';');
 
@@ -158,7 +159,7 @@ window.StudioCanvas = (function () {
     const bottomHandle = document.createElement('div');
     bottomHandle.style.cssText = [
       'position:absolute', 'bottom:-4px', 'left:20%', 'width:60%', 'height:8px',
-      'cursor:ns-resize', 'background:rgba(0,212,255,0.6)', 'border-radius:4px',
+      'cursor:ns-resize', 'background:rgba(253,164,212,0.7)', 'border-radius:4px',
       'opacity:0', 'transition:opacity 0.15s', 'z-index:10'
     ].join(';');
 

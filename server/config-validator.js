@@ -130,12 +130,10 @@ export function validateDashboard(dashboard) {
     errors.push(...gridErrors);
   }
 
-  // Widgets array
+  // Widgets array — empty is allowed (studio creates blank dashboards)
   if (!Array.isArray(dashboard.widgets)) {
     errors.push('Dashboard must have a widgets array');
-  } else if (dashboard.widgets.length === 0) {
-    errors.push('Dashboard must have at least one widget');
-  } else {
+  } else if (dashboard.widgets.length > 0) {
     // Validate each widget
     dashboard.widgets.forEach((widget, index) => {
       const widgetErrors = validateWidget(widget, dashboard.grid);

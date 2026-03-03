@@ -1128,3 +1128,50 @@ export async function getMetrics(dashboardId) {
     default: return {};
   }
 }
+
+// ── Metric Descriptor Browser ────────────────────────────────────────────────
+// Lists all available Cloud Monitoring metric types for a project.
+// Results cached for 1 hour — metric descriptors rarely change.
+
+const _descriptorCache = new Map(); // project -> { time, data }
+const DESCRIPTOR_TTL = 60 * 60 * 1000;
+
+export async function listDescriptors(project, search = '') {
+  const cached = _descriptorCache.get(project);
+  if (cached && Date.now() - cached.time < DESCRIPTOR_TTL) {
+    return _filterDescriptors(cached.data, search);
+  }
+
+  const [raw] = await client.listMetricDescriptors({ name: `projects/${project}` });
+
+  const normalized = raw.map(d => ({
+    type:        d.type        || '',
+    displayName: d.displayName || '',
+    description: d.description || '',
+    metricKind:  d.metricKind  || '',
+    valueType:   d.valueType   || '',
+    unit:        d.unit        || '',
+  }));
+
+  // Sort: custom metrics first, then alphabetically by type
+  normalized.sort((a, b) => {
+    const ac = a.type.startsWith('custom/') ? 0 : 1;
+    const bc = b.type.startsWith('custom/') ? 0 : 1;
+    if (ac !== bc) return ac - bc;
+    return a.type.localeCompare(b.type);
+  });
+
+  _descriptorCache.set(project, { time: Date.now(), data: normalized });
+  logger.info({ project, count: normalized.length }, 'GCP metric descriptors cached');
+  return _filterDescriptors(normalized, search);
+}
+
+function _filterDescriptors(descriptors, search) {
+  if (!search) return descriptors;
+  const q = search.toLowerCase();
+  return descriptors.filter(d =>
+    d.type.toLowerCase().includes(q) ||
+    d.displayName.toLowerCase().includes(q) ||
+    d.description.toLowerCase().includes(q)
+  );
+}

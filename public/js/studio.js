@@ -21,6 +21,7 @@
     ───────────────────────────────────────────── */
 
     async init() {
+      this.metricBrowser = new MetricBrowser(this);
       await this.loadConfig();
       await this.loadThemes();
       this.renderSidebar();
@@ -385,12 +386,20 @@
         wc.thresholds.critical = v !== '' ? parseFloat(v) : undefined;
       });
 
-      // Special: source change reloads queries
+      // Show/hide Browse GCP Metrics button based on source
+      const browseBtn = document.getElementById('browse-metrics-btn');
+      if (browseBtn) {
+        browseBtn.style.display = (wc.source === 'gcp') ? '' : 'none';
+        browseBtn.onclick = () => self.metricBrowser.open(wc);
+      }
+
+      // Special: source change reloads queries + toggles Browse button
       const sourceEl = document.getElementById('prop-source');
       if (sourceEl) {
         sourceEl.onchange = async function () {
           wc.source = sourceEl.value;
           wc.queryId = '';
+          if (browseBtn) browseBtn.style.display = (wc.source === 'gcp') ? '' : 'none';
           await self.loadQueryOptions(wc.source, '');
           self.markDirty();
         };
@@ -926,41 +935,302 @@
     ───────────────────────────────────────────── */
 
     showToast(msg, type) {
-      type = type || 'info';
-
-      const colorMap = {
-        success: '#1a7a3a',
-        error: '#7a1a1a',
-        info: '#1a3a7a',
-      };
-
       const toast = document.createElement('div');
-      toast.style.cssText = [
-        'position:fixed',
-        'bottom:24px',
-        'right:24px',
-        'padding:12px 20px',
-        'border-radius:6px',
-        'background:' + (colorMap[type] || colorMap.info),
-        'color:#fff',
-        'font-family:Rajdhani,sans-serif',
-        'font-size:14px',
-        'font-weight:600',
-        'z-index:9999',
-        'pointer-events:none',
-        'box-shadow:0 4px 16px rgba(0,0,0,0.5)',
-        'transition:opacity 0.3s',
-      ].join(';');
-
+      toast.className = 'studio-toast ' + (type || 'info');
       toast.textContent = msg;
       document.body.appendChild(toast);
 
       setTimeout(() => {
         toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px)';
         setTimeout(() => {
           if (toast.parentNode) toast.parentNode.removeChild(toast);
         }, 300);
       }, 3000);
+    }
+  }
+
+  /* ─────────────────────────────────────────────
+     GCP Metric Browser
+  ───────────────────────────────────────────── */
+
+  // Human-friendly names for common GCP service namespaces
+  const GCP_SERVICE_LABELS = {
+    'run':                'Cloud Run',
+    'bigquery':           'BigQuery',
+    'pubsub':             'Pub/Sub',
+    'compute':            'Compute Engine',
+    'storage':            'Cloud Storage',
+    'logging':            'Cloud Logging',
+    'monitoring':         'Cloud Monitoring',
+    'cloudsql':           'Cloud SQL',
+    'kubernetes':         'Kubernetes',
+    'container':          'GKE',
+    'bigtable':           'Cloud Bigtable',
+    'spanner':            'Cloud Spanner',
+    'firestore':          'Firestore',
+    'dataflow':           'Dataflow',
+    'dataproc':           'Dataproc',
+    'composer':           'Cloud Composer',
+    'cloudfunctions':     'Cloud Functions',
+    'appengine':          'App Engine',
+    'loadbalancing':      'Load Balancing',
+    'networking':         'Networking',
+    'dns':                'Cloud DNS',
+    'redis':              'Memorystore',
+    'serviceruntime':     'API Usage',
+    'custom':             'Custom Metrics',
+    'agent':              'Ops Agent',
+    'external':           'External',
+  };
+
+  // Priority order for the sidebar (most useful for MadHive first)
+  const GCP_SERVICE_PRIORITY = [
+    'run', 'bigquery', 'pubsub', 'storage', 'logging',
+    'kubernetes', 'container', 'compute', 'bigtable',
+    'cloudsql', 'spanner', 'dataflow', 'cloudfunctions',
+    'appengine', 'monitoring', 'serviceruntime', 'custom',
+  ];
+
+  class MetricBrowser {
+    constructor(studio) {
+      this.studio         = studio;
+      this.target         = null;
+      this.allDescriptors = [];
+      this.activeNs       = null;
+      this.selected       = null;
+      this._bindModal();
+    }
+
+    _bindModal() {
+      const modal = document.getElementById('metric-browser-modal');
+      document.getElementById('mb-close').addEventListener('click', () => this.close());
+      modal.addEventListener('click', (e) => { if (e.target === modal) this.close(); });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.style.display !== 'none') this.close();
+      });
+      document.getElementById('mb-project').addEventListener('change', () => this._load());
+      document.getElementById('mb-search').addEventListener('input', () => {
+        this.activeNs = null;
+        document.querySelectorAll('.mb-svc-item').forEach(el => el.classList.remove('active'));
+        this._filterAndRender();
+      });
+      document.getElementById('mb-apply').addEventListener('click', () => this._apply());
+    }
+
+    open(widgetConfig) {
+      this.target   = widgetConfig;
+      this.selected = null;
+      this.activeNs = null;
+
+      const projects = ['mad-master', 'mad-data', 'mad-audit', 'mad-looker-enterprise'];
+      const sel = document.getElementById('mb-project');
+      sel.textContent = '';
+      projects.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p;
+        opt.textContent = p;
+        sel.appendChild(opt);
+      });
+
+      document.getElementById('mb-search').value = '';
+      document.getElementById('mb-config-panel').style.display = 'none';
+      document.getElementById('mb-services').textContent = '';
+      this._setStatus('Loading metrics\u2026');
+      document.getElementById('metric-browser-modal').style.display = 'flex';
+      this._load();
+    }
+
+    close() {
+      document.getElementById('metric-browser-modal').style.display = 'none';
+    }
+
+    async _load() {
+      const project = document.getElementById('mb-project').value;
+      this._setStatus('Loading metrics\u2026');
+      try {
+        const res  = await fetch('/api/gcp/metrics/descriptors?project=' + encodeURIComponent(project));
+        const data = await res.json();
+        if (!data.success) throw new Error(data.hint || data.error);
+        this.allDescriptors = data.descriptors || [];
+        this._renderServiceSidebar();
+        this._setStatus('Select a service or search to browse metrics');
+      } catch (e) {
+        this._setStatus('Error: ' + e.message);
+      }
+    }
+
+    // Extract short service key from full GCP namespace (e.g. "run.googleapis.com" → "run")
+    _svcKey(ns) {
+      return ns.replace('.googleapis.com', '').replace('.google.com', '');
+    }
+
+    _renderServiceSidebar() {
+      const container = document.getElementById('mb-services');
+      container.textContent = '';
+
+      // Build namespace → count map using short keys
+      const counts = {};
+      this.allDescriptors.forEach(d => {
+        const ns = d.type.split('/')[0];
+        const key = this._svcKey(ns);
+        counts[key] = (counts[key] || 0) + 1;
+      });
+
+      // Render priority services first, then a divider, then the rest
+      const priorityKeys = GCP_SERVICE_PRIORITY.filter(k => counts[k]);
+      const otherKeys = Object.keys(counts)
+        .filter(k => !GCP_SERVICE_PRIORITY.includes(k))
+        .sort((a, b) => counts[b] - counts[a]);
+
+      const addItem = (key, label) => {
+        const item = document.createElement('div');
+        item.className = 'mb-svc-item';
+        const nameEl = document.createElement('span');
+        nameEl.className = 'mb-svc-name';
+        nameEl.textContent = label;
+        const countEl = document.createElement('span');
+        countEl.className = 'mb-svc-count';
+        countEl.textContent = counts[key] || 0;
+        item.appendChild(nameEl);
+        item.appendChild(countEl);
+        item.addEventListener('click', () => {
+          document.querySelectorAll('.mb-svc-item').forEach(el => el.classList.remove('active'));
+          item.classList.add('active');
+          document.getElementById('mb-search').value = '';
+          this.activeNs = key;
+          this._filterAndRender();
+        });
+        container.appendChild(item);
+      };
+
+      priorityKeys.forEach(k => addItem(k, GCP_SERVICE_LABELS[k] || k));
+
+      if (otherKeys.length) {
+        const div = document.createElement('div');
+        div.className = 'mb-svc-divider';
+        div.textContent = 'Other Services';
+        container.appendChild(div);
+        otherKeys.forEach(k => addItem(k, GCP_SERVICE_LABELS[k] || k));
+      }
+    }
+
+    _filterAndRender() {
+      const q  = (document.getElementById('mb-search').value || '').toLowerCase();
+      const ns = this.activeNs;
+      const filtered = this.allDescriptors.filter(d => {
+        const key = this._svcKey(d.type.split('/')[0]);
+        if (ns && key !== ns) return false;
+        if (q && !d.type.toLowerCase().includes(q) &&
+                 !d.displayName.toLowerCase().includes(q) &&
+                 !d.description.toLowerCase().includes(q)) return false;
+        return true;
+      });
+      this._renderCards(filtered);
+    }
+
+    _renderCards(descriptors) {
+      const list = document.getElementById('mb-list');
+      list.textContent = '';
+      if (!descriptors.length) { this._setStatus('No metrics match'); return; }
+
+      // Limit render to 200 at a time for performance
+      const toShow = descriptors.slice(0, 200);
+      const frag = document.createDocumentFragment();
+
+      toShow.forEach(d => {
+        const card    = document.createElement('div');
+        const header  = document.createElement('div');
+        const nameEl  = document.createElement('span');
+        const kindEl  = document.createElement('span');
+        const typeEl  = document.createElement('div');
+        const descEl  = document.createElement('div');
+
+        card.className   = 'mb-card' + (this.selected && this.selected.type === d.type ? ' selected' : '');
+        header.className = 'mb-card-header';
+        nameEl.className = 'mb-card-name';
+        kindEl.className = 'mb-card-kind';
+        typeEl.className = 'mb-card-type';
+        descEl.className = 'mb-card-desc';
+
+        nameEl.textContent = d.displayName || d.type.split('/').pop();
+        kindEl.textContent = d.metricKind || '';
+        typeEl.textContent = d.type;
+        descEl.textContent = d.description || '';
+
+        header.appendChild(nameEl);
+        if (d.metricKind) header.appendChild(kindEl);
+        card.appendChild(header);
+        card.appendChild(typeEl);
+        if (d.description) card.appendChild(descEl);
+        card.addEventListener('click', () => this._select(d, card));
+        frag.appendChild(card);
+      });
+
+      list.appendChild(frag);
+
+      if (descriptors.length > 200) {
+        const more = document.createElement('div');
+        more.className = 'mb-status';
+        more.textContent = (descriptors.length - 200) + ' more — refine your search to see them';
+        list.appendChild(more);
+      }
+    }
+
+    _select(descriptor, cardEl) {
+      document.querySelectorAll('#mb-list .mb-card').forEach(el => el.classList.remove('selected'));
+      cardEl.classList.add('selected');
+      this.selected = descriptor;
+      document.getElementById('mb-sel-type').textContent = descriptor.type;
+      document.getElementById('mb-sel-name').textContent = descriptor.displayName || descriptor.type.split('/').pop();
+      document.getElementById('mb-config-panel').style.display = 'flex';
+    }
+
+    async _apply() {
+      const wc = this.target, descriptor = this.selected;
+      if (!wc || !descriptor) return;
+      const project    = document.getElementById('mb-project').value;
+      const timeWindow = parseInt(document.getElementById('mb-time-window').value) || 60;
+      const aligner    = document.getElementById('mb-aggregation').value;
+      const name       = descriptor.displayName || descriptor.type.split('/').pop();
+      const id         = descriptor.type.replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '-' + Date.now();
+      const applyBtn   = document.getElementById('mb-apply');
+      applyBtn.textContent = 'Saving\u2026';
+      applyBtn.setAttribute('disabled', '');
+      try {
+        const res = await fetch('/api/queries/gcp', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id, name, description: descriptor.description || '',
+            metricType: descriptor.type, project, timeWindow,
+            aggregation: { perSeriesAligner: aligner, crossSeriesReducer: 'REDUCE_MEAN' },
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || res.statusText);
+        const queryId = (data.query && data.query.id) || id;
+        wc.queryId = queryId;
+        wc.source  = 'gcp';
+        this.studio.markDirty();
+        this.studio.renderCanvas();
+        this.studio.showWidgetProps(wc.id);
+        this.close();
+        this.studio.showToast('Metric applied: ' + name, 'success');
+      } catch (e) {
+        this.studio.showToast('Failed: ' + e.message, 'error');
+      } finally {
+        applyBtn.textContent = 'Apply to Widget';
+        applyBtn.removeAttribute('disabled');
+      }
+    }
+
+    _setStatus(msg) {
+      const list = document.getElementById('mb-list');
+      list.textContent = '';
+      const s = document.createElement('div');
+      s.className = 'mb-status';
+      s.textContent = msg;
+      list.appendChild(s);
     }
   }
 

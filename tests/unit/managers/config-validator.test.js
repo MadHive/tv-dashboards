@@ -291,7 +291,7 @@ describe('Config Validator', () => {
       expect(errors.length).toBe(0);
     });
 
-    it('should reject dashboard with empty widgets array', () => {
+    it('should accept dashboard with empty widgets array', () => {
       const dashboard = {
         ...testDashboard,
         widgets: []
@@ -300,7 +300,7 @@ describe('Config Validator', () => {
       const errors = validateDashboard(dashboard);
 
       expect(Array.isArray(errors)).toBe(true);
-      expect(errors.some(e => e.includes('at least one widget'))).toBe(true);
+      expect(errors.length).toBe(0);
     });
 
     it('should validate grid with valid values', () => {
