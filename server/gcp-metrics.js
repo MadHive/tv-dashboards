@@ -165,8 +165,10 @@ async function getDeliveryGeo(days = 7, minImpressions = 100) {
       SELECT
         SUBSTR(b.postal, 1, 3) AS zip3,
         mg.region.code AS state,
-        ROUND(AVG(z.internal_point_lat), 3) AS lat,
-        ROUND(AVG(z.internal_point_lon), 3) AS lon,
+        -- Weighted by impressions so the centroid lands on the highest-traffic zip,
+        -- not a simple average that can drift into coastal ocean for coastal zip3s
+        ROUND(SUM(b.IM * z.internal_point_lat) / SUM(b.IM), 3) AS lat,
+        ROUND(SUM(b.IM * z.internal_point_lon) / SUM(b.IM), 3) AS lon,
         SUM(b.IM) AS impressions,
         SUM(b.CL) AS clicks,
         COUNT(DISTINCT b.postal) AS zip_count,
