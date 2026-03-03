@@ -101,7 +101,9 @@ export class GCPDataSource extends DataSource {
 
       // Transform data for widget type with time period metadata
       const transformed = this.transformData(timeSeries, widgetConfig.type, {
-        timePeriod
+        timePeriod,
+        max:  widgetConfig.max,
+        unit: widgetConfig.unit,
       });
 
       // Record successful query
@@ -201,11 +203,15 @@ export class GCPDataSource extends DataSource {
       },
       'gauge': (ts) => {
         const { latest } = require('../gcp-metrics.js');
+        let val = latest(ts);
+        // Some GCP metrics report in microseconds despite _ms names — convert if value is unreasonably large
+        const cfgUnit = options.unit || '';
+        if (cfgUnit === 'ms' && val !== null && val > 10000) val = Math.round(val / 1000);
         return {
-          value: latest(ts),
+          value: val,
           min: 0,
-          max: 100,
-          unit: '%',
+          max: options.max || 100,
+          unit: cfgUnit,
           ...(options.timePeriod && { timePeriod: options.timePeriod })
         };
       },
