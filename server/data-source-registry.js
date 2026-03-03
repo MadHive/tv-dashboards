@@ -195,6 +195,20 @@ class DataSourceRegistry {
   }
 
   /**
+   * Re-initialize a single data source after credential changes.
+   * Resets connection state then calls initialize() again so it picks
+   * up new process.env values without a full server restart.
+   */
+  async reinitializeSource(sourceName) {
+    const source = this.getSource(sourceName);
+    source.isConnected = false;
+    source.lastError   = null;
+    await source.initialize();
+    logger.info({ sourceName, isConnected: source.isConnected }, 'Data source reinitialized');
+    return source;
+  }
+
+  /**
    * Get available metrics for a data source
    */
   getAvailableMetrics(sourceName) {
