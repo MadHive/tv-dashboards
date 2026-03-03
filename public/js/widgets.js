@@ -17,10 +17,17 @@ window.Widgets = (function () {
   function fmtNum(n) {
     if (n == null || n === '') return '—';
     if (typeof n === 'string') return n;
-    if (Math.abs(n) >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-    if (Math.abs(n) >= 10000)   return (n / 1000).toFixed(1) + 'K';
-    if (Number.isInteger(n))    return n.toLocaleString();
-    return String(n);
+    const abs = Math.abs(n);
+    if (abs >= 1e12) return (n / 1e12).toFixed(1) + 'T';
+    if (abs >= 1e9)  return (n / 1e9).toFixed(1) + 'G';
+    if (abs >= 1e6)  return (n / 1e6).toFixed(1) + 'M';
+    if (abs >= 1e4)  return (n / 1e3).toFixed(1) + 'K';
+    if (Number.isInteger(n)) return n.toLocaleString();
+    if (abs >= 100) return Math.round(n).toLocaleString();
+    if (abs >= 10)  return n.toFixed(1);
+    if (abs >= 1)   return n.toFixed(2);
+    if (abs > 0)    return n.toFixed(3);
+    return '0';
   }
 
   function trendArrow(t) {

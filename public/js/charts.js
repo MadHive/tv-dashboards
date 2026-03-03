@@ -527,9 +527,17 @@ window.Charts = (function () {
   }
 
   function formatNum(n) {
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-    if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
-    return String(n);
+    if (n == null || isNaN(n)) return '—';
+    const abs = Math.abs(n);
+    if (abs >= 1e12) return (n / 1e12).toFixed(1) + 'T';
+    if (abs >= 1e9)  return (n / 1e9).toFixed(1) + 'G';
+    if (abs >= 1e6)  return (n / 1e6).toFixed(1) + 'M';
+    if (abs >= 1e3)  return (n / 1e3).toFixed(1) + 'K';
+    if (abs >= 100)  return Math.round(n).toString();
+    if (abs >= 10)   return n.toFixed(1);
+    if (abs >= 1)    return n.toFixed(2);
+    if (abs > 0)     return n.toFixed(3);
+    return '0';
   }
 
 
