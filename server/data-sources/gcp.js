@@ -170,9 +170,8 @@ export class GCPDataSource extends DataSource {
    */
   transformData(timeSeries, widgetType, options = {}) {
     // If data is already transformed (from dashboard), return as-is
-    if (!Array.isArray(timeSeries) || timeSeries.length === 0) {
-      return timeSeries || this.getEmptyData(widgetType);
-    }
+    if (!Array.isArray(timeSeries)) return timeSeries;
+    if (timeSeries.length === 0) return this.getEmptyData(widgetType);
 
     // Check if this looks like GCP time series data
     const isTimeSeries = timeSeries[0]?.points !== undefined;
