@@ -88,7 +88,7 @@ export class GCPDataSource extends DataSource {
       const timeSeries = await this.gcpMetrics.query(
         savedQuery.project || 'mad-master',
         savedQuery.metricType,
-        savedQuery.filters || {},
+        (typeof savedQuery.filters === 'string' ? savedQuery.filters : '') || '',
         savedQuery.timeWindow || 10,
         savedQuery.aggregation
       );
