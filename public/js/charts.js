@@ -1087,6 +1087,30 @@ window.Charts = (function () {
       });
       ctx.globalAlpha = 1.0;
 
+      // ── Persistent arc lines: data center → top delivery hotspots ──
+      var topFlowHotspots = hotspotPositions.slice(0, 30);
+      topFlowHotspots.forEach(function(hs) {
+        if (!hs) return;
+        var nearDc = dcPositions[0];
+        var nearDist = Infinity;
+        dcPositions.forEach(function(dc) {
+          var d2 = Math.sqrt(Math.pow(hs.x - dc.x, 2) + Math.pow(hs.y - dc.y, 2));
+          if (d2 < nearDist) { nearDist = d2; nearDc = dc; }
+        });
+        var arcH2 = Math.min(60, nearDist * 0.18);
+        var mx2 = (nearDc.x + hs.x) / 2;
+        var my2 = (nearDc.y + hs.y) / 2 - arcH2;
+        var impRatio = maxImp > 0 ? Math.sqrt(hs.imp / maxImp) : 0;
+        var lineAlpha = 0.04 + impRatio * 0.12;
+        var lineWidth2 = 0.5 + impRatio * 1.5;
+        ctx.beginPath();
+        ctx.moveTo(nearDc.x, nearDc.y);
+        ctx.quadraticCurveTo(mx2, my2, hs.x, hs.y);
+        ctx.strokeStyle = hexToRgba(BRAND.cyan, lineAlpha);
+        ctx.lineWidth = lineWidth2;
+        ctx.stroke();
+      });
+
       mapParticles.forEach(function (p) {
         p.age = (p.age || 0) + 1;
         if (p.age < (p.delay || 0)) return; // stagger initial appearance
