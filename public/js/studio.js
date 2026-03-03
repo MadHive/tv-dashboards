@@ -21,7 +21,7 @@
     ───────────────────────────────────────────── */
 
     async init() {
-      this.metricBrowser = new MetricBrowser(this);
+      try { this.metricBrowser = new MetricBrowser(this); } catch (e) { console.error('[studio] MetricBrowser init failed:', e); }
       await this.loadConfig();
       await this.loadThemes();
       this.renderSidebar();
@@ -1240,6 +1240,6 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     window.studio = new StudioApp();
-    window.studio.init();
+    window.studio.init().catch(e => console.error('[studio] init failed:', e));
   });
 })();

@@ -232,6 +232,18 @@ const app = new Elysia()
     });
   })
 
+  // Studio JS/CSS: served dynamically so file edits take effect on restart
+  // without the static plugin's in-memory file cache getting in the way
+  .get('/js/studio.js', () => new Response(readFileSync(join(publicDir, 'js/studio.js'), 'utf8'), {
+    headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }
+  }))
+  .get('/css/studio.css', () => new Response(readFileSync(join(publicDir, 'css/studio.css'), 'utf8'), {
+    headers: { 'content-type': 'text/css; charset=utf-8', 'Cache-Control': 'no-cache' }
+  }))
+  .get('/js/studio-canvas.js', () => new Response(readFileSync(join(publicDir, 'js/studio-canvas.js'), 'utf8'), {
+    headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }
+  }))
+
   .use(staticPlugin({ assets: publicDir, prefix: '/' }))
 
   .get('/wizard-demo', async () => {

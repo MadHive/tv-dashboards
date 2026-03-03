@@ -201,10 +201,10 @@ async function getDeliveryGeo() {
       dma: r.dma || null,
     }));
     _bqGeoCacheTime = Date.now();
-    logger.info('[bq] Delivery geo: ${_bqGeoCache.length} zip3 prefixes loaded');
+    logger.info(`[bq] Delivery geo: ${_bqGeoCache.length} zip3 prefixes loaded`);
     return _bqGeoCache;
   } catch (err) {
-    logger.error('[bq] Delivery geo query failed: ${err.message}');
+    logger.error(`[bq] Delivery geo query failed: ${err.message}`);
     return _bqGeoCache || [];
   }
 }
