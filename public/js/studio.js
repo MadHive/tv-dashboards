@@ -773,19 +773,50 @@
 
     async applyTheme(themeId) {
       try {
+        // Activate on server (persists to config)
         const res = await fetch('/api/themes/' + themeId + '/activate', { method: 'POST' });
         if (!res.ok) throw new Error(res.statusText);
 
-        // Toggle .active class
-        const swatches = document.querySelectorAll('.theme-swatch');
-        swatches.forEach((s) => {
+        // Fetch full theme to get colors for live preview
+        const themeRes = await fetch('/api/themes/' + encodeURIComponent(themeId));
+        if (themeRes.ok) {
+          const theme = await themeRes.json();
+          this._applyThemeCss(theme);
+        }
+
+        // Toggle .active class on swatches
+        document.querySelectorAll('.theme-swatch').forEach((s) => {
           s.classList.toggle('active', s.getAttribute('data-id') === themeId);
         });
 
-        this.showToast('Theme applied', 'success');
+        this.showToast('Theme applied — TV display will update on next load', 'success');
       } catch (e) {
         this.showToast('Theme error: ' + e.message, 'error');
       }
+    }
+
+    _applyThemeCss(theme) {
+      const c = theme.colors || {};
+      if (!c.background && !c.primary) return;
+
+      const prev = document.getElementById('active-theme-vars');
+      if (prev) prev.parentNode.removeChild(prev);
+
+      const vars = [
+        c.background ? '--bg: '          + c.background + ';' : '',
+        c.background ? '--bg-surface: '  + c.background + ';' : '',
+        c.primary    ? '--mh-pink: '     + c.primary    + ';' : '',
+        c.primary    ? '--mh-hot-pink: ' + c.primary    + ';' : '',
+        c.primary    ? '--accent: '      + c.primary    + ';' : '',
+        c.secondary  ? '--cyan: '        + c.secondary  + ';' : '',
+        c.text       ? '--t1: '          + c.text       + ';' : '',
+      ].filter(Boolean).join('\n  ');
+
+      if (!vars) return;
+      const style = document.createElement('style');
+      style.id = 'active-theme-vars';
+      style.textContent = ':root {\n  ' + vars + '\n}';
+      document.head.appendChild(style);
     }
 
     /* ─────────────────────────────────────────────

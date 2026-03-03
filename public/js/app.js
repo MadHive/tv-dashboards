@@ -54,6 +54,11 @@
         srcEl.textContent = 'GCP Cloud Monitoring';
       }
 
+      // Apply active theme if one is set
+      if (this.config.global && this.config.global.activeTheme) {
+        this.loadAndApplyTheme(this.config.global.activeTheme);
+      }
+
       this.renderPages();
       this.renderNavDots();
       this.startClock();
@@ -250,6 +255,46 @@
       };
       tick();
       setInterval(tick, 1000);
+    }
+
+    // ---- theme application ----
+    async loadAndApplyTheme(themeId) {
+      try {
+        const res = await fetch('/api/themes/' + encodeURIComponent(themeId));
+        if (!res.ok) return;
+        const theme = await res.json();
+        this.applyThemeCss(theme);
+      } catch (_) {
+        // Theme load failure is non-fatal — keep default brand theme
+      }
+    }
+
+    applyThemeCss(theme) {
+      const c = theme.colors || {};
+      if (!c.background && !c.primary) return; // nothing to apply
+
+      // Remove any previous theme style block
+      const prev = document.getElementById('active-theme-vars');
+      if (prev) prev.parentNode.removeChild(prev);
+
+      // Map theme colors → CSS custom properties
+      // background → surface colors, primary → brand accent, text → text colors
+      const vars = [
+        c.background ? `--bg: ${c.background};` : '',
+        c.background ? `--bg-surface: ${c.background};` : '',
+        c.primary    ? `--mh-pink: ${c.primary};` : '',
+        c.primary    ? `--mh-hot-pink: ${c.primary};` : '',
+        c.primary    ? `--accent: ${c.primary};` : '',
+        c.secondary  ? `--cyan: ${c.secondary};` : '',
+        c.text       ? `--t1: ${c.text};` : '',
+      ].filter(Boolean).join('\n  ');
+
+      if (!vars) return;
+
+      const style = document.createElement('style');
+      style.id = 'active-theme-vars';
+      style.textContent = ':root {\n  ' + vars + '\n}';
+      document.head.appendChild(style);
     }
 
     // ---- keyboard navigation ----
