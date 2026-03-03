@@ -3,34 +3,34 @@ window.StudioCanvas = (function () {
 
   let app = null;
 
-  let _ghost = null;
-  let _overlay = null;
-  let _dragWc = null;
+  var _ghost = null;
+  var _overlay = null;
+  var _dragWc = null;
 
   function _showOverlay(page, dash, wc) {
     _hideOverlay(page);
     _dragWc = wc;
 
-    const overlay = document.createElement('div');
+    var overlay = document.createElement('div');
     overlay.className = 'studio-grid-overlay';
     overlay.id = 'studio-drag-overlay';
     overlay.style.gridTemplateColumns = 'repeat(' + dash.grid.columns + ', 1fr)';
     overlay.style.gridTemplateRows    = 'repeat(' + dash.grid.rows    + ', 1fr)';
 
-    for (let r = 1; r <= dash.grid.rows; r++) {
-      for (let c = 1; c <= dash.grid.columns; c++) {
-        const cell = document.createElement('div');
-        cell.className    = 'grid-cell';
-        cell.dataset.col  = c;
-        cell.dataset.row  = r;
+    for (var r = 1; r <= dash.grid.rows; r++) {
+      for (var c = 1; c <= dash.grid.columns; c++) {
+        var cell = document.createElement('div');
+        cell.className   = 'studio-grid-cell';
+        cell.dataset.col = c;
+        cell.dataset.row = r;
         overlay.appendChild(cell);
       }
     }
     page.appendChild(overlay);
     _overlay = overlay;
 
-    // Ghost
-    const ghost = document.createElement('div');
+    // Ghost sits in the grid at the widget's current position
+    var ghost = document.createElement('div');
     ghost.className = 'studio-drag-ghost';
     ghost.style.gridColumn = wc.position.col + ' / span ' + (wc.position.colSpan || 1);
     ghost.style.gridRow    = wc.position.row + ' / span ' + (wc.position.rowSpan || 1);
@@ -48,11 +48,11 @@ window.StudioCanvas = (function () {
 
   function _highlightCells(col, row, colSpan, rowSpan, blocked) {
     if (!_overlay) return;
-    _overlay.querySelectorAll('.grid-cell').forEach(function (cell) {
-      const c = parseInt(cell.dataset.col);
-      const r = parseInt(cell.dataset.row);
-      const inCol = c >= col && c < col + colSpan;
-      const inRow = r >= row && r < row + rowSpan;
+    _overlay.querySelectorAll('.studio-grid-cell').forEach(function (cell) {
+      var c     = parseInt(cell.dataset.col);
+      var r     = parseInt(cell.dataset.row);
+      var inCol = c >= col && c < col + colSpan;
+      var inRow = r >= row && r < row + rowSpan;
       cell.classList.toggle('drag-target', inCol && inRow && !blocked);
       cell.classList.toggle('drag-blocked', inCol && inRow &&  blocked);
     });
