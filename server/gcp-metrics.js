@@ -1133,7 +1133,9 @@ export async function getMetrics(dashboardId, widgetConfig = {}) {
   switch (dashboardId) {
     case 'platform-overview':  return platformOverview();
     case 'services-health':    return servicesHealth();
-    case 'campaign-delivery':  return campaignDeliveryMap(widgetConfig);
+    case 'campaign-delivery':           return campaignDeliveryMap(widgetConfig);
+    case 'campaign-delivery-northeast': return campaignDeliveryMap(widgetConfig);
+    case 'campaign-delivery-southeast': return campaignDeliveryMap(widgetConfig);
     case 'data-processing':    return dataProcessing();
     case 'data-pipeline':      return dataPipeline();
     case 'bidder-cluster':     return bidderCluster();

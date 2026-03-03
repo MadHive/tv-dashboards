@@ -622,7 +622,7 @@ window.Charts = (function () {
       for (var p = 0; p < 120; p++) {  // More particles for richer visualization
         mapParticles.push({
           dc: Math.floor(Math.random() * DATA_CENTERS.length),
-          target: Math.floor(Math.random() * Math.min(50, Math.max(1, hotspotPositions.length || 10))),
+          target: Math.floor(Math.random() * 50), // reassigned per-frame in drawMap()
           t: Math.random(),                        // well-distributed initial phase
           speed: 0.003 + Math.random() * 0.006,    // Faster and more varied
           delay: Math.random() * 100,               // frame delay before first appearance
