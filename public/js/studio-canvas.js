@@ -3,6 +3,62 @@ window.StudioCanvas = (function () {
 
   let app = null;
 
+  let _ghost = null;
+  let _overlay = null;
+  let _dragWc = null;
+
+  function _showOverlay(page, dash, wc) {
+    _hideOverlay(page);
+    _dragWc = wc;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'studio-grid-overlay';
+    overlay.id = 'studio-drag-overlay';
+    overlay.style.gridTemplateColumns = 'repeat(' + dash.grid.columns + ', 1fr)';
+    overlay.style.gridTemplateRows    = 'repeat(' + dash.grid.rows    + ', 1fr)';
+
+    for (let r = 1; r <= dash.grid.rows; r++) {
+      for (let c = 1; c <= dash.grid.columns; c++) {
+        const cell = document.createElement('div');
+        cell.className    = 'grid-cell';
+        cell.dataset.col  = c;
+        cell.dataset.row  = r;
+        overlay.appendChild(cell);
+      }
+    }
+    page.appendChild(overlay);
+    _overlay = overlay;
+
+    // Ghost
+    const ghost = document.createElement('div');
+    ghost.className = 'studio-drag-ghost';
+    ghost.style.gridColumn = wc.position.col + ' / span ' + (wc.position.colSpan || 1);
+    ghost.style.gridRow    = wc.position.row + ' / span ' + (wc.position.rowSpan || 1);
+    page.insertBefore(ghost, page.firstChild);
+    _ghost = ghost;
+  }
+
+  function _hideOverlay(page) {
+    if (_overlay && _overlay.parentNode) _overlay.parentNode.removeChild(_overlay);
+    if (_ghost  && _ghost.parentNode)   _ghost.parentNode.removeChild(_ghost);
+    _overlay = null;
+    _ghost   = null;
+    _dragWc  = null;
+  }
+
+  function _highlightCells(col, row, colSpan, rowSpan, blocked) {
+    if (!_overlay) return;
+    _overlay.querySelectorAll('.grid-cell').forEach(function (cell) {
+      const c = parseInt(cell.dataset.col);
+      const r = parseInt(cell.dataset.row);
+      const inCol = c >= col && c < col + colSpan;
+      const inRow = r >= row && r < row + rowSpan;
+      cell.classList.toggle('drag-target', inCol && inRow && !blocked);
+      cell.classList.toggle('drag-blocked', inCol && inRow &&  blocked);
+    });
+    if (_ghost) _ghost.classList.toggle('blocked', blocked);
+  }
+
   function render(studioApp) {
     app = studioApp;
     const canvas = document.getElementById('studio-canvas');
@@ -109,12 +165,26 @@ window.StudioCanvas = (function () {
 
   function enableDrag(card, wc) {
     card.setAttribute('draggable', 'true');
+
     card.addEventListener('dragstart', function (e) {
-      card.style.opacity = '0.5';
+      // Suppress the browser's default ghost image
+      var blank = document.createElement('div');
+      document.body.appendChild(blank);
+      e.dataTransfer.setDragImage(blank, 0, 0);
+      setTimeout(function () { document.body.removeChild(blank); }, 0);
+
       e.dataTransfer.setData('widgetId', wc.id);
+      card.style.opacity = '0.25';
+
+      var page = card.closest('.dashboard-page');
+      var dash = app.modifiedConfig.dashboards[app.activeDashIdx];
+      _showOverlay(page, dash, wc);
     });
+
     card.addEventListener('dragend', function () {
       card.style.opacity = '1';
+      var page = card.closest('.dashboard-page');
+      _hideOverlay(page);
     });
   }
 
