@@ -263,6 +263,31 @@ const app = new Elysia()
     return getData(params.dashboardId);
   }, { detail: { tags: ['metrics'], summary: 'Get metrics for a dashboard' } })
 
+  // Browse GCP metric descriptors across projects
+  .get('/api/gcp/metrics/descriptors', async ({ query }) => {
+    try {
+      const { listDescriptors } = await import('./gcp-metrics.js');
+      const projects = (process.env.GCP_PROJECTS || 'mad-master').split(',').map(p => p.trim());
+      const project = query.project && projects.includes(query.project) ? query.project : projects[0];
+      const search  = query.search || '';
+      const descriptors = await listDescriptors(project, search);
+      const namespaces = [...new Set(descriptors.map(d => d.type.split('/')[0]))].sort();
+      return { success: true, project, projects, count: descriptors.length, namespaces, descriptors };
+    } catch (err) {
+      const permDenied = err.code === 7 || (err.message || '').includes('PERMISSION_DENIED');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: err.message,
+          hint: permDenied
+            ? 'Grant roles/monitoring.viewer to the service account on this project'
+            : undefined,
+        }),
+        { status: permDenied ? 403 : 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  }, { detail: { tags: ['metrics'], summary: 'Browse GCP metric descriptors for a project' } })
+
   // Single widget data endpoint
   .get('/api/data/:widgetId', async ({ params }) => {
     const config = loadConfig();

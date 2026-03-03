@@ -965,3 +965,228 @@ body.studio-body {
   color: var(--mh-pink);
   box-shadow: 0 0 20px rgba(253,164,212,0.1);
 }
+
+/* ── GCP Metric Browser ── */
+.mb-modal-content {
+  width: 760px;
+  max-width: 94vw;
+  max-height: 88vh;
+}
+
+.mb-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 18px 18px;
+  height: calc(88vh - 56px);
+}
+
+.mb-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.mb-controls-row {
+  display: flex;
+  gap: 8px;
+}
+
+.mb-project-select {
+  flex: 0 0 200px;
+  padding: 7px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--t1);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.mb-project-select:focus { border-color: var(--mh-pink); outline: none; }
+
+#mb-search {
+  flex: 1;
+  padding: 7px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--t1);
+  font-family: var(--font-body);
+  font-size: 14px;
+  transition: border-color 0.15s;
+}
+
+#mb-search:focus { border-color: var(--mh-pink); outline: none; }
+#mb-search::placeholder { color: var(--t3); }
+
+.mb-ns-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.mb-chip {
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--t3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+
+.mb-chip:hover { border-color: var(--mh-pink); color: var(--t2); }
+.mb-chip.active {
+  border-color: var(--mh-pink);
+  background: var(--accent-dim);
+  color: var(--mh-pink);
+}
+
+.mb-list {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  padding: 4px;
+  min-height: 0;
+}
+
+.mb-status {
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--t3);
+  font-family: var(--font-display);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.mb-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  gap: 1px 8px;
+  padding: 7px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s;
+  border-left: 2px solid transparent;
+}
+
+.mb-item:hover { background: var(--bg-card); }
+.mb-item.selected {
+  background: var(--accent-dim);
+  border-left-color: var(--mh-pink);
+}
+
+.mb-item-type {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--mh-pink);
+  letter-spacing: 0.3px;
+  grid-column: 1;
+  grid-row: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mb-item-kind {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--t3);
+  grid-column: 2;
+  grid-row: 1;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.mb-item-name {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--t2);
+  grid-column: 1 / -1;
+  grid-row: 2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mb-config-panel {
+  flex-shrink: 0;
+  border: 1px solid var(--border-lit);
+  border-radius: 6px;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mb-selected-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mb-sel-type {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--mh-pink);
+  letter-spacing: 0.5px;
+}
+
+.mb-sel-name {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--t1);
+  font-weight: 600;
+}
+
+.mb-sel-desc {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--t3);
+}
+
+.mb-config-row {
+  display: flex;
+  gap: 12px;
+}
+
+.mb-config-row label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--t3);
+  font-family: var(--font-display);
+}
+
+.mb-config-row select {
+  padding: 6px 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--t1);
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+
+.mb-config-row select:focus { border-color: var(--mh-pink); outline: none; }
+
+#mb-apply { width: 100%; }
+
+/* Scrollbar for metric list */
+.mb-list::-webkit-scrollbar { width: 3px; }
+.mb-list::-webkit-scrollbar-track { background: transparent; }
+.mb-list::-webkit-scrollbar-thumb { background: var(--border-lit); border-radius: 2px; }
