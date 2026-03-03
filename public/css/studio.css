@@ -1554,3 +1554,49 @@ body.studio-body {
   0%, 100% { outline-color: var(--mh-pink); }
   50%       { outline-color: var(--mh-hot-pink); box-shadow: 0 0 12px rgba(253,164,212,0.3); }
 }
+
+/* ── Data Source List ── */
+.datasource-list { display: flex; flex-direction: column; }
+
+.ds-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: background 0.1s;
+  color: var(--t2);
+}
+
+.ds-row:hover { background: var(--bg-card); }
+
+.ds-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ds-status-dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.ds-status-dot.amber { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+.ds-status-dot.red   { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+.ds-status-dot.grey  { background: var(--t3); }
+
+.ds-name { font-family: var(--font-body); font-size: 13px; color: var(--t2); flex: 1; }
+.ds-type { font-family: var(--font-mono); font-size: 10px; color: var(--t3); }
+
+/* ── Data Source Editor ── */
+.datasource-editor-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.dse-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

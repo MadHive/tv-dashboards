@@ -1477,6 +1477,127 @@
       }
     }
 
+    /* ─────────────────────────────────────────────
+       Data Source List + Editor
+    ───────────────────────────────────────────── */
+
+    async renderDatasourceList() {
+      const list = document.getElementById('datasource-list');
+      if (!list) return;
+      list.textContent = '';
+      try {
+        const res  = await fetch('/api/data-sources');
+        const data = await res.json();
+        const sources = data.sources || [];
+        if (!sources.length) {
+          const empty = document.createElement('div');
+          empty.className = 'mb-status';
+          empty.textContent = 'No data sources configured';
+          list.appendChild(empty);
+          return;
+        }
+        sources.forEach(src => {
+          const row  = document.createElement('div');
+          row.className = 'ds-row';
+          const dot  = document.createElement('span');
+          dot.className = 'ds-status-dot ' + (src.isConnected ? 'green' : src.lastError ? 'red' : 'grey');
+          const name = document.createElement('span');
+          name.className   = 'ds-name';
+          name.textContent = src.name;
+          const type = document.createElement('span');
+          type.className   = 'ds-type';
+          type.textContent = src.isConnected ? 'connected' : (src.lastError ? 'error' : 'not configured');
+          row.appendChild(dot);
+          row.appendChild(name);
+          row.appendChild(type);
+          row.addEventListener('click', () => this.openDatasourceEditor(src));
+          list.appendChild(row);
+        });
+      } catch (e) {
+        this.showToast('Failed to load data sources: ' + e.message, 'error');
+      }
+    }
+
+    async openDatasourceEditor(src) {
+      const props   = document.getElementById('properties-placeholder');
+      const content = document.getElementById('properties-content');
+      const qe      = document.getElementById('query-editor-panel');
+      const dse     = document.getElementById('datasource-editor-panel');
+      [props, content, qe].forEach(el => { if (el) el.style.display = 'none'; });
+      if (dse) dse.style.display = 'flex';
+
+      document.getElementById('dse-name').textContent   = src.name;
+      const statusEl = document.getElementById('dse-status');
+      statusEl.textContent = src.isConnected ? 'connected' : 'not connected';
+      statusEl.style.color = src.isConnected ? 'var(--green)' : 'var(--red)';
+
+      // Load schema to know which fields to show
+      const fieldsEl = document.getElementById('dse-fields');
+      fieldsEl.textContent = '';
+      try {
+        const schemaRes  = await fetch('/api/data-sources/schemas/detailed');
+        const schemaData = await schemaRes.json().catch(() => ({ schemas: {} }));
+        const schema = (schemaData.schemas && schemaData.schemas[src.name]) || { fields: [] };
+        (schema.fields || []).forEach(field => {
+          const label = document.createElement('label');
+          label.className = 'qe-label';
+          const titleEl = document.createTextNode(field.description || field.name);
+          const input = document.createElement('input');
+          input.className = 'qe-input';
+          input.type = field.secure ? 'password' : 'text';
+          input.dataset.field = field.name;
+          input.placeholder = field.secure
+            ? '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (stored)'
+            : (field.default || '');
+          label.appendChild(titleEl);
+          label.appendChild(input);
+          if (field.envVar) {
+            const hint = document.createElement('div');
+            hint.className   = 'props-hint';
+            hint.textContent = 'env: ' + field.envVar;
+            label.appendChild(hint);
+          }
+          fieldsEl.appendChild(label);
+        });
+      } catch (e) {
+        const err = document.createElement('div');
+        err.className   = 'mb-status';
+        err.textContent = 'Schema unavailable';
+        fieldsEl.appendChild(err);
+      }
+
+      document.getElementById('dse-close').onclick = () => {
+        if (dse) dse.style.display = 'none';
+        this.showDashboardProps();
+      };
+
+      document.getElementById('dse-test').onclick = async () => {
+        const btn    = document.getElementById('dse-test');
+        const result = document.getElementById('dse-test-result');
+        btn.setAttribute('disabled', '');
+        result.textContent = 'Testing\u2026';
+        result.style.color = 'var(--t3)';
+        const t0 = Date.now();
+        try {
+          const res  = await fetch('/api/data-sources/' + encodeURIComponent(src.name) + '/test', { method: 'POST' });
+          const data = await res.json();
+          const ms   = Date.now() - t0;
+          if (data.connected || data.success) {
+            result.textContent = '\u2713 Connected (' + ms + 'ms)';
+            result.style.color = 'var(--green)';
+          } else {
+            result.textContent = '\u2717 Failed \u2014 ' + (data.error || 'Unknown error');
+            result.style.color = 'var(--red)';
+          }
+        } catch (e) {
+          result.textContent = '\u2717 ' + e.message;
+          result.style.color = 'var(--red)';
+        } finally {
+          btn.removeAttribute('disabled');
+        }
+      };
+    }
+
     _setStatus(msg) {
       const list = document.getElementById('mb-list');
       list.textContent = '';
