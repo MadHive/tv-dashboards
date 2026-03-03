@@ -12,6 +12,36 @@ import logger from './logger.js';
 const client = new monitoring.MetricServiceClient();
 const bq = new BigQuery({ projectId: 'mad-data' });
 
+// ── State centroids — used to snap ocean/offshore hotspot coordinates to land ──
+// Any hotspot more than MAX_DRIFT degrees from its state centroid is replaced.
+const STATE_CENTROIDS = {
+  ME:[-69.4,45.4], VT:[-72.6,44],   NH:[-71.6,43.7], MA:[-71.8,42.4],
+  RI:[-71.5,41.7], CT:[-72.7,41.6], NY:[-75,43],      NJ:[-74.5,40],
+  PA:[-77.2,40.9], DE:[-75.5,39],   MD:[-76.6,39.1],  DC:[-77,38.9],
+  VA:[-79.5,37.5], WV:[-80.5,38.9], NC:[-79,35.5],    SC:[-81,33.8],
+  GA:[-83.4,32.7], FL:[-81.5,28.5], AL:[-86.8,32.8],  MS:[-89.5,32.5],
+  TN:[-86,35.8],   KY:[-84.3,37.5], OH:[-82.8,40.4],  IN:[-86.3,40],
+  IL:[-89.2,40],   MI:[-84.5,44.3], WI:[-89.8,44.3],  MN:[-94.3,46.4],
+  IA:[-93.5,42],   MO:[-92.5,38.5], ND:[-100.5,47.5], SD:[-100,44.5],
+  NE:[-99.9,41.5], KS:[-98.4,38.5], OK:[-97.5,35.5],  TX:[-99.3,31.5],
+  NM:[-106,34.5],  CO:[-105.5,39],  WY:[-107.5,43],   MT:[-109.5,47],
+  ID:[-114.5,44.5],UT:[-111.5,39.5],AZ:[-111.5,34.3], NV:[-116.8,39],
+  CA:[-119.5,37],  OR:[-120.5,44],  WA:[-120.5,47.5],
+  LA:[-92,31],     AR:[-92,34.8],
+};
+const MAX_DRIFT = 2.5; // degrees; beyond this → snap to state centroid
+
+function snapToLand(lat, lon, state) {
+  const c = STATE_CENTROIDS[state];
+  if (!c) return { lat, lon };
+  const dLat = Math.abs(lat - c[1]);
+  const dLon = Math.abs(lon - c[0]);
+  if (dLat > MAX_DRIFT || dLon > MAX_DRIFT) {
+    return { lat: c[1], lon: c[0] };
+  }
+  return { lat, lon };
+}
+
 // ── helpers ──
 function interval(minutes) {
   const now = new Date();
@@ -352,12 +382,14 @@ async function campaignDeliveryMap(widgetConfig = {}) {
       stateActivity[st].campaigns += z.zips;
     }
     // Include as hotspot for zip-level rendering
+    // Snap any coordinate that drifted into coastal ocean back to the state centroid
     if (z.lat && z.lon) {
       if (!regionStates || regionStates.has(z.state)) {
+        const snapped = snapToLand(z.lat, z.lon, z.state);
         hotspots.push({
           zip3: z.zip3,
-          lat: z.lat,
-          lon: z.lon,
+          lat: snapped.lat,
+          lon: snapped.lon,
           impressions: z.impressions,
           clicks: z.clicks,
           state: z.state,
