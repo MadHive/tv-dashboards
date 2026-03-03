@@ -1435,6 +1435,63 @@ describe('BigQuery Data Source', () => {
     });
   });
 
+  describe('transformData() - usa-map', () => {
+    const zipRows = [
+      { zip3: '100', state: 'NY', lat: 40.713, lon: -74.006, impressions: 5000, clicks: 120, zip_count: 8, city: 'New York', dma: 'New York' },
+      { zip3: '900', state: 'CA', lat: 34.052, lon: -118.244, impressions: 3000, clicks: 80, zip_count: 5, city: 'Los Angeles', dma: 'Los Angeles' },
+      { zip3: '100', state: 'NY', lat: 40.800, lon: -73.950, impressions: 1000, clicks: 25, zip_count: 3, city: 'Bronx', dma: 'New York' },
+      { zip3: '330', state: 'FL', lat: 25.775, lon: -80.208, impressions: 2000, clicks: 60, zip_count: 4, city: 'Miami', dma: 'Miami' },
+      // Row with missing lat/lon — should not be a hotspot
+      { zip3: '999', state: 'AK', lat: null, lon: null, impressions: 500, clicks: 10, zip_count: 1, city: null, dma: null },
+    ];
+
+    it('should aggregate impressions by state', () => {
+      const result = dataSource.transformData(zipRows, 'usa-map');
+      expect(result).toHaveProperty('states');
+      expect(result.states.NY).toBeDefined();
+      expect(result.states.NY.impressions).toBe(6000); // 5000 + 1000
+      expect(result.states.CA).toBeDefined();
+      expect(result.states.CA.impressions).toBe(3000);
+      expect(result.states.FL).toBeDefined();
+      expect(result.states.FL.impressions).toBe(2000);
+    });
+
+    it('should accumulate bids (clicks) per state', () => {
+      const result = dataSource.transformData(zipRows, 'usa-map');
+      expect(result.states.NY.bids).toBe(145);  // 120 + 25
+      expect(result.states.CA.bids).toBe(80);
+    });
+
+    it('should count zip3 groups as campaigns per state', () => {
+      const result = dataSource.transformData(zipRows, 'usa-map');
+      // NY has 2 rows, CA has 1, FL has 1, AK has 1
+      expect(result.states.NY.campaigns).toBe(2);
+      expect(result.states.CA.campaigns).toBe(1);
+    });
+
+    it('should build hotspots only for rows with lat/lon', () => {
+      const result = dataSource.transformData(zipRows, 'usa-map');
+      expect(result).toHaveProperty('hotspots');
+      expect(Array.isArray(result.hotspots)).toBe(true);
+      // AK row has null lat/lon — excluded
+      expect(result.hotspots.length).toBe(4);
+      expect(result.hotspots.every(h => h.lat !== null && h.lon !== null)).toBe(true);
+    });
+
+    it('should return totals across all states', () => {
+      const result = dataSource.transformData(zipRows, 'usa-map');
+      expect(result).toHaveProperty('totals');
+      expect(result.totals.impressions).toBe(11500); // 5000+3000+1000+2000+500
+      expect(result.totals.bids).toBe(295);          // 120+80+25+60+10
+      expect(result.totals.campaigns).toBeGreaterThan(0);
+    });
+
+    it('should return empty data for empty rows', () => {
+      const result = dataSource.transformData([], 'usa-map');
+      expect(result).toBeDefined();
+    });
+  });
+
   describe('Integration scenarios', () => {
     it('should support multiple widget types from same data source', async () => {
       await dataSource.initialize();
