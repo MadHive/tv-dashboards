@@ -44,6 +44,8 @@ import { models } from './models/index.js';
 import { smartRateLimit, addCacheHeaders, cachePresets } from './rate-limiter.js';
 import { getConfig, updateConfig, toggleEnabled, getAuditLog, exportConfigs } from './data-source-config.js';
 import { initDatabase } from './db.js';
+import { updateEnvVars } from './env-writer.js';
+import { ENV_MAP }       from './data-source-env-map.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT || '80', 10);
@@ -704,6 +706,68 @@ const app = new Elysia()
     body: 'datasource.config',
     response: { 200: 'common.success', 400: 'common.error' },
     detail: { tags: ['data-sources'], summary: 'Update data source config' },
+  })
+
+  // Save credentials to .env and hot-reload the data source
+  .put('/api/data-sources/:name/credentials', async ({ params, body }) => {
+    try {
+      const { name } = params;
+      const allowed  = ENV_MAP[name];
+
+      if (!allowed) {
+        return new Response(
+          JSON.stringify({ success: false, error: `No credential map for source: ${name}` }),
+          { status: 400, headers: { 'content-type': 'application/json' } }
+        );
+      }
+
+      for (const key of Object.keys(body)) {
+        if (!allowed[key]) {
+          return new Response(
+            JSON.stringify({ success: false, error: `Unknown credential key: ${key}` }),
+            { status: 400, headers: { 'content-type': 'application/json' } }
+          );
+        }
+      }
+
+      const updates = Object.fromEntries(
+        Object.entries(body).filter(([, v]) => typeof v === 'string' && v.trim() !== '')
+      );
+
+      if (Object.keys(updates).length === 0) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'No credentials provided' }),
+          { status: 400, headers: { 'content-type': 'application/json' } }
+        );
+      }
+
+      updateEnvVars(updates);
+      for (const [k, v] of Object.entries(updates)) {
+        process.env[k] = v;
+      }
+
+      const source = await dataSourceRegistry.reinitializeSource(name);
+
+      return {
+        success:   true,
+        connected: source.isConnected,
+        message:   source.lastError?.message || null,
+      };
+    } catch (err) {
+      logger.error({ error: err.message }, 'Failed to save credentials');
+      return new Response(
+        JSON.stringify({ success: false, error: err.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  }, {
+    body: t.Record(t.String(), t.String()),
+    response: {
+      200: t.Object({ success: t.Boolean(), connected: t.Boolean(), message: t.Optional(t.Nullable(t.String())) }),
+      400: 'common.error',
+      500: 'common.error',
+    },
+    detail: { tags: ['data-sources'], summary: 'Save credentials to .env and hot-reload data source' },
   })
 
   .post('/api/data-sources/:name/toggle', async ({ params, body }) => {
