@@ -532,14 +532,6 @@ window.Charts = (function () {
     return String(n);
   }
 
-  function lerpZoom(a, b, t) {
-    return {
-      x0: a.x0 + (b.x0 - a.x0) * t,
-      y0: a.y0 + (b.y0 - a.y0) * t,
-      x1: a.x1 + (b.x1 - a.x1) * t,
-      y1: a.y1 + (b.y1 - a.y1) * t,
-    };
-  }
 
   // ===========================================================================
   // USA MAP V2 — Dramatically more info-dense and visually striking
@@ -555,36 +547,6 @@ window.Charts = (function () {
   let mapScrollResetTime = 0;  // epoch ms — leaderboard resets scroll here
   let mapPrevTopState    = '';  // id of #1 state on last data update
 
-  // ── Map zoom cycle ──
-  var MAP_ZOOM_REGIONS = [
-    {
-      id: 'full',
-      label: '',
-      duration: 12000,
-      x0: 0, y0: 0, x1: 1, y1: 1,
-      states: null,
-    },
-    {
-      id: 'northeast',
-      label: 'NORTHEAST',
-      duration: 7000,
-      // Real Albers bounds: x 0.710-0.827, y 0.175-0.493. Add padding + widen for context.
-      x0: 0.65, y0: 0.10, x1: 0.88, y1: 0.56,
-      states: ['ME','VT','NH','MA','RI','CT','NY','NJ','PA','DE','MD','DC','VA','WV'],
-    },
-    {
-      id: 'southeast',
-      label: 'SOUTHEAST',
-      duration: 7000,
-      // Real Albers bounds: x 0.594-0.741, y 0.512-0.803. Add padding.
-      x0: 0.52, y0: 0.44, x1: 0.80, y1: 0.88,
-      states: ['NC','SC','GA','FL','AL','MS','TN','KY'],
-    },
-  ];
-  var MAP_ZOOM_TRANS_MS = 1500;
-  var mapZoomIdx   = 0;
-  var mapZoomSince = 0;
-  var mapZoomFrom  = null;
 
   // GCP Data Center locations — delivery arc origins (real infrastructure)
   const DATA_CENTERS = [
@@ -592,6 +554,17 @@ window.Charts = (function () {
     { id: 'us-central1', label: 'CENTRAL', lon: -95.9,  lat: 41.3 },   // Council Bluffs, Iowa
     { id: 'us-east4',    label: 'EAST',    lon: -77.5,  lat: 39.0 },   // Ashburn, Virginia
   ];
+
+  // Regional viewport bounds in normalized Albers [0,1] coordinates
+  var REGION_VIEWPORTS = {
+    northeast: { x0: 0.65, y0: 0.10, x1: 0.88, y1: 0.56 },
+    southeast: { x0: 0.52, y0: 0.44, x1: 0.80, y1: 0.88 },
+  };
+
+  var REGION_STATES = {
+    northeast: new Set(['ME','VT','NH','MA','RI','CT','NY','NJ','PA','DE','MD','DC','VA','WV']),
+    southeast: new Set(['NC','SC','GA','FL','AL','MS','TN','KY']),
+  };
 
   // Preload official Google Cloud icon (served locally from /img/gcp-icon.png)
   let gcpIconImg = null;
@@ -633,7 +606,6 @@ window.Charts = (function () {
     });
 
     canvas._mapData = data;
-    canvas._mapZoomEnabled = data.zoom !== false;
 
     // Reset leaderboard scroll if the top state changed
     var sortedForCheck = Object.entries(data.states || {})
@@ -647,10 +619,10 @@ window.Charts = (function () {
     // Init directional arc particles (from data centers outward to states)
     // Stagger initial `t` widely and vary speeds for organic feel
     if (mapParticles.length === 0) {
-      for (var p = 0; p < 80; p++) {  // More particles for richer visualization
+      for (var p = 0; p < 120; p++) {  // More particles for richer visualization
         mapParticles.push({
           dc: Math.floor(Math.random() * DATA_CENTERS.length),
-          target: Math.floor(Math.random() * 10),
+          target: Math.floor(Math.random() * Math.min(50, Math.max(1, hotspotPositions.length || 10))),
           t: Math.random(),                        // well-distributed initial phase
           speed: 0.003 + Math.random() * 0.006,    // Faster and more varied
           delay: Math.random() * 100,               // frame delay before first appearance
@@ -770,49 +742,16 @@ window.Charts = (function () {
     var mapX = 12 + (w - leaderboardW - 24) * 0.16;
     var mapY = h * 0.15;
 
-    // ── Zoom cycle: advance state + compute current zoom rect ──
-    var zoomNow = Date.now();
-    if (mapZoomSince === 0) mapZoomSince = zoomNow;
-
-    var curRegion = MAP_ZOOM_REGIONS[mapZoomIdx];
-    var zoomElapsed = zoomNow - mapZoomSince;
-
-    var zoomEnabled = canvas._mapZoomEnabled !== false;
-    if (!zoomEnabled) {
-      // Stay on full view
-      if (mapZoomIdx !== 0) { mapZoomIdx = 0; mapZoomFrom = null; mapZoomSince = zoomNow; }
-    } else if (zoomElapsed > curRegion.duration + MAP_ZOOM_TRANS_MS) {
-      mapZoomFrom  = curRegion;
-      mapZoomIdx   = (mapZoomIdx + 1) % MAP_ZOOM_REGIONS.length;
-      mapZoomSince = zoomNow;
-      curRegion    = MAP_ZOOM_REGIONS[mapZoomIdx];
-      zoomElapsed  = 0;
+    // Apply regional viewport — expands coords so region fills canvas naturally
+    var mapRegion = data.region && REGION_VIEWPORTS[data.region];
+    if (mapRegion) {
+      var rWFrac = Math.max(0.05, mapRegion.x1 - mapRegion.x0);
+      var rHFrac = Math.max(0.05, mapRegion.y1 - mapRegion.y0);
+      mapW = mapW / rWFrac;
+      mapH = mapH / rHFrac;
+      mapX = mapX - mapRegion.x0 * mapW;
+      mapY = mapY - mapRegion.y0 * mapH;
     }
-
-    var zoomRect;
-    if (mapZoomFrom && zoomElapsed < MAP_ZOOM_TRANS_MS) {
-      var zt = zoomElapsed / MAP_ZOOM_TRANS_MS;
-      zt = zt < 0.5 ? 4 * zt * zt * zt : 1 - Math.pow(-2 * zt + 2, 3) / 2;
-      zoomRect = lerpZoom(mapZoomFrom, curRegion, zt);
-    } else {
-      zoomRect = curRegion;
-      if (zoomElapsed >= MAP_ZOOM_TRANS_MS) mapZoomFrom = null;
-    }
-
-    // Expand map coords so zoomed region fills the original map area
-    var origMapX = mapX, origMapY = mapY, origMapW = mapW, origMapH = mapH;
-    var wFrac = Math.max(0.05, zoomRect.x1 - zoomRect.x0);
-    var hFrac = Math.max(0.05, zoomRect.y1 - zoomRect.y0);
-    mapW = origMapW / wFrac;
-    mapH = origMapH / hFrac;
-    mapX = origMapX - zoomRect.x0 * mapW;
-    mapY = origMapY - zoomRect.y0 * mapH;
-
-    // Clip all subsequent map drawing to the original map area
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(origMapX, origMapY, origMapW, origMapH);
-    ctx.clip();
 
     // ── Subtle radial glow ──
     var grad = ctx.createRadialGradient(mapX + mapW * 0.5, mapY + mapH * 0.5, 0, mapX + mapW * 0.5, mapY + mapH * 0.5, mapW * 0.55);
@@ -1084,12 +1023,52 @@ window.Charts = (function () {
       return { id: dc.id, label: dc.label, x: mapX + xy[0] * mapW, y: mapY + xy[1] * mapH };
     });
 
+    // Visible data centers — only render icons for DCs in viewport
+    var visibleDcPositions = dcPositions;
+    if (data.region && REGION_VIEWPORTS[data.region]) {
+      var rv = REGION_VIEWPORTS[data.region];
+      visibleDcPositions = dcPositions.filter(function(dc) {
+        var dcEntry = DATA_CENTERS.find(function(d) { return d.id === dc.id; });
+        if (!dcEntry) return true;
+        var nxy = US.project(dcEntry.lon, dcEntry.lat);
+        return nxy[0] >= rv.x0 - 0.05 && nxy[0] <= rv.x1 + 0.05 &&
+               nxy[1] >= rv.y0 - 0.05 && nxy[1] <= rv.y1 + 0.05;
+      });
+      if (visibleDcPositions.length === 0) {
+        visibleDcPositions = [dcPositions[2] || dcPositions[0]]; // fallback to EAST DC
+      }
+    }
+
     topStates.forEach(function (entry) {
       var stDef = US.states.find(function (s) { return s.id === entry[0]; });
       if (!stDef) return;
       var cxy = US.project(stDef.center[0], stDef.center[1]);
       topCenters.push({ id: entry[0], x: mapX + cxy[0] * mapW, y: mapY + cxy[1] * mapH, imp: entry[1].impressions, bids: entry[1].bids });
     });
+
+    // Project delivery hotspots to canvas coords for particle targeting
+    var hotspotPositions = [];
+    var rawHotspots = (data.hotspots || []).slice(0, 80);
+    rawHotspots.forEach(function(h) {
+      if (!h.lat || !h.lon) return;
+      var xy = US.project(h.lon, h.lat);
+      hotspotPositions.push({
+        x: mapX + xy[0] * mapW,
+        y: mapY + xy[1] * mapH,
+        imp: h.impressions || 0,
+        state: h.state,
+        city: h.city || h.zip3,
+      });
+    });
+    hotspotPositions.sort(function(a, b) { return b.imp - a.imp; });
+
+    // Filter to region hotspots only in regional views
+    if (data.region && REGION_STATES[data.region]) {
+      var regionStateSet = REGION_STATES[data.region];
+      hotspotPositions = hotspotPositions.filter(function(h) {
+        return regionStateSet.has(h.state);
+      });
+    }
 
     // ── Proportional bubble overlay (sized by bid volume) ──
     topCenters.forEach(function (tc) {
@@ -1112,7 +1091,9 @@ window.Charts = (function () {
       mapParticles.slice(0, 15).forEach(function(p) {
         if (p.age < p.delay) return;
         var dc = dcPositions[p.dc % dcPositions.length];
-        var target = topCenters[p.target % topCenters.length];
+        var target = hotspotPositions.length > 0
+          ? hotspotPositions[p.target % hotspotPositions.length]
+          : (topCenters.length > 0 ? topCenters[p.target % topCenters.length] : null);
         if (!dc || !target) return;
 
         var dist = Math.sqrt(Math.pow(target.x - dc.x, 2) + Math.pow(target.y - dc.y, 2));
@@ -1135,6 +1116,30 @@ window.Charts = (function () {
       });
       ctx.globalAlpha = 1.0;
 
+      // ── Persistent arc lines: data center → top delivery hotspots ──
+      var topFlowHotspots = hotspotPositions.slice(0, 30);
+      topFlowHotspots.forEach(function(hs) {
+        if (!hs) return;
+        var nearDc = dcPositions[0];
+        var nearDist = Infinity;
+        dcPositions.forEach(function(dc) {
+          var d2 = Math.sqrt(Math.pow(hs.x - dc.x, 2) + Math.pow(hs.y - dc.y, 2));
+          if (d2 < nearDist) { nearDist = d2; nearDc = dc; }
+        });
+        var arcH2 = Math.min(60, nearDist * 0.18);
+        var mx2 = (nearDc.x + hs.x) / 2;
+        var my2 = (nearDc.y + hs.y) / 2 - arcH2;
+        var impRatio = maxImp > 0 ? Math.sqrt(hs.imp / maxImp) : 0;
+        var lineAlpha = 0.04 + impRatio * 0.12;
+        var lineWidth2 = 0.5 + impRatio * 1.5;
+        ctx.beginPath();
+        ctx.moveTo(nearDc.x, nearDc.y);
+        ctx.quadraticCurveTo(mx2, my2, hs.x, hs.y);
+        ctx.strokeStyle = hexToRgba(BRAND.cyan, lineAlpha);
+        ctx.lineWidth = lineWidth2;
+        ctx.stroke();
+      });
+
       mapParticles.forEach(function (p) {
         p.age = (p.age || 0) + 1;
         if (p.age < (p.delay || 0)) return; // stagger initial appearance
@@ -1145,7 +1150,9 @@ window.Charts = (function () {
           // Create burst effect at arrival
           if (prevT < 1) {
             var dc = dcPositions[p.dc % dcPositions.length];
-            var target = topCenters[p.target % topCenters.length];
+            var target = hotspotPositions.length > 0
+              ? hotspotPositions[p.target % hotspotPositions.length]
+              : (topCenters.length > 0 ? topCenters[p.target % topCenters.length] : null);
             if (target) {
               mapBursts.push({
                 x: target.x,
@@ -1157,7 +1164,7 @@ window.Charts = (function () {
           }
           p.t = -Math.random() * 0.2; // random pause before next arc
           p.dc = Math.floor(Math.random() * dcPositions.length);
-          p.target = Math.floor(Math.random() * Math.min(topCenters.length, 10));
+          p.target = Math.floor(Math.random() * Math.min(50, Math.max(1, hotspotPositions.length || 10)));
           p.speed = 0.003 + Math.random() * 0.006;
           p.type = Math.random() > 0.7 ? 'fast' : 'normal';
           p.size = 1 + Math.random() * 2;
@@ -1165,7 +1172,9 @@ window.Charts = (function () {
         if (p.t < 0) return; // in pause phase
 
         var dc = dcPositions[p.dc % dcPositions.length];
-        var target = topCenters[p.target % topCenters.length];
+        var target = hotspotPositions.length > 0
+          ? hotspotPositions[p.target % hotspotPositions.length]
+          : (topCenters.length > 0 ? topCenters[p.target % topCenters.length] : null);
         if (!dc || !target) return;
 
         // Ease-out cubic for smooth deceleration at destination
@@ -1225,7 +1234,7 @@ window.Charts = (function () {
       });
 
       // Draw GCP data center markers — official Google Cloud icon
-      dcPositions.forEach(function (dc) {
+      visibleDcPositions.forEach(function (dc) {
         var iconSize = 40; // icon render size (4K scale)
 
         // Large outer glow
@@ -1545,40 +1554,12 @@ window.Charts = (function () {
       }
     });
 
-    ctx.restore();  // end map clip
-
-    // ── Zoom region label ──
-    if (curRegion.label) {
-      var labelAlpha = 1;
-      if (mapZoomFrom && zoomElapsed < MAP_ZOOM_TRANS_MS) {
-        labelAlpha = zoomElapsed / MAP_ZOOM_TRANS_MS;
-      }
-      ctx.globalAlpha = labelAlpha * 0.9;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'bottom';
-      ctx.font = "700 18px 'Space Grotesk', sans-serif";
-      ctx.fillStyle = BRAND.pink;
-      ctx.fillText('\u25C2 ' + curRegion.label, origMapX + 10, origMapY + origMapH - 10);
-      ctx.font = "500 11px 'Space Grotesk', sans-serif";
-      ctx.fillStyle = BRAND.text3;
-      ctx.fillText('ZOOMED VIEW', origMapX + 10, origMapY + origMapH - 30);
-      ctx.globalAlpha = 1;
-    }
 
     // ── Leaderboard sidebar (right side) — 4K scaled ──
     var lbX = w - leaderboardW - 6;
     var lbY = 100;
     var lbEntryH = 42;
-    // During zoom, show only states in the current region
     var lbSorted = sorted;
-    if (curRegion.states) {
-      var regionSet = new Set(curRegion.states);
-      var regionSorted = sorted.filter(function(e) { return regionSet.has(e[0]); });
-      if (regionSorted.length > 0) {
-        var blendT = mapZoomFrom ? Math.min(1, zoomElapsed / MAP_ZOOM_TRANS_MS) : 1;
-        lbSorted = blendT >= 0.5 ? regionSorted : sorted;
-      }
-    }
     var lbCount = Math.min(15, lbSorted.length);
 
     // Leaderboard header
@@ -1594,8 +1575,7 @@ window.Charts = (function () {
     ctx.textBaseline = 'middle';
     ctx.font = "600 15px 'Space Grotesk', sans-serif";
     ctx.fillStyle = BRAND.text2;
-    var lbTitle = curRegion.states ? 'TOP ' + curRegion.label : 'TOP STATES';
-    ctx.fillText(lbTitle, lbX + leaderboardW / 2, lbY - 19);
+    ctx.fillText('TOP STATES', lbX + leaderboardW / 2, lbY - 19);
 
     // Auto-scroll: offset based on time
     var scrollElapsed = now - mapScrollResetTime;
@@ -1699,6 +1679,16 @@ window.Charts = (function () {
     ctx.fillStyle = BRAND.text3;
     ctx.font = "500 13px 'Space Grotesk', sans-serif";
     ctx.fillText('\u25CB = bid volume', legX + legW + 18, legY + 8);
+
+    // Regional view label
+    if (data.region && REGION_VIEWPORTS[data.region]) {
+      var rlabel = data.region === 'northeast' ? 'NORTHEAST' : 'SOUTHEAST';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      ctx.font = "700 16px 'Space Grotesk', sans-serif";
+      ctx.fillStyle = hexToRgba(BRAND.pink, 0.8);
+      ctx.fillText(rlabel + ' MARKETS', 16, 16);
+    }
   }
 
   // ===========================================================================

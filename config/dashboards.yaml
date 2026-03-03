@@ -160,13 +160,59 @@ dashboards:
       - id: usa-delivery-map
         type: usa-map
         title: ''
-        source: bigquery
-        queryId: delivery-geo-map
+        source: gcp
         position:
           col: 1
           row: 1
           colSpan: 1
           rowSpan: 1
+
+  - id: campaign-delivery-northeast
+    name: Campaign Delivery
+    subtitle: Northeast Markets
+    icon: map
+    grid:
+      columns: 1
+      rows: 1
+      gap: 0
+    widgets:
+      - id: usa-delivery-map-ne
+        type: usa-map
+        title: ''
+        source: gcp
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        mapConfig:
+          region: northeast
+          timeWindow: 7
+          minImpressions: 50
+
+  - id: campaign-delivery-southeast
+    name: Campaign Delivery
+    subtitle: Southeast Markets
+    icon: map
+    grid:
+      columns: 1
+      rows: 1
+      gap: 0
+    widgets:
+      - id: usa-delivery-map-se
+        type: usa-map
+        title: ''
+        source: gcp
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        mapConfig:
+          region: southeast
+          timeWindow: 7
+          minImpressions: 50
+
   - id: data-processing
     name: Data Processing
     subtitle: Analytics & Compute
