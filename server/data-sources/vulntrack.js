@@ -156,8 +156,10 @@ export class VulnTrackDataSource extends DataSource {
         const medium   = s.mediumOpen   || s.medium   || 0;
         const low      = s.lowOpen      || s.low      || 0;
 
-        // Score formula: 100 - weighted severity impact
-        const score = Math.max(0, 100 - (critical * 10 + high * 3 + medium * 1));
+        // Score formula: logarithmic penalty so score never permanently zeros
+        // out at high vuln volumes — gives meaningful gradient even under load
+        const rawPenalty = critical * 10 + high * 3 + medium * 1;
+        const score = Math.max(0, Math.round(100 - Math.min(99, Math.log1p(rawPenalty) * 8)));
 
         // Source breakdown — clean up key names
         const bySource = {};

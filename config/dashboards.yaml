@@ -435,7 +435,7 @@ dashboards:
     title: Core Cluster Nodes
     type: stat-card
   - id: bidder-cpu
-    max: 100
+    max: 1
     min: 0
     position:
       col: 1
@@ -448,7 +448,7 @@ dashboards:
     type: gauge
     unit: '%'
   - id: bidder-memory
-    max: 100
+    max: 1
     min: 0
     position:
       col: 2
