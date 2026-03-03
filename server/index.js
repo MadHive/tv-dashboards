@@ -1174,12 +1174,16 @@ const app = new Elysia()
         'Expires': '0'
       }
     });
-  })
+  });
 
-  .listen({ port: PORT, hostname: HOST });
+export { app };
 
-logger.info(`Dashboard server running at http://${HOST}:${PORT}`);
-logger.info('Config loaded from config/dashboards.yaml');
-logger.info({ dataMode: LIVE ? 'LIVE' : 'MOCK' }, 'Data mode configured');
-logger.info(`Numerics widgets: http://${HOST}:${PORT}/api/numerics/<widget>`);
-logger.info(`AnyBoard config: http://${HOST}:${PORT}/api/anyboard/config.json`);
+// Only start listening when this file is the entry point (not when imported by tests)
+if (import.meta.main) {
+  app.listen({ port: PORT, hostname: HOST });
+  logger.info(`Dashboard server running at http://${HOST}:${PORT}`);
+  logger.info('Config loaded from config/dashboards.yaml');
+  logger.info({ dataMode: LIVE ? 'LIVE' : 'MOCK' }, 'Data mode configured');
+  logger.info(`Numerics widgets: http://${HOST}:${PORT}/api/numerics/<widget>`);
+  logger.info(`AnyBoard config: http://${HOST}:${PORT}/api/anyboard/config.json`);
+}
