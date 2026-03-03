@@ -463,8 +463,16 @@
         displaySection.style.display = showDisplayTypes.includes(wc.type) ? '' : 'none';
       }
 
-      this.loadQueryOptions(wc.source, wc.queryId);
+      // Always load queries for current source (even if no queryId assigned yet)
+      this.loadQueryOptions(wc.source || 'gcp', wc.queryId || '');
       this.bindWidgetPropListeners(wc);
+
+      // Ensure the Data section is open so source/query are visible
+      const dataSections = document.querySelectorAll('#widget-props .props-section');
+      dataSections.forEach(function (s) {
+        const sum = s.querySelector('summary');
+        if (sum && sum.textContent.trim() === 'Data') s.setAttribute('open', '');
+      });
     }
 
     bindWidgetPropListeners(wc) {
