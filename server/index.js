@@ -535,7 +535,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['data-sources'], summary: 'List all data sources' } })
+  }, {
+    response: { 200: 'datasource.list' },
+    detail: { tags: ['data-sources'], summary: 'List all data sources' },
+  })
 
   .get('/api/data-sources/schemas', () => {
     try {
@@ -569,7 +572,10 @@ const app = new Elysia()
         { status: 404, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['data-sources'], summary: 'Get available metrics for a data source' } })
+  }, {
+    response: { 200: t.Object({ success: t.Boolean(), metrics: t.Array(t.Any()) }) },
+    detail: { tags: ['data-sources'], summary: 'Get available metrics for a data source' },
+  })
 
   .post('/api/data-sources/:name/test', async ({ params }) => {
     try {
@@ -581,7 +587,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['data-sources'], summary: 'Test data source connection' } })
+  }, {
+    response: { 200: 'datasource.test-response' },
+    detail: { tags: ['data-sources'], summary: 'Test data source connection' },
+  })
 
   // Data source schema endpoints (detailed field definitions)
   .get('/api/data-sources/schemas/detailed', () => {
@@ -683,7 +692,11 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['data-sources'], summary: 'Update data source config' } })
+  }, {
+    body: 'datasource.config',
+    response: { 200: 'common.success', 400: 'common.error' },
+    detail: { tags: ['data-sources'], summary: 'Update data source config' },
+  })
 
   .post('/api/data-sources/:name/toggle', async ({ params, body }) => {
     try {
@@ -726,7 +739,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['data-sources'], summary: 'Get audit log for data source' } })
+  }, {
+    response: { 200: t.Object({ success: t.Boolean(), history: t.Array(t.Any()) }) },
+    detail: { tags: ['data-sources'], summary: 'Get audit log for data source' },
+  })
 
   .get('/api/data-sources/export', () => {
     try {
@@ -761,7 +777,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['templates'], summary: 'List dashboard templates' } })
+  }, {
+    response: { 200: 'template.list' },
+    detail: { tags: ['templates'], summary: 'List dashboard templates' },
+  })
 
   .get('/api/templates/:id', ({ params }) => {
     try {
@@ -793,7 +812,10 @@ const app = new Elysia()
         { status: error.message.includes('not found') ? 404 : 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['templates'], summary: 'Get template by ID' } })
+  }, {
+    response: { 200: 'template.response', 404: 'common.error' },
+    detail: { tags: ['templates'], summary: 'Get template by ID' },
+  })
 
   .post('/api/templates', async ({ body }) => {
     try {
@@ -834,7 +856,11 @@ const app = new Elysia()
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['templates'], summary: 'Create new template' } })
+  }, {
+    body: 'template.create',
+    response: { 200: 'template.response', 400: 'common.error' },
+    detail: { tags: ['templates'], summary: 'Create new template' },
+  })
 
   .put('/api/templates/:id', async ({ params, body }) => {
     try {
@@ -891,7 +917,11 @@ const app = new Elysia()
         { status: 400, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['templates'], summary: 'Update template' } })
+  }, {
+    body: 'template.update',
+    response: { 200: 'template.response', 404: 'common.error' },
+    detail: { tags: ['templates'], summary: 'Update template' },
+  })
 
   .delete('/api/templates/:id', ({ params }) => {
     try {
@@ -923,7 +953,10 @@ const app = new Elysia()
         { status: error.message.includes('not found') ? 404 : 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['templates'], summary: 'Delete template' } })
+  }, {
+    response: { 200: 'common.success', 404: 'common.error' },
+    detail: { tags: ['templates'], summary: 'Delete template' },
+  })
 
   .post('/api/dashboards/export', ({ body }) => {
     try {
@@ -983,7 +1016,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['themes'], summary: 'List all themes' } })
+  }, {
+    response: { 200: 'theme.list' },
+    detail: { tags: ['themes'], summary: 'List all themes' },
+  })
 
   .get('/api/themes/categories', () => {
     try {
@@ -994,7 +1030,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['themes'], summary: 'List theme categories' } })
+  }, {
+    response: { 200: 'theme.list' },
+    detail: { tags: ['themes'], summary: 'List theme categories' },
+  })
 
   .get('/api/themes/default', ({ set }) => {
     try {
@@ -1010,7 +1049,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['themes'], summary: 'Get default theme' } })
+  }, {
+    response: { 200: 'theme.list' },
+    detail: { tags: ['themes'], summary: 'Get default theme' },
+  })
 
   .get('/api/themes/:id', ({ params, set }) => {
     try {
@@ -1026,7 +1068,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['themes'], summary: 'Get theme by ID' } })
+  }, {
+    response: { 200: 'theme.response', 404: 'common.error' },
+    detail: { tags: ['themes'], summary: 'Get theme by ID' },
+  })
 
   .post('/api/themes', async ({ body, set }) => {
     try {
@@ -1037,7 +1082,11 @@ const app = new Elysia()
       set.status = 400;
       return { error: error.message };
     }
-  }, { detail: { tags: ['themes'], summary: 'Create new theme' } })
+  }, {
+    body: 'theme.create',
+    response: { 200: 'theme.response', 400: 'common.error' },
+    detail: { tags: ['themes'], summary: 'Create new theme' },
+  })
 
   .put('/api/themes/:id', async ({ params, body, set }) => {
     try {
@@ -1049,7 +1098,11 @@ const app = new Elysia()
       set.status = 400;
       return { error: error.message };
     }
-  }, { detail: { tags: ['themes'], summary: 'Update theme' } })
+  }, {
+    body: 'theme.update',
+    response: { 200: 'theme.response', 404: 'common.error' },
+    detail: { tags: ['themes'], summary: 'Update theme' },
+  })
 
   .delete('/api/themes/:id', async ({ params, set }) => {
     try {
@@ -1063,7 +1116,10 @@ const app = new Elysia()
       set.status = 400;
       return { error: error.message };
     }
-  }, { detail: { tags: ['themes'], summary: 'Delete theme' } })
+  }, {
+    response: { 200: 'common.success', 404: 'common.error' },
+    detail: { tags: ['themes'], summary: 'Delete theme' },
+  })
 
   // Health check endpoint for Cloud Run
   .get('/health', () => {
@@ -1073,7 +1129,10 @@ const app = new Elysia()
       version: '2.0.0',
       service: 'tv-dashboards'
     };
-  }, { detail: { tags: ['health'], summary: 'Health check for Cloud Run' } })
+  }, {
+    response: { 200: t.Object({ status: t.String(), timestamp: t.String(), uptime: t.Number() }) },
+    detail: { tags: ['health'], summary: 'Health check for Cloud Run' },
+  })
 
   // Performance metrics endpoint
   .get('/api/metrics', () => {
@@ -1088,7 +1147,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['metrics'], summary: 'Get server performance metrics' } })
+  }, {
+    response: { 200: t.Object({ success: t.Boolean(), metrics: t.Any() }) },
+    detail: { tags: ['metrics'], summary: 'Get server performance metrics' },
+  })
 
   // Apply rate limiting
   .use(smartRateLimit)
