@@ -48,7 +48,7 @@
   global.sanitizeURL = function (url) {
     if (!url) return '';
     const trimmed = url.trim().toLowerCase();
-    if (trimmed.startsWith('javascript:') || trimmed.startsWith('data:')) {
+    if (trimmed.startsWith('javascript:') || trimmed.startsWith('data:') || trimmed.startsWith('vbscript:')) {
       return '';
     }
     return url;
