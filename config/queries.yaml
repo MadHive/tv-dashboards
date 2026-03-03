@@ -242,8 +242,8 @@ gcp:
   project: mad-master
   timeWindow: 30
   aggregation:
-    perSeriesAligner: ALIGN_MEAN
-    crossSeriesReducer: REDUCE_PERCENTILE_95
+    perSeriesAligner: ALIGN_DELTA
+    crossSeriesReducer: REDUCE_PERCENTILE_99
     alignmentPeriod:
       seconds: 60
   filters: ''
@@ -410,8 +410,8 @@ gcp:
   project: mad-master
   timeWindow: 10
   aggregation:
-    perSeriesAligner: ALIGN_MEAN
-    crossSeriesReducer: REDUCE_PERCENTILE_50
+    perSeriesAligner: ALIGN_DELTA
+    crossSeriesReducer: REDUCE_PERCENTILE_99
     alignmentPeriod:
       seconds: 60
   filters: ''
@@ -508,8 +508,8 @@ gcp:
   project: mad-master
   timeWindow: 10
   aggregation:
-    perSeriesAligner: ALIGN_MEAN
-    crossSeriesReducer: REDUCE_PERCENTILE_50
+    perSeriesAligner: ALIGN_DELTA
+    crossSeriesReducer: REDUCE_PERCENTILE_99
     alignmentPeriod:
       seconds: 60
   filters: ''
@@ -536,8 +536,8 @@ gcp:
   project: mad-master
   timeWindow: 10
   aggregation:
-    perSeriesAligner: ALIGN_MEAN
-    crossSeriesReducer: REDUCE_PERCENTILE_50
+    perSeriesAligner: ALIGN_DELTA
+    crossSeriesReducer: REDUCE_PERCENTILE_99
     alignmentPeriod:
       seconds: 60
   filters: ''
@@ -550,8 +550,8 @@ gcp:
   project: mad-master
   timeWindow: 10
   aggregation:
-    perSeriesAligner: ALIGN_MEAN
-    crossSeriesReducer: REDUCE_PERCENTILE_95
+    perSeriesAligner: ALIGN_DELTA
+    crossSeriesReducer: REDUCE_PERCENTILE_99
     alignmentPeriod:
       seconds: 60
   filters: ''
@@ -606,8 +606,8 @@ gcp:
   project: mad-master
   timeWindow: 10
   aggregation:
-    perSeriesAligner: ALIGN_MEAN
-    crossSeriesReducer: REDUCE_PERCENTILE_95
+    perSeriesAligner: ALIGN_DELTA
+    crossSeriesReducer: REDUCE_PERCENTILE_99
     alignmentPeriod:
       seconds: 60
   filters: ''
@@ -648,8 +648,8 @@ gcp:
   project: mad-master
   timeWindow: 10
   aggregation:
-    perSeriesAligner: ALIGN_MEAN
-    crossSeriesReducer: REDUCE_PERCENTILE_95
+    perSeriesAligner: ALIGN_DELTA
+    crossSeriesReducer: REDUCE_PERCENTILE_99
     alignmentPeriod:
       seconds: 60
   filters: ''
@@ -760,8 +760,8 @@ gcp:
   project: mad-master
   timeWindow: 10
   aggregation:
-    perSeriesAligner: ALIGN_RATE
-    crossSeriesReducer: REDUCE_PERCENTILE_50
+    perSeriesAligner: ALIGN_DELTA
+    crossSeriesReducer: REDUCE_SUM
     alignmentPeriod:
       seconds: 60
   filters: ''
@@ -774,8 +774,8 @@ gcp:
   project: mad-master
   timeWindow: 10
   aggregation:
-    perSeriesAligner: ALIGN_RATE
-    crossSeriesReducer: REDUCE_PERCENTILE_50
+    perSeriesAligner: ALIGN_DELTA
+    crossSeriesReducer: REDUCE_SUM
     alignmentPeriod:
       seconds: 60
   filters: ''
@@ -788,8 +788,8 @@ gcp:
   project: mad-master
   timeWindow: 10
   aggregation:
-    perSeriesAligner: ALIGN_MEAN
-    crossSeriesReducer: REDUCE_PERCENTILE_95
+    perSeriesAligner: ALIGN_DELTA
+    crossSeriesReducer: REDUCE_PERCENTILE_99
     alignmentPeriod:
       seconds: 60
   filters: ''
