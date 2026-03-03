@@ -79,7 +79,6 @@ dashboards:
       colSpan: 1
       row: 2
       rowSpan: 1
-    queryId: bigtable-table-bytes
     source: gcp
     title: Storage Volume
     type: stat-card
@@ -246,7 +245,6 @@ dashboards:
       colSpan: 1
       row: 1
       rowSpan: 1
-    queryId: bigtable-table-bytes
     source: gcp
     title: Storage Volume
     type: stat-card
@@ -303,7 +301,6 @@ dashboards:
       colSpan: 1
       row: 1
       rowSpan: 1
-    queryId: lb-503-count
     source: gcp
     title: Error Rate
     type: stat-card
@@ -315,7 +312,6 @@ dashboards:
       colSpan: 1
       row: 2
       rowSpan: 1
-    queryId: cloudrun-latency
     source: gcp
     title: Timeout Rate
     type: gauge
@@ -386,7 +382,6 @@ dashboards:
       colSpan: 1
       row: 1
       rowSpan: 1
-    queryId: pipe-bytes-written
     source: gcp
     title: End-to-End Data Flow
     type: pipeline-flow
@@ -435,7 +430,6 @@ dashboards:
       colSpan: 1
       row: 1
       rowSpan: 1
-    queryId: k8s-cpu-bidder
     source: gcp
     title: Core Cluster Nodes
     type: stat-card
