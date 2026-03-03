@@ -543,6 +543,8 @@ window.Charts = (function () {
   let mapPrevTotals = {};  // for animated counter
   let mapDataEvents = [];  // time-decaying visual events { stateId, value, born, type }
   let mapBursts = [];       // particle arrival bursts { x, y, born, color }
+  let mapScrollResetTime = 0;  // epoch ms — leaderboard resets scroll here
+  let mapPrevTopState    = '';  // id of #1 state on last data update
 
   // GCP Data Center locations — delivery arc origins (real infrastructure)
   const DATA_CENTERS = [
@@ -591,6 +593,15 @@ window.Charts = (function () {
     });
 
     canvas._mapData = data;
+
+    // Reset leaderboard scroll if the top state changed
+    var sortedForCheck = Object.entries(data.states || {})
+      .sort(function(a, b) { return b[1].impressions - a[1].impressions; });
+    var topId = sortedForCheck.length ? sortedForCheck[0][0] : '';
+    if (topId !== mapPrevTopState) {
+      mapScrollResetTime = Date.now();
+      mapPrevTopState = topId;
+    }
 
     // Init directional arc particles (from data centers outward to states)
     // Stagger initial `t` widely and vary speeds for organic feel
@@ -1471,7 +1482,8 @@ window.Charts = (function () {
     ctx.fillText('TOP STATES', lbX + leaderboardW / 2, lbY - 19);
 
     // Auto-scroll: offset based on time
-    var scrollOffset = Math.floor((now / 3500) % Math.max(1, lbCount - 8));
+    var scrollElapsed = now - mapScrollResetTime;
+    var scrollOffset  = Math.floor((scrollElapsed / 3500) % Math.max(1, lbCount - 8));
     var visibleCount = Math.min(lbCount, Math.floor((h - lbY - 50) / lbEntryH));
 
     for (var li = 0; li < visibleCount; li++) {
