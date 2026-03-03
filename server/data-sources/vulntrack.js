@@ -172,6 +172,12 @@ export class VulnTrackDataSource extends DataSource {
         return {
           score: Math.round(score),
           total: total,
+          // charts.js securityScorecard expects the *Open suffix
+          criticalOpen: critical,
+          highOpen: high,
+          mediumOpen: medium,
+          lowOpen: low,
+          // also expose bare names for other widget types
           critical: critical,
           high: high,
           medium: medium,
