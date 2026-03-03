@@ -75,6 +75,9 @@ window.StudioCanvas = (function () {
       return;
     }
 
+    // Widget instance registry for this render — keyed by widget id
+    var widgetInstances = {};
+
     // Create dashboard page div
     // 'active' class is required — dashboard.css hides .dashboard-page until active
     const page = document.createElement('div');
@@ -113,14 +116,16 @@ window.StudioCanvas = (function () {
       content.className = 'widget-content';
       card.appendChild(content);
 
-      // Render widget using widgets.js
+      // Render widget using widgets.js — store instance for later data update
+      var widgetInstance = null;
       if (window.Widgets && window.Widgets.create) {
         try {
-          window.Widgets.create(wc.type, content, wc);
+          widgetInstance = window.Widgets.create(wc.type, content, wc);
         } catch (e) {
           content.textContent = wc.type;
         }
       }
+      widgetInstances[wc.id] = widgetInstance;
 
       // Click: select widget
       card.addEventListener('click', function (e) {
@@ -161,6 +166,19 @@ window.StudioCanvas = (function () {
     });
 
     canvas.appendChild(page);
+
+    // Fetch live data and update widgets so the canvas preview shows real values
+    fetch('/api/metrics/' + dash.id)
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        dash.widgets.forEach(function (wc) {
+          var inst = widgetInstances[wc.id];
+          if (inst && inst.update && data[wc.id]) {
+            try { inst.update(data[wc.id]); } catch (_) {}
+          }
+        });
+      })
+      .catch(function () {}); // fail silently — canvas still shows widget shells
   }
 
   function enableDrag(card, wc) {

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="/css/dashboard.css?v=12">
-  <link rel="stylesheet" href="/css/studio.css?v=8">
+  <link rel="stylesheet" href="/css/studio.css?v=9">
 </head>
 <body class="studio-body">
 
@@ -196,10 +196,16 @@
           <details class="props-section" open>
             <summary>Data</summary>
             <div>
+              <!-- Current data summary — always shows what's powering this widget -->
+              <div id="data-summary" class="data-summary">
+                <span class="data-summary-source" id="data-summary-source"></span>
+                <span class="data-summary-sep">&#8250;</span>
+                <span class="data-summary-query" id="data-summary-query"></span>
+              </div>
               <label>
-                Source
+                Change Source
                 <select id="prop-source">
-                  <option value="gcp">GCP</option>
+                  <option value="gcp">GCP Cloud Monitoring</option>
                   <option value="bigquery">BigQuery</option>
                   <option value="vulntrack">VulnTrack</option>
                   <option value="mock">Mock</option>
@@ -207,7 +213,7 @@
               </label>
               <button id="browse-metrics-btn" class="studio-btn secondary small" style="display:none">&#128270; Browse GCP Metrics</button>
               <label>
-                Query
+                Change Query
                 <select id="prop-query"></select>
               </label>
               <button id="new-query-btn" class="studio-btn secondary small">+ New Query</button>
@@ -437,7 +443,7 @@
   <script src="/js/charts.js?v=11"></script>
   <script src="/js/widgets.js?v=11"></script>
   <script src="/js/query-editor.js?v=1"></script>
-  <script src="/js/studio-canvas.js?v=4"></script>
-  <script src="/js/studio.js?v=10"></script>
+  <script src="/js/studio-canvas.js?v=5"></script>
+  <script src="/js/studio.js?v=12"></script>
 </body>
 </html>

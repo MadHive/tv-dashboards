@@ -1096,6 +1096,31 @@ const app = new Elysia()
     detail: { tags: ['themes'], summary: 'Create new theme' },
   })
 
+  .post('/api/themes/:id/activate', async ({ params }) => {
+    try {
+      const theme = themeManager.getTheme(params.id);
+      if (!theme) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Theme not found' }),
+          { status: 404, headers: { 'content-type': 'application/json' } }
+        );
+      }
+      const cfg = loadConfig();
+      cfg.global = { ...cfg.global, activeTheme: params.id };
+      saveConfig(cfg);
+      invalidateConfigCache();
+      return { success: true, activeTheme: params.id };
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  }, {
+    response: { 200: 'common.success', 404: 'common.error' },
+    detail: { tags: ['themes'], summary: 'Set active theme' },
+  })
+
   .put('/api/themes/:id', async ({ params, body, set }) => {
     try {
       // Merge ID from params into body
