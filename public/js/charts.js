@@ -767,6 +767,46 @@ window.Charts = (function () {
     var mapX = 12 + (w - leaderboardW - 24) * 0.16;
     var mapY = h * 0.15;
 
+    // ── Zoom cycle: advance state + compute current zoom rect ──
+    var zoomNow = Date.now();
+    if (mapZoomSince === 0) mapZoomSince = zoomNow;
+
+    var curRegion = MAP_ZOOM_REGIONS[mapZoomIdx];
+    var zoomElapsed = zoomNow - mapZoomSince;
+
+    if (zoomElapsed > curRegion.duration + MAP_ZOOM_TRANS_MS) {
+      mapZoomFrom  = curRegion;
+      mapZoomIdx   = (mapZoomIdx + 1) % MAP_ZOOM_REGIONS.length;
+      mapZoomSince = zoomNow;
+      curRegion    = MAP_ZOOM_REGIONS[mapZoomIdx];
+      zoomElapsed  = 0;
+    }
+
+    var zoomRect;
+    if (mapZoomFrom && zoomElapsed < MAP_ZOOM_TRANS_MS) {
+      var zt = zoomElapsed / MAP_ZOOM_TRANS_MS;
+      zt = zt < 0.5 ? 4 * zt * zt * zt : 1 - Math.pow(-2 * zt + 2, 3) / 2;
+      zoomRect = lerpZoom(mapZoomFrom, curRegion, zt);
+    } else {
+      zoomRect = curRegion;
+      if (zoomElapsed >= MAP_ZOOM_TRANS_MS) mapZoomFrom = null;
+    }
+
+    // Expand map coords so zoomed region fills the original map area
+    var origMapX = mapX, origMapY = mapY, origMapW = mapW, origMapH = mapH;
+    var wFrac = Math.max(0.05, zoomRect.x1 - zoomRect.x0);
+    var hFrac = Math.max(0.05, zoomRect.y1 - zoomRect.y0);
+    mapW = origMapW / wFrac;
+    mapH = origMapH / hFrac;
+    mapX = origMapX - zoomRect.x0 * mapW;
+    mapY = origMapY - zoomRect.y0 * mapH;
+
+    // Clip all subsequent map drawing to the original map area
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(origMapX, origMapY, origMapW, origMapH);
+    ctx.clip();
+
     // ── Subtle radial glow ──
     var grad = ctx.createRadialGradient(mapX + mapW * 0.5, mapY + mapH * 0.5, 0, mapX + mapW * 0.5, mapY + mapH * 0.5, mapW * 0.55);
     grad.addColorStop(0, hexToRgba(BRAND.violet, 0.15));
@@ -1497,6 +1537,8 @@ window.Charts = (function () {
         drawMiniSparkline(ctx, regionSpark, pos.x + 14, pos.y + 86, panelW - 28, 48, BRAND.pink);
       }
     });
+
+    ctx.restore();  // end map clip
 
     // ── Leaderboard sidebar (right side) — 4K scaled ──
     var lbX = w - leaderboardW - 6;
