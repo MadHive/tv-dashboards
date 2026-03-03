@@ -188,24 +188,73 @@ window.StudioCanvas = (function () {
     });
   }
 
+  function _hasCollision(dash, col, row, colSpan, rowSpan, excludeId) {
+    return dash.widgets.some(function (w) {
+      if (w.id === excludeId) return false;
+      var wcs = w.position.colSpan || 1;
+      var wrs = w.position.rowSpan || 1;
+      var colOk = col < w.position.col + wcs && col + colSpan > w.position.col;
+      var rowOk = row < w.position.row + wrs && row + rowSpan > w.position.row;
+      return colOk && rowOk;
+    });
+  }
+
   function enableDropZone(page, dash) {
     page.addEventListener('dragover', function (e) {
       e.preventDefault();
+      if (!_dragWc || !_overlay) return;
+
+      var rect    = page.getBoundingClientRect();
+      var relX    = e.clientX - rect.left;
+      var relY    = e.clientY - rect.top;
+      var colW    = rect.width  / dash.grid.columns;
+      var rowH    = rect.height / dash.grid.rows;
+      var col     = Math.max(1, Math.min(dash.grid.columns, Math.ceil(relX / colW)));
+      var row     = Math.max(1, Math.min(dash.grid.rows,    Math.ceil(relY / rowH)));
+      var colSpan = _dragWc.position.colSpan || 1;
+      var rowSpan = _dragWc.position.rowSpan || 1;
+
+      // Clamp so widget doesn't go off-grid
+      col = Math.min(col, dash.grid.columns - colSpan + 1);
+      row = Math.min(row, dash.grid.rows    - rowSpan + 1);
+
+      var blocked = _hasCollision(dash, col, row, colSpan, rowSpan, _dragWc.id);
+
+      _highlightCells(col, row, colSpan, rowSpan, blocked);
+
+      if (_ghost) {
+        _ghost.style.gridColumn = col + ' / span ' + colSpan;
+        _ghost.style.gridRow    = row + ' / span ' + rowSpan;
+      }
+
+      // Live-update properties panel inputs
+      var colInput = document.getElementById('prop-col');
+      var rowInput = document.getElementById('prop-row');
+      if (colInput) colInput.value = col;
+      if (rowInput) rowInput.value = row;
     });
+
     page.addEventListener('drop', function (e) {
       e.preventDefault();
-      const widgetId = e.dataTransfer.getData('widgetId');
-      const wc = dash.widgets.find(function (w) { return w.id === widgetId; });
+      var widgetId = e.dataTransfer.getData('widgetId');
+      var wc = dash.widgets.find(function (w) { return w.id === widgetId; });
       if (!wc) return;
 
-      const rect = page.getBoundingClientRect();
-      const relX = e.clientX - rect.left;
-      const relY = e.clientY - rect.top;
-      const colWidth = rect.width / dash.grid.columns;
-      const rowHeight = rect.height / dash.grid.rows;
+      var rect    = page.getBoundingClientRect();
+      var relX    = e.clientX - rect.left;
+      var relY    = e.clientY - rect.top;
+      var colW    = rect.width  / dash.grid.columns;
+      var rowH    = rect.height / dash.grid.rows;
+      var col     = Math.max(1, Math.min(dash.grid.columns, Math.ceil(relX / colW)));
+      var row     = Math.max(1, Math.min(dash.grid.rows,    Math.ceil(relY / rowH)));
+      var colSpan = wc.position.colSpan || 1;
+      var rowSpan = wc.position.rowSpan || 1;
 
-      const col = Math.max(1, Math.min(dash.grid.columns, Math.ceil(relX / colWidth)));
-      const row = Math.max(1, Math.min(dash.grid.rows, Math.ceil(relY / rowHeight)));
+      col = Math.min(col, dash.grid.columns - colSpan + 1);
+      row = Math.min(row, dash.grid.rows    - rowSpan + 1);
+
+      // Reject blocked drops
+      if (_hasCollision(dash, col, row, colSpan, rowSpan, widgetId)) return;
 
       wc.position.col = col;
       wc.position.row = row;
