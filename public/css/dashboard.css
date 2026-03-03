@@ -769,9 +769,39 @@ body::before {
   z-index: 100;
   background: rgba(14,3,32,0.80);
 }
+#nav-dots-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 #nav-dots {
   display: flex;
   gap: 16px;
+}
+.pause-btn {
+  background: none;
+  border: 1px solid var(--t3);
+  color: var(--t2);
+  cursor: pointer;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
+  padding: 0;
+  line-height: 1;
+}
+.pause-btn:hover {
+  border-color: var(--mh-pink);
+  color: var(--mh-pink);
+}
+.pause-btn.paused {
+  border-color: #00d4ff;
+  color: #00d4ff;
+  box-shadow: 0 0 8px rgba(0,212,255,0.4);
 }
 .nav-dot {
   width: 12px;
@@ -1011,3 +1041,4 @@ body.editor-active .widget.selected {
   background: rgba(251, 113, 133, 0.2);
   color: #FB7185;
 }
+

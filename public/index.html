@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/dashboard.css?v=11">
+  <link rel="stylesheet" href="/css/dashboard.css?v=12">
   <link rel="stylesheet" href="/css/editor.css?v=1">
   <link rel="stylesheet" href="/css/query-editor.css?v=1">
   <link rel="stylesheet" href="/css/components/tv-preview.css?v=1">
@@ -52,7 +52,10 @@
 
   <!-- ===== bottom navigation ===== -->
   <nav id="bottom-bar">
-    <div id="nav-dots"></div>
+    <div id="nav-dots-row">
+      <div id="nav-dots"></div>
+      <button id="pause-btn" class="pause-btn" title="Pause slideshow (Space)">⏸</button>
+    </div>
     <div id="rotation-track">
       <div id="rotation-progress"></div>
     </div>
@@ -73,6 +76,6 @@
   <script src="/js/utils.js?v=1"></script>
   <script src="/js/query-editor.js?v=1"></script>
   <!-- <script src="/js/auth-ui.js?v=1"></script> -->
-  <script src="/js/app.js?v=11"></script>
+  <script src="/js/app.js?v=12"></script>
 </body>
 </html>
