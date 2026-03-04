@@ -33,6 +33,8 @@ window.MapboxUSAMap = (function () {
       particleSpeed:   1.0,
       colorScheme:     'brand',
       showLeaderboard: true,
+      mapStyle:        'brand',
+      zoomViz:         'dots',
       ...(userConfig || {}),
     };
   }

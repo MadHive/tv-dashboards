@@ -13,6 +13,8 @@ function buildMapConfig(userConfig) {
     particleSpeed:   1.0,
     colorScheme:     'brand',
     showLeaderboard: true,
+    mapStyle:        'brand',
+    zoomViz:         'dots',
     ...(userConfig || {}),
   };
 }
@@ -95,5 +97,23 @@ describe('getColorScheme()', () => {
       expect(typeof s.particleFast).toBe('string');
       expect(typeof s.stateGlowHigh).toBe('string');
     });
+  });
+});
+
+describe('buildMapConfig() — new boundary fields', () => {
+  it('defaults mapStyle to brand', () => {
+    expect(buildMapConfig(undefined).mapStyle).toBe('brand');
+  });
+
+  it('defaults zoomViz to dots', () => {
+    expect(buildMapConfig(undefined).zoomViz).toBe('dots');
+  });
+
+  it('accepts mapStyle: mapbox', () => {
+    expect(buildMapConfig({ mapStyle: 'mapbox' }).mapStyle).toBe('mapbox');
+  });
+
+  it('accepts zoomViz: heatmap', () => {
+    expect(buildMapConfig({ zoomViz: 'heatmap' }).zoomViz).toBe('heatmap');
   });
 });
