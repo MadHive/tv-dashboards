@@ -236,7 +236,7 @@
           <details class="props-section" open>
             <summary>Position</summary>
             <div>
-              <p class="props-hint">Drag widget to reposition · drag handles to resize · or type below</p>
+              <p class="props-hint">Drag to reposition · resize handles for col/row spans · or edit below</p>
               <div class="props-grid-2">
                 <label>Col <input id="prop-col"     type="number" min="1"></label>
                 <label>Row <input id="prop-row"     type="number" min="1"></label>
@@ -322,10 +322,10 @@
 
         <!-- Config strip -->
         <div class="qe-config">
-          <label class="qe-label">Metric / SQL
+          <label class="qe-label" id="qe-metric-label">Metric / SQL
             <input id="qe-metric" type="text" class="qe-input" placeholder="metric.type or SQL">
           </label>
-          <div class="qe-row">
+          <div class="qe-row" id="qe-gcp-row">
             <label class="qe-label">Time Window
               <select id="qe-time-window" class="qe-select">
                 <option value="5">5 min</option>
@@ -359,6 +359,7 @@
                 <option value="line-chart">Line Chart</option>
                 <option value="table">Table</option>
                 <option value="multi-metric-card">Multi Metric</option>
+                <option value="stacked-bar-chart">Stacked Bar</option>
               </select>
             </label>
             <span id="qe-run-status" class="qe-run-status"></span>

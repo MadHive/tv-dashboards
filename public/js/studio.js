@@ -1231,6 +1231,30 @@
 
       document.getElementById('qe-name').textContent         = query.name;
       document.getElementById('qe-source-badge').textContent = source;
+      // Source-aware field visibility
+      const gcpRow      = document.getElementById('qe-gcp-row');
+      const metricLabel = document.getElementById('qe-metric-label');
+      const metricInput = document.getElementById('qe-metric');
+      const isGcp       = source === 'gcp';
+      const isComputed  = source === 'computed';
+
+      if (gcpRow) gcpRow.style.display = isGcp ? '' : 'none';
+
+      if (metricLabel) {
+        // Update only the text node (first child), not the input child
+        const textNode = [...metricLabel.childNodes].find(n => n.nodeType === Node.TEXT_NODE);
+        if (textNode) {
+          if (isComputed)  textNode.textContent = 'Function ID';
+          else if (!isGcp) textNode.textContent = 'SQL Query';
+          else             textNode.textContent = 'Metric Type';
+        }
+      }
+
+      if (metricInput) {
+        metricInput.readOnly   = isComputed;
+        metricInput.style.opacity = isComputed ? '0.6' : '';
+      }
+
       document.getElementById('qe-metric').value             = query.metricType || query.sql || query.queryId || '';
       document.getElementById('qe-time-window').value        = query.timeWindow || 60;
       document.getElementById('qe-aggregation').value        =
