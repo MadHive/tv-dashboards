@@ -245,7 +245,48 @@ export class GCPDataSource extends DataSource {
         // Sort by value descending, take top 10
         bars.sort((a, b) => b.value - a.value);
         return { bars: bars.slice(0, 10), ...(options.timePeriod && { timePeriod: options.timePeriod }) };
-      }
+      },
+      'table': (ts) => {
+        if (!Array.isArray(ts) || !ts.length) return { columns: [], rows: [] };
+
+        // Collect all unique label keys across all series
+        const labelKeys = new Set();
+        ts.forEach(series => {
+          Object.keys(series.resource?.labels || {}).forEach(k => labelKeys.add(k));
+          Object.keys(series.metric?.labels   || {}).forEach(k => labelKeys.add(k));
+        });
+        const labelArr = [...labelKeys];
+
+        const columns = [
+          { key: 'timestamp', label: 'Timestamp', align: 'left' },
+          ...labelArr.map(k => ({ key: k, label: k, align: 'left' })),
+          { key: 'value', label: 'Value', align: 'right', format: 'number' },
+        ];
+
+        const rows = [];
+        for (const series of ts) {
+          const labels = {
+            ...(series.resource?.labels || {}),
+            ...(series.metric?.labels   || {}),
+          };
+          for (const point of (series.points || []).slice(0, 50)) {
+            const v = point.value;
+            rows.push({
+              timestamp: point.interval?.endTime?.seconds
+                ? new Date(point.interval.endTime.seconds * 1000)
+                    .toISOString().replace('T', ' ').slice(0, 19)
+                : '',
+              ...Object.fromEntries(labelArr.map(k => [k, labels[k] || ''])),
+              value: Number(v.doubleValue || v.int64Value || v.distributionValue?.mean || 0),
+            });
+          }
+        }
+        return {
+          columns,
+          rows: rows.slice(0, 200),
+          ...(options.timePeriod && { timePeriod: options.timePeriod }),
+        };
+      },
     };
 
     const transformer = transformers[widgetType];

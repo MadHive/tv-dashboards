@@ -328,6 +328,39 @@ describe('GCP Data Source', () => {
     });
   });
 
+  describe('transformData() table type', () => {
+    it('returns columns and rows from time series', async () => {
+      await dataSource.initialize();
+      const ts = [{
+        resource: { labels: { service_name: 'bidder' } },
+        metric:   { labels: {} },
+        points: [
+          { interval: { endTime: { seconds: 1709547600 } }, value: { doubleValue: 142.3 } },
+          { interval: { endTime: { seconds: 1709547540 } }, value: { doubleValue: 138.7 } },
+        ],
+      }];
+      const result = dataSource.transformData(ts, 'table');
+      expect(result).toHaveProperty('columns');
+      expect(result).toHaveProperty('rows');
+      expect(Array.isArray(result.columns)).toBe(true);
+      expect(Array.isArray(result.rows)).toBe(true);
+      const colKeys = result.columns.map(c => c.key);
+      expect(colKeys).toContain('timestamp');
+      expect(colKeys).toContain('value');
+      expect(colKeys).toContain('service_name');
+      expect(result.rows.length).toBe(2);
+      expect(typeof result.rows[0].value).toBe('number');
+    });
+
+    it('returns empty columns and rows for empty time series', async () => {
+      await dataSource.initialize();
+      const result = dataSource.transformData([], 'table');
+      expect(result).toHaveProperty('columns');
+      expect(result).toHaveProperty('rows');
+      expect(result.rows.length).toBe(0);
+    });
+  });
+
   describe('transformData() - widget type transformations', () => {
     it('should transform for big-number widget', () => {
       const timeSeries = [

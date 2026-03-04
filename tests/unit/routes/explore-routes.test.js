@@ -156,6 +156,25 @@ describe('Explore Routes', () => {
       expect((callSql.match(/LIMIT/gi) || []).length).toBe(1);
     });
 
+    it('returns table shape when widgetType is table', async () => {
+      const res = await app.handle(new Request('http://localhost/api/explore/bigquery', {
+        method:  'POST',
+        headers: { 'content-type': 'application/json' },
+        body:    JSON.stringify({ sql: 'SELECT * FROM test', widgetType: 'table' }),
+      }));
+      const body = await res.json();
+      expect(body.success).toBe(true);
+      expect(body.widgetData).toHaveProperty('columns');
+      expect(body.widgetData).toHaveProperty('rows');
+      expect(Array.isArray(body.widgetData.columns)).toBe(true);
+      const colKeys = body.widgetData.columns.map(c => c.key);
+      expect(colKeys).toContain('zip3');
+      expect(colKeys).toContain('impressions');
+      const impCol = body.widgetData.columns.find(c => c.key === 'impressions');
+      expect(impCol.align).toBe('right');
+      expect(impCol.format).toBe('number');
+    });
+
     it('returns 400 when sql is missing', async () => {
       const res = await app.handle(new Request('http://localhost/api/explore/bigquery', {
         method:  'POST',

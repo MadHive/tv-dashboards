@@ -966,6 +966,10 @@
         { type: 'pipeline-flow',     icon: '\u2192',        name: 'Pipeline' },
         { type: 'usa-map',           icon: '\uD83D\uDDFA', name: 'USA Map' },
         { type: 'security-scorecard',icon: '\uD83D\uDEE1', name: 'Security' },
+        { type: 'line-chart',        icon: '\uD83D\uDCC8', name: 'Line Chart' },
+        { type: 'table',             icon: '\u25A6',        name: 'Table' },
+        { type: 'multi-metric-card', icon: '\u22A0',        name: 'Multi Metric' },
+        { type: 'stacked-bar-chart', icon: '\u2590',        name: 'Stacked Bar' },
       ];
 
       const typeGrid = document.getElementById('palette-type-grid');

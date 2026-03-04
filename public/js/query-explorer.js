@@ -32,6 +32,7 @@ window.QueryExplorer = (function () {
       this._schemaCols     = null;
 
       this._bound = false;
+      this._init(); // bind button listener immediately — DOM is ready by instantiation time
     }
 
     _init() {
@@ -367,6 +368,34 @@ window.QueryExplorer = (function () {
           });
           return { bars: [...seen.entries()].slice(0, 10).map(([label, value]) => ({ label, value })) };
         }
+        case 'table': {
+          if (!rawSeries?.length) return null;
+          const sample = rawSeries[0];
+          const cols   = Object.keys(sample);
+          return {
+            columns: cols.map(k => ({
+              key:    k,
+              label:  k,
+              align:  typeof sample[k] === 'number' ? 'right' : 'left',
+              format: typeof sample[k] === 'number' ? 'number' : undefined,
+            })),
+            rows: rawSeries.slice(0, 200),
+          };
+        }
+        case 'multi-metric-card': {
+          if (!rawSeries?.length) return null;
+          // Group by the first non-timestamp, non-value label key
+          const labelKey = Object.keys(rawSeries[0]).find(k => k !== 'timestamp' && k !== 'value');
+          if (!labelKey) return { metrics: [{ label: 'Value', value: rawSeries[0].value ?? 0, unit: '', trend: 'stable' }] };
+          const seen = new Map();
+          rawSeries.forEach(r => {
+            const lbl = String(r[labelKey]);
+            if (!seen.has(lbl)) seen.set(lbl, r.value);
+          });
+          return {
+            metrics: [...seen.entries()].slice(0, 6).map(([label, value]) => ({ label, value, unit: '', trend: 'stable' })),
+          };
+        }
         default:
           return { value: vals[0], unit: '' };
       }
@@ -389,6 +418,37 @@ window.QueryExplorer = (function () {
           return { bars: rows.slice(0, 10).map(r => ({ label: strCol ? String(r[strCol]) : String(r[numCol]), value: r[numCol] || 0 })) };
         case 'line-chart':
           return { series: [{ label: numCol, data: rows.map(r => r[numCol] || 0) }], timestamps: [] };
+        case 'table':
+          // Use outer `cols` (already computed from rows[0]) — no shadow needed
+          return {
+            columns: cols.map(k => ({
+              key:    k,
+              label:  k,
+              align:  typeof rows[0][k] === 'number' ? 'right' : 'left',
+              format: typeof rows[0][k] === 'number' ? 'number' : undefined,
+            })),
+            rows: rows.slice(0, 200),
+          };
+        case 'multi-metric-card': {
+          // Use outer `cols` and `rows[0]` — no shadow needed
+          const mmNumCols = cols.filter(k => typeof rows[0][k] === 'number');
+          if (!mmNumCols.length) return null;
+          return {
+            metrics: mmNumCols.slice(0, 6).map(k => ({ label: k, value: rows[0][k], unit: '', trend: 'stable' })),
+          };
+        }
+        case 'stacked-bar-chart': {
+          // Use outer `cols`, `numCol`, `strCol` — no shadow needed
+          const sbNumCols = cols.filter(k => typeof rows[0][k] === 'number');
+          if (!sbNumCols.length) return null;
+          return {
+            categories: rows.map(r => strCol ? String(r[strCol]) : ''),
+            series: sbNumCols.map(k => ({
+              label: k,
+              data:  rows.map(r => r[k] || 0),
+            })),
+          };
+        }
         default:
           return { value: rows[0][numCol], unit: '' };
       }

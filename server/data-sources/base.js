@@ -185,6 +185,9 @@ export class DataSource {
       case 'security-scorecard':
         return { ...baseData, score: 0, categories: [] };
 
+      case 'table':
+        return { columns: [], rows: [] };
+
       default:
         return baseData;
     }
