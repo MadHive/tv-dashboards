@@ -23,6 +23,7 @@
     async init() {
       try { this.metricBrowser = new MetricBrowser(this); } catch (e) { console.error('[studio] MetricBrowser init failed:', e); }
       try { this.gcpImporter = new GcpDashboardImporter(this); } catch (e) { console.error('[studio] GcpDashboardImporter init failed:', e); }
+      try { this.queryExplorer = new window.QueryExplorer(this); } catch (e) { console.error('[studio] QueryExplorer init failed:', e); }
       await this.loadConfig();
       await this.loadThemes();
       this.renderSidebar();
@@ -1699,6 +1700,12 @@
     async _apply() {
       const wc = this.target, descriptor = this.selected;
       if (!wc || !descriptor) return;
+      // Explorer mode: route metric type to callback instead of saving a query
+      if (wc._explorerMode && typeof this._explorerCallback === 'function') {
+        this._explorerCallback(descriptor.type);
+        this.close();
+        return;
+      }
       const project    = document.getElementById('mb-project').value;
       const timeWindow = parseInt(document.getElementById('mb-time-window').value) || 60;
       const aligner    = document.getElementById('mb-aggregation').value;
