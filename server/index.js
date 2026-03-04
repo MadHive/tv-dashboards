@@ -229,6 +229,16 @@ const app = new Elysia()
     });
   })
 
+  .get('/admin/import', () => {
+    const importHtml = readFileSync(join(publicDir, 'import.html'), 'utf8');
+    return new Response(importHtml, {
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+      }
+    });
+  })
+
   .get('/data-sources.html', () => {
     const dataSourcesHtml = readFileSync(join(publicDir, 'data-sources-page.html'), 'utf8');
     return new Response(dataSourcesHtml, {
