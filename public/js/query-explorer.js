@@ -418,38 +418,32 @@ window.QueryExplorer = (function () {
           return { bars: rows.slice(0, 10).map(r => ({ label: strCol ? String(r[strCol]) : String(r[numCol]), value: r[numCol] || 0 })) };
         case 'line-chart':
           return { series: [{ label: numCol, data: rows.map(r => r[numCol] || 0) }], timestamps: [] };
-        case 'table': {
-          if (!rows?.length) return null;
-          const sample = rows[0];
-          const cols   = Object.keys(sample);
+        case 'table':
+          // Use outer `cols` (already computed from rows[0]) — no shadow needed
           return {
             columns: cols.map(k => ({
               key:    k,
               label:  k,
-              align:  typeof sample[k] === 'number' ? 'right' : 'left',
-              format: typeof sample[k] === 'number' ? 'number' : undefined,
+              align:  typeof rows[0][k] === 'number' ? 'right' : 'left',
+              format: typeof rows[0][k] === 'number' ? 'number' : undefined,
             })),
             rows: rows.slice(0, 200),
           };
-        }
         case 'multi-metric-card': {
-          if (!rows?.length) return null;
-          const sample  = rows[0];
-          const numCols = Object.keys(sample).filter(k => typeof sample[k] === 'number');
-          if (!numCols.length) return null;
+          // Use outer `cols` and `rows[0]` — no shadow needed
+          const mmNumCols = cols.filter(k => typeof rows[0][k] === 'number');
+          if (!mmNumCols.length) return null;
           return {
-            metrics: numCols.slice(0, 6).map(k => ({ label: k, value: sample[k], unit: '', trend: 'stable' })),
+            metrics: mmNumCols.slice(0, 6).map(k => ({ label: k, value: rows[0][k], unit: '', trend: 'stable' })),
           };
         }
         case 'stacked-bar-chart': {
-          if (!rows?.length) return null;
-          const sample  = rows[0];
-          const strCol  = Object.keys(sample).find(k => typeof sample[k] === 'string');
-          const numCols = Object.keys(sample).filter(k => typeof sample[k] === 'number');
-          if (!numCols.length) return null;
+          // Use outer `cols`, `numCol`, `strCol` — no shadow needed
+          const sbNumCols = cols.filter(k => typeof rows[0][k] === 'number');
+          if (!sbNumCols.length) return null;
           return {
             categories: rows.map(r => strCol ? String(r[strCol]) : ''),
-            series: numCols.map(k => ({
+            series: sbNumCols.map(k => ({
               label: k,
               data:  rows.map(r => r[k] || 0),
             })),

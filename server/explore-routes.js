@@ -200,7 +200,6 @@ function transformBqRows(rows, widgetType) {
         timestamps: [],
       };
     case 'table': {
-      if (!rows?.length) return null;
       const sampleRow = rows[0];
       const cols = Object.keys(sampleRow);
       return {
