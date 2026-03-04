@@ -123,6 +123,7 @@ window.QueryExplorer = (function () {
           if (!body) {
             this._runStatus.textContent = 'Enter a metric type';
             this._runBtn.removeAttribute('disabled');
+            if (this._lastRaw) this._setActionsDisabled(false);
             return;
           }
         } else {
@@ -130,6 +131,7 @@ window.QueryExplorer = (function () {
           if (!body) {
             this._runStatus.textContent = 'Enter a SQL query';
             this._runBtn.removeAttribute('disabled');
+            if (this._lastRaw) this._setActionsDisabled(false);
             return;
           }
         }
@@ -384,11 +386,11 @@ window.QueryExplorer = (function () {
 
       const cols  = Object.keys(rows[0]);
       const lines = [
-        cols.join(','),
+        cols.map(c => c.includes(',') || c.includes('"') ? '"' + c.replace(/"/g, '""') + '"' : c).join(','),
         ...rows.map(r => cols.map(c => {
           const v = r[c] ?? '';
           const s = String(v);
-          return s.includes(',') || s.includes('"') || s.includes('\n')
+          return s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')
             ? '"' + s.replace(/"/g, '""') + '"'
             : s;
         }).join(',')),
