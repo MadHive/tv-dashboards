@@ -19,6 +19,7 @@
       <span class="studio-logo-sub">STUDIO</span>
     </div>
     <div class="studio-actions">
+      <a href="/admin/import" class="studio-btn ghost small">&#8595; Import from GCP</a>
       <span id="dirty-indicator" style="display:none">&#9679; Unsaved</span>
       <button id="discard-btn" class="studio-btn secondary small" disabled>Discard</button>
       <button id="save-btn" class="studio-btn primary small" disabled>Save</button>
@@ -111,9 +112,9 @@
       <!-- Queries panel -->
       <div class="sidebar-panel" id="panel-queries" style="display:none">
         <div class="query-list-toolbar">
-          <button id="import-gcp-dashboards-btn" class="btn-import-gcp" title="Import queries from GCP Cloud Monitoring dashboards">
+          <a href="/admin/import" class="btn-import-gcp" title="Browse GCP dashboards and import charts">
             &#8595; Import from GCP
-          </button>
+          </a>
           <button id="open-query-explorer-btn" class="btn-open-explorer" title="Open Query Explorer">
             &#9670; Explorer
           </button>

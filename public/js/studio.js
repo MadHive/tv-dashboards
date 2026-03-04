@@ -22,7 +22,6 @@
 
     async init() {
       try { this.metricBrowser = new MetricBrowser(this); } catch (e) { console.error('[studio] MetricBrowser init failed:', e); }
-      try { this.gcpImporter = new GcpDashboardImporter(this); } catch (e) { console.error('[studio] GcpDashboardImporter init failed:', e); }
       try { this.queryExplorer = new window.QueryExplorer(this); } catch (e) { console.error('[studio] QueryExplorer init failed:', e); }
       await this.loadConfig();
       await this.loadThemes();

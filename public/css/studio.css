@@ -5,7 +5,7 @@
 
 /* ── Studio layout dimensions (non-conflicting namespace) ── */
 :root {
-  --studio-sidebar-w: 220px;
+  --studio-sidebar-w: 280px;
   --studio-props-w:   264px;
   --studio-topbar-h:  52px;
 }
@@ -122,6 +122,10 @@ body.studio-body {
   flex-direction: column;
   position: relative;
   z-index: 10;
+  resize:    horizontal;
+  overflow:  auto;
+  min-width: 200px;
+  max-width: 520px;
 }
 
 .sidebar-section {
