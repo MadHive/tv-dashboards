@@ -32,6 +32,7 @@ window.QueryExplorer = (function () {
       this._schemaCols     = null;
 
       this._bound = false;
+      this._init(); // bind button listener immediately — DOM is ready by instantiation time
     }
 
     _init() {
