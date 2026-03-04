@@ -2219,38 +2219,51 @@
       const checkboxes = [...this.tileList.querySelectorAll('input[type="checkbox"]:checked')];
       if (!checkboxes.length) return;
 
-      const selected = checkboxes.map(cb => ({ ...this._tiles[parseInt(cb.dataset.idx, 10)] }));
+      const selected = checkboxes
+        .map(cb => ({ ...this._tiles[parseInt(cb.dataset.idx, 10)] }))
+        .filter(tile => tile.metricType);
 
       let imported = 0;
       let skipped  = 0;
 
-      for (const tile of selected) {
-        if (tile.conflictId) {
-          const action = await this._resolveConflict(tile);
-          if (action === 'skip') { skipped++; continue; }
-          tile.id = tile.conflictId; // overwrite: reuse existing id
-        }
+      // Disable navigation controls while import is in progress to prevent
+      // the _resolveConflict Promise from hanging if modal is dismissed.
+      if (this.closeBtn) this.closeBtn.disabled = true;
+      if (this.backBtn)  this.backBtn.disabled  = true;
+      this.doBtn.disabled = true;
 
-        try {
-          const res = await fetch('/api/queries/gcp', {
-            method:  'POST',
-            headers: { 'content-type': 'application/json' },
-            body:    JSON.stringify({
-              id:          tile.id,
-              name:        tile.name,
-              metricType:  tile.metricType,
-              project:     this.activeProject,
-              filters:     tile.filters || '',
-              aggregation: tile.aggregation,
-              timeWindow:  10,
-              widgetTypes: [],
-            }),
-          });
-          if (res.ok) imported++;
-          else skipped++;
-        } catch (_) {
-          skipped++;
+      try {
+        for (const tile of selected) {
+          if (tile.conflictId) {
+            const action = await this._resolveConflict(tile);
+            if (action === 'skip') { skipped++; continue; }
+            tile.id = tile.conflictId; // overwrite: reuse existing id
+          }
+
+          try {
+            const res = await fetch('/api/queries/gcp', {
+              method:  'POST',
+              headers: { 'content-type': 'application/json' },
+              body:    JSON.stringify({
+                id:          tile.id,
+                name:        tile.name,
+                metricType:  tile.metricType,
+                project:     this.activeProject,
+                filters:     tile.filters || '',
+                aggregation: tile.aggregation,
+                timeWindow:  10,
+                widgetTypes: [],
+              }),
+            });
+            if (res.ok) imported++;
+            else skipped++;
+          } catch (_) {
+            skipped++;
+          }
         }
+      } finally {
+        if (this.closeBtn) this.closeBtn.disabled = false;
+        if (this.backBtn)  this.backBtn.disabled  = false;
       }
 
       this.close();
