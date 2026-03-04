@@ -22,6 +22,7 @@
 
     async init() {
       try { this.metricBrowser = new MetricBrowser(this); } catch (e) { console.error('[studio] MetricBrowser init failed:', e); }
+      try { this.gcpImporter = new GcpDashboardImporter(this); } catch (e) { console.error('[studio] GcpDashboardImporter init failed:', e); }
       await this.loadConfig();
       await this.loadThemes();
       this.renderSidebar();
@@ -2007,6 +2008,326 @@
       s.className = 'mb-status';
       s.textContent = msg;
       list.appendChild(s);
+    }
+  }
+
+  /* ==========================================================================
+     GcpDashboardImporter — two-step modal for importing GCP dashboard metrics
+     ========================================================================== */
+
+  class GcpDashboardImporter {
+    constructor(studioApp) {
+      this.app           = studioApp;
+      this.projects      = (window.__GCP_PROJECTS__ ||
+                            'mad-master,mad-data,mad-audit,mad-looker-enterprise')
+                             .split(',').map(p => p.trim()).filter(Boolean);
+      this.activeProject = this.projects[0];
+      this._tiles        = [];
+      this._dashboard    = null;
+
+      this.modal      = document.getElementById('gcp-import-modal');
+      this.step1      = document.getElementById('gcp-import-step1');
+      this.step2      = document.getElementById('gcp-import-step2');
+      this.titleEl    = document.getElementById('gcp-import-title');
+      this.backBtn    = document.getElementById('gcp-import-back-btn');
+      this.closeBtn   = document.getElementById('gcp-import-close-btn');
+      this.projectTabs= document.getElementById('gcp-import-project-tabs');
+      this.dashList   = document.getElementById('gcp-import-dashboard-list');
+      this.tileList   = document.getElementById('gcp-import-tile-list');
+      this.doBtn      = document.getElementById('gcp-import-do-btn');
+      this.countEl    = document.getElementById('gcp-import-selected-count');
+
+      this._bindEvents();
+    }
+
+    _bindEvents() {
+      document.getElementById('import-gcp-dashboards-btn')
+        ?.addEventListener('click', () => this.open());
+      this.closeBtn?.addEventListener('click', () => this.close());
+      this.backBtn?.addEventListener('click',  () => this._showStep1());
+      this.modal?.addEventListener('click', (e) => {
+        if (e.target === this.modal) this.close();
+      });
+      this.doBtn?.addEventListener('click', () => this._importSelected());
+    }
+
+    open() {
+      if (!this.modal) return;
+      this.modal.style.display = 'flex';
+      this._showStep1();
+      this._renderProjectTabs();
+      this._loadDashboards();
+    }
+
+    close() {
+      if (this.modal) this.modal.style.display = 'none';
+    }
+
+    // ── Step 1: dashboard list ─────────────────────────────────────
+
+    _renderProjectTabs() {
+      if (!this.projectTabs) return;
+      this.projectTabs.textContent = '';
+      this.projects.forEach(p => {
+        const btn = document.createElement('button');
+        btn.className = 'gcp-import-project-tab' + (p === this.activeProject ? ' active' : '');
+        btn.textContent = p;
+        btn.addEventListener('click', () => {
+          this.activeProject = p;
+          this._renderProjectTabs();
+          this._loadDashboards();
+        });
+        this.projectTabs.appendChild(btn);
+      });
+    }
+
+    async _loadDashboards() {
+      this.dashList.textContent = '';
+      const loading = document.createElement('div');
+      loading.className = 'gcp-import-loading';
+      loading.textContent = 'Loading dashboards\u2026';
+      this.dashList.appendChild(loading);
+
+      try {
+        const res  = await fetch('/api/gcp/dashboards?project=' + encodeURIComponent(this.activeProject));
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Unknown error');
+
+        this.dashList.textContent = '';
+        const dashboards = data.dashboards || [];
+        if (!dashboards.length) {
+          const empty = document.createElement('div');
+          empty.className = 'gcp-import-empty';
+          empty.textContent = 'No custom dashboards found in this project.';
+          this.dashList.appendChild(empty);
+          return;
+        }
+
+        dashboards.forEach(d => {
+          const row = document.createElement('div');
+          row.className = 'gcp-dashboard-row';
+
+          const nameEl = document.createElement('span');
+          nameEl.className = 'gcp-dashboard-row-name';
+          nameEl.textContent = d.displayName;
+
+          const countEl = document.createElement('span');
+          countEl.className = 'gcp-dashboard-row-count';
+          countEl.textContent = d.tileCount + ' charts';
+
+          row.appendChild(nameEl);
+          row.appendChild(countEl);
+          row.addEventListener('click', () => this._openDashboard(d));
+          this.dashList.appendChild(row);
+        });
+      } catch (err) {
+        this.dashList.textContent = '';
+        const errEl = document.createElement('div');
+        errEl.className = 'gcp-import-error';
+        errEl.textContent = 'Could not connect to GCP: ' + err.message;
+        this.dashList.appendChild(errEl);
+      }
+    }
+
+    // ── Step 2: tile checklist ─────────────────────────────────────
+
+    async _openDashboard(d) {
+      this._dashboard = d;
+      this._showStep2();
+      this.tileList.textContent = '';
+      const loading = document.createElement('div');
+      loading.className = 'gcp-import-loading';
+      loading.textContent = 'Loading tiles\u2026';
+      this.tileList.appendChild(loading);
+      this.doBtn.disabled = true;
+      this.countEl.textContent = '0 selected';
+
+      const shortId = d.name.split('/').pop();
+
+      try {
+        const res  = await fetch('/api/gcp/dashboards/' + encodeURIComponent(shortId) + '?project=' + encodeURIComponent(this.activeProject));
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || 'Unknown error');
+
+        this._tiles = data.tiles || [];
+        this._renderTiles();
+      } catch (err) {
+        this.tileList.textContent = '';
+        const errEl = document.createElement('div');
+        errEl.className = 'gcp-import-error';
+        errEl.textContent = 'Failed to load tiles: ' + err.message;
+        this.tileList.appendChild(errEl);
+      }
+    }
+
+    _renderTiles() {
+      this.tileList.textContent = '';
+      if (!this._tiles.length) {
+        const empty = document.createElement('div');
+        empty.className = 'gcp-import-empty';
+        empty.textContent = 'No importable chart tiles found.';
+        this.tileList.appendChild(empty);
+        return;
+      }
+
+      this._tiles.forEach((tile, i) => {
+        const row = document.createElement('div');
+        row.className = 'gcp-tile-row';
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.dataset.idx = i;
+        cb.addEventListener('change', () => this._updateCount());
+
+        const info = document.createElement('div');
+        info.className = 'gcp-tile-info';
+
+        const nameEl = document.createElement('div');
+        nameEl.className = 'gcp-tile-name';
+        nameEl.textContent = tile.name;
+
+        const metricEl = document.createElement('div');
+        metricEl.className = 'gcp-tile-metric';
+        metricEl.textContent = tile.metricType;
+
+        info.appendChild(nameEl);
+        info.appendChild(metricEl);
+        row.appendChild(cb);
+        row.appendChild(info);
+
+        if (tile.conflictId) {
+          const badge = document.createElement('span');
+          badge.className = 'gcp-tile-conflict';
+          badge.textContent = '\u26a0 exists';
+          badge.title = 'Already saved as query: ' + tile.conflictId;
+          row.appendChild(badge);
+        }
+
+        this.tileList.appendChild(row);
+      });
+    }
+
+    _updateCount() {
+      const checked = this.tileList.querySelectorAll('input[type="checkbox"]:checked').length;
+      this.countEl.textContent = checked + ' selected';
+      this.doBtn.disabled = checked === 0;
+    }
+
+    // ── Import ─────────────────────────────────────────────────────
+
+    async _importSelected() {
+      const checkboxes = [...this.tileList.querySelectorAll('input[type="checkbox"]:checked')];
+      if (!checkboxes.length) return;
+
+      const selected = checkboxes
+        .map(cb => ({ ...this._tiles[parseInt(cb.dataset.idx, 10)] }))
+        .filter(tile => tile.metricType);
+
+      let imported = 0;
+      let skipped  = 0;
+
+      // Disable navigation controls while import is in progress to prevent
+      // the _resolveConflict Promise from hanging if modal is dismissed.
+      if (this.closeBtn) this.closeBtn.disabled = true;
+      if (this.backBtn)  this.backBtn.disabled  = true;
+      this.doBtn.disabled = true;
+
+      try {
+        for (const tile of selected) {
+          if (tile.conflictId) {
+            const action = await this._resolveConflict(tile);
+            if (action === 'skip') { skipped++; continue; }
+            tile.id = tile.conflictId; // overwrite: reuse existing id
+          }
+
+          try {
+            const res = await fetch('/api/queries/gcp', {
+              method:  'POST',
+              headers: { 'content-type': 'application/json' },
+              body:    JSON.stringify({
+                id:          tile.id,
+                name:        tile.name,
+                metricType:  tile.metricType,
+                project:     this.activeProject,
+                filters:     tile.filters || '',
+                aggregation: tile.aggregation,
+                timeWindow:  10,
+                widgetTypes: [],
+              }),
+            });
+            if (res.ok) imported++;
+            else skipped++;
+          } catch (_) {
+            skipped++;
+          }
+        }
+      } finally {
+        if (this.closeBtn) this.closeBtn.disabled = false;
+        if (this.backBtn)  this.backBtn.disabled  = false;
+        this._updateCount(); // re-evaluate doBtn state based on remaining checkboxes
+      }
+
+      this.close();
+      this.app.renderQueryList();
+      const msg   = imported + ' imported' + (skipped ? ', ' + skipped + ' skipped' : '');
+      const level = imported > 0 ? 'success' : 'info';
+      this.app.showToast(msg, level);
+    }
+
+    // Returns Promise<'skip'|'overwrite'>
+    _resolveConflict(tile) {
+      return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.className = 'gcp-conflict-prompt';
+
+        const box = document.createElement('div');
+        box.className = 'gcp-conflict-box';
+
+        const msg = document.createElement('div');
+        msg.className = 'gcp-conflict-msg';
+        const strong = document.createElement('strong');
+        strong.textContent = tile.name;
+        msg.appendChild(strong);
+        msg.appendChild(document.createTextNode(' already exists as a saved query.'));
+
+        const actions = document.createElement('div');
+        actions.className = 'gcp-conflict-actions';
+
+        const skipBtn = document.createElement('button');
+        skipBtn.className = 'btn-secondary';
+        skipBtn.textContent = 'Skip';
+        skipBtn.addEventListener('click', () => { overlay.remove(); resolve('skip'); });
+
+        const overwriteBtn = document.createElement('button');
+        overwriteBtn.className = 'btn-primary';
+        overwriteBtn.textContent = 'Overwrite';
+        overwriteBtn.addEventListener('click', () => { overlay.remove(); resolve('overwrite'); });
+
+        actions.appendChild(skipBtn);
+        actions.appendChild(overwriteBtn);
+        box.appendChild(msg);
+        box.appendChild(actions);
+        overlay.appendChild(box);
+
+        const modalBox = this.modal.querySelector('.studio-modal-content');
+        if (modalBox) modalBox.appendChild(overlay);
+      });
+    }
+
+    // ── Navigation ─────────────────────────────────────────────────
+
+    _showStep1() {
+      this.step1.style.display  = '';
+      this.step2.style.display  = 'none';
+      this.backBtn.style.display = 'none';
+      this.titleEl.textContent   = 'Import from GCP Dashboards';
+    }
+
+    _showStep2() {
+      this.step1.style.display   = 'none';
+      this.step2.style.display   = '';
+      this.backBtn.style.display = '';
+      this.titleEl.textContent   = this._dashboard?.displayName || 'Select Tiles';
     }
   }
 
