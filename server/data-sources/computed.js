@@ -45,7 +45,7 @@ export class ComputedDataSource extends DataSource {
       const fn = FUNCTION_REGISTRY[entry.function];
       if (!fn) {
         logger.error({ function: entry.function }, '[computed] function not in registry');
-        return { timestamp: new Date().toISOString(), source: 'computed', data: {}, rawData: [] };
+        return { timestamp: new Date().toISOString(), source: 'computed', data: {}, rawData: [], widgetId: widgetConfig.id, queryId: widgetConfig.queryId };
       }
 
       const result = await fn(entry.params || {}, widgetConfig);
@@ -61,7 +61,7 @@ export class ComputedDataSource extends DataSource {
       };
     } catch (err) {
       logger.error({ err: err.message, queryId: widgetConfig.queryId }, '[computed] fetchMetrics failed');
-      return { timestamp: new Date().toISOString(), source: 'computed', data: {}, rawData: [] };
+      return { timestamp: new Date().toISOString(), source: 'computed', data: {}, rawData: [], widgetId: widgetConfig.id, queryId: widgetConfig.queryId };
     }
   }
 
