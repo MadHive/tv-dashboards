@@ -113,6 +113,42 @@ export const exploreRoutes = new Elysia({ prefix: '/api/explore' })
       summary: 'Ad-hoc BigQuery SQL query',
       description: 'Run an unsaved BigQuery SQL query and get raw rows + widget data. Caps at 200 rows.',
     },
+  })
+
+  .post('/computed', async ({ body }) => {
+    const { function: fnId, params = {} } = body || {};
+
+    if (!fnId) {
+      return new Response(
+        JSON.stringify({ success: false, error: 'function is required' }),
+        { status: 400, headers: { 'content-type': 'application/json' } }
+      );
+    }
+
+    const t0 = Date.now();
+    try {
+      const computedSource = dataSourceRegistry.getSource('computed');
+      const result = await computedSource.fetchMetrics({ queryId: fnId, id: fnId, ...params });
+
+      return {
+        success:     true,
+        widgetData:  result.data   || null,
+        rawData:     result.rawData || [],
+        executionMs: Date.now() - t0,
+      };
+    } catch (err) {
+      logger.error({ err: err.message }, 'explore/computed failed');
+      return new Response(
+        JSON.stringify({ success: false, error: err.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } }
+      );
+    }
+  }, {
+    detail: {
+      tags: ['queries'],
+      summary: 'Ad-hoc computed function query',
+      description: 'Run a named computed function ad-hoc for the Query Explorer.',
+    },
   });
 
 function extractRawSeries(timeSeries) {

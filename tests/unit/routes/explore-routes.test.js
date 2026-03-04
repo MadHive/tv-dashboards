@@ -23,11 +23,19 @@ const mockBqExecute = mock(async () => [
   { zip3: '900', state: 'CA', impressions: 41033 },
 ]);
 
+const mockComputedFetch = mock(async ({ queryId }) => ({
+  source:  'computed',
+  data:    { value: '1.2 TB', detail: 'BQ + BT + GCS' },
+  rawData: [{ label: 'total', value: '1.2 TB' }],
+  queryId,
+}));
+
 mock.module('../../../server/data-source-registry.js', () => ({
   dataSourceRegistry: {
     getSource: (name) => {
       if (name === 'bigquery') return { executeQuery: mockBqExecute };
       if (name === 'gcp')      return { transformData: (_ts, _type) => ({ value: 142.3, unit: '' }) };
+      if (name === 'computed') return { fetchMetrics: mockComputedFetch };
     },
   },
 }));
@@ -41,6 +49,7 @@ describe('Explore Routes', () => {
     app = new Elysia().use(exploreRoutes);
     mockGcpQuery.mockClear();
     mockBqExecute.mockClear();
+    mockComputedFetch.mockClear();
   });
 
   describe('POST /api/explore/gcp', () => {
@@ -156,6 +165,44 @@ describe('Explore Routes', () => {
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body.success).toBe(false);
+    });
+  });
+
+  describe('POST /api/explore/computed', () => {
+    it('returns widgetData, rawData and executionMs', async () => {
+      const res = await app.handle(new Request('http://localhost/api/explore/computed', {
+        method:  'POST',
+        headers: { 'content-type': 'application/json' },
+        body:    JSON.stringify({ function: 'storage-volume' }),
+      }));
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.success).toBe(true);
+      expect(body.widgetData).toBeDefined();
+      expect(Array.isArray(body.rawData)).toBe(true);
+      expect(typeof body.executionMs).toBe('number');
+    });
+
+    it('returns 400 when function is missing', async () => {
+      const res = await app.handle(new Request('http://localhost/api/explore/computed', {
+        method:  'POST',
+        headers: { 'content-type': 'application/json' },
+        body:    JSON.stringify({}),
+      }));
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.success).toBe(false);
+    });
+
+    it('calls fetchMetrics with queryId set to the function name', async () => {
+      await app.handle(new Request('http://localhost/api/explore/computed', {
+        method:  'POST',
+        headers: { 'content-type': 'application/json' },
+        body:    JSON.stringify({ function: 'fleet-health' }),
+      }));
+      expect(mockComputedFetch).toHaveBeenCalledWith(
+        expect.objectContaining({ queryId: 'fleet-health' })
+      );
     });
   });
 });

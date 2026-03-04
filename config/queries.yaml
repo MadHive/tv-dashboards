@@ -1,3 +1,72 @@
+computed:
+  - id: storage-volume
+    name: Storage Volume
+    description: Combined storage bytes across BigQuery, Bigtable, and GCS (mad-data + mad-master)
+    function: storageVolume
+    widgetTypes:
+      - stat-card
+  - id: fleet-health
+    name: Fleet Health
+    description: Percentage of Cloud Run services currently receiving requests
+    function: fleetHealth
+    widgetTypes:
+      - gauge
+  - id: service-latency
+    name: Median Service Latency
+    description: Median request latency across all Cloud Run services (ms)
+    function: serviceLatency
+    widgetTypes:
+      - gauge
+  - id: campaign-delivery-map
+    name: Campaign Delivery Map
+    description: USA delivery heatmap — BigQuery impression data + GCP data center arcs (nationwide)
+    function: campaignDeliveryMapWidget
+    params:
+      widgetId: usa-delivery-map
+    widgetTypes:
+      - usa-map
+  - id: campaign-delivery-map-ne
+    name: Campaign Delivery Map (Northeast)
+    description: Northeast region delivery heatmap
+    function: campaignDeliveryMapWidget
+    params:
+      region: northeast
+      widgetId: usa-delivery-map-ne
+    widgetTypes:
+      - usa-map
+  - id: campaign-delivery-map-se
+    name: Campaign Delivery Map (Southeast)
+    description: Southeast region delivery heatmap
+    function: campaignDeliveryMapWidget
+    params:
+      region: southeast
+      widgetId: usa-delivery-map-se
+    widgetTypes:
+      - usa-map
+  - id: core-cluster-size
+    name: Core Cluster Nodes
+    description: Total active containers across bidder, roger, and memcached
+    function: coreClusterSize
+    widgetTypes:
+      - stat-card
+  - id: pipeline-flow
+    name: End-to-End Data Flow
+    description: Pipeline stage flow with ingest, transform, store, process, deliver, report rates
+    function: pipelineFlow
+    widgetTypes:
+      - pipeline-flow
+  - id: bidder-error-rate
+    name: Bidder Error Rate
+    description: Percentage of LB requests with non-2xx, non-204, non-503 response codes
+    function: bidderErrorRate
+    widgetTypes:
+      - stat-card
+  - id: bidder-timeout-rate
+    name: Bidder Timeout Rate
+    description: Percentage of LB requests with 408 or 504 response codes
+    function: bidderTimeoutRate
+    widgetTypes:
+      - gauge
 bigquery:
   - id: example-count
     name: Example Row Count
@@ -892,6 +961,19 @@ gcp:
       crossSeriesReducer: REDUCE_SUM
     updatedAt: '2026-03-03T22:20:09.069Z'
     createdAt: '2026-03-03T22:20:09.069Z'
+  - id: count-328b
+    name: Count
+    widgetTypes: []
+    metricType: custom.googleapis.com/opencensus/grpc.io/client/completed_rpcs
+    project: mad-master
+    timeWindow: 10
+    aggregation:
+      perSeriesAligner: ALIGN_RATE
+      crossSeriesReducer: REDUCE_SUM
+      alignmentPeriod: 60s
+    filters: resource.type="k8s_container"
+    updatedAt: '2026-03-04T17:27:52.824Z'
+    createdAt: '2026-03-04T17:27:52.824Z'
 vulntrack:
   - id: vulntrack-security-posture
     name: Security Posture Overview

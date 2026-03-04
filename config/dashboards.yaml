@@ -1,995 +1,1007 @@
 dashboards:
-- grid:
-    columns: 4
-    gap: 14
-    rows: 2
-  icon: bolt
-  id: platform-overview
-  name: Platform Overview
-  subtitle: Real-Time Activity
-  widgets:
-  - id: bids-served
-    position:
-      col: 1
-      colSpan: 2
-      row: 1
-    queryId: stan-bids-in
-    source: gcp
-    title: Bids Served
-    type: big-number
-    unit: /s
-  - id: impressions-delivered
-    position:
-      col: 3
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    queryId: cloudrun-request-count-madmaster
-    source: gcp
-    title: Impressions Delivered
-    type: stat-card
-  - id: bid-qps
-    max: 5000000
-    min: 0
-    position:
-      col: 4
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    queryId: stan-bids-won
-    source: gcp
-    title: Bid QPS
-    type: stat-card
-    unit: /s
-  - id: platform-uptime
-    max: 100
-    min: 0
-    position:
-      col: 1
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    queryId: k8s-uptime-bidder
-    source: gcp
-    title: Platform Uptime
-    type: big-number
-    unit: s
-  - id: events-processed
-    position:
-      col: 2
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    queryId: kafka-writes-madmaster
-    source: gcp
-    title: Events Processed
-    type: big-number
-  - id: kafka-throughput
-    position:
-      col: 3
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    queryId: kafka-writes-madmaster
-    source: gcp
-    title: Kafka Writes
-    type: big-number
-  - id: storage-volume
-    position:
-      col: 4
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    source: gcp
-    title: Storage Volume
-    type: stat-card
-- grid:
-    columns: 3
-    gap: 14
-    rows: 2
-  icon: grid
-  id: services-health
-  name: Services Health
-  subtitle: Cloud Run Fleet
-  widgets:
-  - id: fleet-health
-    max: 100
-    min: 0
-    position:
-      col: 1
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    source: gcp
-    title: Fleet Health
-    type: gauge
-    unit: '%'
-  - id: requests-served
-    position:
-      col: 2
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    queryId: cloudrun-request-count-madmaster
-    source: gcp
-    title: Requests Served
-    type: big-number
-  - id: response-time
-    max: 500
-    min: 0
-    position:
-      col: 3
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    source: gcp
-    title: Median Latency (Cloud Run)
-    type: gauge
-    unit: ms
-  - id: top-services
-    position:
-      col: 1
-      colSpan: 2
-      row: 2
-      rowSpan: 1
-    queryId: cloudrun-request-count-madmaster
-    source: gcp
-    title: Top Services by Traffic
-    type: bar-chart
-  - id: fastest-services
-    position:
-      col: 3
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    queryId: cloudrun-latencies-madmaster
-    source: gcp
-    title: Fastest Response Times
-    type: bar-chart
-- grid:
-    columns: 1
-    gap: 0
-    rows: 1
-  icon: map
-  id: campaign-delivery
-  name: Campaign Delivery
-  subtitle: Nationwide Reach
-  widgets:
-  - id: usa-delivery-map
-    position:
-      col: 1
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    source: gcp
-    title: ''
-    type: usa-map
-- grid:
-    columns: 1
-    gap: 0
-    rows: 1
-  icon: map
-  id: campaign-delivery-northeast
-  name: Campaign Delivery
-  subtitle: Northeast Markets
-  widgets:
-  - id: usa-delivery-map-ne
-    mapConfig:
-      minImpressions: 50
-      region: northeast
-      timeWindow: 7
-    position:
-      col: 1
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    source: gcp
-    title: ''
-    type: usa-map
-- grid:
-    columns: 1
-    gap: 0
-    rows: 1
-  icon: map
-  id: campaign-delivery-southeast
-  name: Campaign Delivery
-  subtitle: Southeast Markets
-  widgets:
-  - id: usa-delivery-map-se
-    mapConfig:
-      minImpressions: 50
-      region: southeast
-      timeWindow: 7
-    position:
-      col: 1
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    source: gcp
-    title: ''
-    type: usa-map
-- grid:
-    columns: 3
-    gap: 14
-    rows: 2
-  icon: data
-  id: data-processing
-  name: Data Processing
-  subtitle: Analytics & Compute
-  widgets:
-  - id: analytics-queries
-    position:
-      col: 1
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    queryId: bigquery-query-count
-    source: gcp
-    title: Analytics Queries
-    type: big-number
-  - id: compute-utilization
-    max: 4000
-    min: 0
-    position:
-      col: 2
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    queryId: bigquery-slots-allocated
-    source: gcp
-    title: Compute Utilization
-    type: gauge
-    unit: slots
-  - id: storage-volume
-    position:
-      col: 3
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    source: gcp
-    title: Storage Volume
-    type: stat-card
-  - id: messages-queued
-    position:
-      col: 1
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    queryId: pubsub-undelivered-maddata
-    source: gcp
-    title: Messages Queued
-    type: big-number
-  - id: ingestion-topics
-    position:
-      col: 2
-      colSpan: 2
-      row: 2
-    queryId: pubsub-topic-send-maddata
-    source: gcp
-    title: Ingestion by Topic
-    type: bar-chart
-- grid:
-    columns: 4
-    gap: 14
-    rows: 3
-  icon: bolt
-  id: bidder-cluster
-  name: Bidder Cluster
-  subtitle: Real-Time Bidding
-  widgets:
-  - id: bid-qps
-    position:
-      col: 1
-      colSpan: 2
-      row: 1
-    queryId: lb-request-count-bidder
-    source: gcp
-    title: Bid QPS
-    type: big-number
-  - id: win-rate
-    position:
-      col: 3
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    queryId: pubsub-wins-topic
-    source: gcp
-    title: Bid Rate (200s)
-    type: stat-card
-  - id: error-rate
-    position:
-      col: 4
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    source: gcp
-    title: Error Rate
-    type: stat-card
-  - id: timeout-rate
-    max: 1
-    min: 0
-    position:
-      col: 1
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    source: gcp
-    title: Timeout Rate
-    type: gauge
-    unit: '%'
-  - id: response-latency
-    max: 200
-    min: 0
-    position:
-      col: 2
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    queryId: lb-backend-latencies
-    source: gcp
-    title: Response Latency
-    type: gauge-row
-    unit: ms
-  - id: bid-nobid-ratio
-    position:
-      col: 3
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    queryId: lb-request-count-bidder
-    source: gcp
-    title: No-Bid Rate (204s)
-    type: stat-card
-  - id: budget-pacing
-    position:
-      col: 4
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    queryId: lb-503-count
-    source: gcp
-    title: Load Shedding
-    type: stat-card
-  - id: qps-by-region
-    position:
-      col: 1
-      colSpan: 2
-      row: 3
-    queryId: lb-request-count-bidder
-    source: gcp
-    title: Response Code Breakdown
-    type: bar-chart
-  - id: response-by-backend
-    position:
-      col: 3
-      colSpan: 2
-      row: 3
-    queryId: lb-request-count-bidder
-    source: gcp
-    title: QPS by Backend
-    type: bar-chart
-- grid:
-    columns: 1
-    gap: 14
-    rows: 1
-  icon: flow
-  id: data-pipeline
-  name: Data Flow
-  subtitle: End-to-End Pipeline
-  widgets:
-  - id: pipeline
-    position:
-      col: 1
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    source: gcp
-    title: End-to-End Data Flow
-    type: pipeline-flow
-- grid:
-    columns: 4
-    gap: 14
-    rows: 3
-  icon: grid
-  id: rtb-infra
-  name: RTB Infrastructure
-  subtitle: Cluster Health
-  widgets:
-  - id: bidder-nodes
-    position:
-      col: 1
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    queryId: k8s-uptime-bidder
-    source: gcp
-    title: Bidder Nodes
-    type: big-number
-  - id: roger-nodes
-    position:
-      col: 2
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    queryId: k8s-uptime-roger
-    source: gcp
-    title: Roger Nodes
-    type: big-number
-  - id: memcache-nodes
-    position:
-      col: 3
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    queryId: k8s-uptime-memcached
-    source: gcp
-    title: Memcache Nodes
-    type: big-number
-  - id: core-cluster-size
-    position:
-      col: 4
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    source: gcp
-    title: Core Cluster Nodes
-    type: stat-card
-  - id: bidder-cpu
-    max: 1
-    min: 0
-    position:
-      col: 1
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    queryId: k8s-cpu-bidder
-    source: gcp
-    title: Bidder CPU P95
-    type: gauge
-    unit: '%'
-  - id: bidder-memory
-    max: 1
-    min: 0
-    position:
-      col: 2
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    queryId: k8s-memory-bidder
-    source: gcp
-    title: Bidder Memory P95
-    type: gauge
-    unit: '%'
-  - id: container-restarts
-    position:
-      col: 3
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    queryId: k8s-restart-bidder
-    source: gcp
-    title: Container Restarts
-    type: stat-card
-  - id: bidder-error-rate
-    max: 1000
-    min: 0
-    position:
-      col: 4
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    queryId: lb-503-count
-    source: gcp
-    title: Bidder Error Rate
-    type: gauge
-    unit: /s
-  - id: pipe-bytes-written
-    position:
-      col: 1
-      colSpan: 1
-      row: 3
-      rowSpan: 1
-    queryId: pipe-bytes-written
-    source: gcp
-    title: Pipe Bytes Written
-    type: big-number
-  - id: bidder-nodes-by-zone
-    position:
-      col: 2
-      colSpan: 2
-      row: 3
-    queryId: k8s-uptime-bidder
-    source: gcp
-    title: Bidder Nodes by Zone
-    type: bar-chart
-  - id: lb-backend-503s
-    position:
-      col: 4
-      colSpan: 1
-      row: 3
-      rowSpan: 1
-    queryId: lb-503-count
-    source: gcp
-    title: LB 503s Rate
-    type: stat-card
-- grid:
-    columns: 3
-    gap: 14
-    rows: 3
-  icon: data
-  id: campaign-pacing
-  name: Campaign & Pacing
-  subtitle: Roger Decision Engine
-  widgets:
-  - id: active-campaigns
-    position:
-      col: 1
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    project: mad-master
-    queryId: roger-campaigns
-    source: gcp
-    sparkline: true
-    title: Active Campaigns
-    type: big-number
-  - id: global-win-rate
-    max: 100
-    min: 0
-    position:
-      col: 2
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    project: mad-master
-    queryId: roger-global-win-rate
-    source: gcp
-    title: Global Win Rate
-    type: gauge
-    unit: '%'
-  - id: campaign-metas
-    position:
-      col: 3
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    project: mad-master
-    queryId: roger-campaign-metas
-    source: gcp
-    title: Campaign Metadata
-    type: stat-card
-  - id: pacing-p50
-    max: 500
-    min: 0
-    position:
-      col: 1
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    project: mad-master
-    queryId: roger-pacing-ratio
-    source: gcp
-    title: Pacing Ratio P50
-    type: gauge
-    unit: ''
-  - id: roger-messages
-    position:
-      col: 2
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    project: mad-master
-    queryId: roger-send-count
-    source: gcp
-    sparkline: true
-    title: Roger Messages
-    type: big-number
-  - id: ebrake-p50
-    position:
-      col: 3
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    project: mad-master
-    queryId: roger-ebrake
-    source: gcp
-    title: Emergency Brake
-    type: stat-card
-  - id: roger-send-latency
-    max: 200
-    min: 0
-    position:
-      col: 1
-      colSpan: 1
-      row: 3
-      rowSpan: 1
-    project: mad-master
-    queryId: roger-send-latency
-    source: gcp
-    title: Send Latency P95
-    type: gauge
-    unit: ms
-  - id: impression-rater
-    position:
-      col: 2
-      colSpan: 1
-      row: 3
-      rowSpan: 1
-    project: mad-master
-    queryId: impressionrater-row-updates
-    source: gcp
-    sparkline: true
-    title: Impressions Rated
-    type: big-number
-  - id: active-campaigns-count
-    position:
-      col: 3
-      colSpan: 1
-      row: 3
-      rowSpan: 1
-    project: mad-master
-    queryId: roger-campaigns
-    source: gcp
-    title: Active Campaigns
-    type: stat-card
-- grid:
-    columns: 4
-    gap: 14
-    rows: 3
-  icon: flow
-  id: data-infra
-  name: Data Infrastructure
-  subtitle: Kafka · Bigtable · PubSub
-  widgets:
-  - id: kafka-requests
-    position:
-      col: 1
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    queryId: kafka-managed-request-count
-    source: gcp
-    title: Kafka Requests
-    type: big-number
-  - id: kafka-lag
-    position:
-      col: 2
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    queryId: kafka-managed-offset-lag
-    source: gcp
-    title: Consumer Lag
-    type: stat-card
-  - id: kafka-latency
-    max: 600
-    min: 0
-    position:
-      col: 3
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    queryId: kafka-managed-latency
-    source: gcp
-    title: Kafka Latency P95
-    type: gauge
-    unit: ms
-  - id: kafka-write-errors
-    position:
-      col: 4
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    queryId: kafka-writes-madmaster
-    source: gcp
-    title: Write Error Rate
-    type: stat-card
-  - id: bigtable-reads
-    position:
-      col: 1
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    queryId: bigtable-returned-rows
-    source: gcp
-    title: Bigtable Read RPS
-    type: big-number
-  - id: bigtable-requests
-    position:
-      col: 2
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    queryId: bigtable-request-count
-    source: gcp
-    title: Bigtable Requests
-    type: big-number
-  - id: bigtable-latency
-    max: 1000
-    min: 0
-    position:
-      col: 3
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    queryId: bigtable-latency
-    source: gcp
-    title: Bigtable P95 Latency
-    type: gauge
-    unit: ms
-  - id: bigtable-cpu
-    max: 100
-    min: 0
-    position:
-      col: 4
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    queryId: bigtable-cpu-load
-    source: gcp
-    title: Bigtable CPU Load
-    type: gauge
-    unit: '%'
-  - id: pubsub-events-unacked
-    position:
-      col: 1
-      colSpan: 1
-      row: 3
-      rowSpan: 1
-    queryId: pubsub-events-primary-unacked
-    source: gcp
-    title: Events Backlog
-    type: stat-card
-  - id: pubsub-wins-unacked
-    position:
-      col: 2
-      colSpan: 1
-      row: 3
-      rowSpan: 1
-    queryId: pubsub-wins-unacked
-    source: gcp
-    title: Wins Backlog
-    type: stat-card
-  - id: bigtable-tables
-    position:
-      col: 3
-      colSpan: 2
-      row: 3
-    queryId: bigtable-table-bytes
-    source: gcp
-    title: Bigtable Tables by Size
-    type: bar-chart
-- grid:
-    columns: 3
-    gap: 14
-    rows: 3
-  icon: bolt
-  id: api-services
-  name: API & Services
-  subtitle: Mozart · Planner · Gary2
-  widgets:
-  - id: mozart-requests
-    position:
-      col: 1
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    project: mad-master
-    queryId: mozart-total-requests
-    source: gcp
-    sparkline: true
-    title: Mozart Requests
-    type: big-number
-  - id: mozart-impressions
-    position:
-      col: 2
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    project: mad-master
-    queryId: mozart-total-impressions
-    source: gcp
-    sparkline: true
-    title: Mozart Impressions
-    type: big-number
-  - id: mozart-errors
-    position:
-      col: 3
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    project: mad-master
-    queryId: mozart-errors
-    source: gcp
-    title: Mozart Errors
-    type: stat-card
-  - id: planner-impressions
-    position:
-      col: 1
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    project: mad-master
-    queryId: planner-impressions
-    source: gcp
-    sparkline: true
-    title: Planner Impressions
-    type: big-number
-  - id: planner-reach
-    position:
-      col: 2
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    project: mad-master
-    queryId: planner-reach
-    source: gcp
-    sparkline: true
-    title: Planner Reach
-    type: big-number
-  - id: madserver-sql
-    max: 500
-    min: 0
-    position:
-      col: 3
-      colSpan: 1
-      row: 2
-      rowSpan: 1
-    project: mad-master
-    queryId: madserver-sql-latency
-    source: gcp
-    title: SQL Latency P95
-    type: gauge
-    unit: ms
-  - id: gary2-segments
-    position:
-      col: 1
-      colSpan: 1
-      row: 3
-      rowSpan: 1
-    project: mad-master
-    queryId: gary2-segments-processed
-    source: gcp
-    sparkline: true
-    title: Segments Processed
-    type: big-number
-  - id: gary2-backlog
-    position:
-      col: 2
-      colSpan: 1
-      row: 3
-      rowSpan: 1
-    project: mad-master
-    queryId: gary2-pubsub-backlog
-    source: gcp
-    title: Gary2 Backlog
-    type: stat-card
-  - id: madserver-calls
-    position:
-      col: 3
-      colSpan: 1
-      row: 3
-      rowSpan: 1
-    project: mad-master
-    queryId: madserver-rpc-calls
-    source: gcp
-    title: API Calls by Client
-    type: bar-chart
-- grid:
-    columns: 1
-    gap: 0
-    rows: 1
-  icon: shield
-  id: security-posture
-  name: Security Posture
-  subtitle: VulnTrack Findings
-  widgets:
-  - id: vulntrack-overview
-    position:
-      col: 1
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    queryId: vulntrack-security-posture
-    source: vulntrack
-    title: ''
-    type: security-scorecard
-- grid:
-    columns: 4
-    gap: 14
-    rows: 4
-  icon: palette
-  id: visual-showcase
-  name: Visual Showcase
-  subtitle: All 14 Widget Types
-  widgets:
-  - id: showcase-bignumber
-    position:
-      col: 1
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    source: mock
-    title: Total Users
-    type: big-number
-  - id: showcase-statcard
-    position:
-      col: 2
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    source: mock
-    title: Active Sessions
-    type: stat-card
-  - id: showcase-gauge
-    max: 100
-    min: 0
-    position:
-      col: 3
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    source: mock
-    title: System Health
-    type: gauge
-    unit: '%'
-  - id: showcase-sparkline
-    position:
-      col: 4
-      colSpan: 1
-      row: 1
-      rowSpan: 1
-    queryId: lb-backend-latencies
-    source: gcp
-    title: Quick Trend
-    type: bar-chart
-  - id: showcase-multimetric
-    position:
-      col: 1
-      colSpan: 2
-      row: 2
-      rowSpan: 1
-    source: mock
-    title: Key Metrics
-    type: multi-metric-card
-  - id: showcase-line
-    position:
-      col: 1
-      colSpan: 2
-      row: 3
-      rowSpan: 1
-    queryId: mozart-total-impressions
-    source: gcp
-    title: Traffic Over Time
-    type: gauge
-  - id: showcase-stackedbar
-    position:
-      col: 1
-      colSpan: 1
-      row: 4
-      rowSpan: 1
-    source: mock
-    title: Conversion Funnel
-    type: stacked-bar-chart
-  - id: showcase-sankey
-    position:
-      col: 2
-      colSpan: 1
-      row: 4
-      rowSpan: 1
-    source: mock
-    title: User Flow
-    type: sankey
-  - id: showcase-table
-    position:
-      col: 3
-      colSpan: 2
-      row: 3
-      rowSpan: 2
-    source: mock
-    title: Recent Transactions
-    type: table
+  - grid:
+      columns: 4
+      gap: 14
+      rows: 2
+    icon: bolt
+    id: platform-overview
+    name: Platform Overview
+    subtitle: Real-Time Activity
+    widgets:
+      - id: bids-served
+        position:
+          col: 1
+          colSpan: 2
+          row: 1
+        queryId: stan-bids-in
+        source: gcp
+        title: Bids Served
+        type: big-number
+        unit: /s
+      - id: impressions-delivered
+        position:
+          col: 3
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: cloudrun-request-count-madmaster
+        source: gcp
+        title: Impressions Delivered
+        type: stat-card
+      - id: bid-qps
+        max: 5000000
+        min: 0
+        position:
+          col: 4
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: stan-bids-won
+        source: gcp
+        title: Bid QPS
+        type: stat-card
+        unit: /s
+      - id: platform-uptime
+        max: 100
+        min: 0
+        position:
+          col: 1
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        queryId: k8s-uptime-bidder
+        source: gcp
+        title: Platform Uptime
+        type: big-number
+        unit: s
+      - id: events-processed
+        position:
+          col: 2
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        queryId: kafka-writes-madmaster
+        source: gcp
+        title: Events Processed
+        type: big-number
+      - id: kafka-throughput
+        position:
+          col: 3
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        queryId: kafka-writes-madmaster
+        source: gcp
+        title: Kafka Writes
+        type: big-number
+      - id: storage-volume
+        position:
+          col: 4
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        queryId: storage-volume
+        source: computed
+        title: Storage Volume
+        type: stat-card
+  - grid:
+      columns: 3
+      gap: 14
+      rows: 2
+    icon: grid
+    id: services-health
+    name: Services Health
+    subtitle: Cloud Run Fleet
+    widgets:
+      - id: fleet-health
+        max: 100
+        min: 0
+        position:
+          col: 1
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: fleet-health
+        source: computed
+        title: Fleet Health
+        type: gauge
+        unit: '%'
+      - id: requests-served
+        position:
+          col: 2
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: cloudrun-request-count-madmaster
+        source: gcp
+        title: Requests Served
+        type: big-number
+      - id: response-time
+        max: 500
+        min: 0
+        position:
+          col: 3
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: service-latency
+        source: computed
+        title: Median Latency (Cloud Run)
+        type: gauge
+        unit: ms
+      - id: top-services
+        position:
+          col: 1
+          colSpan: 2
+          row: 2
+          rowSpan: 1
+        queryId: cloudrun-request-count-madmaster
+        source: gcp
+        title: Top Services by Traffic
+        type: bar-chart
+      - id: fastest-services
+        position:
+          col: 3
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        queryId: cloudrun-latencies-madmaster
+        source: gcp
+        title: Fastest Response Times
+        type: bar-chart
+  - grid:
+      columns: 1
+      gap: 0
+      rows: 1
+    icon: map
+    id: campaign-delivery
+    name: Campaign Delivery
+    subtitle: Nationwide Reach
+    widgets:
+      - id: usa-delivery-map
+        position:
+          col: 1
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: campaign-delivery-map
+        source: computed
+        title: ''
+        type: usa-map
+  - grid:
+      columns: 1
+      gap: 0
+      rows: 1
+    icon: map
+    id: campaign-delivery-northeast
+    name: Campaign Delivery
+    subtitle: Northeast Markets
+    widgets:
+      - id: usa-delivery-map-ne
+        mapConfig:
+          minImpressions: 50
+          region: northeast
+          timeWindow: 7
+        position:
+          col: 1
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: campaign-delivery-map-ne
+        source: computed
+        title: ''
+        type: usa-map
+  - grid:
+      columns: 1
+      gap: 0
+      rows: 1
+    icon: map
+    id: campaign-delivery-southeast
+    name: Campaign Delivery
+    subtitle: Southeast Markets
+    widgets:
+      - id: usa-delivery-map-se
+        mapConfig:
+          minImpressions: 50
+          region: southeast
+          timeWindow: 7
+        position:
+          col: 1
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: campaign-delivery-map-se
+        source: computed
+        title: ''
+        type: usa-map
+  - grid:
+      columns: 3
+      gap: 14
+      rows: 2
+    icon: data
+    id: data-processing
+    name: Data Processing
+    subtitle: Analytics & Compute
+    widgets:
+      - id: analytics-queries
+        position:
+          col: 1
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: bigquery-query-count
+        source: gcp
+        title: Analytics Queries
+        type: big-number
+      - id: compute-utilization
+        max: 4000
+        min: 0
+        position:
+          col: 2
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: bigquery-slots-allocated
+        source: gcp
+        title: Compute Utilization
+        type: gauge
+        unit: slots
+      - id: storage-volume
+        position:
+          col: 3
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: storage-volume
+        source: computed
+        title: Storage Volume
+        type: stat-card
+      - id: messages-queued
+        position:
+          col: 1
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        queryId: pubsub-undelivered-maddata
+        source: gcp
+        title: Messages Queued
+        type: big-number
+      - id: ingestion-topics
+        position:
+          col: 2
+          colSpan: 2
+          row: 2
+        queryId: pubsub-topic-send-maddata
+        source: gcp
+        title: Ingestion by Topic
+        type: bar-chart
+  - grid:
+      columns: 4
+      gap: 14
+      rows: 3
+    icon: bolt
+    id: bidder-cluster
+    name: Bidder Cluster
+    subtitle: Real-Time Bidding
+    widgets:
+      - id: bid-qps
+        position:
+          col: 1
+          colSpan: 2
+          row: 1
+        queryId: lb-request-count-bidder
+        source: gcp
+        title: Bid QPS
+        type: big-number
+      - id: win-rate
+        position:
+          col: 3
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: pubsub-wins-topic
+        source: gcp
+        title: Bid Rate (200s)
+        type: stat-card
+      - id: error-rate
+        position:
+          col: 4
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: bidder-error-rate
+        source: computed
+        title: Error Rate
+        type: stat-card
+      - id: timeout-rate
+        max: 1
+        min: 0
+        position:
+          col: 1
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        queryId: bidder-timeout-rate
+        source: computed
+        title: Timeout Rate
+        type: gauge
+        unit: '%'
+      - id: response-latency
+        max: 200
+        min: 0
+        position:
+          col: 2
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        queryId: lb-backend-latencies
+        source: gcp
+        title: Response Latency
+        type: gauge-row
+        unit: ms
+      - id: bid-nobid-ratio
+        position:
+          col: 3
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        queryId: lb-request-count-bidder
+        source: gcp
+        title: No-Bid Rate (204s)
+        type: stat-card
+      - id: budget-pacing
+        position:
+          col: 4
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        queryId: lb-503-count
+        source: gcp
+        title: Load Shedding
+        type: stat-card
+      - id: qps-by-region
+        position:
+          col: 1
+          colSpan: 2
+          row: 3
+        queryId: lb-request-count-bidder
+        source: gcp
+        title: Response Code Breakdown
+        type: bar-chart
+      - id: response-by-backend
+        position:
+          col: 3
+          colSpan: 2
+          row: 3
+        queryId: lb-request-count-bidder
+        source: gcp
+        title: QPS by Backend
+        type: bar-chart
+  - grid:
+      columns: 1
+      gap: 14
+      rows: 1
+    icon: flow
+    id: data-pipeline
+    name: Data Flow
+    subtitle: End-to-End Pipeline
+    widgets:
+      - id: pipeline
+        position:
+          col: 1
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: pipeline-flow
+        source: computed
+        title: End-to-End Data Flow
+        type: pipeline-flow
+  - grid:
+      columns: 4
+      gap: 14
+      rows: 3
+    icon: grid
+    id: rtb-infra
+    name: RTB Infrastructure
+    subtitle: Cluster Health
+    widgets:
+      - id: bidder-nodes
+        position:
+          col: 1
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: k8s-uptime-bidder
+        source: gcp
+        title: Bidder Nodes
+        type: big-number
+      - id: roger-nodes
+        position:
+          col: 2
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: k8s-uptime-roger
+        source: gcp
+        title: Roger Nodes
+        type: big-number
+      - id: memcache-nodes
+        position:
+          col: 3
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: k8s-uptime-memcached
+        source: gcp
+        title: Memcache Nodes
+        type: big-number
+      - id: core-cluster-size
+        position:
+          col: 4
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: core-cluster-size
+        source: computed
+        title: Core Cluster Nodes
+        type: stat-card
+      - id: bidder-cpu
+        max: 1
+        min: 0
+        position:
+          col: 1
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        queryId: k8s-cpu-bidder
+        source: gcp
+        title: Bidder CPU P95
+        type: gauge
+        unit: '%'
+      - id: bidder-memory
+        max: 1
+        min: 0
+        position:
+          col: 2
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        queryId: k8s-memory-bidder
+        source: gcp
+        title: Bidder Memory P95
+        type: gauge
+        unit: '%'
+      - id: container-restarts
+        position:
+          col: 3
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        queryId: k8s-restart-bidder
+        source: gcp
+        title: Container Restarts
+        type: stat-card
+      - id: bidder-error-rate
+        max: 1000
+        min: 0
+        position:
+          col: 4
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        queryId: lb-503-count
+        source: gcp
+        title: Bidder Error Rate
+        type: gauge
+        unit: /s
+      - id: pipe-bytes-written
+        position:
+          col: 1
+          colSpan: 1
+          row: 3
+          rowSpan: 1
+        queryId: pipe-bytes-written
+        source: gcp
+        title: Pipe Bytes Written
+        type: big-number
+      - id: bidder-nodes-by-zone
+        position:
+          col: 2
+          colSpan: 2
+          row: 3
+        queryId: k8s-uptime-bidder
+        source: gcp
+        title: Bidder Nodes by Zone
+        type: bar-chart
+      - id: lb-backend-503s
+        position:
+          col: 4
+          colSpan: 1
+          row: 3
+          rowSpan: 1
+        queryId: lb-503-count
+        source: gcp
+        title: LB 503s Rate
+        type: stat-card
+  - grid:
+      columns: 3
+      gap: 14
+      rows: 3
+    icon: data
+    id: campaign-pacing
+    name: Campaign & Pacing
+    subtitle: Roger Decision Engine
+    widgets:
+      - id: active-campaigns
+        position:
+          col: 1
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        project: mad-master
+        queryId: roger-campaigns
+        source: gcp
+        sparkline: true
+        title: Active Campaigns
+        type: big-number
+      - id: global-win-rate
+        max: 100
+        min: 0
+        position:
+          col: 2
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        project: mad-master
+        queryId: roger-global-win-rate
+        source: gcp
+        title: Global Win Rate
+        type: gauge
+        unit: '%'
+      - id: campaign-metas
+        position:
+          col: 3
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        project: mad-master
+        queryId: roger-campaign-metas
+        source: gcp
+        title: Campaign Metadata
+        type: stat-card
+      - id: pacing-p50
+        max: 500
+        min: 0
+        position:
+          col: 1
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        project: mad-master
+        queryId: roger-pacing-ratio
+        source: gcp
+        title: Pacing Ratio P50
+        type: gauge
+        unit: ''
+      - id: roger-messages
+        position:
+          col: 2
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        project: mad-master
+        queryId: roger-send-count
+        source: gcp
+        sparkline: true
+        title: Roger Messages
+        type: big-number
+      - id: ebrake-p50
+        position:
+          col: 3
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        project: mad-master
+        queryId: roger-ebrake
+        source: gcp
+        title: Emergency Brake
+        type: stat-card
+      - id: roger-send-latency
+        max: 200
+        min: 0
+        position:
+          col: 1
+          colSpan: 1
+          row: 3
+          rowSpan: 1
+        project: mad-master
+        queryId: roger-send-latency
+        source: gcp
+        title: Send Latency P95
+        type: gauge
+        unit: ms
+      - id: impression-rater
+        position:
+          col: 2
+          colSpan: 1
+          row: 3
+          rowSpan: 1
+        project: mad-master
+        queryId: impressionrater-row-updates
+        source: gcp
+        sparkline: true
+        title: Impressions Rated
+        type: big-number
+      - id: active-campaigns-count
+        position:
+          col: 3
+          colSpan: 1
+          row: 3
+          rowSpan: 1
+        project: mad-master
+        queryId: roger-campaigns
+        source: gcp
+        title: Active Campaigns
+        type: stat-card
+  - grid:
+      columns: 4
+      gap: 14
+      rows: 3
+    icon: flow
+    id: data-infra
+    name: Data Infrastructure
+    subtitle: Kafka · Bigtable · PubSub
+    widgets:
+      - id: kafka-requests
+        position:
+          col: 1
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: kafka-managed-request-count
+        source: gcp
+        title: Kafka Requests
+        type: big-number
+      - id: kafka-lag
+        position:
+          col: 2
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: kafka-managed-offset-lag
+        source: gcp
+        title: Consumer Lag
+        type: stat-card
+      - id: kafka-latency
+        max: 600
+        min: 0
+        position:
+          col: 3
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: kafka-managed-latency
+        source: gcp
+        title: Kafka Latency P95
+        type: gauge
+        unit: ms
+      - id: kafka-write-errors
+        position:
+          col: 4
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: kafka-writes-madmaster
+        source: gcp
+        title: Write Error Rate
+        type: stat-card
+      - id: bigtable-reads
+        position:
+          col: 1
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        queryId: bigtable-returned-rows
+        source: gcp
+        title: Bigtable Read RPS
+        type: big-number
+      - id: bigtable-requests
+        position:
+          col: 2
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        queryId: bigtable-request-count
+        source: gcp
+        title: Bigtable Requests
+        type: big-number
+      - id: bigtable-latency
+        max: 1000
+        min: 0
+        position:
+          col: 3
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        queryId: bigtable-latency
+        source: gcp
+        title: Bigtable P95 Latency
+        type: gauge
+        unit: ms
+      - id: bigtable-cpu
+        max: 100
+        min: 0
+        position:
+          col: 4
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        queryId: bigtable-cpu-load
+        source: gcp
+        title: Bigtable CPU Load
+        type: gauge
+        unit: '%'
+      - id: pubsub-events-unacked
+        position:
+          col: 1
+          colSpan: 1
+          row: 3
+          rowSpan: 1
+        queryId: pubsub-events-primary-unacked
+        source: gcp
+        title: Events Backlog
+        type: stat-card
+      - id: pubsub-wins-unacked
+        position:
+          col: 2
+          colSpan: 1
+          row: 3
+          rowSpan: 1
+        queryId: pubsub-wins-unacked
+        source: gcp
+        title: Wins Backlog
+        type: stat-card
+      - id: bigtable-tables
+        position:
+          col: 3
+          colSpan: 2
+          row: 3
+        queryId: bigtable-table-bytes
+        source: gcp
+        title: Bigtable Tables by Size
+        type: bar-chart
+  - grid:
+      columns: 3
+      gap: 14
+      rows: 3
+    icon: bolt
+    id: api-services
+    name: API & Services
+    subtitle: Mozart · Planner · Gary2
+    widgets:
+      - id: mozart-requests
+        position:
+          col: 1
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        project: mad-master
+        queryId: mozart-total-requests
+        source: gcp
+        sparkline: true
+        title: Mozart Requests
+        type: big-number
+      - id: mozart-impressions
+        position:
+          col: 2
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        project: mad-master
+        queryId: mozart-total-impressions
+        source: gcp
+        sparkline: true
+        title: Mozart Impressions
+        type: big-number
+      - id: mozart-errors
+        position:
+          col: 3
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        project: mad-master
+        queryId: mozart-errors
+        source: gcp
+        title: Mozart Errors
+        type: stat-card
+      - id: planner-impressions
+        position:
+          col: 1
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        project: mad-master
+        queryId: planner-impressions
+        source: gcp
+        sparkline: true
+        title: Planner Impressions
+        type: big-number
+      - id: planner-reach
+        position:
+          col: 2
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        project: mad-master
+        queryId: planner-reach
+        source: gcp
+        sparkline: true
+        title: Planner Reach
+        type: big-number
+      - id: madserver-sql
+        max: 500
+        min: 0
+        position:
+          col: 3
+          colSpan: 1
+          row: 2
+          rowSpan: 1
+        project: mad-master
+        queryId: madserver-sql-latency
+        source: gcp
+        title: SQL Latency P95
+        type: gauge
+        unit: ms
+      - id: gary2-segments
+        position:
+          col: 1
+          colSpan: 1
+          row: 3
+          rowSpan: 1
+        project: mad-master
+        queryId: gary2-segments-processed
+        source: gcp
+        sparkline: true
+        title: Segments Processed
+        type: big-number
+      - id: gary2-backlog
+        position:
+          col: 2
+          colSpan: 1
+          row: 3
+          rowSpan: 1
+        project: mad-master
+        queryId: gary2-pubsub-backlog
+        source: gcp
+        title: Gary2 Backlog
+        type: stat-card
+      - id: madserver-calls
+        position:
+          col: 3
+          colSpan: 1
+          row: 3
+          rowSpan: 1
+        project: mad-master
+        queryId: madserver-rpc-calls
+        source: gcp
+        title: API Calls by Client
+        type: bar-chart
+  - grid:
+      columns: 1
+      gap: 0
+      rows: 1
+    icon: shield
+    id: security-posture
+    name: Security Posture
+    subtitle: VulnTrack Findings
+    widgets:
+      - id: vulntrack-overview
+        position:
+          col: 1
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: vulntrack-security-posture
+        source: vulntrack
+        title: ''
+        type: security-scorecard
+  - grid:
+      columns: 4
+      gap: 14
+      rows: 4
+    icon: palette
+    id: visual-showcase
+    name: Visual Showcase
+    subtitle: All 14 Widget Types
+    widgets:
+      - id: showcase-bignumber
+        position:
+          col: 1
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        source: mock
+        title: Total Users
+        type: big-number
+      - id: showcase-statcard
+        position:
+          col: 2
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        source: mock
+        title: Active Sessions
+        type: stat-card
+      - id: showcase-gauge
+        max: 100
+        min: 0
+        position:
+          col: 3
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        source: mock
+        title: System Health
+        type: gauge
+        unit: '%'
+      - id: showcase-sparkline
+        position:
+          col: 4
+          colSpan: 1
+          row: 1
+          rowSpan: 1
+        queryId: lb-backend-latencies
+        source: gcp
+        title: Quick Trend
+        type: bar-chart
+      - id: showcase-multimetric
+        position:
+          col: 1
+          colSpan: 2
+          row: 2
+          rowSpan: 1
+        source: mock
+        title: Key Metrics
+        type: multi-metric-card
+      - id: showcase-line
+        position:
+          col: 1
+          colSpan: 2
+          row: 3
+          rowSpan: 1
+        queryId: mozart-total-impressions
+        source: gcp
+        title: Traffic Over Time
+        type: gauge
+      - id: showcase-stackedbar
+        position:
+          col: 1
+          colSpan: 1
+          row: 4
+          rowSpan: 1
+        source: mock
+        title: Conversion Funnel
+        type: stacked-bar-chart
+      - id: showcase-sankey
+        position:
+          col: 2
+          colSpan: 1
+          row: 4
+          rowSpan: 1
+        source: mock
+        title: User Flow
+        type: sankey
+      - id: showcase-table
+        position:
+          col: 3
+          colSpan: 2
+          row: 3
+          rowSpan: 2
+        source: mock
+        title: Recent Transactions
+        type: table
 global:
   refresh_interval: 8
   rotation_interval: 30
   title: MADHIVE PLATFORM
+  activeTheme: light-clean

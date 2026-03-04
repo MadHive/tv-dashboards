@@ -506,7 +506,14 @@ async function dataProcessing() {
 // ──────────────────────────────────────────────
 // Data Pipeline — 6 stages
 // ──────────────────────────────────────────────
+let _dataPipelineCache = null;
+let _dataPipelineCacheTime = 0;
+const PIPELINE_CACHE_TTL = 15000;
+
 async function dataPipeline() {
+  if (_dataPipelineCache && (Date.now() - _dataPipelineCacheTime) < PIPELINE_CACHE_TTL) {
+    return _dataPipelineCache;
+  }
   const [pubsub, pipeRows, bqExecTimes] = await Promise.all([
     query('mad-data', 'pubsub.googleapis.com/topic/send_message_operation_count', '', 5),
     query('mad-master', 'custom.googleapis.com/opencensus/mhive/pipe/rows_written', '', 10),
@@ -541,7 +548,7 @@ async function dataPipeline() {
   let totalLatency = 0;
   stagesRaw.forEach(s => { totalLatency += s.latency; });
 
-  return {
+  const _pipelineResult = {
     pipeline: {
       summary: {
         throughput: stagesRaw[stagesRaw.length - 1].throughput,
@@ -557,6 +564,9 @@ async function dataPipeline() {
       })),
     },
   };
+  _dataPipelineCache = _pipelineResult;
+  _dataPipelineCacheTime = Date.now();
+  return _pipelineResult;
 }
 
 // ──────────────────────────────────────────────
@@ -564,6 +574,9 @@ async function dataPipeline() {
 // Uses loadbalancing.googleapis.com metrics for the bidder backends
 // ──────────────────────────────────────────────
 let _bidderHistory = [];
+let _bidderClusterCache = null;
+let _bidderClusterCacheTime = 0;
+const BIDDER_CACHE_TTL = 15000;
 
 // Standard aggregation presets (matching RTB Triage & SLA dashboards)
 const AGG_RATE_SUM = {
@@ -593,6 +606,12 @@ function aggPercentile(pct) {
 }
 
 async function bidderCluster() {
+  // 15-second cache — prevents double GCP calls when bidderErrorRate and bidderTimeoutRate
+  // are both fetched in the same refresh cycle (each would otherwise fire 7 API queries).
+  if (_bidderClusterCache && (Date.now() - _bidderClusterCacheTime) < BIDDER_CACHE_TTL) {
+    return _bidderClusterCache;
+  }
+
   const bidderFilter = 'resource.labels.backend_name = monitoring.regex.full_match(".*bidder.*|.*vast--prod.*")';
 
   const [
@@ -687,7 +706,7 @@ async function bidderCluster() {
       color: codeColors[code] || colors[i % colors.length],
     }));
 
-  return {
+  const _bidderResult = {
     'bid-qps': {
       value: Math.round(totalQps),
       sparkline: [..._bidderHistory],
@@ -735,6 +754,9 @@ async function bidderCluster() {
         : [{ label: 'no data', value: 0, color: '#6B5690' }],
     },
   };
+  _bidderClusterCache = _bidderResult;
+  _bidderClusterCacheTime = Date.now();
+  return _bidderResult;
 }
 
 // ──────────────────────────────────────────────
@@ -1173,6 +1195,137 @@ async function securityPosture() {
         openFindings: t.openFindings || t.stats?.openFindings || 0,
       })),
     },
+  };
+}
+
+// ===========================================================================
+// Named exports for the computed query engine
+// Each returns { data: widgetData, rawData: [{label, value}] }
+// ===========================================================================
+
+export async function storageVolume() {
+  const AGG_STORAGE = { alignmentPeriod: { seconds: 60 }, perSeriesAligner: 'ALIGN_MEAN', crossSeriesReducer: 'REDUCE_SUM' };
+  const [bqData, bqMaster, btUsed, gcsData, gcsMaster] = await Promise.all([
+    query('mad-data',   'bigquery.googleapis.com/storage/stored_bytes',  '', 60, AGG_STORAGE),
+    query('mad-master', 'bigquery.googleapis.com/storage/stored_bytes',  '', 60, AGG_STORAGE),
+    query('mad-master', 'bigtable.googleapis.com/table/bytes_used',      'resource.type = "bigtable_table"', 10, AGG_STORAGE),
+    query('mad-data',   'storage.googleapis.com/storage/total_bytes',    'resource.type = "gcs_bucket"', 60, AGG_STORAGE),
+    query('mad-master', 'storage.googleapis.com/storage/total_bytes',    'resource.type = "gcs_bucket"', 60, AGG_STORAGE),
+  ]);
+  const bqBytes  = (latest(bqData) || 0) + (latest(bqMaster) || 0);
+  const btBytes  = latest(btUsed)  || 0;
+  const gcsBytes = (latest(gcsData) || 0) + (latest(gcsMaster) || 0);
+  const total    = bqBytes + btBytes + gcsBytes;
+  const parts    = [];
+  if (bqBytes  > 0) parts.push('BQ '  + fmtBytes(bqBytes));
+  if (btBytes  > 0) parts.push('BT '  + fmtBytes(btBytes));
+  if (gcsBytes > 0) parts.push('GCS ' + fmtBytes(gcsBytes));
+  return {
+    data: { value: total > 0 ? fmtBytes(total) : '—', detail: parts.join(' + ') || 'BQ + BT + GCS', trend: 'up' },
+    rawData: [
+      { label: 'BigQuery (mad-data)',    value: fmtBytes(latest(bqData) || 0) },
+      { label: 'BigQuery (mad-master)',  value: fmtBytes(latest(bqMaster) || 0) },
+      { label: 'Bigtable (mad-master)',  value: fmtBytes(btBytes) },
+      { label: 'GCS (mad-data)',         value: fmtBytes(latest(gcsData) || 0) },
+      { label: 'GCS (mad-master)',       value: fmtBytes(latest(gcsMaster) || 0) },
+      { label: 'Total',                  value: fmtBytes(total) },
+    ],
+  };
+}
+
+export async function fleetHealth() {
+  const { requestCounts, latencies } = await getCloudRunData();
+  const svcMap  = buildServiceMap(requestCounts, latencies);
+  const allSvcs = Object.values(svcMap);
+  const online  = allSvcs.filter(s => s.requestRate > 0).length;
+  const pct     = allSvcs.length > 0 ? Math.round(online / allSvcs.length * 100) : 100;
+  return {
+    data: { value: pct, detail: online + '/' + allSvcs.length + ' active', trend: 'stable' },
+    rawData: [
+      { label: 'online services', value: online },
+      { label: 'total services',  value: allSvcs.length },
+      { label: 'health %',        value: pct },
+    ],
+  };
+}
+
+export async function serviceLatency() {
+  const { latencies } = await getCloudRunData();
+  const svcMap  = buildServiceMap([], latencies);
+  const withLat = Object.values(svcMap).filter(s => s.latency > 0).sort((a, b) => a.latency - b.latency);
+  const median  = withLat.length > 0 ? Math.round(withLat[Math.floor(withLat.length / 2)].latency) : null;
+  return {
+    data: { value: median },
+    rawData: withLat.slice(0, 10).map(s => ({ label: s.name, value: s.latency })),
+  };
+}
+
+export async function campaignDeliveryMapWidget(params = {}, widgetConfig = {}) {
+  const wc = {
+    id:        widgetConfig.id || params.widgetId || 'usa-delivery-map',
+    mapConfig: {
+      region:         params.region         || widgetConfig.mapConfig?.region,
+      timeWindow:     params.timeWindow     || widgetConfig.mapConfig?.timeWindow,
+      minImpressions: params.minImpressions || widgetConfig.mapConfig?.minImpressions,
+    },
+  };
+  const all  = await campaignDeliveryMap(wc);
+  const data = all[wc.id] || {};
+  const topHotspots = (data.hotspots || []).slice(0, 20).map(h => ({
+    label: (h.zip3 || '?') + ' (' + (h.state || '?') + ')',
+    value: h.impressions || 0,
+  }));
+  return { data, rawData: topHotspots };
+}
+
+export async function coreClusterSize() {
+  // Note: kubernetes.io/container/uptime does not need resource.type prefix in the extra filter
+  // (consistent with how rtbInfra() strips the prefix via .replace() before passing to query()).
+  const filter = (name) => `resource.labels.container_name = "${name}"`;
+  const AGG_COUNT = { alignmentPeriod: { seconds: 60 }, perSeriesAligner: 'ALIGN_MEAN', crossSeriesReducer: 'REDUCE_COUNT' };
+  const [bidderTs, rogerTs, memTs] = await Promise.all([
+    query('mad-master', 'kubernetes.io/container/uptime', filter('bidder'),    10, AGG_COUNT),
+    query('mad-master', 'kubernetes.io/container/uptime', filter('roger'),     10, AGG_COUNT),
+    query('mad-master', 'kubernetes.io/container/uptime', filter('memcached'), 10, AGG_COUNT),
+  ]);
+  const bidder   = Math.round(latest(bidderTs) || 0);
+  const roger    = Math.round(latest(rogerTs)  || 0);
+  const memcache = Math.round(latest(memTs)    || 0);
+  const total    = bidder + roger + memcache;
+  return {
+    data: { value: String(total), detail: 'total containers', trend: 'stable' },
+    rawData: [
+      { label: 'bidder',    value: bidder },
+      { label: 'roger',     value: roger },
+      { label: 'memcached', value: memcache },
+      { label: 'total',     value: total },
+    ],
+  };
+}
+
+export async function pipelineFlow() {
+  const all = await dataPipeline();
+  return {
+    data:    all['pipeline'],
+    rawData: (all['pipeline']?.stages || []).map(s => ({ label: s.name, value: s.throughput })),
+  };
+}
+
+export async function bidderErrorRate() {
+  const all = await bidderCluster();
+  const d   = all['error-rate'] || {};
+  return {
+    data:    d,
+    rawData: [{ label: 'error rate', value: d.value ?? 0 }],
+  };
+}
+
+export async function bidderTimeoutRate() {
+  const all = await bidderCluster();
+  const d   = all['timeout-rate'] || {};
+  return {
+    data:    d,
+    rawData: [{ label: 'timeout rate', value: d.value ?? 0 }],
   };
 }
 
