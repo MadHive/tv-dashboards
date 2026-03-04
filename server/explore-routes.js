@@ -73,7 +73,12 @@ export const exploreRoutes = new Elysia({ prefix: '/api/explore' })
     }
 
     let safeSql = sql.trim().replace(/;\s*$/, '');
-    if (!/\bLIMIT\b/i.test(safeSql)) {
+    // Strip string literals and line comments before testing for LIMIT to prevent
+    // false-positives where "LIMIT" appears inside a quoted string or comment.
+    const sqlStripped = safeSql
+      .replace(/'(?:[^'\\]|\\.)*'/g, "''")
+      .replace(/--[^\n]*/g, '');
+    if (!/\bLIMIT\b/i.test(sqlStripped)) {
       safeSql = safeSql + ' LIMIT 200';
     }
 
@@ -88,6 +93,9 @@ export const exploreRoutes = new Elysia({ prefix: '/api/explore' })
         success:     true,
         rows,
         widgetData,
+        widgetDataNote: widgetData === null && rows.length > 0
+          ? 'No numeric column detected; widgetData unavailable for this result set.'
+          : undefined,
         rowCount:    rows.length,
         columnCount: rows.length > 0 ? Object.keys(rows[0]).length : 0,
         executionMs,
