@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="/css/dashboard.css?v=12">
   <link rel="stylesheet" href="/css/studio.css?v=11">
+  <link rel="stylesheet" href="/css/query-explorer.css?v=1">
 </head>
 <body class="studio-body">
 
@@ -112,6 +113,9 @@
         <div class="query-list-toolbar">
           <button id="import-gcp-dashboards-btn" class="btn-import-gcp" title="Import queries from GCP Cloud Monitoring dashboards">
             &#8595; Import from GCP
+          </button>
+          <button id="open-query-explorer-btn" class="btn-open-explorer" title="Open Query Explorer">
+            &#9670; Explorer
           </button>
         </div>
         <div id="query-list" class="query-list"></div>
@@ -504,6 +508,7 @@
   <script src="/js/charts.js?v=18"></script>
   <script src="/js/widgets.js?v=11"></script>
   <script src="/js/query-editor.js?v=1"></script>
+  <script src="/js/query-explorer.js?v=1"></script>
   <script src="/js/studio-canvas.js?v=5"></script>
   <script src="/js/studio.js?v=20"></script>
 
@@ -528,6 +533,160 @@
       <div class="gcp-import-footer">
         <span id="gcp-import-selected-count" class="gcp-import-count">0 selected</span>
         <button id="gcp-import-do-btn" class="btn-primary" disabled>Import Selected</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Query Explorer Modal -->
+<div id="qx-modal" class="studio-modal" style="display:none">
+  <div class="studio-modal-content qx-modal-content">
+    <div class="studio-modal-header">
+      <h2>Query Explorer</h2>
+      <button id="qx-close-btn" class="modal-close">&#x2715;</button>
+    </div>
+    <div class="qx-body">
+
+      <!-- Left: Query Builder -->
+      <div class="qx-builder">
+        <div class="qx-field-row">
+          <label class="qx-label">Source</label>
+          <select id="qx-source" class="qx-select">
+            <option value="gcp">GCP Metrics</option>
+            <option value="bigquery">BigQuery</option>
+            <option value="logging" disabled>Cloud Logging &#183; Phase 2</option>
+            <option value="trace" disabled>Cloud Trace &#183; Phase 2</option>
+            <option value="otel" disabled>OTel Collector &#183; Phase 2</option>
+          </select>
+        </div>
+
+        <!-- GCP fields -->
+        <div id="qx-gcp-fields" class="qx-source-fields">
+          <div class="qx-field-row">
+            <label class="qx-label">Metric Type</label>
+            <div class="qx-metric-row">
+              <input id="qx-metric-type" type="text" class="qx-input" placeholder="e.g. run.googleapis.com/request_count">
+              <button id="qx-browse-btn" class="studio-btn secondary small">Browse</button>
+            </div>
+          </div>
+          <div class="qx-field-row">
+            <label class="qx-label">Project</label>
+            <select id="qx-project" class="qx-select">
+              <option value="mad-master">mad-master</option>
+              <option value="mad-data">mad-data</option>
+              <option value="mad-audit">mad-audit</option>
+              <option value="mad-looker-enterprise">mad-looker-enterprise</option>
+            </select>
+          </div>
+          <div class="qx-field-row">
+            <label class="qx-label">Time Window</label>
+            <select id="qx-time-window" class="qx-select">
+              <option value="5">5 min</option>
+              <option value="10">10 min</option>
+              <option value="30" selected>30 min</option>
+              <option value="60">1 hour</option>
+              <option value="360">6 hours</option>
+              <option value="1440">24 hours</option>
+            </select>
+          </div>
+          <div class="qx-field-row">
+            <label class="qx-label">Aligner</label>
+            <select id="qx-aligner" class="qx-select">
+              <option value="ALIGN_RATE">ALIGN_RATE</option>
+              <option value="ALIGN_DELTA">ALIGN_DELTA</option>
+              <option value="ALIGN_MEAN" selected>ALIGN_MEAN</option>
+              <option value="ALIGN_SUM">ALIGN_SUM</option>
+              <option value="ALIGN_MAX">ALIGN_MAX</option>
+            </select>
+          </div>
+          <div class="qx-field-row">
+            <label class="qx-label">Reducer</label>
+            <select id="qx-reducer" class="qx-select">
+              <option value="REDUCE_NONE" selected>REDUCE_NONE</option>
+              <option value="REDUCE_SUM">REDUCE_SUM</option>
+              <option value="REDUCE_MEAN">REDUCE_MEAN</option>
+              <option value="REDUCE_MAX">REDUCE_MAX</option>
+            </select>
+          </div>
+          <div class="qx-field-row">
+            <label class="qx-label">Period</label>
+            <select id="qx-period" class="qx-select">
+              <option value="60s" selected>60s</option>
+              <option value="300s">300s</option>
+              <option value="600s">600s</option>
+              <option value="3600s">3600s</option>
+            </select>
+          </div>
+          <div class="qx-field-row">
+            <label class="qx-label">Filters</label>
+            <input id="qx-filters" type="text" class="qx-input" placeholder='resource.type="k8s_container"'>
+          </div>
+        </div>
+
+        <!-- BigQuery fields -->
+        <div id="qx-bq-fields" class="qx-source-fields" style="display:none">
+          <div class="qx-field-row">
+            <label class="qx-label">SQL</label>
+            <textarea id="qx-sql" class="qx-textarea" rows="10" spellcheck="false" placeholder="SELECT zip3, SUM(impressions) AS impressions&#10;FROM \`mad-data.reporting.billable_agg\`&#10;LIMIT 50"></textarea>
+          </div>
+          <div class="qx-field-row qx-schema-row">
+            <label class="qx-label">Schema</label>
+            <div class="qx-schema-controls">
+              <select id="qx-bq-dataset" class="qx-select qx-select-sm">
+                <option value="">Dataset&#8230;</option>
+              </select>
+              <select id="qx-bq-table" class="qx-select qx-select-sm">
+                <option value="">Table&#8230;</option>
+              </select>
+            </div>
+          </div>
+          <div id="qx-schema-cols" class="qx-schema-cols"></div>
+        </div>
+
+        <button id="qx-run-btn" class="studio-btn primary qx-run-btn">&#9654; Run Query</button>
+        <div id="qx-run-status" class="qx-run-status"></div>
+      </div>
+
+      <!-- Center: Raw Results -->
+      <div class="qx-results" id="qx-results">
+        <div class="qx-results-placeholder">Configure a query and click Run</div>
+      </div>
+
+      <!-- Right: Widget Preview -->
+      <div class="qx-preview">
+        <div class="qx-preview-header">
+          <label class="qx-label">Widget Type
+            <select id="qx-widget-type" class="qx-select">
+              <option value="big-number">Big Number</option>
+              <option value="stat-card">Stat Card</option>
+              <option value="gauge">Gauge</option>
+              <option value="line-chart">Line Chart</option>
+              <option value="bar-chart">Bar Chart</option>
+            </select>
+          </label>
+        </div>
+        <div id="qx-preview-canvas-wrap" class="qx-preview-canvas-wrap">
+          <div class="qx-results-placeholder">Run a query to preview</div>
+        </div>
+        <div class="qx-preview-config" id="qx-preview-config" style="display:none">
+          <label class="qx-label qx-label-inline">Unit
+            <input id="qx-unit" type="text" class="qx-input-sm" placeholder="req/s">
+          </label>
+          <label class="qx-label qx-label-inline" id="qx-max-row" style="display:none">Max
+            <input id="qx-max" type="number" class="qx-input-sm" placeholder="100">
+          </label>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Action bar -->
+    <div class="qx-action-bar">
+      <button id="qx-export-csv-btn" class="studio-btn secondary" disabled>&#8595; Export CSV</button>
+      <div class="qx-action-bar-right">
+        <button id="qx-save-btn"   class="studio-btn secondary" disabled>Save as Query</button>
+        <button id="qx-assign-btn" class="studio-btn secondary" disabled>Assign to Widget</button>
+        <button class="studio-btn secondary" disabled title="Coming in Phase 2">Create Assertion</button>
       </div>
     </div>
   </div>
