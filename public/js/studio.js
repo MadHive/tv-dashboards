@@ -2264,6 +2264,7 @@
       } finally {
         if (this.closeBtn) this.closeBtn.disabled = false;
         if (this.backBtn)  this.backBtn.disabled  = false;
+        this._updateCount(); // re-evaluate doBtn state based on remaining checkboxes
       }
 
       this.close();
