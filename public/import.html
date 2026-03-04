@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Import from GCP — MadHive Studio</title>
+  <link rel="stylesheet" href="/css/dashboard.css?v=12">
+  <link rel="stylesheet" href="/css/studio.css?v=11">
+  <link rel="stylesheet" href="/css/importer.css?v=1">
+</head>
+<body class="studio-body">
+
+  <!-- Top bar -->
+  <header class="studio-topbar">
+    <div class="studio-brand">
+      <a href="/admin" class="imp-back-link">&#8592; Studio</a>
+    </div>
+    <div class="imp-topbar-title">Import from GCP Dashboards</div>
+    <div class="studio-actions">
+      <label class="imp-project-label">Project
+        <select id="imp-project" class="imp-project-select">
+          <option value="mad-master">mad-master</option>
+          <option value="mad-data">mad-data</option>
+          <option value="mad-audit">mad-audit</option>
+          <option value="mad-looker-enterprise">mad-looker-enterprise</option>
+        </select>
+      </label>
+    </div>
+  </header>
+
+  <!-- 3-panel layout -->
+  <div class="imp-layout">
+
+    <!-- Left: Dashboard list -->
+    <aside class="imp-left">
+      <div class="imp-panel-header">
+        <span class="imp-panel-title">Dashboards</span>
+        <input id="imp-search" type="text" class="imp-search" placeholder="Search&#8230;">
+      </div>
+      <div id="imp-dash-list" class="imp-dash-list">
+        <div class="imp-loading">Loading&#8230;</div>
+      </div>
+    </aside>
+
+    <!-- Center: Tile list -->
+    <main class="imp-center">
+      <div class="imp-panel-header">
+        <span class="imp-panel-title" id="imp-dash-name">Select a dashboard</span>
+        <span class="imp-selection-count" id="imp-sel-count"></span>
+      </div>
+      <div id="imp-tile-list" class="imp-tile-list">
+        <div class="imp-empty">Select a dashboard on the left to see its charts.</div>
+      </div>
+    </main>
+
+    <!-- Right: Live preview -->
+    <aside class="imp-right">
+      <div class="imp-panel-header">
+        <span class="imp-panel-title">Live Preview</span>
+      </div>
+      <div id="imp-preview-area" class="imp-preview-area">
+        <div class="imp-empty">Click a chart tile to preview its data.</div>
+      </div>
+      <div id="imp-preview-controls" class="imp-preview-controls" style="display:none">
+        <label class="imp-ctrl-label">Type
+          <select id="imp-widget-type" class="imp-select">
+            <option value="big-number">Big Number</option>
+            <option value="stat-card">Stat Card</option>
+            <option value="gauge">Gauge</option>
+            <option value="line-chart">Line Chart</option>
+            <option value="bar-chart">Bar Chart</option>
+            <option value="table">Table</option>
+          </select>
+        </label>
+        <label class="imp-ctrl-label">Window
+          <select id="imp-time-window" class="imp-select">
+            <option value="5">5 min</option>
+            <option value="10">10 min</option>
+            <option value="30" selected>30 min</option>
+            <option value="60">1 hour</option>
+          </select>
+        </label>
+        <div id="imp-status" class="imp-status"></div>
+      </div>
+      <div class="imp-add-bar">
+        <label class="imp-ctrl-label">Add to
+          <select id="imp-target-dash" class="imp-select">
+            <option value="">Loading&#8230;</option>
+          </select>
+        </label>
+        <button id="imp-add-btn" class="studio-btn primary" disabled>Add to Dashboard</button>
+      </div>
+    </aside>
+
+  </div>
+
+  <script src="/js/us-states.js?v=11"></script>
+  <script src="/js/charts.js?v=18"></script>
+  <script src="/js/widgets.js?v=11"></script>
+  <script src="/js/importer.js?v=1"></script>
+</body>
+</html>

@@ -642,12 +642,21 @@ window.Charts = (function () {
     }
 
     // Each canvas gets its own RAF loop so multiple usa-map instances
-    // (nationwide, northeast, southeast) all animate independently
+    // (nationwide, northeast, southeast) all animate independently.
+    // Visibility-aware throttle: 30fps when the dashboard page is active,
+    // 2fps when hidden — prevents all 3 map canvases burning GPU at 60fps
+    // while off-screen (the TV slideshow hides pages with opacity:0 but
+    // the RAF loops kept running, causing the performance ceiling).
     if (!canvas._mapAnimId) {
       (function startLoop() {
         canvas._mapAnimId = requestAnimationFrame(function tick() {
+          var isVisible = !!canvas.closest('.dashboard-page.active');
           drawMap(canvas);
-          canvas._mapAnimId = requestAnimationFrame(tick);
+          // 30fps (≈33ms) when visible, 500ms (2fps) when hidden
+          var delay = isVisible ? 16 : 500;
+          setTimeout(function () {
+            canvas._mapAnimId = requestAnimationFrame(tick);
+          }, delay);
         });
       })();
     }

@@ -260,6 +260,11 @@ body::before {
   min-height: 0;
 }
 
+/* Table widgets need at least 2 visible rows to be usable */
+.widget-table .widget-content {
+  min-height: 140px;
+}
+
 /* ===========================================================================
    BIG NUMBER — huge for 10ft viewing
    =========================================================================== */
