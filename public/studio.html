@@ -554,6 +554,7 @@
           <select id="qx-source" class="qx-select">
             <option value="gcp">GCP Metrics</option>
             <option value="bigquery">BigQuery</option>
+            <option value="computed">Computed Functions</option>
             <option value="logging" disabled>Cloud Logging &#183; Phase 2</option>
             <option value="trace" disabled>Cloud Trace &#183; Phase 2</option>
             <option value="otel" disabled>OTel Collector &#183; Phase 2</option>
@@ -641,6 +642,20 @@
             </div>
           </div>
           <div id="qx-schema-cols" class="qx-schema-cols"></div>
+        </div>
+
+        <!-- Computed fields -->
+        <div id="qx-computed-fields" class="qx-source-fields" style="display:none">
+          <div class="qx-field-row">
+            <label class="qx-label">Function</label>
+            <select id="qx-computed-fn" class="qx-select">
+              <option value="">Loading&#8230;</option>
+            </select>
+          </div>
+          <div class="qx-field-row">
+            <label class="qx-label">Params (JSON, optional)</label>
+            <textarea id="qx-computed-params" class="qx-textarea" rows="3" spellcheck="false" placeholder="{}"></textarea>
+          </div>
         </div>
 
         <button id="qx-run-btn" class="studio-btn primary qx-run-btn">&#9654; Run Query</button>

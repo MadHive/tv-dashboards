@@ -55,6 +55,9 @@ window.QueryExplorer = (function () {
       this._bqDataset     = document.getElementById('qx-bq-dataset');
       this._bqTable       = document.getElementById('qx-bq-table');
       this._schemaCols    = document.getElementById('qx-schema-cols');
+      this._computedFields  = document.getElementById('qx-computed-fields');
+      this._computedFn      = document.getElementById('qx-computed-fn');
+      this._computedParams  = document.getElementById('qx-computed-params');
 
       if (!this._modal) return;
 
@@ -102,7 +105,9 @@ window.QueryExplorer = (function () {
       const src = this._source?.value;
       if (this._gcpFields) this._gcpFields.style.display = src === 'gcp'      ? '' : 'none';
       if (this._bqFields)  this._bqFields.style.display  = src === 'bigquery' ? '' : 'none';
+      if (this._computedFields) this._computedFields.style.display = src === 'computed' ? '' : 'none';
       if (src === 'bigquery') this._loadBqDatasets();
+      if (src === 'computed') this._loadComputedFunctions();
     }
 
     async _runQuery() {
@@ -122,6 +127,14 @@ window.QueryExplorer = (function () {
           body = this._buildGcpBody();
           if (!body) {
             this._runStatus.textContent = 'Enter a metric type';
+            this._runBtn.removeAttribute('disabled');
+            if (this._lastRaw) this._setActionsDisabled(false);
+            return;
+          }
+        } else if (src === 'computed') {
+          body = this._buildComputedBody();
+          if (!body) {
+            this._runStatus.textContent = 'Select a function';
             this._runBtn.removeAttribute('disabled');
             if (this._lastRaw) this._setActionsDisabled(false);
             return;
@@ -154,7 +167,10 @@ window.QueryExplorer = (function () {
         this._runStatus.textContent = ms + 'ms';
         this._runStatus.style.color = 'var(--green, #4ade80)';
 
-        if (src === 'gcp') {
+        if (src === 'computed') {
+          this._lastRaw = { type: 'computed', rows: data.rawData || [], meta: data };
+          this._renderBqResults(data.rawData || [], (data.rawData || []).length, data.rawData?.length > 0 ? Object.keys(data.rawData[0] || {}).length : 0, ms);
+        } else if (src === 'gcp') {
           this._lastRaw = { type: 'gcp', rawSeries: data.rawSeries, meta: data };
           this._renderGcpResults(data.rawSeries, data.seriesCount, data.pointCount, ms);
         } else {
@@ -324,6 +340,7 @@ window.QueryExplorer = (function () {
       if (this._lastRaw.type === 'gcp') {
         widgetData = this._transformGcpClientSide(this._lastRaw.rawSeries, type);
       } else {
+        // computed rawData uses same [{label, value}] shape as BQ rows
         widgetData = this._transformBqClientSide(this._lastRaw.rows, type);
       }
       this._renderWidgetPreview(widgetData, type);
@@ -527,6 +544,36 @@ window.QueryExplorer = (function () {
           this._schemaCols.appendChild(row);
         });
       } catch (_) { /* silent */ }
+    }
+
+    async _loadComputedFunctions() {
+      if (!this._computedFn) return;
+      try {
+        const res  = await fetch('/api/queries/computed');
+        const data = await res.json();
+        this._computedFn.textContent = '';
+        const dflt = document.createElement('option');
+        dflt.value = '';
+        dflt.textContent = 'Select function\u2026';
+        this._computedFn.appendChild(dflt);
+        (data.queries || []).forEach(q => {
+          const opt = document.createElement('option');
+          opt.value       = q.id;
+          opt.textContent = q.name + ' (' + q.id + ')';
+          this._computedFn.appendChild(opt);
+        });
+      } catch (_) { /* silent */ }
+    }
+
+    _buildComputedBody() {
+      const fnId = this._computedFn?.value?.trim();
+      if (!fnId) return null;
+      let params = {};
+      try {
+        const raw = this._computedParams?.value?.trim();
+        if (raw && raw !== '{}') params = JSON.parse(raw);
+      } catch (_) { /* ignore bad JSON */ }
+      return { function: fnId, params, widgetType: this._widgetType?.value || 'big-number' };
     }
 
     _setActionsDisabled(disabled) {
