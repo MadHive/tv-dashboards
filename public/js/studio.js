@@ -970,6 +970,7 @@
         { type: 'service-heatmap',   icon: '\uD83D\uDFE9', name: 'Heatmap' },
         { type: 'pipeline-flow',     icon: '\u2192',        name: 'Pipeline' },
         { type: 'usa-map',           icon: '\uD83D\uDDFA', name: 'USA Map' },
+        { type: 'usa-map-gl', icon: '\uD83D\uDDFA', name: 'USA Map (GL)' },
         { type: 'security-scorecard',icon: '\uD83D\uDEE1', name: 'Security' },
         { type: 'line-chart',        icon: '\uD83D\uDCC8', name: 'Line Chart' },
         { type: 'table',             icon: '\u25A6',        name: 'Table' },
