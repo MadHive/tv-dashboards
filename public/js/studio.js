@@ -483,6 +483,8 @@
           set('prop-mgl-particles',   String(mgl.particleCount || 120));
           set('prop-mgl-speed',       String(mgl.particleSpeed  || 1.0));
           set('prop-mgl-leaderboard', String(mgl.showLeaderboard !== false));
+          set('prop-mgl-mapstyle', mgl.mapStyle || 'brand');
+          set('prop-mgl-zoomviz',  mgl.zoomViz  || 'dots');
         }
       }
 
@@ -599,6 +601,8 @@
       bind('prop-mgl-particles',   (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), particleCount: parseInt(v, 10) }; });
       bind('prop-mgl-speed',       (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), particleSpeed: parseFloat(v) }; });
       bind('prop-mgl-leaderboard', (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showLeaderboard: v === 'true' }; });
+      bind('prop-mgl-mapstyle', (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), mapStyle: v }; });
+      bind('prop-mgl-zoomviz',  (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), zoomViz: v }; });
     }
 
     /* ─────────────────────────────────────────────
