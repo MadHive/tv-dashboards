@@ -74,11 +74,8 @@
         pauseBtn.addEventListener('click', () => this.togglePause());
       }
 
-      // Click anywhere on dashboard (not top-bar or bottom-bar) to pause/resume
-      document.addEventListener('click', (e) => {
-        if (e.target.closest('#top-bar') || e.target.closest('#bottom-bar')) return;
-        this.togglePause();
-      });
+      // Note: removed "click anywhere to pause" — it caused the pause button to
+      // immediately un-pause when clicking elsewhere on the dashboard.
 
     }
 
