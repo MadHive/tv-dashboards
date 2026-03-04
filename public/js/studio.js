@@ -468,7 +468,7 @@
       // Show/hide Display section based on type
       const displaySection = document.getElementById('display-section');
       if (displaySection) {
-        const showDisplayTypes = ['gauge', 'gauge-row', 'progress-bar', 'big-number', 'stat-card'];
+        const showDisplayTypes = ['gauge', 'gauge-row', 'progress-bar', 'big-number', 'stat-card', 'line-chart', 'bar-chart'];
         displaySection.style.display = showDisplayTypes.includes(wc.type) ? '' : 'none';
       }
       const mapSection = document.getElementById('map-config-section');
@@ -501,7 +501,7 @@
         // Update display section visibility on type change
         const displaySection = document.getElementById('display-section');
         if (displaySection) {
-          const showDisplayTypes = ['gauge', 'gauge-row', 'progress-bar', 'big-number', 'stat-card'];
+          const showDisplayTypes = ['gauge', 'gauge-row', 'progress-bar', 'big-number', 'stat-card', 'line-chart', 'bar-chart'];
           displaySection.style.display = showDisplayTypes.includes(v) ? '' : 'none';
         }
         const mapSec = document.getElementById('map-config-section');
