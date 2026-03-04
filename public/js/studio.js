@@ -1006,7 +1006,7 @@
             if (selectedLabel) selectedLabel.textContent = t.name;
 
             if (addForm) addForm.style.display = 'flex';
-            this.loadPaletteQueries('gcp');
+            this.loadPaletteQueries(document.getElementById('aw-source')?.value || 'gcp');
           });
 
           typeGrid.appendChild(card);
@@ -1231,7 +1231,7 @@
 
       document.getElementById('qe-name').textContent         = query.name;
       document.getElementById('qe-source-badge').textContent = source;
-      document.getElementById('qe-metric').value             = query.metricType || query.sql || '';
+      document.getElementById('qe-metric').value             = query.metricType || query.sql || query.queryId || '';
       document.getElementById('qe-time-window').value        = query.timeWindow || 60;
       document.getElementById('qe-aggregation').value        =
         (query.aggregation && query.aggregation.perSeriesAligner) || 'ALIGN_MEAN';
