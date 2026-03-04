@@ -19,6 +19,28 @@ window.MapboxUSAMap = (function () {
   };
   var USA_BOUNDS = [[-125, 24], [-66, 50]];
 
+  // ── Config defaults + color schemes ──────────────────────────────────────
+
+  var SCHEME_COLORS = {
+    brand: { particleNormal: '#67E8F9', particleFast: '#FDA4D4', stateGlowHigh: '#FDA4D4' },
+    cool:  { particleNormal: '#60A5FA', particleFast: '#FFFFFF', stateGlowHigh: '#e0f2fe' },
+    warm:  { particleNormal: '#fbbf24', particleFast: '#FF6B35', stateGlowHigh: '#fef08a' },
+  };
+
+  function buildMapConfig(userConfig) {
+    return {
+      particleCount:   120,
+      particleSpeed:   1.0,
+      colorScheme:     'brand',
+      showLeaderboard: true,
+      ...(userConfig || {}),
+    };
+  }
+
+  function getColorScheme(name) {
+    return SCHEME_COLORS[name] || SCHEME_COLORS.brand;
+  }
+
   var CHOROPLETH = [
     'interpolate', ['linear'], ['get', 'intensity'],
     0,    '#1a0840',
@@ -33,10 +55,12 @@ window.MapboxUSAMap = (function () {
     constructor(container, config) {
       this._container  = container;
       this._config     = config || {};
+      this._cfg        = buildMapConfig((config || {}).mglConfig);
       this._map        = null;
       this._data       = null;
       this._particles  = [];
       this._animId     = null;
+      this._pulseId    = null;
       this._lbScrollEl = null;
       this._lbTotals   = null;
 
@@ -115,6 +139,20 @@ window.MapboxUSAMap = (function () {
           })),
         },
       });
+
+      // Animated pulse ring sources
+      this._map.addSource('hotspots-pulse',   { type: 'geojson', data: this._empty() });
+      this._map.addSource('datacenter-pulse', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: DATA_CENTERS.map((dc, i) => ({
+            type: 'Feature',
+            properties: { phase: i / DATA_CENTERS.length },
+            geometry: { type: 'Point', coordinates: [dc.lon, dc.lat] },
+          })),
+        },
+      });
     }
 
     _empty() { return { type: 'FeatureCollection', features: [] }; }
@@ -135,11 +173,35 @@ window.MapboxUSAMap = (function () {
       });
 
       this._map.addLayer({
+        id: 'states-glow', type: 'line', source: 'us-states',
+        filter: ['>', ['get', 'intensity'], 0.45],
+        paint: {
+          'line-color':   ['interpolate', ['linear'], ['get', 'intensity'],
+            0.45, '#7c3aed', 0.75, '#b87aff', 1.0, '#FDA4D4'],
+          'line-width':   14,
+          'line-blur':    10,
+          'line-opacity': ['interpolate', ['linear'], ['get', 'intensity'],
+            0.45, 0.1, 1.0, 0.45],
+          'line-color-transition': { duration: 800 },
+        },
+      });
+
+      this._map.addLayer({
         id: 'arc-corridors', type: 'line', source: 'arc-corridors',
         paint: {
           'line-color':   '#67E8F9',
           'line-width':   ['get', 'lw'],
           'line-opacity': ['get', 'lo'],
+        },
+      });
+
+      this._map.addLayer({
+        id: 'arc-particles-glow', type: 'circle', source: 'arc-particles',
+        paint: {
+          'circle-radius':  ['*', ['get', 'sz'], 3.5],
+          'circle-color':   ['case', ['==', ['get', 'pt'], 'fast'], '#FDA4D4', '#67E8F9'],
+          'circle-opacity': 0.10,
+          'circle-blur':    0.9,
         },
       });
 
@@ -178,6 +240,18 @@ window.MapboxUSAMap = (function () {
       });
 
       this._map.addLayer({
+        id: 'hotspots-pulse-ring', type: 'circle', source: 'hotspots-pulse',
+        paint: {
+          'circle-radius':         ['get', 'pr'],
+          'circle-color':          'transparent',
+          'circle-stroke-width':   1.5,
+          'circle-stroke-color':   ['case', ['>', ['get', 'ir'], 0.4], '#FDA4D4', '#67E8F9'],
+          'circle-stroke-opacity': ['get', 'po'],
+          'circle-blur':           0.3,
+        },
+      });
+
+      this._map.addLayer({
         id: 'datacenter-marks', type: 'circle', source: 'datacenters',
         paint: {
           'circle-radius':       7,
@@ -185,6 +259,18 @@ window.MapboxUSAMap = (function () {
           'circle-opacity':      0.92,
           'circle-stroke-width': 2,
           'circle-stroke-color': '#67E8F9',
+        },
+      });
+
+      this._map.addLayer({
+        id: 'datacenter-pulse-ring', type: 'circle', source: 'datacenter-pulse',
+        paint: {
+          'circle-radius':         ['get', 'pr'],
+          'circle-color':          'transparent',
+          'circle-stroke-width':   2,
+          'circle-stroke-color':   '#67E8F9',
+          'circle-stroke-opacity': ['get', 'po'],
+          'circle-blur':           0.2,
         },
       });
     }
@@ -225,6 +311,14 @@ window.MapboxUSAMap = (function () {
       this._buildCorridors(hotspots.slice(0, 30), maxHot);
       this._initParticles(hotspots.slice(0, 50));
       if (!this._animId) this._startAnimation();
+      if (!this._pulseId) this._startPulse();
+
+      // Re-read mglConfig in case Studio changed it, then apply
+      this._cfg = buildMapConfig(this._config.mglConfig);
+      this._applyColorScheme(this._cfg.colorScheme);
+      if (this._lbEl) {
+        this._lbEl.style.display = this._cfg.showLeaderboard ? '' : 'none';
+      }
 
       const bounds = REGION_BOUNDS[data.region] || USA_BOUNDS;
       this._map.fitBounds(bounds, { padding: 20, duration: 800 });
@@ -262,7 +356,7 @@ window.MapboxUSAMap = (function () {
 
     _initParticles(hotspots) {
       const targets = hotspots.length ? hotspots : [{ lon: -98, lat: 39 }];
-      this._particles = Array.from({ length: 120 }, () => {
+      this._particles = Array.from({ length: this._cfg.particleCount }, () => {
         const dc  = DATA_CENTERS[Math.floor(Math.random() * DATA_CENTERS.length)];
         const tgt = targets[Math.floor(Math.random() * targets.length)];
         return {
@@ -282,7 +376,7 @@ window.MapboxUSAMap = (function () {
 
         if (this._map?.getSource('arc-particles')) {
           const features = this._particles.map(p => {
-            p.t += p.speed * (p.pt === 'fast' ? 1.5 : 1);
+            p.t += p.speed * (p.pt === 'fast' ? 1.5 : 1) * this._cfg.particleSpeed;
             if (p.t > 1) {
               p.t = 0;
               const targets = this._data?.hotspots || [];
@@ -316,6 +410,66 @@ window.MapboxUSAMap = (function () {
       this._animId = requestAnimationFrame(tick);
     }
 
+    _startPulse() {
+      let tick = 0;
+      this._pulseId = setInterval(() => {
+        if (!this._map) return;
+        tick += 1;
+        const t = tick / 7;
+
+        // Hotspot pulse rings — top 20
+        if (this._data?.hotspots?.length) {
+          const maxHot = this._data.hotspots[0]?.impressions || 1;
+          const features = this._data.hotspots
+            .filter(h => h.lat && h.lon)
+            .slice(0, 20)
+            .map((h, i) => {
+              const phase = (t * 0.8 + i * 0.31) % 1;
+              const ir    = (h.impressions || 0) / maxHot;
+              const baseR = 3 + ir * 14;
+              return {
+                type: 'Feature',
+                properties: { pr: baseR + phase * 22, po: (1 - phase) * 0.38 * ir, ir },
+                geometry: { type: 'Point', coordinates: [h.lon, h.lat] },
+              };
+            });
+          this._map.getSource('hotspots-pulse')?.setData({ type: 'FeatureCollection', features });
+        }
+
+        // Data center pulse rings
+        const dcFeatures = DATA_CENTERS.map((dc, i) => {
+          const phase = (t * 0.55 + i * 0.33) % 1;
+          return {
+            type: 'Feature',
+            properties: { pr: 8 + phase * 28, po: (1 - phase) * 0.65 },
+            geometry: { type: 'Point', coordinates: [dc.lon, dc.lat] },
+          };
+        });
+        this._map.getSource('datacenter-pulse')?.setData({ type: 'FeatureCollection', features: dcFeatures });
+      }, 150);
+    }
+
+    _applyColorScheme(schemeName) {
+      if (!this._map?.isStyleLoaded()) return;
+      const s = getColorScheme(schemeName);
+
+      this._map.setPaintProperty('arc-particles',
+        'circle-color', ['case', ['==', ['get', 'pt'], 'fast'], s.particleFast, s.particleNormal]);
+      if (this._map.getLayer('arc-particles-glow')) {
+        this._map.setPaintProperty('arc-particles-glow',
+          'circle-color', ['case', ['==', ['get', 'pt'], 'fast'], s.particleFast, s.particleNormal]);
+      }
+      if (this._map.getLayer('hotspots-pulse-ring')) {
+        this._map.setPaintProperty('hotspots-pulse-ring',
+          'circle-stroke-color', ['case', ['>', ['get', 'ir'], 0.4], s.particleFast, s.particleNormal]);
+      }
+      if (this._map.getLayer('states-glow')) {
+        this._map.setPaintProperty('states-glow', 'line-color',
+          ['interpolate', ['linear'], ['get', 'intensity'],
+            0.45, '#7c3aed', 0.75, '#b87aff', 1.0, s.stateGlowHigh]);
+      }
+    }
+
     _buildLeaderboardDOM() {
       const lb = document.createElement('div');
       lb.className = 'mgl-leaderboard';
@@ -337,6 +491,7 @@ window.MapboxUSAMap = (function () {
       lb.appendChild(title);
       lb.appendChild(rowsWrap);
       lb.appendChild(this._lbTotals);
+      this._lbEl = lb;
       this._wrap.appendChild(lb);
     }
 
@@ -395,6 +550,7 @@ window.MapboxUSAMap = (function () {
     destroy() {
       if (this._animId) cancelAnimationFrame(this._animId);
       this._animId = null;
+      if (this._pulseId) { clearInterval(this._pulseId); this._pulseId = null; }
       if (this._map) { this._map.remove(); this._map = null; }
     }
   }
