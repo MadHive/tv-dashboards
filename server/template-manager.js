@@ -93,6 +93,17 @@ export function listTemplates() {
  */
 export function loadTemplate(filename) {
   try {
+    // Validate filename to prevent path traversal attacks
+    if (!filename || typeof filename !== 'string') {
+      throw new Error('Filename is required');
+    }
+    if (filename.includes('..') || 
+        filename.includes('/') || 
+        filename.includes('\\') ||
+        !/^[a-zA-Z0-9._-]+$/.test(filename)) {
+      throw new Error('Invalid filename: path traversal not allowed');
+    }
+    
     const filepath = join(TEMPLATES_DIR, filename);
 
     if (!existsSync(filepath)) {
@@ -115,6 +126,17 @@ export function loadTemplate(filename) {
  */
 export function deleteTemplate(filename) {
   try {
+    // Validate filename to prevent path traversal attacks
+    if (!filename || typeof filename !== 'string') {
+      throw new Error('Filename is required');
+    }
+    if (filename.includes('..') || 
+        filename.includes('/') || 
+        filename.includes('\\') ||
+        !/^[a-zA-Z0-9._-]+$/.test(filename)) {
+      throw new Error('Invalid filename: path traversal not allowed');
+    }
+    
     const filepath = join(TEMPLATES_DIR, filename);
 
     if (!existsSync(filepath)) {

@@ -263,6 +263,17 @@ export function listBackups() {
  */
 export async function restoreBackup(backupFilename) {
   try {
+    // Validate filename to prevent path traversal attacks
+    if (!backupFilename || typeof backupFilename !== 'string') {
+      throw new Error('Backup filename is required');
+    }
+    if (backupFilename.includes('..') || 
+        backupFilename.includes('/') || 
+        backupFilename.includes('\\') ||
+        !/^[a-zA-Z0-9._-]+$/.test(backupFilename)) {
+      throw new Error('Invalid backup filename: path traversal not allowed');
+    }
+    
     const backupPath = join(CONFIG_DIR, backupFilename);
 
     if (!existsSync(backupPath)) {
