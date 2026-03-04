@@ -62,7 +62,8 @@ window.MapboxUSAMap = (function () {
       this._data       = null;
       this._particles  = [];
       this._animId     = null;
-      this._pulseId    = null;
+      this._pulseId      = null;
+      this._currentStyle = 'brand';
       this._lbScrollEl = null;
       this._lbTotals   = null;
 
@@ -155,11 +156,51 @@ window.MapboxUSAMap = (function () {
           })),
         },
       });
+
+      // Boundary sources
+      this._map.addSource('us-counties', {
+        type: 'geojson',
+        data: '/data/us-counties.json',
+      });
+
+      this._map.addSource('mapbox-streets', {
+        type: 'vector',
+        url:  'mapbox://mapbox.mapbox-streets-v8',
+      });
     }
 
     _empty() { return { type: 'FeatureCollection', features: [] }; }
 
     _addLayers() {
+      // County boundary lines — beneath everything
+      this._map.addLayer({
+        id:     'admin-county-lines',
+        type:   'line',
+        source: 'us-counties',
+        paint: {
+          'line-color':   '#3D1A5C',
+          'line-width':   0.4,
+          'line-opacity': 0.5,
+        },
+      });
+
+      // State boundary lines — Mapbox Streets vector tiles, crisp at all zoom levels
+      this._map.addLayer({
+        id:             'admin-state-lines',
+        type:           'line',
+        source:         'mapbox-streets',
+        'source-layer': 'admin',
+        filter: ['all',
+          ['==', ['get', 'admin_level'], 4],
+          ['==', ['get', 'disputed'],    false],
+        ],
+        paint: {
+          'line-color':   '#6B5690',
+          'line-width':   1.2,
+          'line-opacity': 0.75,
+        },
+      });
+
       this._map.addLayer({
         id: 'states-fill', type: 'fill', source: 'us-states',
         paint: {
@@ -224,6 +265,26 @@ window.MapboxUSAMap = (function () {
           'circle-color':   ['case', ['>', ['get', 'ir'], 0.4], '#FDA4D4', '#67E8F9'],
           'circle-opacity': ['interpolate', ['linear'], ['get', 'ir'], 0, 0.06, 1, 0.22],
           'circle-blur':    1.0,
+        },
+      });
+
+      // Delivery heatmap — GPU smooth heat blobs (active when zoomViz: heatmap)
+      this._map.addLayer({
+        id:     'delivery-heatmap',
+        type:   'heatmap',
+        source: 'hotspots',
+        layout: { visibility: 'none' },
+        paint: {
+          'heatmap-weight':    ['interpolate', ['linear'], ['get', 'ir'], 0, 0, 1, 1],
+          'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 3, 1, 8, 3],
+          'heatmap-color':     ['interpolate', ['linear'], ['heatmap-density'],
+            0,   'transparent',
+            0.2, '#3D1A5C',
+            0.4, '#7c3aed',
+            0.7, '#FDA4D4',
+            1.0, '#FFFFFF'],
+          'heatmap-radius':    ['interpolate', ['linear'], ['zoom'], 3, 25, 8, 55],
+          'heatmap-opacity':   0.85,
         },
       });
 
@@ -318,6 +379,10 @@ window.MapboxUSAMap = (function () {
       // Re-read mglConfig in case Studio changed it, then apply
       this._cfg = buildMapConfig(this._config.mglConfig);
       this._applyColorScheme(this._cfg.colorScheme);
+      this._applyZoomViz(this._cfg.zoomViz);
+      if (this._cfg.mapStyle !== this._currentStyle) {
+        this._applyMapStyle(this._cfg.mapStyle);
+      }
       if (this._lbEl) {
         this._lbEl.style.display = this._cfg.showLeaderboard ? '' : 'none';
       }
@@ -470,6 +535,49 @@ window.MapboxUSAMap = (function () {
           ['interpolate', ['linear'], ['get', 'intensity'],
             0.45, '#7c3aed', 0.75, '#b87aff', 1.0, s.stateGlowHigh]);
       }
+    }
+
+    _applyZoomViz(mode) {
+      if (!this._map?.isStyleLoaded()) return;
+      const isHeatmap = mode === 'heatmap';
+      const vis = (show) => show ? 'visible' : 'none';
+
+      if (this._map.getLayer('delivery-heatmap'))
+        this._map.setLayoutProperty('delivery-heatmap',    'visibility', vis(isHeatmap));
+      if (this._map.getLayer('hotspots-glow'))
+        this._map.setLayoutProperty('hotspots-glow',       'visibility', vis(!isHeatmap));
+      if (this._map.getLayer('hotspots-core'))
+        this._map.setLayoutProperty('hotspots-core',       'visibility', vis(!isHeatmap));
+      if (this._map.getLayer('hotspots-pulse-ring'))
+        this._map.setLayoutProperty('hotspots-pulse-ring', 'visibility', vis(!isHeatmap));
+    }
+
+    _applyMapStyle(styleName) {
+      if (!this._map) return;
+      if (this._currentStyle === styleName) return;
+      this._currentStyle = styleName;
+
+      const newStyle = styleName === 'mapbox'
+        ? 'mapbox://styles/mapbox/dark-v11'
+        : this._blankStyle();
+
+      this._map.setStyle(newStyle);
+
+      this._map.once('style.load', () => {
+        this._addSources();
+        this._addLayers();
+        if (this._data) this._applyData(this._data);
+
+        // Suppress road/label clutter in Mapbox style
+        if (styleName === 'mapbox') {
+          const hide = ['road-street', 'road-minor', 'road-primary', 'road-secondary',
+            'road-motorway', 'poi-label', 'place-label', 'country-label', 'state-label'];
+          hide.forEach(id => {
+            if (this._map.getLayer(id))
+              this._map.setLayoutProperty(id, 'visibility', 'none');
+          });
+        }
+      });
     }
 
     _buildLeaderboardDOM() {
