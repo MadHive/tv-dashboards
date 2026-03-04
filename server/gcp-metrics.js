@@ -506,7 +506,14 @@ async function dataProcessing() {
 // ──────────────────────────────────────────────
 // Data Pipeline — 6 stages
 // ──────────────────────────────────────────────
+let _dataPipelineCache = null;
+let _dataPipelineCacheTime = 0;
+const PIPELINE_CACHE_TTL = 15000;
+
 async function dataPipeline() {
+  if (_dataPipelineCache && (Date.now() - _dataPipelineCacheTime) < PIPELINE_CACHE_TTL) {
+    return _dataPipelineCache;
+  }
   const [pubsub, pipeRows, bqExecTimes] = await Promise.all([
     query('mad-data', 'pubsub.googleapis.com/topic/send_message_operation_count', '', 5),
     query('mad-master', 'custom.googleapis.com/opencensus/mhive/pipe/rows_written', '', 10),
@@ -541,7 +548,7 @@ async function dataPipeline() {
   let totalLatency = 0;
   stagesRaw.forEach(s => { totalLatency += s.latency; });
 
-  return {
+  const _pipelineResult = {
     pipeline: {
       summary: {
         throughput: stagesRaw[stagesRaw.length - 1].throughput,
@@ -557,6 +564,9 @@ async function dataPipeline() {
       })),
     },
   };
+  _dataPipelineCache = _pipelineResult;
+  _dataPipelineCacheTime = Date.now();
+  return _pipelineResult;
 }
 
 // ──────────────────────────────────────────────
@@ -564,6 +574,9 @@ async function dataPipeline() {
 // Uses loadbalancing.googleapis.com metrics for the bidder backends
 // ──────────────────────────────────────────────
 let _bidderHistory = [];
+let _bidderClusterCache = null;
+let _bidderClusterCacheTime = 0;
+const BIDDER_CACHE_TTL = 15000;
 
 // Standard aggregation presets (matching RTB Triage & SLA dashboards)
 const AGG_RATE_SUM = {
@@ -593,6 +606,12 @@ function aggPercentile(pct) {
 }
 
 async function bidderCluster() {
+  // 15-second cache — prevents double GCP calls when bidderErrorRate and bidderTimeoutRate
+  // are both fetched in the same refresh cycle (each would otherwise fire 7 API queries).
+  if (_bidderClusterCache && (Date.now() - _bidderClusterCacheTime) < BIDDER_CACHE_TTL) {
+    return _bidderClusterCache;
+  }
+
   const bidderFilter = 'resource.labels.backend_name = monitoring.regex.full_match(".*bidder.*|.*vast--prod.*")';
 
   const [
@@ -687,7 +706,7 @@ async function bidderCluster() {
       color: codeColors[code] || colors[i % colors.length],
     }));
 
-  return {
+  const _bidderResult = {
     'bid-qps': {
       value: Math.round(totalQps),
       sparkline: [..._bidderHistory],
@@ -735,6 +754,9 @@ async function bidderCluster() {
         : [{ label: 'no data', value: 0, color: '#6B5690' }],
     },
   };
+  _bidderClusterCache = _bidderResult;
+  _bidderClusterCacheTime = Date.now();
+  return _bidderResult;
 }
 
 // ──────────────────────────────────────────────
@@ -1257,6 +1279,8 @@ export async function campaignDeliveryMapWidget(params = {}, widgetConfig = {}) 
 }
 
 export async function coreClusterSize() {
+  // Note: kubernetes.io/container/uptime does not need resource.type prefix in the extra filter
+  // (consistent with how rtbInfra() strips the prefix via .replace() before passing to query()).
   const filter = (name) => `resource.labels.container_name = "${name}"`;
   const AGG_COUNT = { alignmentPeriod: { seconds: 60 }, perSeriesAligner: 'ALIGN_MEAN', crossSeriesReducer: 'REDUCE_COUNT' };
   const [bidderTs, rogerTs, memTs] = await Promise.all([
