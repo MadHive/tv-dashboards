@@ -64,6 +64,9 @@ window.MapboxUSAMap = (function () {
       this._animId     = null;
       this._pulseId      = null;
       this._currentStyle = 'brand';
+      this._totalValueEl  = null;
+      this._lbHeaderTotal = null;
+      this._displayedTotal = 0;
       this._lbScrollEl = null;
       this._lbTotals   = null;
 
@@ -603,6 +606,33 @@ window.MapboxUSAMap = (function () {
       lb.appendChild(this._lbTotals);
       this._lbEl = lb;
       this._wrap.appendChild(lb);
+
+      // Leaderboard header total (above title)
+      this._lbHeaderTotal = document.createElement('div');
+      this._lbHeaderTotal.className   = 'mgl-lb-header-total';
+      this._lbHeaderTotal.textContent = '\u2014';
+      lb.insertBefore(this._lbHeaderTotal, lb.firstChild);
+
+      // Bottom-left impressions total overlay
+      const overlay = document.createElement('div');
+      overlay.className = 'mgl-total-overlay';
+
+      const lbl = document.createElement('div');
+      lbl.className   = 'mgl-total-label';
+      lbl.textContent = '\u2B23 LIVE DELIVERY';
+
+      this._totalValueEl = document.createElement('div');
+      this._totalValueEl.className   = 'mgl-total-value';
+      this._totalValueEl.textContent = '\u2014';
+
+      const sub = document.createElement('div');
+      sub.className   = 'mgl-total-sub';
+      sub.textContent = 'impressions right now';
+
+      overlay.appendChild(lbl);
+      overlay.appendChild(this._totalValueEl);
+      overlay.appendChild(sub);
+      this._wrap.appendChild(overlay);
     }
 
     _renderLeaderboard(states, maxImp, totals) {
@@ -648,13 +678,41 @@ window.MapboxUSAMap = (function () {
         this._lbScrollEl.appendChild(row);
       });
 
-      if (totals && this._lbTotals) {
-        const imp = totals.impressions || 0;
-        const fmt = imp >= 1e9 ? (imp / 1e9).toFixed(1) + 'B'
-                  : imp >= 1e6 ? (imp / 1e6).toFixed(1) + 'M'
-                  : (imp / 1e3).toFixed(0) + 'K';
-        this._lbTotals.textContent = fmt + ' total impressions';
+      // Animated total in bottom-left overlay + leaderboard header
+      const imp = (totals && totals.impressions) ? totals.impressions : 0;
+      this._animateTotal(imp);
+
+      if (this._lbHeaderTotal) {
+        const fmt2 = (n) =>
+          n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' :
+          n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' :
+          n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
+        this._lbHeaderTotal.textContent = fmt2(imp) + ' total impressions';
       }
+    }
+
+    _animateTotal(targetTotal) {
+      if (!this._totalValueEl) return;
+      const start    = this._displayedTotal;
+      const end      = targetTotal;
+      const duration = 800;
+      const t0       = performance.now();
+
+      const fmt = (n) =>
+        n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' :
+        n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' :
+        n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
+
+      const tick = (now) => {
+        const elapsed  = now - t0;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased    = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+        const current  = Math.round(start + (end - start) * eased);
+        if (this._totalValueEl) this._totalValueEl.textContent = fmt(current);
+        if (progress < 1) requestAnimationFrame(tick);
+        else this._displayedTotal = end;
+      };
+      requestAnimationFrame(tick);
     }
 
     destroy() {
