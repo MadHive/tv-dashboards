@@ -17,6 +17,7 @@ import { proxyRoutes } from './api-proxy.js';
 import { numericsRoutes, anyboardRoutes } from './tv-apps.js';
 import { bigQueryRoutes } from './bigquery-routes.js';
 import { queryRoutes } from './query-routes.js';
+import { gcpDashboardRoutes } from './gcp-dashboard-routes.js';
 import { googleOAuthRoutes } from './google-oauth.js';
 import {
   loadConfig as loadConfigFromFile,
@@ -1278,6 +1279,7 @@ const app = new Elysia()
   .use(anyboardRoutes)
   .use(bigQueryRoutes)
   .use(queryRoutes)
+  .use(gcpDashboardRoutes)
   .use(googleOAuthRoutes)
 
   // Serve React frontend for /app/* routes
