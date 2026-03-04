@@ -1,0 +1,306 @@
+/* ===========================================================================
+   Query Explorer — full-screen three-panel query sandbox
+   =========================================================================== */
+
+/* ── Modal override: wider than standard studio-modal-content ── */
+.qx-modal-content {
+  width:      95vw;
+  max-width:  1400px;
+  max-height: 90vh;
+  overflow:   hidden;
+  display:    flex;
+  flex-direction: column;
+  position:   relative;
+}
+
+/* ── Three-panel body ── */
+.qx-body {
+  display:    flex;
+  flex:       1;
+  min-height: 0;
+  overflow:   hidden;
+}
+
+/* ── Left: Query Builder ── */
+.qx-builder {
+  width:       280px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  overflow-y:  auto;
+  padding:     12px;
+  display:     flex;
+  flex-direction: column;
+  gap:         6px;
+}
+
+.qx-field-row {
+  display:        flex;
+  flex-direction: column;
+  gap:            3px;
+}
+
+.qx-label {
+  font-size:   10px;
+  font-weight: 700;
+  color:       var(--t3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.qx-label-inline {
+  flex-direction: row;
+  align-items:    center;
+  gap:            6px;
+}
+
+.qx-input,
+.qx-textarea,
+.qx-select {
+  background:   var(--bg-input, #1a1a2e);
+  border:       1px solid var(--border);
+  border-radius: 4px;
+  color:        var(--t1);
+  font-size:    12px;
+  padding:      5px 8px;
+  width:        100%;
+  box-sizing:   border-box;
+}
+
+.qx-input-sm {
+  background:   var(--bg-input, #1a1a2e);
+  border:       1px solid var(--border);
+  border-radius: 4px;
+  color:        var(--t1);
+  font-size:    11px;
+  padding:      3px 6px;
+  width:        70px;
+}
+
+.qx-select-sm {
+  font-size:    11px;
+  padding:      3px 6px;
+}
+
+.qx-textarea {
+  font-family:  var(--font-mono, monospace);
+  font-size:    11px;
+  resize:       vertical;
+  min-height:   120px;
+}
+
+.qx-input:focus,
+.qx-textarea:focus,
+.qx-select:focus {
+  outline:      none;
+  border-color: var(--accent, #7c3aed);
+}
+
+.qx-metric-row {
+  display:  flex;
+  gap:      4px;
+}
+.qx-metric-row .qx-input { flex: 1; }
+
+.qx-run-btn {
+  margin-top: 8px;
+  width:      100%;
+}
+
+.qx-run-status {
+  font-size:   11px;
+  color:       var(--t3);
+  text-align:  center;
+  min-height:  16px;
+  margin-top:  4px;
+}
+
+.qx-schema-row { margin-top: 4px; }
+
+.qx-schema-controls {
+  display: flex;
+  gap:     4px;
+}
+
+.qx-schema-cols {
+  font-size:   10px;
+  color:       var(--t3);
+  font-family: var(--font-mono, monospace);
+  max-height:  100px;
+  overflow-y:  auto;
+  margin-top:  4px;
+  padding:     4px 0;
+}
+
+.qx-schema-col {
+  display: flex;
+  gap:     6px;
+  padding: 1px 0;
+}
+.qx-col-name  { color: var(--t2); }
+.qx-col-type  { color: var(--t3); }
+
+/* ── Center: Raw Results ── */
+.qx-results {
+  flex:      1;
+  overflow:  auto;
+  padding:   0;
+  min-width: 0;
+  position:  relative;
+}
+
+.qx-results-placeholder {
+  color:      var(--t3);
+  font-size:  13px;
+  text-align: center;
+  padding:    40px 20px;
+}
+
+.qx-results-header {
+  padding:     8px 14px;
+  font-size:   11px;
+  color:       var(--t3);
+  border-bottom: 1px solid var(--border);
+  display:     flex;
+  align-items: center;
+  justify-content: space-between;
+  position:    sticky;
+  top:         0;
+  background:  var(--bg-surface);
+  z-index:     1;
+  flex-shrink: 0;
+}
+
+.qx-results-meta {
+  display: flex;
+  gap:     12px;
+}
+
+.qx-results-table-wrap {
+  overflow: auto;
+}
+
+.qx-results-table {
+  width:           100%;
+  border-collapse: collapse;
+  font-size:       11px;
+  font-family:     var(--font-mono, monospace);
+}
+
+.qx-results-table th {
+  background:   var(--bg-input, #1a1a2e);
+  border-bottom: 1px solid var(--border);
+  color:        var(--t2);
+  font-weight:  700;
+  padding:      6px 10px;
+  text-align:   left;
+  white-space:  nowrap;
+  position:     sticky;
+  top:          0;
+  z-index:      1;
+}
+
+.qx-results-table td {
+  padding:      4px 10px;
+  border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.04));
+  white-space:  nowrap;
+  max-width:    220px;
+  overflow:     hidden;
+  text-overflow: ellipsis;
+  color:        var(--t1);
+}
+
+.qx-results-table tr:hover td {
+  background: var(--hover, rgba(255,255,255,0.04));
+}
+
+.qx-td-num { color: var(--mh-pink, #f472b6); text-align: right; }
+
+.qx-error-banner {
+  background: rgba(220,38,38,0.1);
+  border:     1px solid rgba(220,38,38,0.3);
+  color:      #ef4444;
+  font-size:  12px;
+  font-family: var(--font-mono, monospace);
+  padding:    12px 14px;
+  margin:     12px;
+  border-radius: 6px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.qx-empty-banner {
+  background: rgba(245,158,11,0.08);
+  border:     1px solid rgba(245,158,11,0.25);
+  color:      #f59e0b;
+  font-size:  12px;
+  padding:    10px 14px;
+  margin:     12px;
+  border-radius: 6px;
+}
+
+/* ── Right: Widget Preview ── */
+.qx-preview {
+  width:       240px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--border);
+  display:     flex;
+  flex-direction: column;
+  overflow-y:  auto;
+  padding:     12px;
+  gap:         10px;
+}
+
+.qx-preview-header { flex-shrink: 0; }
+
+.qx-preview-canvas-wrap {
+  flex:          1;
+  min-height:    120px;
+  border:        1px solid var(--border);
+  border-radius: 6px;
+  overflow:      hidden;
+  display:       flex;
+  align-items:   center;
+  justify-content: center;
+}
+
+.qx-preview-config {
+  display:        flex;
+  flex-direction: column;
+  gap:            6px;
+  flex-shrink:    0;
+}
+
+/* ── Action bar ── */
+.qx-action-bar {
+  display:      flex;
+  align-items:  center;
+  justify-content: space-between;
+  padding:      10px 16px;
+  border-top:   1px solid var(--border);
+  flex-shrink:  0;
+  gap:          8px;
+}
+
+.qx-action-bar-right {
+  display: flex;
+  gap:     6px;
+}
+
+/* ── Explorer button in Queries toolbar ── */
+.btn-open-explorer {
+  background:    transparent;
+  border:        1px solid var(--border);
+  border-radius: 4px;
+  color:         var(--t2);
+  padding:       5px 10px;
+  font-size:     11px;
+  font-weight:   600;
+  cursor:        pointer;
+  letter-spacing: 0.02em;
+  transition:    all 0.15s;
+  white-space:   nowrap;
+}
+.btn-open-explorer:hover {
+  border-color: var(--accent, #7c3aed);
+  color:        var(--t1);
+}
