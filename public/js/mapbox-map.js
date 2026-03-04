@@ -19,6 +19,28 @@ window.MapboxUSAMap = (function () {
   };
   var USA_BOUNDS = [[-125, 24], [-66, 50]];
 
+  // ── Config defaults + color schemes ──────────────────────────────────────
+
+  var SCHEME_COLORS = {
+    brand: { particleNormal: '#67E8F9', particleFast: '#FDA4D4', stateGlowHigh: '#FDA4D4' },
+    cool:  { particleNormal: '#60A5FA', particleFast: '#FFFFFF', stateGlowHigh: '#e0f2fe' },
+    warm:  { particleNormal: '#fbbf24', particleFast: '#FF6B35', stateGlowHigh: '#fef08a' },
+  };
+
+  function buildMapConfig(userConfig) {
+    return {
+      particleCount:   120,
+      particleSpeed:   1.0,
+      colorScheme:     'brand',
+      showLeaderboard: true,
+      ...(userConfig || {}),
+    };
+  }
+
+  function getColorScheme(name) {
+    return SCHEME_COLORS[name] || SCHEME_COLORS.brand;
+  }
+
   var CHOROPLETH = [
     'interpolate', ['linear'], ['get', 'intensity'],
     0,    '#1a0840',
@@ -33,10 +55,12 @@ window.MapboxUSAMap = (function () {
     constructor(container, config) {
       this._container  = container;
       this._config     = config || {};
+      this._cfg        = buildMapConfig((config || {}).mglConfig);
       this._map        = null;
       this._data       = null;
       this._particles  = [];
       this._animId     = null;
+      this._pulseId    = null;
       this._lbScrollEl = null;
       this._lbTotals   = null;
 
