@@ -33,6 +33,8 @@ window.MapboxUSAMap = (function () {
       particleSpeed:   1.0,
       colorScheme:     'brand',
       showLeaderboard: true,
+      mapStyle:        'brand',
+      zoomViz:         'dots',
       ...(userConfig || {}),
     };
   }
@@ -60,7 +62,12 @@ window.MapboxUSAMap = (function () {
       this._data       = null;
       this._particles  = [];
       this._animId     = null;
-      this._pulseId    = null;
+      this._pulseId      = null;
+      this._currentStyle = 'brand';
+      this._totalValueEl  = null;
+      this._lbHeaderTotal = null;
+      this._displayedTotal = 0;
+      this._totalAnimId    = null;
       this._lbScrollEl = null;
       this._lbTotals   = null;
 
@@ -153,11 +160,51 @@ window.MapboxUSAMap = (function () {
           })),
         },
       });
+
+      // Boundary sources
+      this._map.addSource('us-counties', {
+        type: 'geojson',
+        data: '/data/us-counties.json',
+      });
+
+      this._map.addSource('mapbox-streets', {
+        type: 'vector',
+        url:  'mapbox://mapbox.mapbox-streets-v8',
+      });
     }
 
     _empty() { return { type: 'FeatureCollection', features: [] }; }
 
     _addLayers() {
+      // County boundary lines — beneath everything
+      this._map.addLayer({
+        id:     'admin-county-lines',
+        type:   'line',
+        source: 'us-counties',
+        paint: {
+          'line-color':   '#3D1A5C',
+          'line-width':   0.4,
+          'line-opacity': 0.5,
+        },
+      });
+
+      // State boundary lines — Mapbox Streets vector tiles, crisp at all zoom levels
+      this._map.addLayer({
+        id:             'admin-state-lines',
+        type:           'line',
+        source:         'mapbox-streets',
+        'source-layer': 'admin',
+        filter: ['all',
+          ['==', ['get', 'admin_level'], 4],
+          ['==', ['get', 'disputed'],    false],
+        ],
+        paint: {
+          'line-color':   '#6B5690',
+          'line-width':   1.2,
+          'line-opacity': 0.75,
+        },
+      });
+
       this._map.addLayer({
         id: 'states-fill', type: 'fill', source: 'us-states',
         paint: {
@@ -222,6 +269,26 @@ window.MapboxUSAMap = (function () {
           'circle-color':   ['case', ['>', ['get', 'ir'], 0.4], '#FDA4D4', '#67E8F9'],
           'circle-opacity': ['interpolate', ['linear'], ['get', 'ir'], 0, 0.06, 1, 0.22],
           'circle-blur':    1.0,
+        },
+      });
+
+      // Delivery heatmap — GPU smooth heat blobs (active when zoomViz: heatmap)
+      this._map.addLayer({
+        id:     'delivery-heatmap',
+        type:   'heatmap',
+        source: 'hotspots',
+        layout: { visibility: 'none' },
+        paint: {
+          'heatmap-weight':    ['interpolate', ['linear'], ['get', 'ir'], 0, 0, 1, 1],
+          'heatmap-intensity': ['interpolate', ['linear'], ['zoom'], 3, 1, 8, 3],
+          'heatmap-color':     ['interpolate', ['linear'], ['heatmap-density'],
+            0,   'transparent',
+            0.2, '#3D1A5C',
+            0.4, '#7c3aed',
+            0.7, '#FDA4D4',
+            1.0, '#FFFFFF'],
+          'heatmap-radius':    ['interpolate', ['linear'], ['zoom'], 3, 25, 8, 55],
+          'heatmap-opacity':   0.85,
         },
       });
 
@@ -316,6 +383,10 @@ window.MapboxUSAMap = (function () {
       // Re-read mglConfig in case Studio changed it, then apply
       this._cfg = buildMapConfig(this._config.mglConfig);
       this._applyColorScheme(this._cfg.colorScheme);
+      this._applyZoomViz(this._cfg.zoomViz);
+      if (this._cfg.mapStyle !== this._currentStyle) {
+        this._applyMapStyle(this._cfg.mapStyle);
+      }
       if (this._lbEl) {
         this._lbEl.style.display = this._cfg.showLeaderboard ? '' : 'none';
       }
@@ -470,6 +541,49 @@ window.MapboxUSAMap = (function () {
       }
     }
 
+    _applyZoomViz(mode) {
+      if (!this._map?.isStyleLoaded()) return;
+      const isHeatmap = mode === 'heatmap';
+      const vis = (show) => show ? 'visible' : 'none';
+
+      if (this._map.getLayer('delivery-heatmap'))
+        this._map.setLayoutProperty('delivery-heatmap',    'visibility', vis(isHeatmap));
+      if (this._map.getLayer('hotspots-glow'))
+        this._map.setLayoutProperty('hotspots-glow',       'visibility', vis(!isHeatmap));
+      if (this._map.getLayer('hotspots-core'))
+        this._map.setLayoutProperty('hotspots-core',       'visibility', vis(!isHeatmap));
+      if (this._map.getLayer('hotspots-pulse-ring'))
+        this._map.setLayoutProperty('hotspots-pulse-ring', 'visibility', vis(!isHeatmap));
+    }
+
+    _applyMapStyle(styleName) {
+      if (!this._map) return;
+      if (this._currentStyle === styleName) return;
+      this._currentStyle = styleName;
+
+      const newStyle = styleName === 'mapbox'
+        ? 'mapbox://styles/mapbox/dark-v11'
+        : this._blankStyle();
+
+      this._map.setStyle(newStyle);
+
+      this._map.once('style.load', () => {
+        this._addSources();
+        this._addLayers();
+        if (this._data) this._applyData(this._data);
+
+        // Suppress road/label clutter in Mapbox style
+        if (styleName === 'mapbox') {
+          const hide = ['road-street', 'road-minor', 'road-primary', 'road-secondary',
+            'road-motorway', 'poi-label', 'place-label', 'country-label', 'state-label'];
+          hide.forEach(id => {
+            if (this._map.getLayer(id))
+              this._map.setLayoutProperty(id, 'visibility', 'none');
+          });
+        }
+      });
+    }
+
     _buildLeaderboardDOM() {
       const lb = document.createElement('div');
       lb.className = 'mgl-leaderboard';
@@ -493,6 +607,33 @@ window.MapboxUSAMap = (function () {
       lb.appendChild(this._lbTotals);
       this._lbEl = lb;
       this._wrap.appendChild(lb);
+
+      // Leaderboard header total (above title)
+      this._lbHeaderTotal = document.createElement('div');
+      this._lbHeaderTotal.className   = 'mgl-lb-header-total';
+      this._lbHeaderTotal.textContent = '\u2014';
+      lb.insertBefore(this._lbHeaderTotal, lb.firstChild);
+
+      // Bottom-left impressions total overlay
+      const overlay = document.createElement('div');
+      overlay.className = 'mgl-total-overlay';
+
+      const lbl = document.createElement('div');
+      lbl.className   = 'mgl-total-label';
+      lbl.textContent = '\u2B23 LIVE DELIVERY';
+
+      this._totalValueEl = document.createElement('div');
+      this._totalValueEl.className   = 'mgl-total-value';
+      this._totalValueEl.textContent = '\u2014';
+
+      const sub = document.createElement('div');
+      sub.className   = 'mgl-total-sub';
+      sub.textContent = 'impressions right now';
+
+      overlay.appendChild(lbl);
+      overlay.appendChild(this._totalValueEl);
+      overlay.appendChild(sub);
+      this._wrap.appendChild(overlay);
     }
 
     _renderLeaderboard(states, maxImp, totals) {
@@ -538,18 +679,54 @@ window.MapboxUSAMap = (function () {
         this._lbScrollEl.appendChild(row);
       });
 
-      if (totals && this._lbTotals) {
-        const imp = totals.impressions || 0;
-        const fmt = imp >= 1e9 ? (imp / 1e9).toFixed(1) + 'B'
-                  : imp >= 1e6 ? (imp / 1e6).toFixed(1) + 'M'
-                  : (imp / 1e3).toFixed(0) + 'K';
-        this._lbTotals.textContent = fmt + ' total impressions';
+      // Animated total in bottom-left overlay + leaderboard header
+      const imp = (totals && totals.impressions) ? totals.impressions : 0;
+      this._animateTotal(imp);
+
+      if (this._lbHeaderTotal) {
+        const fmt2 = (n) =>
+          n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' :
+          n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' :
+          n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
+        this._lbHeaderTotal.textContent = fmt2(imp) + ' total impressions';
       }
     }
 
+    _animateTotal(targetTotal) {
+      if (!this._totalValueEl) return;
+      // Cancel any in-progress animation before starting a new one
+      if (this._totalAnimId) { cancelAnimationFrame(this._totalAnimId); this._totalAnimId = null; }
+      const start    = this._displayedTotal;
+      const end      = targetTotal;
+      const duration = 800;
+      const t0       = performance.now();
+
+      const fmt = (n) =>
+        n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' :
+        n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' :
+        n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
+
+      const tick = (now) => {
+        const elapsed  = now - t0;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased    = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+        const current  = Math.round(start + (end - start) * eased);
+        if (this._totalValueEl) this._totalValueEl.textContent = fmt(current);
+        if (progress < 1) {
+          this._totalAnimId = requestAnimationFrame(tick);
+        } else {
+          this._totalAnimId    = null;
+          this._displayedTotal = end;
+        }
+      };
+      this._totalAnimId = requestAnimationFrame(tick);
+    }
+
     destroy() {
-      if (this._animId) cancelAnimationFrame(this._animId);
-      this._animId = null;
+      if (this._animId)      cancelAnimationFrame(this._animId);
+      if (this._totalAnimId) cancelAnimationFrame(this._totalAnimId);
+      this._animId      = null;
+      this._totalAnimId = null;
       if (this._pulseId) { clearInterval(this._pulseId); this._pulseId = null; }
       if (this._map) { this._map.remove(); this._map = null; }
     }
