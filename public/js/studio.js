@@ -2309,7 +2309,7 @@
         box.appendChild(actions);
         overlay.appendChild(box);
 
-        const modalBox = this.modal.querySelector('.modal-box');
+        const modalBox = this.modal.querySelector('.studio-modal-content');
         if (modalBox) modalBox.appendChild(overlay);
       });
     }

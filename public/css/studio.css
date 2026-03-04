@@ -1772,11 +1772,9 @@ body.studio-body {
 .btn-import-gcp:hover { opacity: 0.85; }
 
 .gcp-import-modal-box {
-  width: 520px;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  position: relative;
+  /* studio-modal-content provides width/max-height/flex-column/background/shadow */
+  overflow: hidden; /* inner .gcp-import-list handles its own scroll */
+  position: relative; /* needed for conflict overlay absolute positioning */
 }
 
 .modal-title-row {
