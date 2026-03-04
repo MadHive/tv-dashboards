@@ -1265,6 +1265,12 @@ const app = new Elysia()
     detail: { tags: ['health'], summary: 'Health check for Cloud Run' },
   })
 
+  .get('/api/config/mapbox-token', () => ({
+    token: process.env.MAPBOX_ACCESS_TOKEN || ''
+  }), {
+    detail: { tags: ['health'], summary: 'Mapbox GL access token for client-side map rendering' }
+  })
+
   // Performance metrics endpoint
   .get('/api/metrics', () => {
     try {
