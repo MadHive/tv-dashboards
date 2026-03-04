@@ -171,6 +171,22 @@ window.MapboxUSAMap = (function () {
         type: 'vector',
         url:  'mapbox://mapbox.mapbox-streets-v8',
       });
+
+      // State center points for label layer
+      if (window.US_STATES) {
+        const US = window.US_STATES;
+        this._map.addSource('state-labels', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: US.states.map(s => ({
+              type: 'Feature',
+              properties: { abbr: s.id, name: s.name },
+              geometry: { type: 'Point', coordinates: s.center },
+            })),
+          },
+        });
+      }
     }
 
     _empty() { return { type: 'FeatureCollection', features: [] }; }
@@ -204,6 +220,27 @@ window.MapboxUSAMap = (function () {
           'line-opacity': 0.75,
         },
       });
+
+      // State abbreviation labels
+      if (this._map.getSource('state-labels')) {
+        this._map.addLayer({
+          id:     'state-labels',
+          type:   'symbol',
+          source: 'state-labels',
+          layout: {
+            'text-field':         ['get', 'abbr'],
+            'text-size':          11,
+            'text-font':          ['DIN Pro Bold', 'Arial Unicode MS Bold'],
+            'text-letter-spacing': 0.08,
+            'text-allow-overlap': false,
+          },
+          paint: {
+            'text-color':     'rgba(255,255,255,0.75)',
+            'text-halo-color': 'rgba(14,3,32,0.7)',
+            'text-halo-width': 1.5,
+          },
+        });
+      }
 
       this._map.addLayer({
         id: 'states-fill', type: 'fill', source: 'us-states',
@@ -246,7 +283,13 @@ window.MapboxUSAMap = (function () {
         id: 'arc-particles-glow', type: 'circle', source: 'arc-particles',
         paint: {
           'circle-radius':  ['*', ['get', 'sz'], 3.5],
-          'circle-color':   ['case', ['==', ['get', 'pt'], 'fast'], '#FDA4D4', '#67E8F9'],
+          'circle-color': [
+            'match', ['get', 'dc'],
+            'us-west1',    '#67E8F9',
+            'us-central1', '#b87aff',
+            'us-east4',    '#FDA4D4',
+            '#67E8F9',
+          ],
           'circle-opacity': 0.10,
           'circle-blur':    0.9,
         },
@@ -256,7 +299,13 @@ window.MapboxUSAMap = (function () {
         id: 'arc-particles', type: 'circle', source: 'arc-particles',
         paint: {
           'circle-radius':  ['get', 'sz'],
-          'circle-color':   ['case', ['==', ['get', 'pt'], 'fast'], '#FDA4D4', '#67E8F9'],
+          'circle-color': [
+            'match', ['get', 'dc'],
+            'us-west1',    '#67E8F9',   // West  — cyan
+            'us-central1', '#b87aff',   // Central — violet
+            'us-east4',    '#FDA4D4',   // East  — pink
+            '#67E8F9',                   // fallback
+          ],
           'circle-opacity': 0.9,
           'circle-blur':    0.2,
         },
@@ -303,6 +352,28 @@ window.MapboxUSAMap = (function () {
             0.85, '#FFFFFF',
           ],
           'circle-opacity': ['interpolate', ['linear'], ['get', 'ir'], 0, 0.55, 1, 0.95],
+        },
+      });
+
+      // City name labels on top 30 high-impression hotspots
+      this._map.addLayer({
+        id:     'hotspot-labels',
+        type:   'symbol',
+        source: 'hotspots',
+        filter: ['<', ['get', 'rank'], 30],
+        layout: {
+          'text-field':         ['get', 'city'],
+          'text-size':          9,
+          'text-font':          ['DIN Pro Regular', 'Arial Unicode MS Regular'],
+          'text-offset':        [0, 1.4],
+          'text-anchor':        'top',
+          'text-allow-overlap': false,
+          'text-optional':      true,
+        },
+        paint: {
+          'text-color':     'rgba(255,255,255,0.6)',
+          'text-halo-color': 'rgba(14,3,32,0.5)',
+          'text-halo-width': 1,
         },
       });
 
@@ -368,9 +439,13 @@ window.MapboxUSAMap = (function () {
 
       const hotFeatures = hotspots
         .filter(h => h.lat && h.lon)
-        .map(h => ({
+        .map((h, i) => ({
           type: 'Feature',
-          properties: { ir: (h.impressions || 0) / maxHot },
+          properties: {
+            ir:   (h.impressions || 0) / maxHot,
+            city: h.city || h.zip3 || '',
+            rank: i,
+          },
           geometry: { type: 'Point', coordinates: [h.lon, h.lat] },
         }));
       this._map.getSource('hotspots')?.setData({ type: 'FeatureCollection', features: hotFeatures });
@@ -463,7 +538,7 @@ window.MapboxUSAMap = (function () {
             const lat = it * it * dc.lat + 2 * it * t * my + t * t * tgt.lat;
             return {
               type: 'Feature',
-              properties: { pt, sz },
+              properties: { pt, sz, dc: p.dc.id },
               geometry: { type: 'Point', coordinates: [lon, lat] },
             };
           });
@@ -539,6 +614,9 @@ window.MapboxUSAMap = (function () {
           ['interpolate', ['linear'], ['get', 'intensity'],
             0.45, '#7c3aed', 0.75, '#b87aff', 1.0, s.stateGlowHigh]);
       }
+
+      if (this._map.getLayer('hotspot-labels'))
+        this._map.setPaintProperty('hotspot-labels', 'text-color', s.particleNormal + 'aa');
     }
 
     _applyZoomViz(mode) {
