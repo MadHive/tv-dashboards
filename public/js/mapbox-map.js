@@ -313,6 +313,13 @@ window.MapboxUSAMap = (function () {
       if (!this._animId) this._startAnimation();
       if (!this._pulseId) this._startPulse();
 
+      // Re-read mglConfig in case Studio changed it, then apply
+      this._cfg = buildMapConfig(this._config.mglConfig);
+      this._applyColorScheme(this._cfg.colorScheme);
+      if (this._lbEl) {
+        this._lbEl.style.display = this._cfg.showLeaderboard ? '' : 'none';
+      }
+
       const bounds = REGION_BOUNDS[data.region] || USA_BOUNDS;
       this._map.fitBounds(bounds, { padding: 20, duration: 800 });
 
@@ -442,6 +449,27 @@ window.MapboxUSAMap = (function () {
       }, 150);
     }
 
+    _applyColorScheme(schemeName) {
+      if (!this._map?.isStyleLoaded()) return;
+      const s = getColorScheme(schemeName);
+
+      this._map.setPaintProperty('arc-particles',
+        'circle-color', ['case', ['==', ['get', 'pt'], 'fast'], s.particleFast, s.particleNormal]);
+      if (this._map.getLayer('arc-particles-glow')) {
+        this._map.setPaintProperty('arc-particles-glow',
+          'circle-color', ['case', ['==', ['get', 'pt'], 'fast'], s.particleFast, s.particleNormal]);
+      }
+      if (this._map.getLayer('hotspots-pulse-ring')) {
+        this._map.setPaintProperty('hotspots-pulse-ring',
+          'circle-stroke-color', ['case', ['>', ['get', 'ir'], 0.4], s.particleFast, s.particleNormal]);
+      }
+      if (this._map.getLayer('states-glow')) {
+        this._map.setPaintProperty('states-glow', 'line-color',
+          ['interpolate', ['linear'], ['get', 'intensity'],
+            0.45, '#7c3aed', 0.75, '#b87aff', 1.0, s.stateGlowHigh]);
+      }
+    }
+
     _buildLeaderboardDOM() {
       const lb = document.createElement('div');
       lb.className = 'mgl-leaderboard';
@@ -463,6 +491,7 @@ window.MapboxUSAMap = (function () {
       lb.appendChild(title);
       lb.appendChild(rowsWrap);
       lb.appendChild(this._lbTotals);
+      this._lbEl = lb;
       this._wrap.appendChild(lb);
     }
 

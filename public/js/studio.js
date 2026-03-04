@@ -474,6 +474,17 @@
       if (mapSection) {
         mapSection.style.display = wc.type === 'usa-map' ? '' : 'none';
       }
+      const mglSection = document.getElementById('mgl-config-section');
+      if (mglSection) {
+        mglSection.style.display = wc.type === 'usa-map-gl' ? '' : 'none';
+        if (wc.type === 'usa-map-gl') {
+          const mgl = wc.mglConfig || {};
+          set('prop-mgl-scheme',      mgl.colorScheme    || 'brand');
+          set('prop-mgl-particles',   String(mgl.particleCount || 120));
+          set('prop-mgl-speed',       String(mgl.particleSpeed  || 1.0));
+          set('prop-mgl-leaderboard', String(mgl.showLeaderboard !== false));
+        }
+      }
 
       // Always load queries for current source (even if no queryId assigned yet)
       this.loadQueryOptions(wc.source || 'gcp', wc.queryId || '');
@@ -505,6 +516,8 @@
         }
         const mapSec = document.getElementById('map-config-section');
         if (mapSec) mapSec.style.display = v === 'usa-map' ? '' : 'none';
+        const mglSec = document.getElementById('mgl-config-section');
+        if (mglSec) mglSec.style.display = v === 'usa-map-gl' ? '' : 'none';
       });
       bind('prop-col', (v) => { wc.position.col = parseInt(v) || wc.position.col; });
       bind('prop-row', (v) => { wc.position.row = parseInt(v) || wc.position.row; });
@@ -582,6 +595,10 @@
         bindMap('prop-map-metric',         function(v) { wc.mapConfig.metric = v; });
         bindMap('prop-map-zoom',           function(v) { wc.mapConfig.zoom = v; });
       }
+      bind('prop-mgl-scheme',      (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), colorScheme: v }; });
+      bind('prop-mgl-particles',   (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), particleCount: parseInt(v, 10) }; });
+      bind('prop-mgl-speed',       (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), particleSpeed: parseFloat(v) }; });
+      bind('prop-mgl-leaderboard', (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showLeaderboard: v === 'true' }; });
     }
 
     /* ─────────────────────────────────────────────
