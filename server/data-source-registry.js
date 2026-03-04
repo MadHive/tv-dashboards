@@ -19,6 +19,7 @@ import { lookerDataSource } from './data-sources/looker.js';
 import { rollbarDataSource } from './data-sources/rollbar.js';
 import { rootlyDataSource } from './data-sources/rootly.js';
 import { segmentDataSource } from './data-sources/segment.js';
+import { computedDataSource } from './data-sources/computed.js';
 import logger from './logger.js';
 
 /**
@@ -56,6 +57,7 @@ class DataSourceRegistry {
     this.register(rollbarDataSource);
     this.register(rootlyDataSource);
     this.register(segmentDataSource);
+    this.register(computedDataSource);
 
     // Initialize all sources
     const initPromises = Array.from(this.sources.values()).map(source =>
