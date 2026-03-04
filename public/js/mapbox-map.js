@@ -722,51 +722,67 @@ window.MapboxUSAMap = (function () {
         .sort(([, a], [, b]) => b.impressions - a.impressions)
         .slice(0, 20);
 
+      const totalImp = sorted.reduce((sum, [, s]) => sum + (s.impressions || 0), 0) || 1;
+
+      const fmt = (n) =>
+        n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' :
+        n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' :
+        n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
+
+      // Build table
       this._lbScrollEl.textContent = '';
+      const table = document.createElement('table');
+      table.className = 'mgl-lb-table';
 
-      sorted.forEach(([id, s], i) => {
-        const row = document.createElement('div');
-        row.className = 'mgl-lb-row';
-
-        const rank = document.createElement('span');
-        rank.className = 'mgl-lb-rank';
-        rank.textContent = i + 1;
-
-        const state = document.createElement('span');
-        state.className = 'mgl-lb-state';
-        state.textContent = id;
-
-        const barWrap = document.createElement('div');
-        barWrap.className = 'mgl-lb-bar-wrap';
-        const bar = document.createElement('div');
-        bar.className = 'mgl-lb-bar';
-        bar.style.width = Math.round((s.impressions / maxImp) * 100) + '%';
-        barWrap.appendChild(bar);
-
-        const val = document.createElement('span');
-        val.className = 'mgl-lb-val';
-        const n = s.impressions;
-        val.textContent = n >= 1e6 ? (n / 1e6).toFixed(1) + 'M'
-                        : n >= 1e3 ? (n / 1e3).toFixed(0) + 'K'
-                        : String(n);
-
-        row.appendChild(rank);
-        row.appendChild(state);
-        row.appendChild(barWrap);
-        row.appendChild(val);
-        this._lbScrollEl.appendChild(row);
+      // Header
+      const thead = document.createElement('thead');
+      const hrow  = document.createElement('tr');
+      ['#', 'ST', 'Impr', '%'].forEach((label, i) => {
+        const th = document.createElement('th');
+        th.textContent = label;
+        hrow.appendChild(th);
       });
+      thead.appendChild(hrow);
+      table.appendChild(thead);
 
-      // Animated total in bottom-left overlay + leaderboard header
+      // Body
+      const tbody = document.createElement('tbody');
+      sorted.forEach(([stateId, s], i) => {
+        const pct   = ((s.impressions / totalImp) * 100).toFixed(1);
+
+        const tr = document.createElement('tr');
+
+        const tdRank = document.createElement('td');
+        tdRank.className   = 'mgl-lb-rank-cell';
+        tdRank.textContent = i + 1;
+
+        const tdState = document.createElement('td');
+        tdState.className   = 'mgl-lb-state-cell';
+        tdState.textContent = stateId;
+
+        const tdImp = document.createElement('td');
+        tdImp.className   = 'mgl-lb-imp-cell';
+        tdImp.textContent = fmt(s.impressions);
+
+        const tdPct = document.createElement('td');
+        tdPct.className   = 'mgl-lb-pct-cell';
+        tdPct.textContent = pct + '%';
+
+        tr.appendChild(tdRank);
+        tr.appendChild(tdState);
+        tr.appendChild(tdImp);
+        tr.appendChild(tdPct);
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      this._lbScrollEl.appendChild(table);
+
+      // Animated total overlay + leaderboard header
       const imp = (totals && totals.impressions) ? totals.impressions : 0;
       this._animateTotal(imp);
 
       if (this._lbHeaderTotal) {
-        const fmt2 = (n) =>
-          n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' :
-          n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' :
-          n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
-        this._lbHeaderTotal.textContent = fmt2(imp) + ' total impressions';
+        this._lbHeaderTotal.textContent = fmt(imp) + ' total impressions';
       }
     }
 
