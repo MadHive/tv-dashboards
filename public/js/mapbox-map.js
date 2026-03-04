@@ -67,6 +67,7 @@ window.MapboxUSAMap = (function () {
       this._totalValueEl  = null;
       this._lbHeaderTotal = null;
       this._displayedTotal = 0;
+      this._totalAnimId    = null;
       this._lbScrollEl = null;
       this._lbTotals   = null;
 
@@ -693,6 +694,8 @@ window.MapboxUSAMap = (function () {
 
     _animateTotal(targetTotal) {
       if (!this._totalValueEl) return;
+      // Cancel any in-progress animation before starting a new one
+      if (this._totalAnimId) { cancelAnimationFrame(this._totalAnimId); this._totalAnimId = null; }
       const start    = this._displayedTotal;
       const end      = targetTotal;
       const duration = 800;
@@ -709,15 +712,21 @@ window.MapboxUSAMap = (function () {
         const eased    = 1 - Math.pow(1 - progress, 3); // easeOutCubic
         const current  = Math.round(start + (end - start) * eased);
         if (this._totalValueEl) this._totalValueEl.textContent = fmt(current);
-        if (progress < 1) requestAnimationFrame(tick);
-        else this._displayedTotal = end;
+        if (progress < 1) {
+          this._totalAnimId = requestAnimationFrame(tick);
+        } else {
+          this._totalAnimId    = null;
+          this._displayedTotal = end;
+        }
       };
-      requestAnimationFrame(tick);
+      this._totalAnimId = requestAnimationFrame(tick);
     }
 
     destroy() {
-      if (this._animId) cancelAnimationFrame(this._animId);
-      this._animId = null;
+      if (this._animId)      cancelAnimationFrame(this._animId);
+      if (this._totalAnimId) cancelAnimationFrame(this._totalAnimId);
+      this._animId      = null;
+      this._totalAnimId = null;
       if (this._pulseId) { clearInterval(this._pulseId); this._pulseId = null; }
       if (this._map) { this._map.remove(); this._map = null; }
     }
