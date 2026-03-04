@@ -682,6 +682,9 @@ window.Widgets = (function () {
       case 'service-heatmap': return serviceHeatmap(container, config);
       case 'pipeline-flow':  return pipelineFlow(container, config);
       case 'usa-map':        return usaMapWidget(container, config);
+      case 'usa-map-gl':
+        if (window.MapboxUSAMap) return window.MapboxUSAMap.mapboxUsaMap(container, config);
+        return usaMapWidget(container, config); // fallback to Canvas 2D if GL not loaded
       case 'security-scorecard': return securityScorecard(container, config);
       case 'sparkline':      return sparkline(container, config);
       case 'multi-metric-card': return multiMetricCard(container, config);
