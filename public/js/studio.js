@@ -629,7 +629,7 @@
         const res = await fetch('/api/queries/' + source);
         const data = await res.json();
         const queries = data.queries || data;
-        if (Array.isArray(queries)) {
+        if (Array.isArray(queries) && queries.length > 0) {
           queries.forEach((q) => {
             const opt = document.createElement('option');
             opt.value = q.id;
@@ -637,6 +637,12 @@
             if (q.id === selectedId) opt.selected = true;
             sel.appendChild(opt);
           });
+        } else {
+          const emptyOpt = document.createElement('option');
+          emptyOpt.value = '';
+          emptyOpt.disabled = true;
+          emptyOpt.textContent = 'No saved queries for this source';
+          sel.appendChild(emptyOpt);
         }
       } catch (_) {
         // Empty dropdown is fine
@@ -1079,13 +1085,19 @@
         const res = await fetch('/api/queries/' + source);
         const data = await res.json();
         const queries = data.queries || data;
-        if (Array.isArray(queries)) {
+        if (Array.isArray(queries) && queries.length > 0) {
           queries.forEach((q) => {
             const opt = document.createElement('option');
             opt.value = q.id;
             opt.textContent = q.name;
             sel.appendChild(opt);
           });
+        } else {
+          const emptyOpt = document.createElement('option');
+          emptyOpt.value = '';
+          emptyOpt.disabled = true;
+          emptyOpt.textContent = 'No saved queries for this source';
+          sel.appendChild(emptyOpt);
         }
       } catch (_) {
         // Empty dropdown is fine
