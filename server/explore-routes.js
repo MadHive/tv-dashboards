@@ -199,6 +199,20 @@ function transformBqRows(rows, widgetType) {
         series: [{ label: numCol, data: rows.map(r => r[numCol] || 0) }],
         timestamps: [],
       };
+    case 'table': {
+      if (!rows?.length) return null;
+      const sampleRow = rows[0];
+      const cols = Object.keys(sampleRow);
+      return {
+        columns: cols.map(k => ({
+          key:    k,
+          label:  k,
+          align:  typeof sampleRow[k] === 'number' ? 'right' : 'left',
+          format: typeof sampleRow[k] === 'number' ? 'number' : undefined,
+        })),
+        rows: rows.slice(0, 200),
+      };
+    }
     default:
       return { value: rows[0][numCol], unit: '' };
   }
