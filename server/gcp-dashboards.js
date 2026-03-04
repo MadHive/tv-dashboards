@@ -3,7 +3,6 @@
 // ===========================================================================
 
 import { GoogleAuth } from 'google-auth-library';
-import logger from './logger.js';
 
 const MONITORING_BASE = 'https://monitoring.googleapis.com/v1';
 
@@ -102,7 +101,7 @@ export function parseTiles(dashboard) {
         filters:     parsed.remaining,
         aggregation: {
           perSeriesAligner:   agg.perSeriesAligner   || 'ALIGN_MEAN',
-          crossSeriesReducer: agg.crossSeriesReducer  || undefined,
+          crossSeriesReducer: agg.crossSeriesReducer  || undefined, // omitted in JSON when absent — correct for single-series queries
           alignmentPeriod:    agg.alignmentPeriod     || '60s',
         },
       });
