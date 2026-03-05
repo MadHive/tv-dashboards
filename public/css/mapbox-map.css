@@ -178,3 +178,69 @@
   flex-shrink:    0;
   text-shadow:    0 0 8px rgba(253,164,212,0.3);
 }
+
+/* ── Data table replacing simple leaderboard ── */
+.mgl-lb-table {
+  width:           100%;
+  border-collapse: collapse;
+  font-size:       10px;
+  table-layout:    fixed;
+}
+
+.mgl-lb-table thead th {
+  color:          rgba(107,86,144,0.8);
+  font-weight:    700;
+  font-size:      8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding:        3px 4px;
+  border-bottom:  1px solid rgba(107,86,144,0.25);
+  text-align:     left;
+}
+
+.mgl-lb-table thead th:last-child,
+.mgl-lb-table thead th:nth-child(3) { text-align: right; }
+
+.mgl-lb-table tbody tr {
+  border-bottom: 1px solid rgba(107,86,144,0.08);
+  transition:    background 0.2s;
+}
+
+.mgl-lb-table tbody tr:hover { background: rgba(124,58,237,0.08); }
+
+.mgl-lb-table tbody td {
+  padding:     4px 4px;
+  color:       var(--t2, #B8A8D0);
+  white-space: nowrap;
+  overflow:    hidden;
+  text-overflow: ellipsis;
+}
+
+.mgl-lb-table tbody td:last-child,
+.mgl-lb-table tbody td:nth-child(3) { text-align: right; }
+
+.mgl-lb-rank-cell {
+  color:       rgba(253,164,212,0.45);
+  font-weight: 700;
+  width:       18px;
+}
+
+.mgl-lb-state-cell {
+  font-weight: 700;
+  color:       #F3F2EB;
+  width:       26px;
+}
+
+.mgl-lb-imp-cell {
+  font-variant-numeric: tabular-nums;
+  color: rgba(184,168,208,0.9);
+}
+
+.mgl-lb-pct-cell {
+  color:      rgba(124,58,237,0.9);
+  font-weight: 600;
+}
+
+.mgl-trend-up   { color: #4ade80; }
+.mgl-trend-down { color: #ef4444; }
+.mgl-trend-flat { color: rgba(184,168,208,0.5); }
