@@ -70,6 +70,8 @@ window.MapboxUSAMap = (function () {
       this._lbHeaderTotal = null;
       this._displayedTotal = 0;
       this._totalAnimId    = null;
+      this._dcMarkers       = [];
+      this._regionPanels    = {};
       this._lbScrollEl = null;
       this._lbTotals   = null;
 
@@ -77,6 +79,7 @@ window.MapboxUSAMap = (function () {
       this._wrap.className = 'mgl-container';
       container.appendChild(this._wrap);
 
+      this._buildOverlayDOM();
       this._buildLeaderboardDOM();
       this._initMap();
     }
@@ -108,6 +111,19 @@ window.MapboxUSAMap = (function () {
         this._map.on('load', async () => {
           await this._addSources();
           this._addLayers();
+          // Place GCP icon markers at data center locations
+          if (this._dcMarkers && this._dcMarkers.length === 0 && mapboxgl) {
+            DATA_CENTERS.forEach(dc => {
+              const el = document.createElement('img');
+              el.className   = 'mgl-dc-marker';
+              el.src         = '/img/gcp-icon.png';
+              el.title       = dc.label + ' — ' + dc.id;
+              const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
+                .setLngLat([dc.lon, dc.lat])
+                .addTo(this._map);
+              this._dcMarkers.push({ dc, el, marker });
+            });
+          }
           if (this._data) this._applyData(this._data);
         });
       } catch (err) {
@@ -467,22 +483,37 @@ window.MapboxUSAMap = (function () {
     }
 
     _initParticles(hotspots) {
-      // Filter to continental US bounds — prevents particles targeting Hawaii/Alaska/Puerto Rico
+      // Filter to continental US bounds
       const conus = hotspots.filter(h =>
         h.lon && h.lat &&
         h.lon > -125 && h.lon < -66 &&
         h.lat >   24 && h.lat <  50
       );
-      const targets = conus.length ? conus : [{ lon: -98, lat: 39 }];
+      const fallback = [{ lon: -98, lat: 39 }];
+
+      // Partition by DC service region so arcs are geographically meaningful
+      const westPool    = conus.filter(h => h.lon <= -104);
+      const centralPool = conus.filter(h => h.lon > -104 && h.lon <= -85);
+      const eastPool    = conus.filter(h => h.lon >  -85);
+      const dcPool = {
+        'us-west1':    westPool.length    > 0 ? westPool    : conus.length ? conus : fallback,
+        'us-central1': centralPool.length > 0 ? centralPool : conus.length ? conus : fallback,
+        'us-east4':    eastPool.length    > 0 ? eastPool    : conus.length ? conus : fallback,
+      };
+
       this._particles = Array.from({ length: this._cfg.particleCount }, () => {
-        const dc  = DATA_CENTERS[Math.floor(Math.random() * DATA_CENTERS.length)];
-        const tgt = targets[Math.floor(Math.random() * targets.length)];
+        const dc   = DATA_CENTERS[Math.floor(Math.random() * DATA_CENTERS.length)];
+        const pool   = dcPool[dc.id] || fallback;
+        const tgt    = pool[Math.floor(Math.random() * pool.length)];
+        const imp    = tgt.impressions || 1;
+        const maxImp = pool[0]?.impressions || imp;
+        const weight = Math.sqrt(imp / maxImp);  // 0-1, sqrt for visual balance
         return {
           t:     Math.random(),
-          speed: 0.003 + Math.random() * 0.006,
+          speed: 0.002 + weight * 0.007,          // heavier delivery = faster arc
           dc, tgt,
-          pt:    Math.random() > 0.7 ? 'fast' : 'normal',
-          sz:    1.5 + Math.random() * 2,
+          pt:    weight > 0.55 ? 'fast' : 'normal',
+          sz:    1.2 + weight * 3.8,              // 1.2px → 5px based on volume
         };
       });
     }
@@ -497,9 +528,16 @@ window.MapboxUSAMap = (function () {
             p.t += p.speed * (p.pt === 'fast' ? 1.5 : 1) * this._cfg.particleSpeed;
             if (p.t > 1) {
               p.t = 0;
-              const targets = this._data?.hotspots || [];
-              if (targets.length) {
-                p.tgt = targets[Math.floor(Math.random() * Math.min(50, targets.length))];
+              const allTargets = (dcPool && dcPool[p.dc?.id]) || this._data?.hotspots || [];
+              if (allTargets.length) {
+                p.tgt = allTargets[Math.floor(Math.random() * Math.min(50, allTargets.length))];
+                // Recompute size/speed for new target
+                const imp2     = p.tgt.impressions || 1;
+                const maxImp2  = allTargets[0]?.impressions || imp2;
+                const w2       = Math.sqrt(imp2 / maxImp2);
+                p.sz    = 1.2 + w2 * 3.5;
+                p.speed = 0.002 + w2 * 0.007;
+                p.pt    = w2 > 0.6 ? 'fast' : 'normal';
               }
             }
             const { dc, tgt, t, sz, pt } = p;
@@ -661,6 +699,56 @@ window.MapboxUSAMap = (function () {
       });
     }
 
+    _buildOverlayDOM() {
+      // ── GCP data center icon markers ────────────────────────────────────────
+      DATA_CENTERS.forEach(dc => {
+        const el = document.createElement('img');
+        el.className = 'mgl-dc-marker';
+        el.src   = '/img/gcp-icon.png';
+        el.title = dc.label + ' — ' + dc.id;
+        this._dcMarkers = this._dcMarkers || [];
+        this._dcMarkers.push({ dc, el, marker: null });
+      });
+
+      // ── Regional data panels (WEST / CENTRAL / EAST) ────────────────────────
+      this._regionPanels = {};
+      [
+        { key: 'west',    label: 'WEST',    style: 'left:14px;top:38%' },
+        { key: 'central', label: 'CENTRAL', style: 'left:50%;transform:translateX(-50%);bottom:72px' },
+        { key: 'east',    label: 'EAST',    style: 'right:285px;top:38%' },
+      ].forEach(({ key, label, style }) => {
+        const panel = document.createElement('div');
+        panel.className = 'mgl-region-panel';
+        panel.setAttribute('style', style);
+
+        const nameEl = document.createElement('div');
+        nameEl.className   = 'mgl-region-name';
+        nameEl.textContent = label;
+
+        const impEl = document.createElement('div');
+        impEl.className   = 'mgl-region-impressions';
+        impEl.textContent = '—';
+
+        const metaEl = document.createElement('div');
+        metaEl.className = 'mgl-region-meta';
+        const bidsEl = document.createElement('span');
+        bidsEl.className = 'mgl-region-bids';
+        const svcEl  = document.createElement('span');
+        svcEl.className  = 'mgl-region-svc';
+        metaEl.appendChild(bidsEl);
+        metaEl.appendChild(svcEl);
+
+        panel.appendChild(nameEl);
+        panel.appendChild(impEl);
+        panel.appendChild(metaEl);
+        this._wrap.appendChild(panel);
+
+        this._regionPanels[key] = { panel, impEl, bidsEl, svcEl };
+      });
+
+      // ── Leaderboard ─────────────────────────────────────────────────────────
+    }
+
     _buildLeaderboardDOM() {
       const lb = document.createElement('div');
       lb.className = 'mgl-leaderboard';
@@ -775,6 +863,16 @@ window.MapboxUSAMap = (function () {
       });
       table.appendChild(tbody);
       this._lbScrollEl.appendChild(table);
+
+      // Update regional panels (WEST/CENTRAL/EAST data)
+      const regions = this._data?.regions || {};
+      const fmtR = (n) => n >= 1e6 ? (n/1e6).toFixed(1)+'M' : n >= 1e3 ? (n/1e3).toFixed(0)+'K' : String(Math.round(n||0));
+      Object.entries(this._regionPanels || {}).forEach(([key, { impEl, bidsEl, svcEl }]) => {
+        const reg = regions[key] || {};
+        impEl.textContent  = reg.impressions ? fmtR(reg.impressions) : '—';
+        bidsEl.textContent = reg.bids ? fmtR(reg.bids) + ' bids' : '';
+        svcEl.textContent  = reg.campaigns ? reg.campaigns + ' svc' : '';
+      });
 
       // Animated total overlay + leaderboard header
       const imp = (totals && totals.impressions) ? totals.impressions : 0;

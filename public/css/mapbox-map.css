@@ -244,3 +244,47 @@
 .mgl-trend-up   { color: #4ade80; }
 .mgl-trend-down { color: #ef4444; }
 .mgl-trend-flat { color: rgba(184,168,208,0.5); }
+
+/* ── Regional data panels (WEST / CENTRAL / EAST) ── */
+.mgl-region-panel {
+  position:      absolute;
+  background:    rgba(14, 3, 32, 0.88);
+  border:        1px solid rgba(107,86,144,0.45);
+  border-radius: 8px;
+  padding:       10px 14px;
+  min-width:     110px;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+}
+.mgl-region-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #FDA4D4, #b87aff);
+  border-radius: 8px 8px 0 0;
+}
+.mgl-region-name {
+  font-size: 9px; font-weight: 700;
+  color: rgba(184,168,208,0.65);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  margin-bottom: 2px;
+}
+.mgl-region-impressions {
+  font-size: 20px; font-weight: 800;
+  color: #FDA4D4; line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.mgl-region-meta {
+  font-size: 9px; margin-top: 4px;
+  display: flex; gap: 8px;
+}
+.mgl-region-bids { color: rgba(184,168,208,0.65); }
+.mgl-region-svc  { color: #67E8F9; }
+
+/* GCP icon markers */
+.mgl-dc-marker {
+  width: 28px; height: 28px;
+  filter: drop-shadow(0 0 8px rgba(103,232,249,0.7));
+  cursor: default;
+}
