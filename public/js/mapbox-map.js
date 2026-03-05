@@ -14,8 +14,10 @@ window.MapboxUSAMap = (function () {
   ];
 
   var REGION_BOUNDS = {
-    northeast: [[-81, 36], [-66, 48]],
-    southeast: [[-89, 24], [-75, 37]],
+    northeast:  [[-81,  36], [-66, 48]],
+    southeast:  [[-89,  24], [-75, 37]],
+    northwest:  [[-125, 41], [-104, 49]],
+    southwest:  [[-125, 31], [-104, 41]],
   };
   var USA_BOUNDS = [[-125, 24], [-66, 50]];
 
