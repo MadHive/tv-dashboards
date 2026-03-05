@@ -212,6 +212,52 @@ dashboards:
     title: ''
     type: usa-map-gl
 - grid:
+    columns: 1
+    gap: 0
+    rows: 1
+  icon: map
+  id: campaign-delivery-gl-nw
+  name: Campaign Delivery GL
+  subtitle: Northwest Markets (Mapbox)
+  widgets:
+  - id: usa-delivery-map-gl-nw
+    mapConfig:
+      minImpressions: 50
+      region: northwest
+      timeWindow: 7
+    position:
+      col: 1
+      colSpan: 1
+      row: 1
+      rowSpan: 1
+    queryId: campaign-delivery-map
+    source: computed
+    title: ''
+    type: usa-map-gl
+- grid:
+    columns: 1
+    gap: 0
+    rows: 1
+  icon: map
+  id: campaign-delivery-gl-sw
+  name: Campaign Delivery GL
+  subtitle: Southwest Markets (Mapbox)
+  widgets:
+  - id: usa-delivery-map-gl-sw
+    mapConfig:
+      minImpressions: 50
+      region: southwest
+      timeWindow: 7
+    position:
+      col: 1
+      colSpan: 1
+      row: 1
+      rowSpan: 1
+    queryId: campaign-delivery-map
+    source: computed
+    title: ''
+    type: usa-map-gl
+- grid:
     columns: 3
     gap: 14
     rows: 2

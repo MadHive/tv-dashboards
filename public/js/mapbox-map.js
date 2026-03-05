@@ -14,8 +14,10 @@ window.MapboxUSAMap = (function () {
   ];
 
   var REGION_BOUNDS = {
-    northeast: [[-81, 36], [-66, 48]],
-    southeast: [[-89, 24], [-75, 37]],
+    northeast:  [[-81,  36], [-66, 48]],
+    southeast:  [[-89,  24], [-75, 37]],
+    northwest:  [[-125, 41], [-104, 49]],
+    southwest:  [[-125, 31], [-104, 41]],
   };
   var USA_BOUNDS = [[-125, 24], [-66, 50]];
 
@@ -98,7 +100,7 @@ window.MapboxUSAMap = (function () {
         });
 
         this._map.on('load', async () => {
-          this._addSources();
+          await this._addSources();
           this._addLayers();
           if (this._data) this._applyData(this._data);
         });
@@ -115,7 +117,7 @@ window.MapboxUSAMap = (function () {
       };
     }
 
-    _addSources() {
+    async _addSources() {
       const US = window.US_STATES;
 
       // Load high-quality state GeoJSON (93+ points per state vs 10-18 in US_STATES)
