@@ -268,49 +268,18 @@ window.MapboxUSAMap = (function () {
         paint: { 'line-color': '#7c3aed', 'line-width': 1, 'line-opacity': 0.5 },
       });
 
-      // Wide outer bloom on top delivery states — creates a vivid halo effect
-      this._map.addLayer({
-        id: 'states-bloom', type: 'line', source: 'us-states',
-        filter: ['>', ['get', 'intensity'], 0.55],
-        paint: {
-          'line-color':   ['interpolate', ['linear'], ['get', 'intensity'],
-            0.55, '#a855f7', 0.80, '#e879f9', 1.0, '#FDA4D4'],
-          'line-width':   36,
-          'line-blur':    28,
-          'line-opacity': ['interpolate', ['linear'], ['get', 'intensity'],
-            0.55, 0.18, 1.0, 0.60],
-          'line-color-transition': { duration: 800 },
-        },
-      });
-
+      // Soft edge glow on delivery states — matches canvas shadowBlur style
       this._map.addLayer({
         id: 'states-glow', type: 'line', source: 'us-states',
-        filter: ['>', ['get', 'intensity'], 0.2],
+        filter: ['>', ['get', 'intensity'], 0.25],
         paint: {
           'line-color':   ['interpolate', ['linear'], ['get', 'intensity'],
-            0.2, '#5b2a8f', 0.6, '#b87aff', 1.0, '#FDA4D4'],
-          'line-width':   20,
-          'line-blur':    16,
+            0.25, '#5b2a8f', 0.6, '#b87aff', 1.0, '#FDA4D4'],
+          'line-width':   8,
+          'line-blur':    10,
           'line-opacity': ['interpolate', ['linear'], ['get', 'intensity'],
-            0.2, 0.10, 1.0, 0.50],
+            0.25, 0.08, 1.0, 0.30],
           'line-color-transition': { duration: 800 },
-        },
-      });
-
-      // Wide cinematic bloom behind corridors
-      this._map.addLayer({
-        id: 'arc-corridors-bloom', type: 'line', source: 'arc-corridors',
-        layout: { 'line-cap': 'round' },
-        paint: {
-          'line-color': [
-            'match', ['get', 'dc'],
-            'us-west1',    '#67E8F9',
-            'us-central1', '#b87aff',
-            '#FDA4D4',
-          ],
-          'line-width':   ['*', ['get', 'lw'], 5],
-          'line-opacity': ['interpolate', ['linear'], ['get', 'ir'], 0, 0.06, 1, 0.22],
-          'line-blur':    14,
         },
       });
 
@@ -318,31 +287,31 @@ window.MapboxUSAMap = (function () {
         id: 'arc-corridors', type: 'line', source: 'arc-corridors',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: {
-          // Low volume: dim DC hue. High volume: bright DC hue → near-white
           'line-color': [
             'interpolate', ['linear'], ['get', 'ir'],
-            0,    ['match', ['get', 'dc'], 'us-west1', '#1a6a80', 'us-central1', '#4a2070', '#7a3050'],
-            0.5,  ['match', ['get', 'dc'], 'us-west1', '#67E8F9', 'us-central1', '#b87aff', '#FDA4D4'],
-            1.0,  '#FFFFFF',
+            0,   ['match', ['get', 'dc'], 'us-west1', '#1a6a80', 'us-central1', '#4a2070', '#7a3050'],
+            0.5, ['match', ['get', 'dc'], 'us-west1', '#67E8F9', 'us-central1', '#b87aff', '#FDA4D4'],
+            1.0, '#FFFFFF',
           ],
           'line-width':   ['get', 'lw'],
           'line-opacity': ['get', 'lo'],
-          'line-blur':    0.4,
+          'line-blur':    0,
         },
       });
 
       this._map.addLayer({
         id: 'arc-particles-glow', type: 'circle', source: 'arc-particles',
         paint: {
-          'circle-radius':  ['*', ['get', 'sz'], 2.8],
+          'circle-radius':  ['*', ['get', 'sz'], 2.0],
           'circle-color': [
-            'interpolate', ['linear'], ['get', 'ir'],
-            0,   ['match', ['get', 'dc'], 'us-west1', '#67E8F9', 'us-central1', '#b87aff', '#FDA4D4'],
-            1,   '#FFFFFF',
+            'match', ['get', 'dc'],
+            'us-west1',    '#67E8F9',
+            'us-central1', '#b87aff',
+            '#FDA4D4',
           ],
-          // Head glows bright; tail ghosts are nearly invisible
-          'circle-opacity': ['interpolate', ['linear'], ['get', 'tr'], 0, 0.22, 1, 0.01],
-          'circle-blur':    0.88,
+          // Head has a soft glow; trail ghosts are nearly invisible
+          'circle-opacity': ['interpolate', ['linear'], ['get', 'tr'], 0, 0.14, 1, 0.01],
+          'circle-blur':    0.85,
         },
       });
 
@@ -350,25 +319,24 @@ window.MapboxUSAMap = (function () {
         id: 'arc-particles', type: 'circle', source: 'arc-particles',
         paint: {
           'circle-radius':  ['get', 'sz'],
-          // DC colour at low ir, brightens to white-hot at peak — decays along trail via ir decay
           'circle-color': [
             'interpolate', ['linear'], ['get', 'ir'],
             0,    ['match', ['get', 'dc'], 'us-west1', '#67E8F9', 'us-central1', '#b87aff', '#FDA4D4'],
-            0.55, ['match', ['get', 'dc'], 'us-west1', '#a8f0ff', 'us-central1', '#d4a8ff', '#ffd0e8'],
+            0.6,  ['match', ['get', 'dc'], 'us-west1', '#a8f0ff', 'us-central1', '#d4a8ff', '#ffd0e8'],
             1.0,  '#FFFFFF',
           ],
-          // Head is fully opaque; trail decays to near-transparent
-          'circle-opacity': ['interpolate', ['linear'], ['get', 'tr'], 0, 1.0, 1, 0.04],
-          'circle-blur':    ['interpolate', ['linear'], ['get', 'tr'], 0, 0.1, 1, 0.6],
+          // Head sharp and bright; trail decays cleanly — no heavy blur on trail
+          'circle-opacity': ['interpolate', ['linear'], ['get', 'tr'], 0, 0.95, 1, 0.04],
+          'circle-blur':    0.05,
         },
       });
 
       this._map.addLayer({
         id: 'hotspots-glow', type: 'circle', source: 'hotspots',
         paint: {
-          'circle-radius':  ['interpolate', ['linear'], ['get', 'ir'], 0, 22, 1, 95],
+          'circle-radius':  ['interpolate', ['linear'], ['get', 'ir'], 0, 10, 1, 50],
           'circle-color':   ['interpolate', ['linear'], ['get', 'ir'], 0, '#67E8F9', 0.5, '#b87aff', 1, '#FDA4D4'],
-          'circle-opacity': ['interpolate', ['linear'], ['get', 'ir'], 0, 0.07, 1, 0.38],
+          'circle-opacity': ['interpolate', ['linear'], ['get', 'ir'], 0, 0.05, 1, 0.20],
           'circle-blur':    1.0,
         },
       });
@@ -396,7 +364,7 @@ window.MapboxUSAMap = (function () {
       this._map.addLayer({
         id: 'hotspots-core', type: 'circle', source: 'hotspots',
         paint: {
-          'circle-radius': ['interpolate', ['linear'], ['get', 'ir'], 0, 7, 1, 30],
+          'circle-radius': ['interpolate', ['linear'], ['get', 'ir'], 0, 3, 1, 14],
           'circle-color':  [
             'interpolate', ['linear'], ['get', 'ir'],
             0,    '#67E8F9',
@@ -620,9 +588,9 @@ window.MapboxUSAMap = (function () {
         features.push({
           type: 'Feature',
           properties: {
-            lw: +(2.5 + ir * 7).toFixed(3),   // 2.5px → 9.5px — all corridors clearly visible
-            lo: +(0.4 + ir * 0.5).toFixed(3),  // 0.4 → 0.9  — dim routes still present
-            ir: +ir.toFixed(3),                 // for color-by-volume in layer paint
+            lw: +(0.8 + ir * 2.5).toFixed(3),  // 0.8px → 3.3px — matches canvas 0.5–2px style
+            lo: +(0.18 + ir * 0.38).toFixed(3), // 0.18 → 0.56  — semi-transparent routes
+            ir: +ir.toFixed(3),
             dc: dc.id,
           },
           geometry: { type: 'LineString', coordinates: pts },
