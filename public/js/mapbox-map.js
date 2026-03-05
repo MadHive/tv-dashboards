@@ -187,15 +187,6 @@ window.MapboxUSAMap = (function () {
     _addLayers() {
       // County boundary lines — beneath everything
 
-      // State abbreviation labels,
-          paint: {
-            'text-color':     'rgba(255,255,255,0.75)',
-            'text-halo-color': 'rgba(14,3,32,0.7)',
-            'text-halo-width': 1.5,
-          },
-        });
-      }
-
       this._map.addLayer({
         id: 'states-fill', type: 'fill', source: 'us-states',
         paint: {
