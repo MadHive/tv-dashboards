@@ -31,7 +31,7 @@ window.MapboxUSAMap = (function () {
 
   function buildMapConfig(userConfig) {
     return {
-      particleCount:   120,
+      particleCount:   60,
       particleSpeed:   1.0,
       colorScheme:     'brand',
       showLeaderboard: true,
@@ -74,6 +74,7 @@ window.MapboxUSAMap = (function () {
       this._regionPanels    = {};
       this._lbScrollEl = null;
       this._lbTotals   = null;
+      this._visObs     = null;
 
       this._wrap = document.createElement('div');
       this._wrap.className = 'mgl-container';
@@ -439,6 +440,7 @@ window.MapboxUSAMap = (function () {
 
       this._buildCorridors(hotspots.slice(0, 30), maxHot);
       this._initParticles(hotspots.slice(0, 50));
+      if (!this._visObs) this._watchVisibility();
       if (!this._animId) this._startAnimation();
       if (!this._pulseId) this._startPulse();
 
@@ -526,10 +528,8 @@ window.MapboxUSAMap = (function () {
     }
 
     _startAnimation() {
+      if (this._animId) return; // already running
       const tick = () => {
-        const isVisible = !!this._wrap?.closest?.('.dashboard-page.active');
-        const delay = isVisible ? 16 : 500;
-
         if (this._map?.getSource('arc-particles')) {
           const features = this._particles.map(p => {
             p.t += p.speed * (p.pt === 'fast' ? 1.5 : 1) * this._cfg.particleSpeed;
@@ -565,12 +565,31 @@ window.MapboxUSAMap = (function () {
           });
         }
 
-        setTimeout(() => {
-          this._animId = requestAnimationFrame(tick);
-        }, delay);
+        this._animId = requestAnimationFrame(tick);
       };
 
       this._animId = requestAnimationFrame(tick);
+    }
+
+    // Stop animation when page leaves view; restart when it returns.
+    _watchVisibility() {
+      if (this._visObs) return;
+      const page = this._wrap?.closest?.('.dashboard-page');
+      if (!page) {
+        setTimeout(() => this._watchVisibility(), 200);
+        return;
+      }
+      this._visObs = new MutationObserver(() => {
+        const active = page.classList.contains('active');
+        if (active) {
+          if (!this._animId) this._startAnimation();
+          if (!this._pulseId) this._startPulse();
+        } else {
+          if (this._animId)  { cancelAnimationFrame(this._animId); this._animId = null; }
+          if (this._pulseId) { clearInterval(this._pulseId); this._pulseId = null; }
+        }
+      });
+      this._visObs.observe(page, { attributes: true, attributeFilter: ['class'] });
     }
 
     _startPulse() {
@@ -926,6 +945,7 @@ window.MapboxUSAMap = (function () {
       this._animId      = null;
       this._totalAnimId = null;
       if (this._pulseId) { clearInterval(this._pulseId); this._pulseId = null; }
+      if (this._visObs)  { this._visObs.disconnect(); this._visObs = null; }
       if (this._map) { this._map.remove(); this._map = null; }
     }
   }
