@@ -53,11 +53,11 @@ window.MapboxUSAMap = (function () {
   };
 
   var REGION_BOUNDS = {
-    // Wide enough to show the serving DC(s) as arc origins + the delivery region
-    northeast:  [[-102, 27], [-58, 52]],   // East DC (VA) + Central DC visible; full NE corridor
-    southeast:  [[-104, 17], [-60, 44]],   // East DC (VA) + Gulf coast; arcs enter from left
-    northwest:  [[-133, 33], [-86, 55]],   // West DC (OR) + Central DC visible; full PNW
-    southwest:  [[-133, 21], [-87, 47]],   // West DC (OR) + Central DC; CA through NM
+    // DC visible on left, delivery region fills the frame
+    northeast:  [[-90, 33], [-62, 50]],    // East DC (VA) left; New England fills right
+    southeast:  [[-94, 19], [-68, 42]],    // East DC (VA) top-left; FL/GA/SC fills frame
+    northwest:  [[-130, 38], [-100, 52]],  // West DC (OR) left; PNW fills right
+    southwest:  [[-130, 26], [-100, 44]],  // West DC (OR) left; CA/NV/AZ fills right
   };
   var USA_BOUNDS = [[-125, 24], [-66, 50]];
 
@@ -299,34 +299,34 @@ window.MapboxUSAMap = (function () {
         },
       });
 
+      // Glow: canvas "8*size radius at 0.1*alpha" — driven by ga property
       this._map.addLayer({
         id: 'arc-particles-glow', type: 'circle', source: 'arc-particles',
         paint: {
-          'circle-radius':  ['*', ['get', 'sz'], 2.0],
+          'circle-radius':  ['*', ['get', 'sz'], 3.2],
           'circle-color': [
             'match', ['get', 'dc'],
             'us-west1',    '#67E8F9',
             'us-central1', '#b87aff',
             '#FDA4D4',
           ],
-          // Head has a soft glow; trail ghosts are nearly invisible
-          'circle-opacity': ['interpolate', ['linear'], ['get', 'tr'], 0, 0.14, 1, 0.01],
-          'circle-blur':    0.85,
+          'circle-opacity': ['get', 'ga'],
+          'circle-blur':    0.8,
         },
       });
 
+      // Main dot + trail — driven by fa (fade alpha from canvas formula)
       this._map.addLayer({
         id: 'arc-particles', type: 'circle', source: 'arc-particles',
         paint: {
           'circle-radius':  ['get', 'sz'],
           'circle-color': [
             'interpolate', ['linear'], ['get', 'ir'],
-            0,    ['match', ['get', 'dc'], 'us-west1', '#67E8F9', 'us-central1', '#b87aff', '#FDA4D4'],
-            0.6,  ['match', ['get', 'dc'], 'us-west1', '#a8f0ff', 'us-central1', '#d4a8ff', '#ffd0e8'],
-            1.0,  '#FFFFFF',
+            0,   ['match', ['get', 'dc'], 'us-west1', '#67E8F9', 'us-central1', '#b87aff', '#FDA4D4'],
+            0.6, ['match', ['get', 'dc'], 'us-west1', '#a8f0ff', 'us-central1', '#d4a8ff', '#ffd0e8'],
+            1.0, '#FFFFFF',
           ],
-          // Head sharp and bright; trail decays cleanly — no heavy blur on trail
-          'circle-opacity': ['interpolate', ['linear'], ['get', 'tr'], 0, 0.95, 1, 0.04],
+          'circle-opacity': ['get', 'fa'],
           'circle-blur':    0.05,
         },
       });
@@ -541,6 +541,9 @@ window.MapboxUSAMap = (function () {
       const region = data.region || this._config.mapConfig?.region;
       const bounds = REGION_BOUNDS[region] || USA_BOUNDS;
 
+      // Position region panels after map finishes panning to new bounds
+      this._map.once('moveend', () => this._positionRegionPanels());
+
       // For regional views, clip arcs/particles to hotspots near the viewport
       // so traces and their animated trails are always visible together.
       // Use a generous buffer so approaching arcs enter from the DC side.
@@ -588,8 +591,8 @@ window.MapboxUSAMap = (function () {
         features.push({
           type: 'Feature',
           properties: {
-            lw: +(0.8 + ir * 2.5).toFixed(3),  // 0.8px → 3.3px — matches canvas 0.5–2px style
-            lo: +(0.18 + ir * 0.38).toFixed(3), // 0.18 → 0.56  — semi-transparent routes
+            lw: +(0.5 + ir * 1.5).toFixed(3),   // exact canvas: 0.5 + impRatio*1.5 (0.5→2px)
+            lo: +(0.04 + ir * 0.12).toFixed(3),  // exact canvas: 0.04 + impRatio*0.12
             ir: +ir.toFixed(3),
             dc: dc.id,
           },
@@ -609,13 +612,13 @@ window.MapboxUSAMap = (function () {
         const path   = paths[Math.floor(Math.random() * paths.length)];
         const weight = path.ir; // already sqrt-scaled (0–1)
         return {
-          t:     Math.random(),
-          speed: 0.002 + weight * 0.008,
+          t:     Math.random() * 0.9,          // stagger start positions
+          speed: 0.003 + weight * 0.006,       // canvas: 0.003 + random*0.006
           dc:    path.dc,
           tgt:   path.tgt,
           ir:    weight,
-          pt:    weight > 0.55 ? 'fast' : 'normal',
-          sz:    4 + weight * 12,  // 4px → 16px — bold, clearly data-driven size for TV
+          pt:    Math.random() > 0.7 ? 'fast' : 'normal',
+          sz:    2 + weight * 5,               // 2–7px matches canvas 2.5*size (size=1–3)
         };
       });
     }
@@ -623,10 +626,12 @@ window.MapboxUSAMap = (function () {
     _startAnimation() {
       if (this._animId) return; // already running
 
-      // Comet-tail constants — each particle renders TRAIL_SEGS points along its arc,
-      // decaying in size and opacity to form a trailing "tracer" effect.
-      const TRAIL_SEGS = 7;   // head + 6 trailing ghosts
-      const TRAIL_GAP  = 0.028; // t-space gap between trail segments
+      // Trail parameters match canvas charts.js exactly:
+      //   trailLength 8 (fast) or 12 (normal), step 0.015 in t-space
+      //   alpha:  0.5 - seg*0.04  (same formula as canvas)
+      //   size:   (1 - seg*0.06) * sz  (canvas: (2.5 - trail*0.15) * p.size)
+      //   ease-out cubic on position: eased = 1 - (1-t)^3
+      //   fade in first 10%, fade out last 15% of arc
 
       const tick = () => {
         if (this._map?.getSource('arc-particles')) {
@@ -635,42 +640,53 @@ window.MapboxUSAMap = (function () {
           this._particles.forEach(p => {
             p.t += p.speed * (p.pt === 'fast' ? 1.5 : 1) * this._cfg.particleSpeed;
             if (p.t > 1) {
-              p.t = 0;
+              p.t = -Math.random() * 0.15; // brief pause before next arc (canvas pattern)
               const paths = this._corridorPaths;
               if (paths && paths.length) {
                 const path = paths[Math.floor(Math.random() * paths.length)];
                 p.dc    = path.dc;
                 p.tgt   = path.tgt;
                 p.ir    = path.ir;
-                p.sz    = 4 + path.ir * 12;
-                p.speed = 0.002 + path.ir * 0.008;
-                p.pt    = path.ir > 0.6 ? 'fast' : 'normal';
+                p.sz    = 2 + path.ir * 5;   // 2–7px — matches canvas 2.5*size range
+                p.speed = 0.003 + path.ir * 0.006;
+                p.pt    = Math.random() > 0.7 ? 'fast' : 'normal';
               }
             }
+            if (p.t < 0) return; // pause phase — no rendering
 
             const { dc, tgt, sz, pt } = p;
-            const ir  = p.ir || 0;
-            const mx  = (dc.lon + tgt.lon) / 2;
-            const my  = (dc.lat + tgt.lat) / 2 + Math.abs(dc.lat - tgt.lat) * 0.15 + 0.5;
+            const ir   = p.ir || 0;
+            const raw  = p.t;
+            const mx   = (dc.lon + tgt.lon) / 2;
+            const my   = (dc.lat + tgt.lat) / 2 + Math.abs(dc.lat - tgt.lat) * 0.15 + 0.5;
+            // Canvas fade: fade in 0→0.1, full 0.1→0.85, fade out 0.85→1
+            const fadeAlpha = raw < 0.1 ? raw / 0.1 : (raw > 0.85 ? (1 - raw) / 0.15 : 1);
+            const trailSegs = pt === 'fast' ? 8 : 12;
 
-            // Generate head + trailing ghost positions
-            for (let seg = 0; seg < TRAIL_SEGS; seg++) {
-              const tt = Math.max(0, p.t - seg * TRAIL_GAP);
-              // Don't stack multiple ghosts at t=0 (arc start)
+            for (let seg = 0; seg <= trailSegs; seg++) {
+              const tt = Math.max(0, raw - seg * 0.015);
               if (seg > 0 && tt === 0) break;
 
-              const it  = 1 - tt;
-              const lon = it * it * dc.lon + 2 * it * tt * mx + tt * tt * tgt.lon;
-              const lat = it * it * dc.lat + 2 * it * tt * my + tt * tt * tgt.lat;
+              // Ease-out cubic — matches canvas `eased = 1 - Math.pow(1-t, 3)`
+              const easedT = 1 - Math.pow(1 - tt, 3);
+              const it     = 1 - easedT;
+              const lon    = it * it * dc.lon + 2 * it * easedT * mx + easedT * easedT * tgt.lon;
+              const lat    = it * it * dc.lat + 2 * it * easedT * my + easedT * easedT * tgt.lat;
 
-              // Decay: head is full size/brightness, tail fades to nothing
-              const fade = seg / (TRAIL_SEGS - 1);          // 0 (head) → 1 (tail end)
-              const trSz = +(sz * Math.pow(1 - fade * 0.82, 1.3)).toFixed(2);
-              const trIr = +(ir  * (1 - fade * 0.88)).toFixed(3);
+              // Canvas formula: alpha = (0.5 - seg*0.04) * fadeAlpha
+              const fa = +(Math.max(0.01, (0.5 - seg * 0.04) * fadeAlpha)).toFixed(3);
+              // Canvas formula: size = (2.5 - seg*0.15) * p.size → scaled to sz
+              const ss = +(Math.max(0.4, (1 - seg * 0.06) * sz)).toFixed(2);
+              // Glow alpha = 0.1 * fadeAlpha (canvas: 8*size radius at 0.1*alpha)
+              const ga = +(0.1 * fadeAlpha * (1 - seg / trailSegs)).toFixed(3);
 
               features.push({
                 type: 'Feature',
-                properties: { pt, sz: trSz, dc: p.dc.id, ir: trIr, tr: +fade.toFixed(3) },
+                properties: {
+                  pt, sz: ss, dc: p.dc.id,
+                  ir: +(ir * (1 - seg / trailSegs)).toFixed(3),
+                  fa, ga,
+                },
                 geometry: { type: 'Point', coordinates: [lon, lat] },
               });
             }
@@ -685,6 +701,38 @@ window.MapboxUSAMap = (function () {
       };
 
       this._animId = requestAnimationFrame(tick);
+    }
+
+    // Dynamically align WEST/CENTRAL/EAST panels to their DC icon positions on screen.
+    _positionRegionPanels() {
+      if (!this._map || !this._regionPanels) return;
+      const dcKeyMap = { 'us-west1': 'west', 'us-central1': 'central', 'us-east4': 'east' };
+      const cw = this._wrap.offsetWidth;
+      const ch = this._wrap.offsetHeight;
+      const lbW  = 340 + 12; // leaderboard width + right gap
+      const PW   = 160;      // approx panel width
+      const PH   = 115;      // approx panel height
+
+      DATA_CENTERS.forEach(dc => {
+        const key   = dcKeyMap[dc.id];
+        const entry = this._regionPanels[key];
+        if (!entry?.panel) return;
+
+        const px = this._map.project([dc.lon, dc.lat]);
+        let x = Math.round(px.x - PW / 2);
+        let y = Math.round(px.y - PH - 52); // sit above the DC marker
+
+        // Clamp horizontally: keep within map, don't overlap leaderboard
+        x = Math.max(8, Math.min(cw - lbW - PW - 8, x));
+        // Clamp vertically
+        y = Math.max(8, Math.min(ch - PH - 8, y));
+
+        entry.panel.style.left   = x + 'px';
+        entry.panel.style.top    = y + 'px';
+        entry.panel.style.right  = '';
+        entry.panel.style.bottom = '';
+        entry.panel.style.transform = '';
+      });
     }
 
     // Stop animation when page leaves view; restart when it returns.
@@ -855,13 +903,13 @@ window.MapboxUSAMap = (function () {
       // ── Regional data panels (WEST / CENTRAL / EAST) ────────────────────────
       this._regionPanels = {};
       [
-        { key: 'west',    label: 'WEST',    style: 'left:14px;top:38%' },
-        { key: 'central', label: 'CENTRAL', style: 'left:50%;transform:translateX(-50%);bottom:72px' },
-        { key: 'east',    label: 'EAST',    style: 'right:365px;top:38%' },
-      ].forEach(({ key, label, style }) => {
+        { key: 'west',    label: 'WEST'    },
+        { key: 'central', label: 'CENTRAL' },
+        { key: 'east',    label: 'EAST'    },
+      ].forEach(({ key, label }) => {
         const panel = document.createElement('div');
         panel.className = 'mgl-region-panel';
-        panel.setAttribute('style', style);
+        panel.style.position = 'absolute';
 
         const nameEl = document.createElement('div');
         nameEl.className   = 'mgl-region-name';
