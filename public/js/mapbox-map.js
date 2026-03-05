@@ -111,9 +111,10 @@ window.MapboxUSAMap = (function () {
       this._totalAnimId    = null;
       this._dcMarkers       = [];
       this._regionPanels    = {};
-      this._lbScrollEl = null;
-      this._lbTotals   = null;
-      this._visObs     = null;
+      this._lbScrollEl     = null;
+      this._lbTotals       = null;
+      this._visObs         = null;
+      this._corridorPaths  = [];
 
       this._wrap = document.createElement('div');
       this._wrap.className = 'mgl-container';
@@ -283,32 +284,30 @@ window.MapboxUSAMap = (function () {
         id: 'arc-corridors', type: 'line', source: 'arc-corridors',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: {
+          // Low volume: dim DC hue. High volume: bright DC hue → near-white
           'line-color': [
-            'match', ['get', 'dc'],
-            'us-west1',    '#67E8F9',   // West — cyan
-            'us-central1', '#b87aff',   // Central — violet
-            'us-east4',    '#FDA4D4',   // East — pink
-            '#67E8F9',
+            'interpolate', ['linear'], ['get', 'ir'],
+            0,    ['match', ['get', 'dc'], 'us-west1', '#1a6a80', 'us-central1', '#4a2070', '#7a3050'],
+            0.5,  ['match', ['get', 'dc'], 'us-west1', '#67E8F9', 'us-central1', '#b87aff', '#FDA4D4'],
+            1.0,  '#FFFFFF',
           ],
           'line-width':   ['get', 'lw'],
           'line-opacity': ['get', 'lo'],
-          'line-blur':    0.5,
+          'line-blur':    0.4,
         },
       });
 
       this._map.addLayer({
         id: 'arc-particles-glow', type: 'circle', source: 'arc-particles',
         paint: {
-          'circle-radius':  ['*', ['get', 'sz'], 3.5],
+          'circle-radius':  ['*', ['get', 'sz'], 2.5],
           'circle-color': [
-            'match', ['get', 'dc'],
-            'us-west1',    '#67E8F9',
-            'us-central1', '#b87aff',
-            'us-east4',    '#FDA4D4',
-            '#67E8F9',
+            'interpolate', ['linear'], ['get', 'ir'],
+            0,   ['match', ['get', 'dc'], 'us-west1', '#67E8F9', 'us-central1', '#b87aff', '#FDA4D4'],
+            1,   '#FFFFFF',
           ],
-          'circle-opacity': 0.10,
-          'circle-blur':    0.9,
+          'circle-opacity': ['interpolate', ['linear'], ['get', 'ir'], 0, 0.08, 1, 0.20],
+          'circle-blur':    0.85,
         },
       });
 
@@ -316,15 +315,15 @@ window.MapboxUSAMap = (function () {
         id: 'arc-particles', type: 'circle', source: 'arc-particles',
         paint: {
           'circle-radius':  ['get', 'sz'],
+          // DC color at low volume, blends to white-hot at high volume
           'circle-color': [
-            'match', ['get', 'dc'],
-            'us-west1',    '#67E8F9',   // West  — cyan
-            'us-central1', '#b87aff',   // Central — violet
-            'us-east4',    '#FDA4D4',   // East  — pink
-            '#67E8F9',                   // fallback
+            'interpolate', ['linear'], ['get', 'ir'],
+            0,    ['match', ['get', 'dc'], 'us-west1', '#67E8F9', 'us-central1', '#b87aff', '#FDA4D4'],
+            0.65, ['match', ['get', 'dc'], 'us-west1', '#a8f0ff', 'us-central1', '#d4a8ff', '#ffd0e8'],
+            1.0,  '#FFFFFF',
           ],
-          'circle-opacity': 0.9,
-          'circle-blur':    0.2,
+          'circle-opacity': ['interpolate', ['linear'], ['get', 'ir'], 0, 0.7, 1, 1.0],
+          'circle-blur':    0.15,
         },
       });
 
@@ -535,6 +534,7 @@ window.MapboxUSAMap = (function () {
     }
 
     _buildCorridors(hotspots, maxHot) {
+      this._corridorPaths = [];
       const features = [];
       hotspots.forEach(hs => {
         if (!hs.lat || !hs.lon) return;
@@ -553,11 +553,14 @@ window.MapboxUSAMap = (function () {
           ]);
         }
         const ir = Math.sqrt((hs.impressions || 0) / maxHot);
+        // Store for particle alignment — particles pick from this same set
+        this._corridorPaths.push({ dc, tgt: hs, ir });
         features.push({
           type: 'Feature',
           properties: {
-            lw: +(1.5 + ir * 6).toFixed(3),
-            lo: +(0.2 + ir * 0.55).toFixed(3),
+            lw: +(2.5 + ir * 7).toFixed(3),   // 2.5px → 9.5px — all corridors clearly visible
+            lo: +(0.4 + ir * 0.5).toFixed(3),  // 0.4 → 0.9  — dim routes still present
+            ir: +ir.toFixed(3),                 // for color-by-volume in layer paint
             dc: dc.id,
           },
           geometry: { type: 'LineString', coordinates: pts },
@@ -566,39 +569,23 @@ window.MapboxUSAMap = (function () {
       this._map.getSource('arc-corridors')?.setData({ type: 'FeatureCollection', features });
     }
 
-    _initParticles(hotspots) {
-      // Filter to continental US bounds
-      const conus = hotspots.filter(h =>
-        h.lon && h.lat &&
-        h.lon > -125 && h.lon < -66 &&
-        h.lat >   24 && h.lat <  50
-      );
-      const fallback = [{ lon: -98, lat: 39 }];
-
-      // Partition by DC service region so arcs are geographically meaningful
-      const westPool    = conus.filter(h => h.lon <= -104);
-      const centralPool = conus.filter(h => h.lon > -104 && h.lon <= -85);
-      const eastPool    = conus.filter(h => h.lon >  -85);
-      this._dcPool = {
-        'us-west1':    westPool.length    > 0 ? westPool    : conus.length ? conus : fallback,
-        'us-central1': centralPool.length > 0 ? centralPool : conus.length ? conus : fallback,
-        'us-east4':    eastPool.length    > 0 ? eastPool    : conus.length ? conus : fallback,
-      };
-      const dcPool = this._dcPool;
+    _initParticles(_hotspots) {
+      // Particles travel on the exact same DC→hotspot paths as the corridor lines.
+      // _buildCorridors() must be called first to populate this._corridorPaths.
+      const paths = this._corridorPaths;
+      if (!paths || !paths.length) { this._particles = []; return; }
 
       this._particles = Array.from({ length: this._cfg.particleCount }, () => {
-        const dc   = DATA_CENTERS[Math.floor(Math.random() * DATA_CENTERS.length)];
-        const pool   = dcPool[dc.id] || fallback;
-        const tgt    = pool[Math.floor(Math.random() * pool.length)];
-        const imp    = tgt.impressions || 1;
-        const maxImp = pool[0]?.impressions || imp;
-        const weight = Math.sqrt(imp / maxImp);  // 0-1, sqrt for visual balance
+        const path   = paths[Math.floor(Math.random() * paths.length)];
+        const weight = path.ir; // already sqrt-scaled (0–1)
         return {
           t:     Math.random(),
-          speed: 0.002 + weight * 0.007,          // heavier delivery = faster arc
-          dc, tgt,
+          speed: 0.002 + weight * 0.008,
+          dc:    path.dc,
+          tgt:   path.tgt,
+          ir:    weight,
           pt:    weight > 0.55 ? 'fast' : 'normal',
-          sz:    1.2 + weight * 3.8,              // 1.2px → 5px based on volume
+          sz:    2 + weight * 7,   // 2px → 9px — clearly data-driven size
         };
       });
     }
@@ -611,16 +598,15 @@ window.MapboxUSAMap = (function () {
             p.t += p.speed * (p.pt === 'fast' ? 1.5 : 1) * this._cfg.particleSpeed;
             if (p.t > 1) {
               p.t = 0;
-              const allTargets = (this._dcPool && this._dcPool[p.dc?.id]) || this._data?.hotspots || [];
-              if (allTargets.length) {
-                p.tgt = allTargets[Math.floor(Math.random() * Math.min(50, allTargets.length))];
-                // Recompute size/speed for new target
-                const imp2     = p.tgt.impressions || 1;
-                const maxImp2  = allTargets[0]?.impressions || imp2;
-                const w2       = Math.sqrt(imp2 / maxImp2);
-                p.sz    = 1.2 + w2 * 3.5;
-                p.speed = 0.002 + w2 * 0.007;
-                p.pt    = w2 > 0.6 ? 'fast' : 'normal';
+              const paths = this._corridorPaths;
+              if (paths && paths.length) {
+                const path = paths[Math.floor(Math.random() * paths.length)];
+                p.dc    = path.dc;
+                p.tgt   = path.tgt;
+                p.ir    = path.ir;
+                p.sz    = 2 + path.ir * 7;
+                p.speed = 0.002 + path.ir * 0.008;
+                p.pt    = path.ir > 0.6 ? 'fast' : 'normal';
               }
             }
             const { dc, tgt, t, sz, pt } = p;
@@ -631,7 +617,7 @@ window.MapboxUSAMap = (function () {
             const lat = it * it * dc.lat + 2 * it * t * my + t * t * tgt.lat;
             return {
               type: 'Feature',
-              properties: { pt, sz, dc: p.dc.id },
+              properties: { pt, sz, dc: p.dc.id, ir: p.ir || 0 },
               geometry: { type: 'Point', coordinates: [lon, lat] },
             };
           });
