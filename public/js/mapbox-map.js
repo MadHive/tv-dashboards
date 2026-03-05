@@ -403,6 +403,19 @@ window.MapboxUSAMap = (function () {
         }));
       this._map.getSource('hotspots')?.setData({ type: 'FeatureCollection', features: hotFeatures });
 
+      // Cache zip5 heatmap data when available — used in heatmap mode for higher precision
+      const hotspotsZ5 = data.hotspots_z5 || [];
+      if (hotspotsZ5.length > 0) {
+        const maxZ5 = hotspotsZ5[0].impressions || 1;
+        this._heatmapSource = hotspotsZ5
+          .filter(h => h.lat && h.lon)
+          .map(h => ({
+            type: 'Feature',
+            properties: { ir: (h.impressions || 0) / maxZ5 },
+            geometry: { type: 'Point', coordinates: [h.lon, h.lat] },
+          }));
+      }
+
       this._buildCorridors(hotspots.slice(0, 30), maxHot);
       this._initParticles(hotspots.slice(0, 50));
       if (!this._animId) this._startAnimation();
@@ -592,6 +605,21 @@ window.MapboxUSAMap = (function () {
         this._map.setLayoutProperty('hotspots-core',       'visibility', vis(!isHeatmap));
       if (this._map.getLayer('hotspots-pulse-ring'))
         this._map.setLayoutProperty('hotspots-pulse-ring', 'visibility', vis(!isHeatmap));
+
+      // Swap hotspot source data: zip5 for heatmap (precision), zip3 for dots (readability)
+      if (isHeatmap && this._heatmapSource?.length > 0) {
+        this._map.getSource('hotspots')?.setData({
+          type: 'FeatureCollection', features: this._heatmapSource,
+        });
+      } else if (!isHeatmap && this._data?.hotspots?.length > 0) {
+        const maxHot = this._data.hotspots[0]?.impressions || 1;
+        const z3Features = this._data.hotspots.filter(h => h.lat && h.lon).map((h, i) => ({
+          type: 'Feature',
+          properties: { ir: (h.impressions || 0) / maxHot, city: h.city || h.zip3 || '', rank: i },
+          geometry: { type: 'Point', coordinates: [h.lon, h.lat] },
+        }));
+        this._map.getSource('hotspots')?.setData({ type: 'FeatureCollection', features: z3Features });
+      }
     }
 
     _applyMapStyle(styleName) {

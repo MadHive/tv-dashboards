@@ -254,6 +254,61 @@ async function getDeliveryGeo(days = 7, minImpressions = 100) {
   }
 }
 
+
+// ── BigQuery zip5 delivery data (full 5-digit precision for heatmap) ──
+let _bqGeoZ5Cache = null;
+const BQ_GEO_Z5_CACHE_TTL = 5 * 60 * 1000;
+
+async function getDeliveryGeoZ5(days = 7, minImpressions = 500) {
+  const cacheKey = 'z5:' + days + ':' + minImpressions;
+  if (_bqGeoZ5Cache && _bqGeoZ5Cache.key === cacheKey && Date.now() - _bqGeoZ5Cache.time < BQ_GEO_Z5_CACHE_TTL) return _bqGeoZ5Cache.data;
+
+  try {
+    // Full zip5 precision — higher threshold and limit than zip3 to manage volume
+    const sql = `
+      SELECT
+        b.postal                AS zip5,
+        mg.region.code          AS state,
+        z.internal_point_lat    AS lat,
+        z.internal_point_lon    AS lon,
+        SUM(b.IM)               AS impressions,
+        ANY_VALUE(mg.city.name) AS city
+      FROM \`mad-data.reporting.billable_agg\` b
+      LEFT JOIN \`mad-data.reporting.meta_geo\` mg
+        ON b.postal = mg.postal_code AND mg.country_code = 'US'
+      LEFT JOIN \`mad-data.public_data.zip_codes\` z
+        ON b.postal = z.zip_code
+      WHERE b.date_nyc >= DATE_SUB(CURRENT_DATE(), INTERVAL ${days} DAY)
+        AND b.country = 'US'
+        AND b.postal IS NOT NULL AND b.postal != ''
+        AND z.internal_point_lat IS NOT NULL
+        AND z.internal_point_lat BETWEEN 24 AND 50
+        AND z.internal_point_lon BETWEEN -125 AND -66
+      GROUP BY 1, 2, 3, 4
+      HAVING impressions > ${minImpressions}
+      ORDER BY impressions DESC
+      LIMIT 2000
+    `;
+
+    const [rows] = await bq.query({ query: sql, location: 'US' });
+
+    const results = rows.map(r => ({
+      zip5:       r.zip5,
+      state:      r.state,
+      lat:        r.lat,
+      lon:        r.lon,
+      impressions: Number(r.impressions),
+      city:       r.city || null,
+    }));
+    _bqGeoZ5Cache = { key: cacheKey, time: Date.now(), data: results };
+    logger.info(`[bq] Delivery geo z5: ${results.length} zip5 codes loaded`);
+    return _bqGeoZ5Cache.data;
+  } catch (err) {
+    logger.error({ err: err.message }, '[bq] Delivery geo z5 query failed');
+    return _bqGeoZ5Cache ? _bqGeoZ5Cache.data : [];
+  }
+}
+
 // ── Pipeline sparkline history (persists across refreshes) ──
 const pipelineHistory = {
   ingest:    [], transform: [], store: [],
@@ -1269,8 +1324,21 @@ export async function campaignDeliveryMapWidget(params = {}, widgetConfig = {}) 
       minImpressions: params.minImpressions || widgetConfig.mapConfig?.minImpressions,
     },
   };
-  const all  = await campaignDeliveryMap(wc);
+  const timeWindow = wc.mapConfig.timeWindow || 7;
+
+  // Fetch zip3 (dots) and zip5 (heatmap) in parallel
+  const [all, hotspotsZ5] = await Promise.all([
+    campaignDeliveryMap(wc),
+    getDeliveryGeoZ5(timeWindow),
+  ]);
+
   const data = all[wc.id] || {};
+
+  // Attach zip5 data alongside zip3 hotspots — Mapbox map uses hotspots_z5 for heatmap mode
+  if (hotspotsZ5.length > 0) {
+    data.hotspots_z5 = hotspotsZ5;
+  }
+
   const topHotspots = (data.hotspots || []).slice(0, 20).map(h => ({
     label: (h.zip3 || '?') + ' (' + (h.state || '?') + ')',
     value: h.impressions || 0,
