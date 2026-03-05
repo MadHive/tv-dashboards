@@ -33,7 +33,7 @@ window.MapboxUSAMap = (function () {
       particleSpeed:   1.0,
       colorScheme:     'brand',
       showLeaderboard: true,
-      mapStyle:        'brand',
+      mapStyle:        'mapbox',
       zoomViz:         'dots',
       ...(userConfig || {}),
     };
@@ -477,7 +477,8 @@ window.MapboxUSAMap = (function () {
         this._lbEl.style.display = this._cfg.showLeaderboard ? '' : 'none';
       }
 
-      const bounds = REGION_BOUNDS[data.region] || USA_BOUNDS;
+      const region = data.region || this._config.mapConfig?.region;
+      const bounds = REGION_BOUNDS[region] || USA_BOUNDS;
       this._map.fitBounds(bounds, { padding: 20, duration: 800 });
 
       this._renderLeaderboard(states, maxImp, data.totals);
@@ -512,7 +513,13 @@ window.MapboxUSAMap = (function () {
     }
 
     _initParticles(hotspots) {
-      const targets = hotspots.length ? hotspots : [{ lon: -98, lat: 39 }];
+      // Filter to continental US bounds — prevents particles targeting Hawaii/Alaska/Puerto Rico
+      const conus = hotspots.filter(h =>
+        h.lon && h.lat &&
+        h.lon > -125 && h.lon < -66 &&
+        h.lat >   24 && h.lat <  50
+      );
+      const targets = conus.length ? conus : [{ lon: -98, lat: 39 }];
       this._particles = Array.from({ length: this._cfg.particleCount }, () => {
         const dc  = DATA_CENTERS[Math.floor(Math.random() * DATA_CENTERS.length)];
         const tgt = targets[Math.floor(Math.random() * targets.length)];
@@ -663,11 +670,23 @@ window.MapboxUSAMap = (function () {
 
         // Suppress road/label clutter in Mapbox style
         if (styleName === 'mapbox') {
-          const hide = ['road-street', 'road-minor', 'road-primary', 'road-secondary',
-            'road-motorway', 'poi-label', 'place-label', 'country-label', 'state-label'];
+          // Hide roads & transit clutter but KEEP state/place/country labels and admin lines
+          const hide = [
+            'road-street', 'road-street-low', 'road-minor', 'road-minor-low',
+            'road-primary', 'road-secondary', 'road-tertiary',
+            'road-motorway', 'road-motorway-link', 'road-trunk', 'road-trunk-link',
+            'road-rail', 'road-service', 'road-ferry',
+            'transit-label', 'poi-label',
+          ];
           hide.forEach(id => {
             if (this._map.getLayer(id))
               this._map.setLayoutProperty(id, 'visibility', 'none');
+          });
+          // Ensure admin + label layers are visible
+          ['admin-state-line-2', 'admin-state-line-1', 'state-label',
+           'country-label', 'settlement-major-label', 'settlement-minor-label'].forEach(id => {
+            if (this._map.getLayer(id))
+              this._map.setLayoutProperty(id, 'visibility', 'visible');
           });
         }
       });
