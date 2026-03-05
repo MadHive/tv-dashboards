@@ -79,6 +79,12 @@ window.MapboxUSAMap = (function () {
       this._wrap.className = 'mgl-container';
       container.appendChild(this._wrap);
 
+      // Create dedicated map div that Mapbox GL owns (must be empty when passed to Map constructor)
+      this._mapDiv = document.createElement('div');
+      this._mapDiv.style.cssText = 'position:absolute;inset:0;';
+      this._wrap.appendChild(this._mapDiv);
+
+      // Overlays go on top of the map div as siblings
       this._buildOverlayDOM();
       this._buildLeaderboardDOM();
       this._initMap();
@@ -100,7 +106,7 @@ window.MapboxUSAMap = (function () {
         this._currentStyle = this._cfg.mapStyle;
 
         this._map = new mapboxgl.Map({
-          container:          this._wrap,
+          container:          this._mapDiv,
           style:              initialStyle,
           bounds:             USA_BOUNDS,
           fitBoundsOptions:   { padding: 20 },
@@ -475,7 +481,7 @@ window.MapboxUSAMap = (function () {
         const ir = Math.sqrt((hs.impressions || 0) / maxHot);
         features.push({
           type: 'Feature',
-          properties: { lw: 0.5 + ir * 1.5, lo: 0.04 + ir * 0.12 },
+          properties: { lw: +(0.5 + ir * 1.5).toFixed(3), lo: +(0.04 + ir * 0.12).toFixed(3) },
           geometry: { type: 'LineString', coordinates: pts },
         });
       });
@@ -495,11 +501,12 @@ window.MapboxUSAMap = (function () {
       const westPool    = conus.filter(h => h.lon <= -104);
       const centralPool = conus.filter(h => h.lon > -104 && h.lon <= -85);
       const eastPool    = conus.filter(h => h.lon >  -85);
-      const dcPool = {
+      this._dcPool = {
         'us-west1':    westPool.length    > 0 ? westPool    : conus.length ? conus : fallback,
         'us-central1': centralPool.length > 0 ? centralPool : conus.length ? conus : fallback,
         'us-east4':    eastPool.length    > 0 ? eastPool    : conus.length ? conus : fallback,
       };
+      const dcPool = this._dcPool;
 
       this._particles = Array.from({ length: this._cfg.particleCount }, () => {
         const dc   = DATA_CENTERS[Math.floor(Math.random() * DATA_CENTERS.length)];
@@ -528,7 +535,7 @@ window.MapboxUSAMap = (function () {
             p.t += p.speed * (p.pt === 'fast' ? 1.5 : 1) * this._cfg.particleSpeed;
             if (p.t > 1) {
               p.t = 0;
-              const allTargets = (dcPool && dcPool[p.dc?.id]) || this._data?.hotspots || [];
+              const allTargets = (this._dcPool && this._dcPool[p.dc?.id]) || this._data?.hotspots || [];
               if (allTargets.length) {
                 p.tgt = allTargets[Math.floor(Math.random() * Math.min(50, allTargets.length))];
                 // Recompute size/speed for new target
