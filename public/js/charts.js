@@ -785,17 +785,7 @@ window.Charts = (function () {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
-    // ── Sweeping scan line for dynamic motion (every 8 seconds) ──
-    var scanProgress = (now / 8000) % 1;
-    var scanY = mapY + scanProgress * mapH;
-    var scanGrad = ctx.createLinearGradient(0, scanY - 40, 0, scanY + 40);
-    scanGrad.addColorStop(0, 'transparent');
-    scanGrad.addColorStop(0.3, hexToRgba(BRAND.cyan, 0.03));
-    scanGrad.addColorStop(0.5, hexToRgba(BRAND.cyan, 0.12));
-    scanGrad.addColorStop(0.7, hexToRgba(BRAND.cyan, 0.03));
-    scanGrad.addColorStop(1, 'transparent');
-    ctx.fillStyle = scanGrad;
-    ctx.fillRect(mapX, scanY - 40, mapW, 80);
+    // scan line removed
 
     // ── Grid overlay (latitude/longitude) ──
     ctx.strokeStyle = hexToRgba(BRAND.border, 0.12);
