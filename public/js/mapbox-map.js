@@ -53,28 +53,6 @@ window.MapboxUSAMap = (function () {
     1.0,  '#FDA4D4',
   ];
 
-  // Convert 0-1 intensity to choropleth hex color (matches CHOROPLETH gradient)
-  function intensityToHex(t) {
-    // Stops: 0→#1a0840, 0.15→#3D1A5C, 0.35→#5b2a8f, 0.60→#7c3aed, 0.85→#b87aff, 1.0→#FDA4D4
-    const stops = [
-      [0,    [26,  8,  64]],
-      [0.15, [61, 26,  92]],
-      [0.35, [91, 42, 143]],
-      [0.60, [124,58, 237]],
-      [0.85, [184,122,255]],
-      [1.00, [253,164,212]],
-    ];
-    let lo = stops[0], hi = stops[stops.length - 1];
-    for (let i = 0; i < stops.length - 1; i++) {
-      if (t >= stops[i][0] && t <= stops[i+1][0]) { lo = stops[i]; hi = stops[i+1]; break; }
-    }
-    const f = lo[0] === hi[0] ? 0 : (t - lo[0]) / (hi[0] - lo[0]);
-    const r = Math.round(lo[1][0] + f * (hi[1][0] - lo[1][0]));
-    const g = Math.round(lo[1][1] + f * (hi[1][1] - lo[1][1]));
-    const b = Math.round(lo[1][2] + f * (hi[1][2] - lo[1][2]));
-    return '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join('');
-  }
-
   class MapboxUSAMap {
     constructor(container, config) {
       this._container  = container;
@@ -119,7 +97,7 @@ window.MapboxUSAMap = (function () {
           attributionControl: false,
         });
 
-        this._map.on('load', () => {
+        this._map.on('load', async () => {
           this._addSources();
           this._addLayers();
           if (this._data) this._applyData(this._data);
@@ -138,6 +116,31 @@ window.MapboxUSAMap = (function () {
     }
 
     _addSources() {
+      const US = window.US_STATES;
+
+      // Load high-quality state GeoJSON (93+ points per state vs 10-18 in US_STATES)
+      let hqStateData = { type: 'FeatureCollection', features: [] };
+      try {
+        const hqRes = await fetch('/data/us-states-hq.json');
+        hqStateData = await hqRes.json();
+        this._stateGeoFeatures = hqStateData.features;
+      } catch (_) {
+        // Fallback: use crude US_STATES paths
+        if (US) {
+          this._stateGeoFeatures = US.states.map(s => ({
+            type: 'Feature',
+            properties: { id: s.id, intensity: 0, impressions: 0 },
+            geometry:   { type: 'Polygon', coordinates: [s.path] },
+          }));
+          hqStateData = { type: 'FeatureCollection', features: this._stateGeoFeatures };
+        }
+      }
+
+      this._map.addSource('us-states', {
+        type: 'geojson',
+        data: hqStateData,
+      });
+
       this._map.addSource('hotspots',      { type: 'geojson', data: this._empty() });
       this._map.addSource('arc-corridors', { type: 'geojson', data: this._empty() });
       this._map.addSource('arc-particles', { type: 'geojson', data: this._empty() });
@@ -168,95 +171,54 @@ window.MapboxUSAMap = (function () {
         },
       });
 
-      // Mapbox Boundaries vector tilesets (paid account)
-      this._map.addSource('boundaries-adm1', {
-        type: 'vector',
-        url:  'mapbox://mapbox.boundaries-adm1-v4',
+      // Boundary sources
+      this._map.addSource('us-counties', {
+        type: 'geojson',
+        data: '/data/us-counties.json',
       });
-      this._map.addSource('boundaries-adm2', {
-        type: 'vector',
-        url:  'mapbox://mapbox.boundaries-adm2-v4',
-      });
-      this._map.addSource('boundaries-postal', {
-        type: 'vector',
-        url:  'mapbox://mapbox.boundaries-pos5-v4',
-      });
+
+      // State center points for label layer
     }
 
     _empty() { return { type: 'FeatureCollection', features: [] }; }
 
     _addLayers() {
-      // ── Mapbox Boundaries layers ──────────────────────────────────────────
+      // County boundary lines — beneath everything
 
-      // Zip code boundaries (thin, shows at zoom 5+)
-      this._map.addLayer({
-        id:             'boundaries-zip-line',
-        type:           'line',
-        source:         'boundaries-postal',
-        'source-layer': 'boundaries_postal_5',
-        minzoom:        5,
-        filter:         ['==', ['get', 'country_code'], 'US'],
-        paint: {
-          'line-color':   '#2D1A4C',
-          'line-width':   0.2,
-          'line-opacity': 0.35,
-        },
-      });
+      // State abbreviation labels,
+          paint: {
+            'text-color':     'rgba(255,255,255,0.75)',
+            'text-halo-color': 'rgba(14,3,32,0.7)',
+            'text-halo-width': 1.5,
+          },
+        });
+      }
 
-      // County boundary lines
       this._map.addLayer({
-        id:             'boundaries-county-line',
-        type:           'line',
-        source:         'boundaries-adm2',
-        'source-layer': 'boundaries_admin_2',
-        filter:         ['==', ['get', 'country_code'], 'US'],
+        id: 'states-fill', type: 'fill', source: 'us-states',
         paint: {
-          'line-color':   '#3D1A5C',
-          'line-width':   0.4,
-          'line-opacity': 0.5,
-        },
-      });
-
-      // State choropleth fill — color driven by match expression updated in _applyData
-      this._map.addLayer({
-        id:             'boundaries-state-fill',
-        type:           'fill',
-        source:         'boundaries-adm1',
-        'source-layer': 'boundaries_admin_1',
-        filter:         ['==', ['get', 'country_code'], 'US'],
-        paint: {
-          'fill-color':   '#1a0840',
+          'fill-color':   CHOROPLETH,
           'fill-opacity': 0.85,
           'fill-color-transition': { duration: 800 },
         },
       });
 
-      // State outline
       this._map.addLayer({
-        id:             'boundaries-state-line',
-        type:           'line',
-        source:         'boundaries-adm1',
-        'source-layer': 'boundaries_admin_1',
-        filter:         ['==', ['get', 'country_code'], 'US'],
-        paint: {
-          'line-color':   '#6B5690',
-          'line-width':   1.0,
-          'line-opacity': 0.7,
-        },
+        id: 'states-outline', type: 'line', source: 'us-states',
+        paint: { 'line-color': '#6B5690', 'line-width': 0.8, 'line-opacity': 0.45 },
       });
 
-      // State glow for high-intensity states
       this._map.addLayer({
-        id:             'boundaries-state-glow',
-        type:           'line',
-        source:         'boundaries-adm1',
-        'source-layer': 'boundaries_admin_1',
-        filter:         ['all', ['==', ['get', 'country_code'], 'US'], ['>', ['feature-state', 'intensity'], 0.45]],
+        id: 'states-glow', type: 'line', source: 'us-states',
+        filter: ['>', ['get', 'intensity'], 0.45],
         paint: {
-          'line-color':   '#FDA4D4',
-          'line-width':   12,
+          'line-color':   ['interpolate', ['linear'], ['get', 'intensity'],
+            0.45, '#7c3aed', 0.75, '#b87aff', 1.0, '#FDA4D4'],
+          'line-width':   14,
           'line-blur':    10,
-          'line-opacity': 0.25,
+          'line-opacity': ['interpolate', ['linear'], ['get', 'intensity'],
+            0.45, 0.1, 1.0, 0.45],
+          'line-color-transition': { duration: 800 },
         },
       });
 
@@ -415,14 +377,17 @@ window.MapboxUSAMap = (function () {
       const maxImp   = Object.values(states).reduce((m, s) => Math.max(m, s.impressions || 0), 1);
       const maxHot   = hotspots.length ? (hotspots[0].impressions || 1) : 1;
 
-      // Update state choropleth via match expression on Boundaries unit_code
-      if (this._map.getLayer('boundaries-state-fill')) {
-        const matchExpr = ['match', ['get', 'unit_code']];
-        Object.entries(states).forEach(([id, s]) => {
-          matchExpr.push('US-' + id, intensityToHex((s.impressions || 0) / maxImp));
+      // Update state choropleth using cached HQ geometry
+      if (this._stateGeoFeatures) {
+        const stateFeatures = this._stateGeoFeatures.map(f => {
+          const sid = f.properties && f.properties.id;
+          const st  = (sid && states[sid]) || { impressions: 0 };
+          return {
+            ...f,
+            properties: { ...f.properties, id: sid, intensity: st.impressions / maxImp, impressions: st.impressions },
+          };
         });
-        matchExpr.push('#1a0840'); // default for states with no data
-        this._map.setPaintProperty('boundaries-state-fill', 'fill-color', matchExpr);
+        this._map.getSource('us-states')?.setData({ type: 'FeatureCollection', features: stateFeatures });
       }
 
       const hotFeatures = hotspots
@@ -604,8 +569,10 @@ window.MapboxUSAMap = (function () {
         this._map.setPaintProperty('hotspots-pulse-ring',
           'circle-stroke-color', ['case', ['>', ['get', 'ir'], 0.4], s.particleFast, s.particleNormal]);
       }
-      if (this._map.getLayer('boundaries-state-glow')) {
-        this._map.setPaintProperty('boundaries-state-glow', 'line-color', s.stateGlowHigh);
+      if (this._map.getLayer('states-glow')) {
+        this._map.setPaintProperty('states-glow', 'line-color',
+          ['interpolate', ['linear'], ['get', 'intensity'],
+            0.45, '#7c3aed', 0.75, '#b87aff', 1.0, s.stateGlowHigh]);
       }
 
       if (this._map.getLayer('hotspot-labels'))
