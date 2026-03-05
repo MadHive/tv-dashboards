@@ -380,8 +380,8 @@ window.MapboxUSAMap = (function () {
         filter: ['all', ['<', ['get', 'rank'], 20], ['!=', ['get', 'city'], '']],
         layout: {
           'text-field':         ['get', 'city'],
-          'text-size':          ['interpolate', ['linear'], ['get', 'ir'], 0, 10, 1, 14],
-          'text-font':          ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+          'text-size':          ['interpolate', ['linear'], ['get', 'ir'], 0, 13, 1, 18],
+          'text-font':          ['Open Sans Bold', 'Arial Unicode MS Bold'],
           'text-offset':        [0, 1.2],
           'text-anchor':        'top',
           'text-allow-overlap': false,
@@ -427,6 +427,24 @@ window.MapboxUSAMap = (function () {
           'circle-stroke-color':   '#67E8F9',
           'circle-stroke-opacity': ['get', 'po'],
           'circle-blur':           0.2,
+        },
+      });
+
+      // State abbreviation labels — on top of fill so they're always readable
+      this._map.addLayer({
+        id: 'state-labels', type: 'symbol', source: 'us-states',
+        layout: {
+          'text-field':         ['get', 'id'],
+          'text-size':          ['interpolate', ['linear'], ['zoom'], 3, 11, 5, 15],
+          'text-font':          ['Open Sans Bold', 'Arial Unicode MS Bold'],
+          'text-letter-spacing': 0.08,
+          'text-allow-overlap': false,
+          'text-optional':      true,
+        },
+        paint: {
+          'text-color':      ['interpolate', ['linear'], ['get', 'intensity'], 0, 'rgba(255,255,255,0.45)', 1, 'rgba(255,255,255,0.9)'],
+          'text-halo-color': 'rgba(14,3,32,0.9)',
+          'text-halo-width': 2,
         },
       });
     }
@@ -482,12 +500,6 @@ window.MapboxUSAMap = (function () {
           }));
       }
 
-      this._buildCorridors(hotspots.slice(0, 50), maxHot);
-      this._initParticles(hotspots.slice(0, 50));
-      if (!this._visObs) this._watchVisibility();
-      if (!this._animId) this._startAnimation();
-      if (!this._pulseId) this._startPulse();
-
       // Re-read mglConfig in case Studio changed it, then apply
       this._cfg = buildMapConfig(this._config.mglConfig);
       this._applyColorScheme(this._cfg.colorScheme);
@@ -501,6 +513,22 @@ window.MapboxUSAMap = (function () {
 
       const region = data.region || this._config.mapConfig?.region;
       const bounds = REGION_BOUNDS[region] || USA_BOUNDS;
+
+      // For regional views, clip arcs/particles to hotspots near the viewport
+      // so traces and their animated trails are always visible together.
+      // Use a generous buffer so approaching arcs enter from the DC side.
+      const arcHotspots = region ? hotspots.filter(h => {
+        if (!h.lat || !h.lon) return false;
+        const pad = 10; // degrees — keeps DCs that sit just outside the region
+        return h.lon >= bounds[0][0] - pad && h.lon <= bounds[1][0] + pad &&
+               h.lat >= bounds[0][1] - pad && h.lat <= bounds[1][1] + pad;
+      }) : hotspots;
+
+      this._buildCorridors(arcHotspots.slice(0, 50), maxHot);
+      this._initParticles(arcHotspots.slice(0, 50));
+      if (!this._visObs) this._watchVisibility();
+      if (!this._animId) this._startAnimation();
+      if (!this._pulseId) this._startPulse();
       this._map.fitBounds(bounds, { padding: 20, duration: 800 });
 
       this._renderLeaderboard(states, maxImp, data.totals);
