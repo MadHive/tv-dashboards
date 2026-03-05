@@ -71,7 +71,7 @@ window.MapboxUSAMap = (function () {
 
   function buildMapConfig(userConfig) {
     return {
-      particleCount:   60,
+      particleCount:   100,
       particleSpeed:   1.0,
       colorScheme:     'brand',
       showLeaderboard: true,
@@ -87,11 +87,12 @@ window.MapboxUSAMap = (function () {
 
   var CHOROPLETH = [
     'interpolate', ['linear'], ['get', 'intensity'],
-    0,    '#1a0840',
-    0.15, '#3D1A5C',
-    0.35, '#5b2a8f',
-    0.60, '#7c3aed',
-    0.85, '#b87aff',
+    0,    '#0d021e',
+    0.10, '#1e0840',
+    0.28, '#4c1d95',
+    0.50, '#7c3aed',
+    0.70, '#a855f7',
+    0.88, '#e879f9',
     1.0,  '#FDA4D4',
   ];
 
@@ -257,14 +258,29 @@ window.MapboxUSAMap = (function () {
         id: 'states-fill', type: 'fill', source: 'us-states',
         paint: {
           'fill-color':   CHOROPLETH,
-          'fill-opacity': 0.85,
+          'fill-opacity': 0.92,
           'fill-color-transition': { duration: 800 },
         },
       });
 
       this._map.addLayer({
         id: 'states-outline', type: 'line', source: 'us-states',
-        paint: { 'line-color': '#6B5690', 'line-width': 0.8, 'line-opacity': 0.45 },
+        paint: { 'line-color': '#7c3aed', 'line-width': 1, 'line-opacity': 0.5 },
+      });
+
+      // Wide outer bloom on top delivery states — creates a vivid halo effect
+      this._map.addLayer({
+        id: 'states-bloom', type: 'line', source: 'us-states',
+        filter: ['>', ['get', 'intensity'], 0.55],
+        paint: {
+          'line-color':   ['interpolate', ['linear'], ['get', 'intensity'],
+            0.55, '#a855f7', 0.80, '#e879f9', 1.0, '#FDA4D4'],
+          'line-width':   36,
+          'line-blur':    28,
+          'line-opacity': ['interpolate', ['linear'], ['get', 'intensity'],
+            0.55, 0.18, 1.0, 0.60],
+          'line-color-transition': { duration: 800 },
+        },
       });
 
       this._map.addLayer({
@@ -272,12 +288,29 @@ window.MapboxUSAMap = (function () {
         filter: ['>', ['get', 'intensity'], 0.2],
         paint: {
           'line-color':   ['interpolate', ['linear'], ['get', 'intensity'],
-            0.45, '#7c3aed', 0.75, '#b87aff', 1.0, '#FDA4D4'],
-          'line-width':   14,
-          'line-blur':    10,
+            0.2, '#5b2a8f', 0.6, '#b87aff', 1.0, '#FDA4D4'],
+          'line-width':   20,
+          'line-blur':    16,
           'line-opacity': ['interpolate', ['linear'], ['get', 'intensity'],
-            0.45, 0.1, 1.0, 0.45],
+            0.2, 0.10, 1.0, 0.50],
           'line-color-transition': { duration: 800 },
+        },
+      });
+
+      // Wide cinematic bloom behind corridors
+      this._map.addLayer({
+        id: 'arc-corridors-bloom', type: 'line', source: 'arc-corridors',
+        layout: { 'line-cap': 'round' },
+        paint: {
+          'line-color': [
+            'match', ['get', 'dc'],
+            'us-west1',    '#67E8F9',
+            'us-central1', '#b87aff',
+            '#FDA4D4',
+          ],
+          'line-width':   ['*', ['get', 'lw'], 5],
+          'line-opacity': ['interpolate', ['linear'], ['get', 'ir'], 0, 0.06, 1, 0.22],
+          'line-blur':    14,
         },
       });
 
@@ -301,14 +334,15 @@ window.MapboxUSAMap = (function () {
       this._map.addLayer({
         id: 'arc-particles-glow', type: 'circle', source: 'arc-particles',
         paint: {
-          'circle-radius':  ['*', ['get', 'sz'], 2.5],
+          'circle-radius':  ['*', ['get', 'sz'], 2.8],
           'circle-color': [
             'interpolate', ['linear'], ['get', 'ir'],
             0,   ['match', ['get', 'dc'], 'us-west1', '#67E8F9', 'us-central1', '#b87aff', '#FDA4D4'],
             1,   '#FFFFFF',
           ],
-          'circle-opacity': ['interpolate', ['linear'], ['get', 'ir'], 0, 0.08, 1, 0.20],
-          'circle-blur':    0.85,
+          // Head glows bright; tail ghosts are nearly invisible
+          'circle-opacity': ['interpolate', ['linear'], ['get', 'tr'], 0, 0.22, 1, 0.01],
+          'circle-blur':    0.88,
         },
       });
 
@@ -316,24 +350,25 @@ window.MapboxUSAMap = (function () {
         id: 'arc-particles', type: 'circle', source: 'arc-particles',
         paint: {
           'circle-radius':  ['get', 'sz'],
-          // DC color at low volume, blends to white-hot at high volume
+          // DC colour at low ir, brightens to white-hot at peak — decays along trail via ir decay
           'circle-color': [
             'interpolate', ['linear'], ['get', 'ir'],
             0,    ['match', ['get', 'dc'], 'us-west1', '#67E8F9', 'us-central1', '#b87aff', '#FDA4D4'],
-            0.65, ['match', ['get', 'dc'], 'us-west1', '#a8f0ff', 'us-central1', '#d4a8ff', '#ffd0e8'],
+            0.55, ['match', ['get', 'dc'], 'us-west1', '#a8f0ff', 'us-central1', '#d4a8ff', '#ffd0e8'],
             1.0,  '#FFFFFF',
           ],
-          'circle-opacity': ['interpolate', ['linear'], ['get', 'ir'], 0, 0.7, 1, 1.0],
-          'circle-blur':    0.15,
+          // Head is fully opaque; trail decays to near-transparent
+          'circle-opacity': ['interpolate', ['linear'], ['get', 'tr'], 0, 1.0, 1, 0.04],
+          'circle-blur':    ['interpolate', ['linear'], ['get', 'tr'], 0, 0.1, 1, 0.6],
         },
       });
 
       this._map.addLayer({
         id: 'hotspots-glow', type: 'circle', source: 'hotspots',
         paint: {
-          'circle-radius':  ['interpolate', ['linear'], ['get', 'ir'], 0, 14, 1, 60],
-          'circle-color':   ['case', ['>', ['get', 'ir'], 0.4], '#FDA4D4', '#67E8F9'],
-          'circle-opacity': ['interpolate', ['linear'], ['get', 'ir'], 0, 0.07, 1, 0.28],
+          'circle-radius':  ['interpolate', ['linear'], ['get', 'ir'], 0, 22, 1, 95],
+          'circle-color':   ['interpolate', ['linear'], ['get', 'ir'], 0, '#67E8F9', 0.5, '#b87aff', 1, '#FDA4D4'],
+          'circle-opacity': ['interpolate', ['linear'], ['get', 'ir'], 0, 0.07, 1, 0.38],
           'circle-blur':    1.0,
         },
       });
@@ -361,7 +396,7 @@ window.MapboxUSAMap = (function () {
       this._map.addLayer({
         id: 'hotspots-core', type: 'circle', source: 'hotspots',
         paint: {
-          'circle-radius': ['interpolate', ['linear'], ['get', 'ir'], 0, 5, 1, 22],
+          'circle-radius': ['interpolate', ['linear'], ['get', 'ir'], 0, 7, 1, 30],
           'circle-color':  [
             'interpolate', ['linear'], ['get', 'ir'],
             0,    '#67E8F9',
@@ -372,26 +407,31 @@ window.MapboxUSAMap = (function () {
         },
       });
 
-      // City name labels on top high-impression hotspots
+      // City name + impressions on top delivery hotspots — clearly shows destination + volume
       this._map.addLayer({
         id:     'hotspot-labels',
         type:   'symbol',
         source: 'hotspots',
-        filter: ['all', ['<', ['get', 'rank'], 20], ['!=', ['get', 'city'], '']],
+        filter: ['all', ['<', ['get', 'rank'], 25], ['!=', ['get', 'city'], '']],
         layout: {
-          'text-field':         ['get', 'city'],
-          'text-size':          ['interpolate', ['linear'], ['get', 'ir'], 0, 13, 1, 18],
+          'text-field': ['format',
+            ['get', 'city'],   { 'font-scale': 1.0 },
+            '\n',              {},
+            ['get', 'imp_fmt'],{ 'font-scale': 0.78, 'text-color': '#FDA4D4' },
+          ],
+          'text-size':          ['interpolate', ['linear'], ['get', 'ir'], 0, 14, 1, 20],
           'text-font':          ['Open Sans Bold', 'Arial Unicode MS Bold'],
-          'text-offset':        [0, 1.2],
+          'text-offset':        [0, 1.3],
           'text-anchor':        'top',
           'text-allow-overlap': false,
           'text-optional':      true,
-          'text-max-width':     6,
+          'text-max-width':     8,
+          'text-line-height':   1.3,
         },
         paint: {
-          'text-color':      ['interpolate', ['linear'], ['get', 'ir'], 0, 'rgba(255,255,255,0.55)', 1, '#FDA4D4'],
-          'text-halo-color': 'rgba(14,3,32,0.85)',
-          'text-halo-width': 1.5,
+          'text-color':      ['interpolate', ['linear'], ['get', 'ir'], 0, 'rgba(255,255,255,0.65)', 0.5, '#e0d0ff', 1, '#FDA4D4'],
+          'text-halo-color': 'rgba(14,3,32,0.92)',
+          'text-halo-width': 2,
         },
       });
 
@@ -443,7 +483,7 @@ window.MapboxUSAMap = (function () {
         id: 'state-labels', type: 'symbol', source: 'us-states',
         layout: {
           'text-field':         ['get', 'id'],
-          'text-size':          ['interpolate', ['linear'], ['zoom'], 3, 11, 5, 15],
+          'text-size':          ['interpolate', ['linear'], ['zoom'], 3, 13, 5, 19],
           'text-font':          ['Open Sans Bold', 'Arial Unicode MS Bold'],
           'text-letter-spacing': 0.08,
           'text-allow-overlap': false,
@@ -484,17 +524,26 @@ window.MapboxUSAMap = (function () {
         this._map.getSource('us-states')?.setData({ type: 'FeatureCollection', features: stateFeatures });
       }
 
+      const fmtImp = (n) =>
+        n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' :
+        n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' :
+        n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
+
       const hotFeatures = hotspots
         .filter(h => h.lat && h.lon)
-        .map((h, i) => ({
+        .map((h, i) => {
+          const cityName = ZIP3_CITY[h.zip3] || h.city || '';
+          return {
           type: 'Feature',
           properties: {
-            ir:   (h.impressions || 0) / maxHot,
-            city: ZIP3_CITY[h.zip3] || h.city || '',
-            rank: i,
+            ir:      (h.impressions || 0) / maxHot,
+            city:    cityName,
+            imp_fmt: cityName ? fmtImp(h.impressions || 0) : '',
+            rank:    i,
           },
           geometry: { type: 'Point', coordinates: [h.lon, h.lat] },
-        }));
+          };
+        });
       this._map.getSource('hotspots')?.setData({ type: 'FeatureCollection', features: hotFeatures });
 
       // Cache zip5 heatmap data when available — used in heatmap mode for higher precision
@@ -598,16 +647,24 @@ window.MapboxUSAMap = (function () {
           tgt:   path.tgt,
           ir:    weight,
           pt:    weight > 0.55 ? 'fast' : 'normal',
-          sz:    3 + weight * 11,  // 3px → 14px — clearly data-driven size for TV
+          sz:    4 + weight * 12,  // 4px → 16px — bold, clearly data-driven size for TV
         };
       });
     }
 
     _startAnimation() {
       if (this._animId) return; // already running
+
+      // Comet-tail constants — each particle renders TRAIL_SEGS points along its arc,
+      // decaying in size and opacity to form a trailing "tracer" effect.
+      const TRAIL_SEGS = 7;   // head + 6 trailing ghosts
+      const TRAIL_GAP  = 0.028; // t-space gap between trail segments
+
       const tick = () => {
         if (this._map?.getSource('arc-particles')) {
-          const features = this._particles.map(p => {
+          const features = [];
+
+          this._particles.forEach(p => {
             p.t += p.speed * (p.pt === 'fast' ? 1.5 : 1) * this._cfg.particleSpeed;
             if (p.t > 1) {
               p.t = 0;
@@ -617,22 +674,38 @@ window.MapboxUSAMap = (function () {
                 p.dc    = path.dc;
                 p.tgt   = path.tgt;
                 p.ir    = path.ir;
-                p.sz    = 3 + path.ir * 11;
+                p.sz    = 4 + path.ir * 12;
                 p.speed = 0.002 + path.ir * 0.008;
                 p.pt    = path.ir > 0.6 ? 'fast' : 'normal';
               }
             }
-            const { dc, tgt, t, sz, pt } = p;
+
+            const { dc, tgt, sz, pt } = p;
+            const ir  = p.ir || 0;
             const mx  = (dc.lon + tgt.lon) / 2;
             const my  = (dc.lat + tgt.lat) / 2 + Math.abs(dc.lat - tgt.lat) * 0.15 + 0.5;
-            const it  = 1 - t;
-            const lon = it * it * dc.lon + 2 * it * t * mx + t * t * tgt.lon;
-            const lat = it * it * dc.lat + 2 * it * t * my + t * t * tgt.lat;
-            return {
-              type: 'Feature',
-              properties: { pt, sz, dc: p.dc.id, ir: p.ir || 0 },
-              geometry: { type: 'Point', coordinates: [lon, lat] },
-            };
+
+            // Generate head + trailing ghost positions
+            for (let seg = 0; seg < TRAIL_SEGS; seg++) {
+              const tt = Math.max(0, p.t - seg * TRAIL_GAP);
+              // Don't stack multiple ghosts at t=0 (arc start)
+              if (seg > 0 && tt === 0) break;
+
+              const it  = 1 - tt;
+              const lon = it * it * dc.lon + 2 * it * tt * mx + tt * tt * tgt.lon;
+              const lat = it * it * dc.lat + 2 * it * tt * my + tt * tt * tgt.lat;
+
+              // Decay: head is full size/brightness, tail fades to nothing
+              const fade = seg / (TRAIL_SEGS - 1);          // 0 (head) → 1 (tail end)
+              const trSz = +(sz * Math.pow(1 - fade * 0.82, 1.3)).toFixed(2);
+              const trIr = +(ir  * (1 - fade * 0.88)).toFixed(3);
+
+              features.push({
+                type: 'Feature',
+                properties: { pt, sz: trSz, dc: p.dc.id, ir: trIr, tr: +fade.toFixed(3) },
+                geometry: { type: 'Point', coordinates: [lon, lat] },
+              });
+            }
           });
 
           this._map.getSource('arc-particles').setData({

@@ -154,11 +154,11 @@
 }
 
 .mgl-total-value {
-  font-size:   54px;
+  font-size:   72px;
   font-weight: 800;
   color:       #FFFFFF;
   line-height: 1;
-  text-shadow: 0 0 30px rgba(253,164,212,0.6), 0 0 60px rgba(124,58,237,0.5);
+  text-shadow: 0 0 40px rgba(253,164,212,0.8), 0 0 80px rgba(168,85,247,0.6), 0 0 120px rgba(124,58,237,0.4);
   font-variant-numeric: tabular-nums;
 }
 
