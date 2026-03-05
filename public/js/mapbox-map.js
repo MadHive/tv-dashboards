@@ -90,9 +90,15 @@ window.MapboxUSAMap = (function () {
 
         mapboxgl.accessToken = token;
 
+        // Start with the configured style directly to avoid a setStyle() call on first data update
+        const initialStyle = (this._cfg.mapStyle === 'mapbox')
+          ? 'mapbox://styles/mapbox/dark-v11'
+          : this._blankStyle();
+        this._currentStyle = this._cfg.mapStyle;
+
         this._map = new mapboxgl.Map({
           container:          this._wrap,
-          style:              this._blankStyle(),
+          style:              initialStyle,
           bounds:             USA_BOUNDS,
           fitBoundsOptions:   { padding: 20 },
           interactive:        false,
@@ -626,8 +632,8 @@ window.MapboxUSAMap = (function () {
 
       this._map.setStyle(newStyle);
 
-      this._map.once('style.load', () => {
-        this._addSources();
+      this._map.once('style.load', async () => {
+        await this._addSources();
         this._addLayers();
         if (this._data) this._applyData(this._data);
 
