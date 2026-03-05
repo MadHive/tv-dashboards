@@ -13,6 +13,45 @@ window.MapboxUSAMap = (function () {
     { id: 'us-east4',    label: 'EAST',    lon: -77.5,  lat: 39.0 },
   ];
 
+  // ZIP3 prefix → major metro name (for city labels on hotspots)
+  var ZIP3_CITY = {
+    '100':'New York','101':'New York','102':'New York','103':'New York',
+    '070':'Newark','071':'Newark','072':'Newark','073':'Newark',
+    '606':'Chicago','607':'Chicago','608':'Chicago','609':'Chicago',
+    '900':'Los Angeles','901':'Los Angeles','902':'Los Angeles','903':'Los Angeles',
+    '904':'Los Angeles','905':'Los Angeles','906':'Los Angeles','907':'Los Angeles',
+    '770':'Houston','771':'Houston','772':'Houston','773':'Houston',
+    '850':'Phoenix','851':'Phoenix','852':'Phoenix','853':'Phoenix',
+    '191':'Philadelphia','190':'Philadelphia','193':'Philadelphia',
+    '750':'Dallas','751':'Dallas','752':'Dallas','753':'Dallas',
+    '921':'San Diego','920':'San Diego','922':'San Diego',
+    '303':'Atlanta','300':'Atlanta','301':'Atlanta','302':'Atlanta',
+    '200':'Washington DC','201':'Washington DC','202':'DC','203':'DC','204':'DC',
+    '021':'Boston','022':'Boston','023':'Boston','024':'Boston',
+    '481':'Detroit','482':'Detroit','483':'Detroit','484':'Detroit',
+    '980':'Seattle','981':'Seattle','982':'Seattle','983':'Seattle',
+    '941':'San Francisco','940':'San Jose','942':'Oakland','943':'Bay Area',
+    '331':'Miami','330':'Miami','332':'Miami','333':'Miami','334':'Miami',
+    '800':'Denver','801':'Denver','802':'Denver','803':'Denver',
+    '891':'Las Vegas','889':'Las Vegas','890':'Las Vegas','892':'Las Vegas',
+    '551':'Minneapolis','554':'Minneapolis','555':'Minneapolis','560':'Minneapolis',
+    '971':'Portland','972':'Portland','973':'Portland',
+    '631':'St. Louis','630':'St. Louis','632':'St. Louis',
+    '152':'Pittsburgh','150':'Pittsburgh','151':'Pittsburgh',
+    '441':'Cleveland','440':'Cleveland','442':'Cleveland',
+    '461':'Indianapolis','460':'Indianapolis','462':'Indianapolis',
+    '430':'Columbus','431':'Columbus','432':'Columbus',
+    '370':'Nashville','371':'Nashville','372':'Nashville',
+    '380':'Memphis','381':'Memphis','382':'Memphis',
+    '760':'Fort Worth','761':'Fort Worth','762':'Fort Worth',
+    '738':'Oklahoma City','730':'Oklahoma City','731':'OKC',
+    '402':'Louisville','400':'Louisville','401':'Louisville',
+    '640':'Kansas City','641':'Kansas City','642':'Kansas City',
+    '700':'New Orleans','701':'New Orleans','702':'New Orleans',
+    '531':'Milwaukee','530':'Milwaukee','532':'Milwaukee',
+    '671':'Wichita','670':'Wichita','672':'Wichita',
+  };
+
   var REGION_BOUNDS = {
     northeast:  [[-81,  36], [-66, 48]],
     southeast:  [[-89,  24], [-75, 37]],
@@ -118,19 +157,14 @@ window.MapboxUSAMap = (function () {
         this._map.on('load', async () => {
           await this._addSources();
           this._addLayers();
-          // Place GCP icon markers at data center locations
-          if (this._dcMarkers && this._dcMarkers.length === 0 && mapboxgl) {
-            DATA_CENTERS.forEach(dc => {
-              const el = document.createElement('img');
-              el.className   = 'mgl-dc-marker';
-              el.src         = '/img/gcp-icon.png';
-              el.title       = dc.label + ' — ' + dc.id;
-              const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
-                .setLngLat([dc.lon, dc.lat])
+          // Attach GCP icon markers (elements created in _buildOverlayDOM)
+          this._dcMarkers.forEach(item => {
+            if (!item.marker) {
+              item.marker = new mapboxgl.Marker({ element: item.el, anchor: 'center' })
+                .setLngLat([item.dc.lon, item.dc.lat])
                 .addTo(this._map);
-              this._dcMarkers.push({ dc, el, marker });
-            });
-          }
+            }
+          });
           if (this._data) this._applyData(this._data);
         });
       } catch (err) {
@@ -141,6 +175,7 @@ window.MapboxUSAMap = (function () {
     _blankStyle() {
       return {
         version: 8,
+        glyphs:  'mapbox://fonts/mapbox/{fontstack}/{range}.pbf',
         sources: {},
         layers:  [{ id: 'background', type: 'background', paint: { 'background-color': '#0E0320' } }],
       };
@@ -246,10 +281,18 @@ window.MapboxUSAMap = (function () {
 
       this._map.addLayer({
         id: 'arc-corridors', type: 'line', source: 'arc-corridors',
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: {
-          'line-color':   '#67E8F9',
+          'line-color': [
+            'match', ['get', 'dc'],
+            'us-west1',    '#67E8F9',   // West — cyan
+            'us-central1', '#b87aff',   // Central — violet
+            'us-east4',    '#FDA4D4',   // East — pink
+            '#67E8F9',
+          ],
           'line-width':   ['get', 'lw'],
           'line-opacity': ['get', 'lo'],
+          'line-blur':    0.5,
         },
       });
 
@@ -329,25 +372,26 @@ window.MapboxUSAMap = (function () {
         },
       });
 
-      // City name labels on top 30 high-impression hotspots
+      // City name labels on top high-impression hotspots
       this._map.addLayer({
         id:     'hotspot-labels',
         type:   'symbol',
         source: 'hotspots',
-        filter: ['<', ['get', 'rank'], 30],
+        filter: ['all', ['<', ['get', 'rank'], 20], ['!=', ['get', 'city'], '']],
         layout: {
           'text-field':         ['get', 'city'],
-          'text-size':          9,
-          'text-font':          ['DIN Pro Regular', 'Arial Unicode MS Regular'],
-          'text-offset':        [0, 1.4],
+          'text-size':          ['interpolate', ['linear'], ['get', 'ir'], 0, 10, 1, 14],
+          'text-font':          ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+          'text-offset':        [0, 1.2],
           'text-anchor':        'top',
           'text-allow-overlap': false,
           'text-optional':      true,
+          'text-max-width':     6,
         },
         paint: {
-          'text-color':     'rgba(255,255,255,0.6)',
-          'text-halo-color': 'rgba(14,3,32,0.5)',
-          'text-halo-width': 1,
+          'text-color':      ['interpolate', ['linear'], ['get', 'ir'], 0, 'rgba(255,255,255,0.55)', 1, '#FDA4D4'],
+          'text-halo-color': 'rgba(14,3,32,0.85)',
+          'text-halo-width': 1.5,
         },
       });
 
@@ -418,7 +462,7 @@ window.MapboxUSAMap = (function () {
           type: 'Feature',
           properties: {
             ir:   (h.impressions || 0) / maxHot,
-            city: h.city || h.zip3 || '',
+            city: ZIP3_CITY[h.zip3] || h.city || '',
             rank: i,
           },
           geometry: { type: 'Point', coordinates: [h.lon, h.lat] },
@@ -438,7 +482,7 @@ window.MapboxUSAMap = (function () {
           }));
       }
 
-      this._buildCorridors(hotspots.slice(0, 30), maxHot);
+      this._buildCorridors(hotspots.slice(0, 50), maxHot);
       this._initParticles(hotspots.slice(0, 50));
       if (!this._visObs) this._watchVisibility();
       if (!this._animId) this._startAnimation();
@@ -483,7 +527,11 @@ window.MapboxUSAMap = (function () {
         const ir = Math.sqrt((hs.impressions || 0) / maxHot);
         features.push({
           type: 'Feature',
-          properties: { lw: +(0.5 + ir * 1.5).toFixed(3), lo: +(0.04 + ir * 0.12).toFixed(3) },
+          properties: {
+            lw: +(1.5 + ir * 6).toFixed(3),
+            lo: +(0.2 + ir * 0.55).toFixed(3),
+            dc: dc.id,
+          },
           geometry: { type: 'LineString', coordinates: pts },
         });
       });
@@ -741,7 +789,7 @@ window.MapboxUSAMap = (function () {
       [
         { key: 'west',    label: 'WEST',    style: 'left:14px;top:38%' },
         { key: 'central', label: 'CENTRAL', style: 'left:50%;transform:translateX(-50%);bottom:72px' },
-        { key: 'east',    label: 'EAST',    style: 'right:285px;top:38%' },
+        { key: 'east',    label: 'EAST',    style: 'right:345px;top:38%' },
       ].forEach(({ key, label, style }) => {
         const panel = document.createElement('div');
         panel.className = 'mgl-region-panel';
