@@ -177,73 +177,15 @@ window.MapboxUSAMap = (function () {
         data: '/data/us-counties.json',
       });
 
-      this._map.addSource('mapbox-streets', {
-        type: 'vector',
-        url:  'mapbox://mapbox.mapbox-streets-v8',
-      });
-
       // State center points for label layer
-      if (window.US_STATES) {
-        const US = window.US_STATES;
-        this._map.addSource('state-labels', {
-          type: 'geojson',
-          data: {
-            type: 'FeatureCollection',
-            features: US.states.map(s => ({
-              type: 'Feature',
-              properties: { abbr: s.id, name: s.name },
-              geometry: { type: 'Point', coordinates: s.center },
-            })),
-          },
-        });
-      }
     }
 
     _empty() { return { type: 'FeatureCollection', features: [] }; }
 
     _addLayers() {
       // County boundary lines — beneath everything
-      this._map.addLayer({
-        id:     'admin-county-lines',
-        type:   'line',
-        source: 'us-counties',
-        paint: {
-          'line-color':   '#3D1A5C',
-          'line-width':   0.4,
-          'line-opacity': 0.5,
-        },
-      });
 
-      // State boundary lines — Mapbox Streets vector tiles, crisp at all zoom levels
-      this._map.addLayer({
-        id:             'admin-state-lines',
-        type:           'line',
-        source:         'mapbox-streets',
-        'source-layer': 'admin',
-        filter: ['all',
-          ['==', ['get', 'admin_level'], 4],
-          ['==', ['get', 'disputed'],    false],
-        ],
-        paint: {
-          'line-color':   '#6B5690',
-          'line-width':   1.2,
-          'line-opacity': 0.75,
-        },
-      });
-
-      // State abbreviation labels
-      if (this._map.getSource('state-labels')) {
-        this._map.addLayer({
-          id:     'state-labels',
-          type:   'symbol',
-          source: 'state-labels',
-          layout: {
-            'text-field':         ['get', 'abbr'],
-            'text-size':          11,
-            'text-font':          ['DIN Pro Bold', 'Arial Unicode MS Bold'],
-            'text-letter-spacing': 0.08,
-            'text-allow-overlap': false,
-          },
+      // State abbreviation labels,
           paint: {
             'text-color':     'rgba(255,255,255,0.75)',
             'text-halo-color': 'rgba(14,3,32,0.7)',
