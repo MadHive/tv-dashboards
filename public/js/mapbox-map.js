@@ -97,7 +97,7 @@ window.MapboxUSAMap = (function () {
           attributionControl: false,
         });
 
-        this._map.on('load', () => {
+        this._map.on('load', async () => {
           this._addSources();
           this._addLayers();
           if (this._data) this._applyData(this._data);
@@ -117,18 +117,28 @@ window.MapboxUSAMap = (function () {
 
     _addSources() {
       const US = window.US_STATES;
-      if (!US) return;
 
-      const stateFeatures = US.states.map(s => ({
-        type: 'Feature',
-        id:   s.id,
-        properties: { id: s.id, intensity: 0, impressions: 0 },
-        geometry:   { type: 'Polygon', coordinates: [s.path] },
-      }));
+      // Load high-quality state GeoJSON (93+ points per state vs 10-18 in US_STATES)
+      let hqStateData = { type: 'FeatureCollection', features: [] };
+      try {
+        const hqRes = await fetch('/data/us-states-hq.json');
+        hqStateData = await hqRes.json();
+        this._stateGeoFeatures = hqStateData.features;
+      } catch (_) {
+        // Fallback: use crude US_STATES paths
+        if (US) {
+          this._stateGeoFeatures = US.states.map(s => ({
+            type: 'Feature',
+            properties: { id: s.id, intensity: 0, impressions: 0 },
+            geometry:   { type: 'Polygon', coordinates: [s.path] },
+          }));
+          hqStateData = { type: 'FeatureCollection', features: this._stateGeoFeatures };
+        }
+      }
 
       this._map.addSource('us-states', {
         type: 'geojson',
-        data: { type: 'FeatureCollection', features: stateFeatures },
+        data: hqStateData,
       });
 
       this._map.addSource('hotspots',      { type: 'geojson', data: this._empty() });
@@ -425,13 +435,14 @@ window.MapboxUSAMap = (function () {
       const maxImp   = Object.values(states).reduce((m, s) => Math.max(m, s.impressions || 0), 1);
       const maxHot   = hotspots.length ? (hotspots[0].impressions || 1) : 1;
 
-      if (US) {
-        const stateFeatures = US.states.map(s => {
-          const st = states[s.id] || { impressions: 0 };
+      // Update state choropleth using cached HQ geometry
+      if (this._stateGeoFeatures) {
+        const stateFeatures = this._stateGeoFeatures.map(f => {
+          const sid = f.properties && f.properties.id;
+          const st  = (sid && states[sid]) || { impressions: 0 };
           return {
-            type: 'Feature', id: s.id,
-            properties: { id: s.id, intensity: st.impressions / maxImp, impressions: st.impressions },
-            geometry:   { type: 'Polygon', coordinates: [s.path] },
+            ...f,
+            properties: { ...f.properties, id: sid, intensity: st.impressions / maxImp, impressions: st.impressions },
           };
         });
         this._map.getSource('us-states')?.setData({ type: 'FeatureCollection', features: stateFeatures });

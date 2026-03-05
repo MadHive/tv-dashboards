@@ -22,12 +22,14 @@ const VALID_WIDGET_TYPES = [
   'stacked-bar-chart',
   'sankey',
   'table',
-  'treemap'
+  'treemap',
+  'usa-map-gl'
 ];
 
 const VALID_DATA_SOURCES = [
   'gcp',
   'bigquery',
+  'computed',
   'aws',
   'datadog',
   'elasticsearch',
