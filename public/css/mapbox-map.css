@@ -27,21 +27,21 @@
   top:        12px;
   right:      12px;
   bottom:     12px;
-  width:      320px;
+  width:      340px;
   display:    flex;
   flex-direction: column;
-  gap:        6px;
+  gap:        8px;
   pointer-events: none;
   overflow:   hidden;
 }
 
 .mgl-lb-title {
-  font-size:      13px;
+  font-size:      17px;
   font-weight:    700;
   color:          rgba(253,164,212,0.7);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  padding:        0 6px 6px;
+  padding:        0 8px 8px;
   border-bottom:  1px solid rgba(253,164,212,0.15);
   flex-shrink:    0;
 }
@@ -146,7 +146,7 @@
 }
 
 .mgl-total-label {
-  font-size:      9px;
+  font-size:      12px;
   font-weight:    700;
   color:          rgba(253,164,212,0.7);
   text-transform: uppercase;
@@ -154,26 +154,26 @@
 }
 
 .mgl-total-value {
-  font-size:   34px;
+  font-size:   54px;
   font-weight: 800;
   color:       #FFFFFF;
   line-height: 1;
-  text-shadow: 0 0 20px rgba(253,164,212,0.5), 0 0 40px rgba(124,58,237,0.4);
+  text-shadow: 0 0 30px rgba(253,164,212,0.6), 0 0 60px rgba(124,58,237,0.5);
   font-variant-numeric: tabular-nums;
 }
 
 .mgl-total-sub {
-  font-size: 10px;
+  font-size: 13px;
   color:     rgba(184,168,208,0.6);
 }
 
 /* Leaderboard header total (above title) */
 .mgl-lb-header-total {
-  font-size:      13px;
+  font-size:      17px;
   font-weight:    700;
   color:          rgba(253,164,212,0.85);
   text-align:     center;
-  padding:        0 6px 8px;
+  padding:        0 8px 8px;
   border-bottom:  1px solid rgba(253,164,212,0.2);
   flex-shrink:    0;
   text-shadow:    0 0 8px rgba(253,164,212,0.3);
@@ -183,17 +183,17 @@
 .mgl-lb-table {
   width:           100%;
   border-collapse: collapse;
-  font-size:       13px;
+  font-size:       17px;
   table-layout:    fixed;
 }
 
 .mgl-lb-table thead th {
   color:          rgba(107,86,144,0.8);
   font-weight:    700;
-  font-size:      10px;
+  font-size:      13px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  padding:        4px 6px;
+  padding:        5px 8px;
   border-bottom:  1px solid rgba(107,86,144,0.25);
   text-align:     left;
 }
@@ -209,7 +209,7 @@
 .mgl-lb-table tbody tr:hover { background: rgba(124,58,237,0.08); }
 
 .mgl-lb-table tbody td {
-  padding:     5px 6px;
+  padding:     7px 8px;
   color:       var(--t2, #B8A8D0);
   white-space: nowrap;
   overflow:    hidden;
@@ -222,26 +222,40 @@
 .mgl-lb-rank-cell {
   color:       rgba(253,164,212,0.45);
   font-weight: 700;
-  width:       22px;
+  width:       26px;
 }
 
 .mgl-lb-state-cell {
   font-weight: 700;
   color:       #F3F2EB;
-  width:       32px;
-  font-size:   14px;
+  width:       38px;
+  font-size:   20px;
 }
 
 .mgl-lb-imp-cell {
   font-variant-numeric: tabular-nums;
   color: rgba(184,168,208,0.9);
-  font-size: 13px;
+  font-size: 17px;
 }
 
 .mgl-lb-pct-cell {
-  color:      rgba(184,122,255,0.95);
   font-weight: 700;
-  font-size:  13px;
+  font-size:  15px;
+  vertical-align: middle;
+}
+
+.mgl-lb-pct-cell .mgl-lb-bar-wrap {
+  height: 4px;
+  background: rgba(107,86,144,0.2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 3px;
+}
+
+.mgl-lb-pct-cell .mgl-lb-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.8s ease;
 }
 
 .mgl-trend-up   { color: #4ade80; }
@@ -251,43 +265,44 @@
 /* ── Regional data panels (WEST / CENTRAL / EAST) ── */
 .mgl-region-panel {
   position:      absolute;
-  background:    rgba(14, 3, 32, 0.88);
-  border:        1px solid rgba(107,86,144,0.45);
-  border-radius: 8px;
-  padding:       10px 14px;
-  min-width:     110px;
+  background:    rgba(14, 3, 32, 0.90);
+  border:        1px solid rgba(107,86,144,0.5);
+  border-radius: 10px;
+  padding:       14px 18px;
+  min-width:     140px;
   pointer-events: none;
-  backdrop-filter: blur(6px);
+  backdrop-filter: blur(8px);
 }
 .mgl-region-panel::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 3px;
+  height: 4px;
   background: linear-gradient(90deg, #FDA4D4, #b87aff);
-  border-radius: 8px 8px 0 0;
+  border-radius: 10px 10px 0 0;
 }
 .mgl-region-name {
-  font-size: 9px; font-weight: 700;
-  color: rgba(184,168,208,0.65);
-  text-transform: uppercase; letter-spacing: 0.1em;
-  margin-bottom: 2px;
+  font-size: 16px; font-weight: 700;
+  color: rgba(184,168,208,0.75);
+  text-transform: uppercase; letter-spacing: 0.12em;
+  margin-bottom: 6px;
 }
 .mgl-region-impressions {
-  font-size: 20px; font-weight: 800;
+  font-size: 40px; font-weight: 800;
   color: #FDA4D4; line-height: 1.1;
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 20px rgba(253,164,212,0.55);
 }
 .mgl-region-meta {
-  font-size: 9px; margin-top: 4px;
-  display: flex; gap: 8px;
+  font-size: 13px; margin-top: 8px;
+  display: flex; gap: 12px;
 }
 .mgl-region-bids { color: rgba(184,168,208,0.65); }
 .mgl-region-svc  { color: #67E8F9; }
 
 /* GCP icon markers */
 .mgl-dc-marker {
-  width: 28px; height: 28px;
-  filter: drop-shadow(0 0 8px rgba(103,232,249,0.7));
+  width: 40px; height: 40px;
+  filter: drop-shadow(0 0 12px rgba(103,232,249,0.85));
   cursor: default;
 }

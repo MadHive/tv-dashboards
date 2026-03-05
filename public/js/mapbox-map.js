@@ -53,10 +53,11 @@ window.MapboxUSAMap = (function () {
   };
 
   var REGION_BOUNDS = {
-    northeast:  [[-81,  36], [-66, 48]],
-    southeast:  [[-89,  24], [-75, 37]],
-    northwest:  [[-125, 41], [-104, 49]],
-    southwest:  [[-125, 31], [-104, 41]],
+    // Wide enough to show the serving DC(s) as arc origins + the delivery region
+    northeast:  [[-102, 27], [-58, 52]],   // East DC (VA) + Central DC visible; full NE corridor
+    southeast:  [[-104, 17], [-60, 44]],   // East DC (VA) + Gulf coast; arcs enter from left
+    northwest:  [[-133, 33], [-86, 55]],   // West DC (OR) + Central DC visible; full PNW
+    southwest:  [[-133, 21], [-87, 47]],   // West DC (OR) + Central DC; CA through NM
   };
   var USA_BOUNDS = [[-125, 24], [-66, 50]];
 
@@ -268,7 +269,7 @@ window.MapboxUSAMap = (function () {
 
       this._map.addLayer({
         id: 'states-glow', type: 'line', source: 'us-states',
-        filter: ['>', ['get', 'intensity'], 0.45],
+        filter: ['>', ['get', 'intensity'], 0.2],
         paint: {
           'line-color':   ['interpolate', ['linear'], ['get', 'intensity'],
             0.45, '#7c3aed', 0.75, '#b87aff', 1.0, '#FDA4D4'],
@@ -330,9 +331,9 @@ window.MapboxUSAMap = (function () {
       this._map.addLayer({
         id: 'hotspots-glow', type: 'circle', source: 'hotspots',
         paint: {
-          'circle-radius':  ['interpolate', ['linear'], ['get', 'ir'], 0, 8,  1, 40],
+          'circle-radius':  ['interpolate', ['linear'], ['get', 'ir'], 0, 14, 1, 60],
           'circle-color':   ['case', ['>', ['get', 'ir'], 0.4], '#FDA4D4', '#67E8F9'],
-          'circle-opacity': ['interpolate', ['linear'], ['get', 'ir'], 0, 0.06, 1, 0.22],
+          'circle-opacity': ['interpolate', ['linear'], ['get', 'ir'], 0, 0.07, 1, 0.28],
           'circle-blur':    1.0,
         },
       });
@@ -360,7 +361,7 @@ window.MapboxUSAMap = (function () {
       this._map.addLayer({
         id: 'hotspots-core', type: 'circle', source: 'hotspots',
         paint: {
-          'circle-radius': ['interpolate', ['linear'], ['get', 'ir'], 0, 3, 1, 14],
+          'circle-radius': ['interpolate', ['linear'], ['get', 'ir'], 0, 5, 1, 22],
           'circle-color':  [
             'interpolate', ['linear'], ['get', 'ir'],
             0,    '#67E8F9',
@@ -429,6 +430,14 @@ window.MapboxUSAMap = (function () {
         },
       });
 
+      // Hide Mapbox base settlement labels — our hotspot-labels layer replaces them
+      // and is positioned at the same coordinates as the hotspot dots (no mismatch)
+      ['settlement-major-label', 'settlement-minor-label', 'settlement-subdivision-label',
+       'place-city-label', 'place-town-label', 'place-village-label'].forEach(id => {
+        if (this._map.getLayer(id))
+          this._map.setLayoutProperty(id, 'visibility', 'none');
+      });
+
       // State abbreviation labels — on top of fill so they're always readable
       this._map.addLayer({
         id: 'state-labels', type: 'symbol', source: 'us-states',
@@ -459,15 +468,17 @@ window.MapboxUSAMap = (function () {
       const hotspots = data.hotspots || [];
       const maxImp   = Object.values(states).reduce((m, s) => Math.max(m, s.impressions || 0), 1);
       const maxHot   = hotspots.length ? (hotspots[0].impressions || 1) : 1;
-
       // Update state choropleth using cached HQ geometry
       if (this._stateGeoFeatures) {
         const stateFeatures = this._stateGeoFeatures.map(f => {
           const sid = f.properties && f.properties.id;
           const st  = (sid && states[sid]) || { impressions: 0 };
+          const raw = st.impressions || 0;
+          // Power scale 0.4: states with 10% of top delivery still show ~40% colour
+          const intensity = maxImp > 0 ? Math.pow(raw / maxImp, 0.4) : 0;
           return {
             ...f,
-            properties: { ...f.properties, id: sid, intensity: st.impressions / maxImp, impressions: st.impressions },
+            properties: { ...f.properties, id: sid, intensity, impressions: raw },
           };
         });
         this._map.getSource('us-states')?.setData({ type: 'FeatureCollection', features: stateFeatures });
@@ -543,15 +554,17 @@ window.MapboxUSAMap = (function () {
           return dist < Math.hypot(hs.lon - nearest.lon, hs.lat - nearest.lat) ? d : nearest;
         });
         const mx  = (dc.lon + hs.lon) / 2;
-        const my  = (dc.lat + hs.lat) / 2 + Math.abs(dc.lat - hs.lat) * 0.3 + 2;
+        const my  = (dc.lat + hs.lat) / 2 + Math.abs(dc.lat - hs.lat) * 0.15 + 0.5;
         const pts = [];
-        for (let t = 0; t <= 1; t += 0.05) {
+        for (let i = 0; i <= 20; i++) {
+          const t = i / 20;
           const it = 1 - t;
           pts.push([
             it * it * dc.lon + 2 * it * t * mx + t * t * hs.lon,
             it * it * dc.lat + 2 * it * t * my + t * t * hs.lat,
           ]);
         }
+        pts[pts.length - 1] = [hs.lon, hs.lat]; // guarantee arc terminates exactly at hotspot
         const ir = Math.sqrt((hs.impressions || 0) / maxHot);
         // Store for particle alignment — particles pick from this same set
         this._corridorPaths.push({ dc, tgt: hs, ir });
@@ -585,7 +598,7 @@ window.MapboxUSAMap = (function () {
           tgt:   path.tgt,
           ir:    weight,
           pt:    weight > 0.55 ? 'fast' : 'normal',
-          sz:    2 + weight * 7,   // 2px → 9px — clearly data-driven size
+          sz:    3 + weight * 11,  // 3px → 14px — clearly data-driven size for TV
         };
       });
     }
@@ -604,14 +617,14 @@ window.MapboxUSAMap = (function () {
                 p.dc    = path.dc;
                 p.tgt   = path.tgt;
                 p.ir    = path.ir;
-                p.sz    = 2 + path.ir * 7;
+                p.sz    = 3 + path.ir * 11;
                 p.speed = 0.002 + path.ir * 0.008;
                 p.pt    = path.ir > 0.6 ? 'fast' : 'normal';
               }
             }
             const { dc, tgt, t, sz, pt } = p;
             const mx  = (dc.lon + tgt.lon) / 2;
-            const my  = (dc.lat + tgt.lat) / 2 + Math.abs(dc.lat - tgt.lat) * 0.3 + 2;
+            const my  = (dc.lat + tgt.lat) / 2 + Math.abs(dc.lat - tgt.lat) * 0.15 + 0.5;
             const it  = 1 - t;
             const lon = it * it * dc.lon + 2 * it * t * mx + t * t * tgt.lon;
             const lat = it * it * dc.lat + 2 * it * t * my + t * t * tgt.lat;
@@ -803,7 +816,7 @@ window.MapboxUSAMap = (function () {
       [
         { key: 'west',    label: 'WEST',    style: 'left:14px;top:38%' },
         { key: 'central', label: 'CENTRAL', style: 'left:50%;transform:translateX(-50%);bottom:72px' },
-        { key: 'east',    label: 'EAST',    style: 'right:345px;top:38%' },
+        { key: 'east',    label: 'EAST',    style: 'right:365px;top:38%' },
       ].forEach(({ key, label, style }) => {
         const panel = document.createElement('div');
         panel.className = 'mgl-region-panel';
@@ -904,7 +917,17 @@ window.MapboxUSAMap = (function () {
         n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' :
         n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
 
-      // Build table
+      // Colour ramp: rank 1 = pink, fades to violet for lower ranks
+      const rankColor = (i) => {
+        const t = i / Math.max(sorted.length - 1, 1);
+        // Pink (#FDA4D4) → violet (#7c3aed)
+        const r = Math.round(253 - t * (253 - 124));
+        const g = Math.round(164 - t * (164 - 58));
+        const b = Math.round(212 - t * (212 - 237));
+        return `rgb(${r},${g},${b})`;
+      };
+
+      // Rebuild rows — preserve existing tbody if present to allow CSS transitions
       this._lbScrollEl.textContent = '';
       const table = document.createElement('table');
       table.className = 'mgl-lb-table';
@@ -912,7 +935,7 @@ window.MapboxUSAMap = (function () {
       // Header
       const thead = document.createElement('thead');
       const hrow  = document.createElement('tr');
-      ['#', 'ST', 'Impr', '%'].forEach((label, i) => {
+      ['#', 'ST', 'IMPRESSIONS', '%'].forEach(label => {
         const th = document.createElement('th');
         th.textContent = label;
         hrow.appendChild(th);
@@ -924,24 +947,41 @@ window.MapboxUSAMap = (function () {
       const tbody = document.createElement('tbody');
       sorted.forEach(([stateId, s], i) => {
         const pct   = ((s.impressions / totalImp) * 100).toFixed(1);
+        const color = rankColor(i);
 
         const tr = document.createElement('tr');
+        // Left accent stripe by rank colour
+        tr.style.borderLeft = `3px solid ${color}`;
 
         const tdRank = document.createElement('td');
         tdRank.className   = 'mgl-lb-rank-cell';
         tdRank.textContent = i + 1;
+        tdRank.style.color = color;
 
         const tdState = document.createElement('td');
         tdState.className   = 'mgl-lb-state-cell';
         tdState.textContent = stateId;
+        tdState.style.color = color;
 
         const tdImp = document.createElement('td');
         tdImp.className   = 'mgl-lb-imp-cell';
         tdImp.textContent = fmt(s.impressions);
 
+        // Percentage cell with inline mini-bar
         const tdPct = document.createElement('td');
-        tdPct.className   = 'mgl-lb-pct-cell';
-        tdPct.textContent = pct + '%';
+        tdPct.className = 'mgl-lb-pct-cell';
+        const barWrap = document.createElement('div');
+        barWrap.className = 'mgl-lb-bar-wrap';
+        const bar = document.createElement('div');
+        bar.className = 'mgl-lb-bar';
+        bar.style.width = pct + '%';
+        bar.style.background = `linear-gradient(90deg, ${color}88, ${color})`;
+        barWrap.appendChild(bar);
+        const pctSpan = document.createElement('span');
+        pctSpan.textContent = pct + '%';
+        pctSpan.style.color = color;
+        tdPct.appendChild(barWrap);
+        tdPct.appendChild(pctSpan);
 
         tr.appendChild(tdRank);
         tr.appendChild(tdState);
