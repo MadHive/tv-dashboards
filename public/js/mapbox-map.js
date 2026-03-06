@@ -746,6 +746,7 @@ window.MapboxUSAMap = (function () {
       this._visObs = new MutationObserver(() => {
         const active = page.classList.contains('active');
         if (active) {
+          if (this._map) this._map.resize();
           if (!this._animId) this._startAnimation();
           if (!this._pulseId) this._startPulse();
         } else {
