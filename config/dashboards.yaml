@@ -56,8 +56,8 @@ dashboards:
       rows: 1
     icon: map
     id: campaign-delivery-gl
-    name: Campaign Delivery GL
-    subtitle: Nationwide Reach (Mapbox)
+    name: Campaign Delivery
+    subtitle: Nationwide
     widgets:
       - id: usa-delivery-map-gl
         position:
@@ -75,8 +75,8 @@ dashboards:
       rows: 1
     icon: map
     id: campaign-delivery-gl-ne
-    name: Campaign Delivery GL
-    subtitle: Northeast Markets (Mapbox)
+    name: Campaign Delivery
+    subtitle: Northeast
     widgets:
       - id: usa-delivery-map-gl-ne
         mapConfig:
@@ -98,8 +98,8 @@ dashboards:
       rows: 1
     icon: map
     id: campaign-delivery-gl-se
-    name: Campaign Delivery GL
-    subtitle: Southeast Markets (Mapbox)
+    name: Campaign Delivery
+    subtitle: Southeast
     widgets:
       - id: usa-delivery-map-gl-se
         mapConfig:
@@ -121,8 +121,8 @@ dashboards:
       rows: 1
     icon: map
     id: campaign-delivery-gl-nw
-    name: Campaign Delivery GL
-    subtitle: Northwest Markets (Mapbox)
+    name: Campaign Delivery
+    subtitle: Northwest
     widgets:
       - id: usa-delivery-map-gl-nw
         mapConfig:
@@ -144,8 +144,8 @@ dashboards:
       rows: 1
     icon: map
     id: campaign-delivery-gl-sw
-    name: Campaign Delivery GL
-    subtitle: Southwest Markets (Mapbox)
+    name: Campaign Delivery
+    subtitle: Southwest
     widgets:
       - id: usa-delivery-map-gl-sw
         mapConfig:
