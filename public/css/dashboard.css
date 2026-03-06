@@ -730,19 +730,24 @@ body::before {
 }
 
 /* Full-bleed map widget: no padding, no title, no corner accents */
-.widget-usa-map {
+.widget-usa-map,
+.widget-usa-map-gl {
   padding: 0;
   background: transparent;
   border: none;
 }
 .widget-usa-map::before,
-.widget-usa-map::after {
+.widget-usa-map::after,
+.widget-usa-map-gl::before,
+.widget-usa-map-gl::after {
   display: none;
 }
-.widget-usa-map .widget-title {
+.widget-usa-map .widget-title,
+.widget-usa-map-gl .widget-title {
   display: none;
 }
-.widget-usa-map .widget-content {
+.widget-usa-map .widget-content,
+.widget-usa-map-gl .widget-content {
   padding: 0;
 }
 
