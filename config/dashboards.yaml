@@ -134,7 +134,7 @@ dashboards:
           colSpan: 1
           row: 1
           rowSpan: 1
-        queryId: campaign-delivery-map
+        queryId: campaign-delivery-map-nw
         source: computed
         title: ''
         type: usa-map-gl
@@ -157,7 +157,7 @@ dashboards:
           colSpan: 1
           row: 1
           rowSpan: 1
-        queryId: campaign-delivery-map
+        queryId: campaign-delivery-map-sw
         source: computed
         title: ''
         type: usa-map-gl

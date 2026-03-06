@@ -43,6 +43,24 @@ computed:
       widgetId: usa-delivery-map-se
     widgetTypes:
       - usa-map
+  - id: campaign-delivery-map-nw
+    name: Campaign Delivery Map (Northwest)
+    description: Northwest region delivery heatmap
+    function: campaignDeliveryMapWidget
+    params:
+      region: northwest
+      widgetId: usa-delivery-map-nw
+    widgetTypes:
+      - usa-map
+  - id: campaign-delivery-map-sw
+    name: Campaign Delivery Map (Southwest)
+    description: Southwest region delivery heatmap
+    function: campaignDeliveryMapWidget
+    params:
+      region: southwest
+      widgetId: usa-delivery-map-sw
+    widgetTypes:
+      - usa-map
   - id: core-cluster-size
     name: Core Cluster Nodes
     description: Total active containers across bidder, roger, and memcached

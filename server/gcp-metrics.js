@@ -425,6 +425,8 @@ async function campaignDeliveryMap(widgetConfig = {}) {
   const REGION_STATE_SETS = {
     northeast: new Set(['ME','VT','NH','MA','RI','CT','NY','NJ','PA','DE','MD','DC','VA','WV']),
     southeast: new Set(['NC','SC','GA','FL','AL','MS','TN','KY']),
+    northwest: new Set(['WA','OR','ID','MT','WY','ND','SD','MN','WI','MI']),
+    southwest: new Set(['CA','NV','AZ','NM','UT','CO','TX','OK','KS','NE']),
   };
   const regionStates = REGION_STATE_SETS[region] || null;
 
