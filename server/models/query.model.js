@@ -11,6 +11,7 @@ export const queryModels = new Elysia({ name: 'query.models' })
       aggregation:  t.Optional(t.Any()),
       filters:      t.Optional(t.String()),
       widgetTypes:  t.Optional(t.Array(t.String())),
+      scale:        t.Optional(t.Number({ description: 'Multiply output value by this factor (e.g. 100 to convert 0–1 fractions to percentages)' })),
     }),
     'query.bigquery': t.Object({
       id: t.String(), name: t.String(),

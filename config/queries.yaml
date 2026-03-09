@@ -252,6 +252,7 @@ gcp:
     aggregation:
       alignmentPeriod: 60s
       perSeriesAligner: ALIGN_MEAN
+    scale: 100
     widgetTypes:
       - gauge
       - line-chart
@@ -470,6 +471,7 @@ gcp:
       alignmentPeriod:
         seconds: 60
     filters: resource.labels.container_name = "bidder"
+    scale: 100
     widgetTypes: []
     updatedAt: '2026-03-03T18:37:21.707Z'
     createdAt: '2026-03-03T18:36:57.733Z'
@@ -484,6 +486,7 @@ gcp:
       alignmentPeriod:
         seconds: 60
     filters: resource.labels.container_name = "bidder"
+    scale: 100
     widgetTypes: []
     updatedAt: '2026-03-03T18:37:21.710Z'
     createdAt: '2026-03-03T18:36:57.737Z'
@@ -778,6 +781,7 @@ gcp:
       alignmentPeriod:
         seconds: 60
     filters: ''
+    scale: 100
     widgetTypes: []
     updatedAt: '2026-03-03T18:37:21.798Z'
     createdAt: '2026-03-03T18:36:57.783Z'
