@@ -357,7 +357,7 @@ window.QueryExplorer = (function () {
         case 'gauge':
           return { value: vals[0], min: 0, max: 100, unit: '' };
         case 'line-chart':
-          return { series: [{ label: 'Value', data: vals.slice(0, 30) }], timestamps: [] };
+          return { series: [{ label: 'Value', values: vals.slice(0, 30) }], timestamps: [] };
         case 'bar-chart': {
           const labelKey = Object.keys(rawSeries[0]).find(k => k !== 'timestamp' && k !== 'value');
           if (!labelKey) return { bars: [{ label: 'Value', value: vals[0] }] };
@@ -417,7 +417,7 @@ window.QueryExplorer = (function () {
         case 'bar-chart':
           return { bars: rows.slice(0, 10).map(r => ({ label: strCol ? String(r[strCol]) : String(r[numCol]), value: r[numCol] || 0 })) };
         case 'line-chart':
-          return { series: [{ label: numCol, data: rows.map(r => r[numCol] || 0) }], timestamps: [] };
+          return { series: [{ label: numCol, values: rows.map(r => r[numCol] || 0) }], timestamps: [] };
         case 'table':
           // Use outer `cols` (already computed from rows[0]) — no shadow needed
           return {

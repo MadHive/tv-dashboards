@@ -73,12 +73,6 @@ computed:
     function: pipelineFlow
     widgetTypes:
       - pipeline-flow
-  - id: pipeline-flow
-    name: End-to-End Data Flow
-    description: Pipeline stage flow with ingest, transform, store, process, deliver, report rates
-    function: pipelineFlow
-    widgetTypes:
-      - pipeline-flow
   - id: bidder-error-rate
     name: Bidder Error Rate
     description: Percentage of LB requests with non-2xx, non-204, non-503 response codes
