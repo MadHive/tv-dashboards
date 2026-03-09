@@ -2,6 +2,8 @@
 
 Real-time engineering dashboard system running on a dedicated display (TV) in the MadHive office. Metrics from GCP Cloud Monitoring, BigQuery, and VulnTrack are displayed on rotating dashboards. A built-in studio at `/admin` lets engineers configure dashboards, assign metrics to widgets, and manage data source credentials — all from the browser.
 
+> **Full guide:** [docs/GUIDE.md](docs/GUIDE.md) — covers the TV display controls, Studio editor walkthrough, widget types, query management, data source configuration, and server administration.
+
 ---
 
 ## Quick Start
