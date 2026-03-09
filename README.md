@@ -18,7 +18,22 @@ cp .env.example .env   # fill in credentials
 bun run start          # server on port 3000
 ```
 
-Open **http://tv:3000** for the TV display and **http://tv:3000/admin** for the studio.
+Open **http://tv.local** for the TV display and **http://tv.local/admin** for the studio.
+
+---
+
+## Local Network Access
+
+The TV display machine is discoverable on the local network via mDNS (Bonjour). No IP address or port number required:
+
+| URL | Purpose |
+|-----|---------|
+| `http://tv.local` | TV display |
+| `http://tv.local/admin` | Studio editor |
+| `http://tv.local/openapi` | API docs |
+| `http://tv.madhive.local` | Same as above (alternate name) |
+
+nginx proxies port 80 → port 3000, and avahi broadcasts the host as `_http._tcp` so it appears in Safari's Bonjour bookmarks automatically. See `infra/` for the configs and `infra/install.sh` to apply them on a new machine.
 
 ---
 
@@ -245,7 +260,7 @@ AWS CloudWatch, DataDog, Elasticsearch, Salesforce, HotJar, FullStory, Zendesk, 
 
 ## API Reference
 
-Full interactive documentation at **http://tv:3000/openapi** (Scalar UI).
+Full interactive documentation at **http://tv.local/openapi** (Scalar UI).
 
 ### Key Endpoints
 
