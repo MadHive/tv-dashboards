@@ -251,35 +251,19 @@ const app = new Elysia()
     });
   })
 
-  // Actively-edited JS/CSS files: served dynamically so edits take effect
-  // on the next restart without the static plugin's in-memory cache interfering
-  .get('/js/app.js', () => new Response(readFileSync(join(publicDir, 'js/app.js'), 'utf8'), {
-    headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }
-  }))
-  .get('/js/charts.js', () => new Response(readFileSync(join(publicDir, 'js/charts.js'), 'utf8'), {
-    headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }
-  }))
-  .get('/js/widgets.js', () => new Response(readFileSync(join(publicDir, 'js/widgets.js'), 'utf8'), {
-    headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }
-  }))
-  .get('/css/dashboard.css', () => new Response(readFileSync(join(publicDir, 'css/dashboard.css'), 'utf8'), {
-    headers: { 'content-type': 'text/css; charset=utf-8', 'Cache-Control': 'no-cache' }
-  }))
-  .get('/js/studio.js', () => new Response(readFileSync(join(publicDir, 'js/studio.js'), 'utf8'), {
-    headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }
-  }))
-  .get('/css/studio.css', () => new Response(readFileSync(join(publicDir, 'css/studio.css'), 'utf8'), {
-    headers: { 'content-type': 'text/css; charset=utf-8', 'Cache-Control': 'no-cache' }
-  }))
-  .get('/js/studio-canvas.js', () => new Response(readFileSync(join(publicDir, 'js/studio-canvas.js'), 'utf8'), {
-    headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }
-  }))
-  .get('/js/importer.js', () => new Response(readFileSync(join(publicDir, 'js/importer.js'), 'utf8'), {
-    headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }
-  }))
-  .get('/css/importer.css', () => new Response(readFileSync(join(publicDir, 'css/importer.css'), 'utf8'), {
-    headers: { 'content-type': 'text/css; charset=utf-8', 'Cache-Control': 'no-cache' }
-  }))
+  // Actively-edited JS/CSS files: served via Bun.file() so edits take effect
+  // on the next restart without the static plugin's in-memory cache interfering.
+  // NOTE: use Bun.file() not readFileSync+string — Bun truncates Response bodies
+  // built from strings that contain multi-byte UTF-8 characters.
+  .get('/js/app.js',          () => new Response(Bun.file(join(publicDir, 'js/app.js')),          { headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' } }))
+  .get('/js/charts.js',       () => new Response(Bun.file(join(publicDir, 'js/charts.js')),       { headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' } }))
+  .get('/js/widgets.js',      () => new Response(Bun.file(join(publicDir, 'js/widgets.js')),      { headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' } }))
+  .get('/css/dashboard.css',  () => new Response(Bun.file(join(publicDir, 'css/dashboard.css')),  { headers: { 'content-type': 'text/css; charset=utf-8',        'Cache-Control': 'no-cache' } }))
+  .get('/js/studio.js',       () => new Response(Bun.file(join(publicDir, 'js/studio.js')),       { headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' } }))
+  .get('/css/studio.css',     () => new Response(Bun.file(join(publicDir, 'css/studio.css')),     { headers: { 'content-type': 'text/css; charset=utf-8',        'Cache-Control': 'no-cache' } }))
+  .get('/js/studio-canvas.js',() => new Response(Bun.file(join(publicDir, 'js/studio-canvas.js')),{ headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' } }))
+  .get('/js/importer.js',     () => new Response(Bun.file(join(publicDir, 'js/importer.js')),     { headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' } }))
+  .get('/css/importer.css',   () => new Response(Bun.file(join(publicDir, 'css/importer.css')),   { headers: { 'content-type': 'text/css; charset=utf-8',        'Cache-Control': 'no-cache' } }))
 
   .use(staticPlugin({ assets: publicDir, prefix: '/' }))
 
