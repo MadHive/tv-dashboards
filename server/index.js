@@ -265,7 +265,11 @@ const app = new Elysia()
   .get('/js/importer.js',     () => new Response(Bun.file(join(publicDir, 'js/importer.js')),     { headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' } }))
   .get('/css/importer.css',   () => new Response(Bun.file(join(publicDir, 'css/importer.css')),   { headers: { 'content-type': 'text/css; charset=utf-8',        'Cache-Control': 'no-cache' } }))
 
-  .use(staticPlugin({ assets: publicDir, prefix: '/' }))
+  .use(staticPlugin({
+    assets: publicDir,
+    prefix: '/',
+    headers: { 'Cache-Control': 'public, max-age=3600, must-revalidate' },
+  }))
 
   .get('/wizard-demo', async () => {
     const file = Bun.file(join(publicDir, 'wizard-demo.html'));

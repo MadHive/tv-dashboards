@@ -5,6 +5,28 @@ server {
     server_name 10.10.8.79 tv.local tv.madhive.local tv.madhive.dev;
 
     # Proxy to dashboard running on port 3000
+    # HTML pages: never cache
+    location ~* \.(html)$ {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_hide_header Cache-Control;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+    }
+
+    # Static assets: 1 hour, must-revalidate (never immutable — version bump on deploy)
+    location ~* \.(js|css|png|jpg|ico|woff2|woff|ttf)$ {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_hide_header Cache-Control;
+        add_header Cache-Control "public, max-age=3600, must-revalidate" always;
+    }
+
     location / {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
