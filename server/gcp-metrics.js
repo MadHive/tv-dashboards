@@ -67,20 +67,54 @@ function interval(minutes) {
 export async function query(project, metricType, extra, minutes, aggregation) {
   let filter = `metric.type = "${metricType}"`;
   if (extra && typeof extra === 'string' && extra.trim()) filter += ` AND ${extra}`;
+
+  const req = {
+    name: `projects/${project}`,
+    filter,
+    interval: interval(minutes || 10),
+    view: 'FULL',
+  };
+  if (aggregation) req.aggregation = normalizeAggregation(aggregation);
+
   try {
-    const req = {
-      name: `projects/${project}`,
-      filter,
-      interval: interval(minutes || 10),
-      view: 'FULL',
-    };
-    if (aggregation) req.aggregation = aggregation;
     const [ts] = await client.listTimeSeries(req);
     return ts || [];
   } catch (err) {
+    // INVALID_ARGUMENT (code 3) usually means the aggregation is incompatible with
+    // this metric's kind/value type (e.g. ALIGN_DELTA on a GAUGE metric).
+    // Retry with ALIGN_MEAN which is universally safe.
+    if (err.code === 3 && aggregation) {
+      logger.warn({ project, metricType, error: err.message }, 'GCP aggregation invalid, retrying with ALIGN_MEAN');
+      try {
+        const safeReq = {
+          ...req,
+          aggregation: {
+            perSeriesAligner:  'ALIGN_MEAN',
+            alignmentPeriod:   req.aggregation?.alignmentPeriod || { seconds: 60 },
+          },
+        };
+        const [ts] = await client.listTimeSeries(safeReq);
+        return ts || [];
+      } catch (err2) {
+        logger.error({ project, metricType, error: err2.message }, 'GCP metrics query error (fallback)');
+        return [];
+      }
+    }
     logger.error({ project, metricType, error: err.message }, 'GCP metrics query error');
     return [];
   }
+}
+
+// GCP dashboard tiles store alignmentPeriod as a proto Duration string ("60s").
+// The client library expects { seconds: N }. Normalize both formats.
+function normalizeAggregation(agg) {
+  if (!agg) return agg;
+  const out = { ...agg };
+  if (typeof out.alignmentPeriod === 'string') {
+    const match = out.alignmentPeriod.match(/^(\d+)s$/);
+    out.alignmentPeriod = match ? { seconds: parseInt(match[1], 10) } : { seconds: 60 };
+  }
+  return out;
 }
 
 export function latest(ts) {
