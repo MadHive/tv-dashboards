@@ -85,6 +85,12 @@ window.MapboxUSAMap = (function () {
     return SCHEME_COLORS[name] || SCHEME_COLORS.brand;
   }
 
+  function fmtImp(n) {
+    return n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' :
+           n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' :
+           n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
+  }
+
   var CHOROPLETH = [
     'interpolate', ['linear'], ['get', 'intensity'],
     0,    '#0d021e',
@@ -117,6 +123,7 @@ window.MapboxUSAMap = (function () {
       this._lbTotals       = null;
       this._visObs         = null;
       this._corridorPaths  = [];
+      this._lastBounds     = null;
 
       this._wrap = document.createElement('div');
       this._wrap.className = 'mgl-container';
@@ -238,12 +245,6 @@ window.MapboxUSAMap = (function () {
             geometry: { type: 'Point', coordinates: [dc.lon, dc.lat] },
           })),
         },
-      });
-
-      // Boundary sources
-      this._map.addSource('us-counties', {
-        type: 'geojson',
-        data: '/data/us-counties.json',
       });
 
       // State center points for label layer
@@ -492,11 +493,6 @@ window.MapboxUSAMap = (function () {
         this._map.getSource('us-states')?.setData({ type: 'FeatureCollection', features: stateFeatures });
       }
 
-      const fmtImp = (n) =>
-        n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' :
-        n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' :
-        n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
-
       const hotFeatures = hotspots
         .filter(h => h.lat && h.lon)
         .map((h, i) => {
@@ -541,9 +537,6 @@ window.MapboxUSAMap = (function () {
       const region = data.region || this._config.mapConfig?.region;
       const bounds = REGION_BOUNDS[region] || USA_BOUNDS;
 
-      // Position region panels after map finishes panning to new bounds
-      this._map.once('moveend', () => this._positionRegionPanels());
-
       // For regional views, clip arcs/particles to hotspots near the viewport
       // so traces and their animated trails are always visible together.
       // Use a generous buffer so approaching arcs enter from the DC side.
@@ -557,9 +550,28 @@ window.MapboxUSAMap = (function () {
       this._buildCorridors(arcHotspots.slice(0, 50), maxHot);
       this._initParticles(arcHotspots.slice(0, 50));
       if (!this._visObs) this._watchVisibility();
-      if (!this._animId) this._startAnimation();
-      if (!this._pulseId) this._startPulse();
-      this._map.fitBounds(bounds, { padding: 20, duration: 800 });
+
+      // Only start animation if this map's page is currently active
+      const _activePage = this._wrap?.closest?.('.dashboard-page');
+      if (!_activePage || _activePage.classList.contains('active')) {
+        if (!this._animId) this._startAnimation();
+        if (!this._pulseId) this._startPulse();
+      }
+
+      // Only re-fit bounds when they change — avoids constant 800ms re-animation on every refresh
+      const boundsKey = JSON.stringify(bounds);
+      if (boundsKey !== this._lastBounds) {
+        this._lastBounds = boundsKey;
+        this._map.once('moveend', () => this._positionRegionPanels());
+        // Offset padding: leaderboard (340px) on right, total overlay (~110px) on left bottom
+        const lbVisible = this._cfg.showLeaderboard !== false;
+        this._map.fitBounds(bounds, {
+          padding: { top: 24, right: lbVisible ? 368 : 24, bottom: 60, left: 24 },
+          duration: 800,
+        });
+      } else {
+        this._positionRegionPanels();
+      }
 
       this._renderLeaderboard(states, maxImp, data.totals);
     }
@@ -719,6 +731,14 @@ window.MapboxUSAMap = (function () {
         if (!entry?.panel) return;
 
         const px = this._map.project([dc.lon, dc.lat]);
+
+        // Hide panels for DCs that are off-screen (regional maps only show some DCs)
+        if (px.x < -40 || px.x > cw + 40 || px.y < -40 || px.y > ch + 40) {
+          entry.panel.style.display = 'none';
+          return;
+        }
+        entry.panel.style.display = '';
+
         let x = Math.round(px.x - PW / 2);
         let y = Math.round(px.y - PH - 52); // sit above the DC marker
 
@@ -841,11 +861,13 @@ window.MapboxUSAMap = (function () {
         });
       } else if (!isHeatmap && this._data?.hotspots?.length > 0) {
         const maxHot = this._data.hotspots[0]?.impressions || 1;
-        const z3Features = this._data.hotspots.filter(h => h.lat && h.lon).map((h, i) => ({
+        const z3Features = this._data.hotspots.filter(h => h.lat && h.lon).map((h, i) => {
+          const cityName = ZIP3_CITY[h.zip3] || h.city || '';
+          return {
           type: 'Feature',
-          properties: { ir: (h.impressions || 0) / maxHot, city: h.city || h.zip3 || '', rank: i },
+          properties: { ir: (h.impressions || 0) / maxHot, city: cityName, imp_fmt: cityName ? fmtImp(h.impressions || 0) : '', rank: i },
           geometry: { type: 'Point', coordinates: [h.lon, h.lat] },
-        }));
+          }; });
         this._map.getSource('hotspots')?.setData({ type: 'FeatureCollection', features: z3Features });
       }
     }
