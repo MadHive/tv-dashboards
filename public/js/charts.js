@@ -2756,6 +2756,161 @@ window.Charts = (function () {
     });
   }
 
+  // ===========================================================================
+  // DONUT RING — animated pie/donut with center label and legend
+  // ===========================================================================
+  const DONUT_PALETTE = [
+    BRAND.pink, '#67E8F9', BRAND.amber, BRAND.green,
+    BRAND.red,  '#A78BFA', '#34D399',   '#F472B6'
+  ];
+
+  function donut(canvas, data, config) {
+    // Cancel any running animation
+    if (canvas._donutAnimId) {
+      cancelAnimationFrame(canvas._donutAnimId);
+      canvas._donutAnimId = null;
+    }
+
+    if (!data || !data.slices || data.slices.length === 0) {
+      const { ctx, w, h } = setup(canvas);
+      ctx.clearRect(0, 0, w, h);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = BRAND.text3;
+      ctx.font = "500 14px 'DM Sans', sans-serif";
+      ctx.fillText('No data', w / 2, h / 2);
+      return;
+    }
+
+    const slices = data.slices.slice(0, 8);
+    const total = slices.reduce((s, sl) => s + (sl.value || 0), 0) || 1;
+
+    // Assign colors
+    const colored = slices.map((sl, i) => ({
+      ...sl,
+      color: sl.color || DONUT_PALETTE[i % DONUT_PALETTE.length],
+    }));
+
+    const startTime = performance.now();
+    const duration = 400;
+
+    function draw(progress) {
+      const { ctx, w, h } = setup(canvas);
+      ctx.clearRect(0, 0, w, h);
+
+      // Reserve bottom 28% for legend
+      const legendH = Math.round(h * 0.28);
+      const chartH  = h - legendH;
+
+      const cx = w / 2;
+      const cy = chartH / 2;
+      const minDim = Math.min(w, chartH);
+      const outerR = minDim * 0.40;
+      const innerR = outerR * 0.60; // 40% ring width → 30% of minDim
+
+      // Draw slices (swept from -π/2, eased in)
+      let angle = -Math.PI / 2;
+      colored.forEach(sl => {
+        const sweep = (sl.value / total) * Math.PI * 2 * progress;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, outerR, angle, angle + sweep);
+        ctx.closePath();
+        ctx.fillStyle = sl.color;
+        ctx.fill();
+        angle += sweep;
+      });
+
+      // Punch inner hole
+      ctx.beginPath();
+      ctx.arc(cx, cy, innerR, 0, Math.PI * 2);
+      ctx.fillStyle = BRAND.surface;
+      ctx.fill();
+
+      // Thin border ring
+      ctx.beginPath();
+      ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+      ctx.strokeStyle = BRAND.border;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Center label
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const centerText = data.centerLabel != null
+        ? String(data.centerLabel)
+        : formatNum(Math.round(total * progress));
+      const fontSize = Math.max(14, innerR * 0.52);
+      ctx.font = `700 ${fontSize}px 'Space Grotesk', sans-serif`;
+      ctx.fillStyle = BRAND.text1;
+      ctx.fillText(centerText, cx, cy - fontSize * 0.15);
+
+      ctx.font = `500 ${Math.max(10, fontSize * 0.45)}px 'DM Sans', sans-serif`;
+      ctx.fillStyle = BRAND.text3;
+      ctx.fillText('total', cx, cy + fontSize * 0.55);
+
+      // Legend (only draw fully when animation is complete or nearly complete)
+      if (progress > 0.5) {
+        const alpha = Math.min(1, (progress - 0.5) / 0.5);
+        ctx.globalAlpha = alpha;
+
+        const cols  = Math.min(colored.length, 4);
+        const rows  = Math.ceil(colored.length / cols);
+        const itemW = w / cols;
+        const itemH = legendH / rows;
+        const dotR  = 5;
+
+        colored.forEach((sl, i) => {
+          const col = i % cols;
+          const row = Math.floor(i / cols);
+          const lx  = col * itemW + 10;
+          const ly  = chartH + row * itemH + itemH / 2;
+
+          // Colored dot
+          ctx.beginPath();
+          ctx.arc(lx + dotR, ly, dotR, 0, Math.PI * 2);
+          ctx.fillStyle = sl.color;
+          ctx.fill();
+
+          // Label + percentage
+          const pct = total > 0 ? ((sl.value / total) * 100).toFixed(1) + '%' : '0%';
+          const maxLabelW = itemW - dotR * 2 - 14 - 36;
+          let label = sl.label || '';
+          ctx.font = "500 11px 'DM Sans', sans-serif";
+          ctx.fillStyle = BRAND.text2;
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          // Truncate if needed
+          while (label.length > 3 && ctx.measureText(label).width > maxLabelW) {
+            label = label.slice(0, -1);
+          }
+          ctx.fillText(label, lx + dotR * 2 + 6, ly);
+
+          ctx.fillStyle = BRAND.text3;
+          ctx.textAlign = 'right';
+          ctx.fillText(pct, lx + itemW - 6, ly);
+        });
+
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    function animate(now) {
+      const elapsed  = now - startTime;
+      const raw      = Math.min(1, elapsed / duration);
+      // Ease out cubic
+      const progress = 1 - Math.pow(1 - raw, 3);
+      draw(progress);
+      if (raw < 1) {
+        canvas._donutAnimId = requestAnimationFrame(animate);
+      } else {
+        canvas._donutAnimId = null;
+      }
+    }
+
+    canvas._donutAnimId = requestAnimationFrame(animate);
+  }
+
   return {
     sparkline,
     gauge,
@@ -2770,6 +2925,7 @@ window.Charts = (function () {
     heatmap,
     stackedBar,
     sankey,
-    treemap
+    treemap,
+    donut
   };
 })();

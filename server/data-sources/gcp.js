@@ -102,8 +102,9 @@ export class GCPDataSource extends DataSource {
       // Transform data for widget type with time period metadata
       const transformed = this.transformData(timeSeries, widgetConfig.type, {
         timePeriod,
-        max:  widgetConfig.max,
-        unit: widgetConfig.unit,
+        max:   widgetConfig.max,
+        unit:  widgetConfig.unit,
+        scale: savedQuery.scale,
       });
 
       // Record successful query
@@ -217,11 +218,39 @@ export class GCPDataSource extends DataSource {
       },
       'line-chart': (ts) => {
         const { spark } = require('../gcp-metrics.js');
+        if (!Array.isArray(ts) || ts.length === 0) {
+          return { series: [], timestamps: [], ...(options.timePeriod && { timePeriod: options.timePeriod }) };
+        }
+
+        // Sort by descending point count then total value, cap at 8 series
+        const scored = ts.map(series => {
+          const pts = series.points || [];
+          const total = pts.reduce((s, p) => s + Number(p.value?.doubleValue || p.value?.int64Value || 0), 0);
+          return { series, pointCount: pts.length, total };
+        });
+        scored.sort((a, b) => b.pointCount - a.pointCount || b.total - a.total);
+        const top = scored.slice(0, 8).map(s => s.series);
+
+        // Build one series per GCP time series
+        const series = top.map((singleTs, idx) => {
+          const resourceLabels = (singleTs.resource && singleTs.resource.labels) || {};
+          const metricLabels   = (singleTs.metric   && singleTs.metric.labels)   || {};
+          const rawLabel =
+            resourceLabels.service_name   ||
+            metricLabels.subscription_id  ||
+            resourceLabels.cluster_name   ||
+            Object.values(resourceLabels)[0] ||
+            Object.values(metricLabels)[0]   ||
+            `Series ${idx + 1}`;
+          const label = String(rawLabel).slice(0, 20);
+          return {
+            label,
+            values: spark([singleTs], 30),
+          };
+        });
+
         return {
-          series: [{
-            label: 'Value',
-            data: spark(ts, 30)
-          }],
+          series,
           timestamps: [],
           ...(options.timePeriod && { timePeriod: options.timePeriod })
         };
@@ -245,6 +274,33 @@ export class GCPDataSource extends DataSource {
         // Sort by value descending, take top 10
         bars.sort((a, b) => b.value - a.value);
         return { bars: bars.slice(0, 10), ...(options.timePeriod && { timePeriod: options.timePeriod }) };
+      },
+      'donut-ring': (ts) => {
+        const { latest } = require('../gcp-metrics.js');
+        if (!Array.isArray(ts) || ts.length === 0) return { slices: [] };
+
+        const slices = ts.map(series => {
+          const resourceLabels = (series.resource && series.resource.labels) || {};
+          const metricLabels   = (series.metric   && series.metric.labels)   || {};
+          const rawLabel =
+            resourceLabels.service_name   ||
+            metricLabels.subscription_id  ||
+            resourceLabels.cluster_name   ||
+            Object.values(resourceLabels)[0] ||
+            Object.values(metricLabels)[0]   ||
+            'Unknown';
+          return {
+            label: String(rawLabel).slice(0, 20),
+            value: latest([series]) || 0,
+          };
+        });
+
+        // Sort by value descending, take top 8
+        slices.sort((a, b) => b.value - a.value);
+        return {
+          slices: slices.slice(0, 8),
+          ...(options.timePeriod && { timePeriod: options.timePeriod }),
+        };
       },
       'table': (ts) => {
         if (!Array.isArray(ts) || !ts.length) return { columns: [], rows: [] };
@@ -292,7 +348,45 @@ export class GCPDataSource extends DataSource {
     const transformer = transformers[widgetType];
     if (transformer) {
       try {
-        return transformer(timeSeries);
+        const result = transformer(timeSeries);
+
+        // Apply scale factor if provided (e.g. scale: 100 to convert 0–1 fractions to %)
+        const scale = options.scale;
+        if (typeof scale === 'number') {
+          // value (big-number, stat-card, gauge) — only if numeric
+          if (typeof result.value === 'number') {
+            result.value = result.value * scale;
+          }
+          // sparkline array (stat-card)
+          if (Array.isArray(result.sparkline)) {
+            result.sparkline = result.sparkline.map(v => (typeof v === 'number' ? v * scale : v));
+          }
+          // series[].values (line-chart)
+          if (Array.isArray(result.series)) {
+            result.series = result.series.map(s => ({
+              ...s,
+              values: Array.isArray(s.values)
+                ? s.values.map(v => (typeof v === 'number' ? v * scale : v))
+                : s.values,
+            }));
+          }
+          // bars[].value (bar-chart)
+          if (Array.isArray(result.bars)) {
+            result.bars = result.bars.map(b => ({
+              ...b,
+              value: typeof b.value === 'number' ? b.value * scale : b.value,
+            }));
+          }
+          // slices[].value (donut-ring)
+          if (Array.isArray(result.slices)) {
+            result.slices = result.slices.map(s => ({
+              ...s,
+              value: typeof s.value === 'number' ? s.value * scale : s.value,
+            }));
+          }
+        }
+
+        return result;
       } catch (error) {
         logger.error({ error: error.message }, 'GCP transform error');
         return this.getEmptyData(widgetType);
