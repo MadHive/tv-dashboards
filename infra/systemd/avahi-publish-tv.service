@@ -1,0 +1,13 @@
+[Unit]
+Description=Publish tv.madhive.local via mDNS
+After=network-online.target avahi-daemon.service
+Requires=avahi-daemon.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/avahi-publish-tv
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
