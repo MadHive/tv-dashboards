@@ -274,6 +274,33 @@ export class GCPDataSource extends DataSource {
         bars.sort((a, b) => b.value - a.value);
         return { bars: bars.slice(0, 10), ...(options.timePeriod && { timePeriod: options.timePeriod }) };
       },
+      'donut-ring': (ts) => {
+        const { latest } = require('../gcp-metrics.js');
+        if (!Array.isArray(ts) || ts.length === 0) return { slices: [] };
+
+        const slices = ts.map(series => {
+          const resourceLabels = (series.resource && series.resource.labels) || {};
+          const metricLabels   = (series.metric   && series.metric.labels)   || {};
+          const rawLabel =
+            resourceLabels.service_name   ||
+            metricLabels.subscription_id  ||
+            resourceLabels.cluster_name   ||
+            Object.values(resourceLabels)[0] ||
+            Object.values(metricLabels)[0]   ||
+            'Unknown';
+          return {
+            label: String(rawLabel).slice(0, 20),
+            value: latest([series]) || 0,
+          };
+        });
+
+        // Sort by value descending, take top 8
+        slices.sort((a, b) => b.value - a.value);
+        return {
+          slices: slices.slice(0, 8),
+          ...(options.timePeriod && { timePeriod: options.timePeriod }),
+        };
+      },
       'table': (ts) => {
         if (!Array.isArray(ts) || !ts.length) return { columns: [], rows: [] };
 

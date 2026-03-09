@@ -666,6 +666,19 @@ window.Widgets = (function () {
     };
   }
 
+  function donutRing(container, config) {
+    const canvas = el('canvas', 'donut-ring-canvas');
+    canvas.style.width = '100%';
+    canvas.style.height = '100%';
+    container.appendChild(canvas);
+
+    return {
+      update(data) {
+        C.donut(canvas, data, config);
+      }
+    };
+  }
+
   // ===========================================================================
   // Factory
   // ===========================================================================
@@ -694,6 +707,7 @@ window.Widgets = (function () {
       case 'sankey':         return sankey(container, config);
       case 'table':          return table(container, config);
       case 'treemap':        return treemap(container, config);
+      case 'donut-ring':     return donutRing(container, config);
       default:
         console.warn('[widgets] unknown type:', type);
         container.textContent = 'Unknown widget: ' + type;
