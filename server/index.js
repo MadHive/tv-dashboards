@@ -187,9 +187,9 @@ const app = new Elysia()
         response.headers.set('Pragma', 'no-cache');
         response.headers.set('Expires', '0');
       }
-      // Static assets: 1 hour cache, immutable
+      // Static assets: 1 hour cache, must-revalidate (not immutable — version bump on deploy)
       else if (pathname.startsWith('/app/assets/') || pathname.startsWith('/css/') || pathname.startsWith('/js/')) {
-        response.headers.set('Cache-Control', 'public, max-age=3600, immutable');
+        response.headers.set('Cache-Control', 'public, max-age=3600, must-revalidate');
       }
       // Dashboard config: 1 minute cache with revalidation
       else if (pathname === '/api/config') {
@@ -273,6 +273,12 @@ const app = new Elysia()
   }))
   .get('/js/studio-canvas.js', () => new Response(readFileSync(join(publicDir, 'js/studio-canvas.js'), 'utf8'), {
     headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }
+  }))
+  .get('/js/importer.js', () => new Response(readFileSync(join(publicDir, 'js/importer.js'), 'utf8'), {
+    headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' }
+  }))
+  .get('/css/importer.css', () => new Response(readFileSync(join(publicDir, 'css/importer.css'), 'utf8'), {
+    headers: { 'content-type': 'text/css; charset=utf-8', 'Cache-Control': 'no-cache' }
   }))
 
   .use(staticPlugin({ assets: publicDir, prefix: '/' }))
