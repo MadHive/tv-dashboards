@@ -67,6 +67,12 @@ computed:
     function: coreClusterSize
     widgetTypes:
       - stat-card
+  - id: data-pipeline-flow
+    name: Data Pipeline Flow
+    description: End-to-end data pipeline stages with throughput and latency metrics
+    function: pipelineFlow
+    widgetTypes:
+      - pipeline-flow
   - id: pipeline-flow
     name: End-to-End Data Flow
     description: Pipeline stage flow with ingest, transform, store, process, deliver, report rates
@@ -130,7 +136,7 @@ bigquery:
     sql: SELECT COUNT(*) as value FROM test_table
     widgetTypes:
       - big-number
-    updatedAt: '2026-03-03T19:28:04.405Z'
+    updatedAt: '2026-03-09T20:06:13.774Z'
     createdAt: '2026-02-26T17:39:15.018Z'
   - id: update-test
     name: Updated Name
@@ -138,42 +144,42 @@ bigquery:
     widgetTypes:
       - big-number
       - stat-card
-    updatedAt: '2026-03-03T19:28:04.412Z'
+    updatedAt: '2026-03-09T20:06:13.782Z'
     createdAt: '2026-02-26T17:39:15.024Z'
   - id: retrieve-test
     name: Retrieve Test
     sql: SELECT * FROM test
     widgetTypes:
       - big-number
-    updatedAt: '2026-03-03T19:28:04.415Z'
+    updatedAt: '2026-03-09T20:06:13.785Z'
     createdAt: '2026-02-26T17:39:15.026Z'
   - id: list-test-1
     name: List Test 1
     sql: SELECT 1
     widgetTypes:
       - big-number
-    updatedAt: '2026-03-03T19:28:04.419Z'
+    updatedAt: '2026-03-09T20:06:13.789Z'
     createdAt: '2026-02-26T17:39:15.028Z'
   - id: list-test-2
     name: List Test 2
     sql: SELECT 2
     widgetTypes:
       - stat-card
-    updatedAt: '2026-03-03T19:28:04.421Z'
+    updatedAt: '2026-03-09T20:06:13.792Z'
     createdAt: '2026-02-26T17:39:15.028Z'
   - id: backup-test
     name: Backup Test
     sql: SELECT 1
     widgetTypes:
       - big-number
-    updatedAt: '2026-03-03T19:28:04.434Z'
+    updatedAt: '2026-03-09T20:06:13.802Z'
     createdAt: '2026-02-26T17:39:15.032Z'
   - id: persist-test
     name: Persistence Test
     sql: SELECT COUNT(*) as value
     widgetTypes:
       - big-number
-    updatedAt: '2026-03-03T19:28:04.437Z'
+    updatedAt: '2026-03-09T20:06:13.805Z'
     createdAt: '2026-02-26T17:39:15.033Z'
   - id: delivery-geo-map
     name: Campaign Delivery Geo Map
@@ -271,7 +277,7 @@ gcp:
     widgetTypes:
       - big-number
       - line-chart
-    updatedAt: '2026-03-03T19:28:04.407Z'
+    updatedAt: '2026-03-09T20:06:13.777Z'
     createdAt: '2026-02-26T17:39:15.022Z'
   - id: monitoring-googleapis-com-uptime-check-request-latency-1772562367145
     name: Request latency

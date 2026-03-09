@@ -242,7 +242,8 @@ dashboards:
           colSpan: 1
           row: 1
           rowSpan: 1
-        source: gcp
+        queryId: data-pipeline-flow
+        source: computed
         title: End-to-End Data Flow
         type: pipeline-flow
   - id: rtb-infra
