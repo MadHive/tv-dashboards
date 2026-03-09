@@ -217,11 +217,39 @@ export class GCPDataSource extends DataSource {
       },
       'line-chart': (ts) => {
         const { spark } = require('../gcp-metrics.js');
+        if (!Array.isArray(ts) || ts.length === 0) {
+          return { series: [], timestamps: [], ...(options.timePeriod && { timePeriod: options.timePeriod }) };
+        }
+
+        // Sort by descending point count then total value, cap at 8 series
+        const scored = ts.map(series => {
+          const pts = series.points || [];
+          const total = pts.reduce((s, p) => s + Number(p.value?.doubleValue || p.value?.int64Value || 0), 0);
+          return { series, pointCount: pts.length, total };
+        });
+        scored.sort((a, b) => b.pointCount - a.pointCount || b.total - a.total);
+        const top = scored.slice(0, 8).map(s => s.series);
+
+        // Build one series per GCP time series
+        const series = top.map((singleTs, idx) => {
+          const resourceLabels = (singleTs.resource && singleTs.resource.labels) || {};
+          const metricLabels   = (singleTs.metric   && singleTs.metric.labels)   || {};
+          const rawLabel =
+            resourceLabels.service_name   ||
+            metricLabels.subscription_id  ||
+            resourceLabels.cluster_name   ||
+            Object.values(resourceLabels)[0] ||
+            Object.values(metricLabels)[0]   ||
+            `Series ${idx + 1}`;
+          const label = String(rawLabel).slice(0, 20);
+          return {
+            label,
+            values: spark([singleTs], 30),
+          };
+        });
+
         return {
-          series: [{
-            label: 'Value',
-            data: spark(ts, 30)
-          }],
+          series,
           timestamps: [],
           ...(options.timePeriod && { timePeriod: options.timePeriod })
         };
