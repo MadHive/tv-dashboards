@@ -215,18 +215,24 @@
         });
         const data = await res.json();
 
-        if (!data.success) { this._setStatus('error', data.error || 'Query failed'); return; }
+        if (!data.success) {
+          this._setStatus('error', data.error || 'Query failed');
+          this._showPreviewMessage('GCP error: ' + (data.error || 'Query failed'));
+          return;
+        }
 
         this._lastRaw = data.rawSeries || [];
 
         if (!this._lastRaw.length) {
           this._setStatus('warn', 'No data for this time window');
+          this._showPreviewMessage('No data returned for this metric in the selected time window.\nTry a longer window or a different metric.');
         } else {
           this._setStatus('ok', data.seriesCount + ' series \u00b7 ' + data.executionMs + 'ms');
+          this._renderPreviewWidget(data.widgetData, widgetType);
         }
-        this._renderPreviewWidget(data.widgetData, widgetType);
       } catch (err) {
         this._setStatus('error', err.message);
+        this._showPreviewMessage('Error: ' + err.message);
       }
     }
 
@@ -265,9 +271,25 @@
       this._renderPreviewWidget(widgetData, type);
     }
 
+    _showPreviewMessage(text) {
+      if (this._widget?.destroy) this._widget.destroy();
+      this._widget = null;
+      if (this._previewArea) {
+        const p = document.createElement('div');
+        p.className = 'imp-empty';
+        p.style.whiteSpace = 'pre-line';
+        p.textContent = text;
+        this._previewArea.textContent = '';
+        this._previewArea.appendChild(p);
+      }
+    }
+
     _renderPreviewWidget(widgetData, widgetType) {
       this._clearWidgetCanvas();
-      if (!widgetData || !window.Widgets) return;
+      if (!widgetData || !window.Widgets) {
+        this._showPreviewMessage('No data available.');
+        return;
+      }
 
       const wrap = document.createElement('div');
       wrap.className = 'imp-preview-widget-wrap';
