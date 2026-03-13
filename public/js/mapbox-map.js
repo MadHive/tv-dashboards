@@ -177,6 +177,12 @@ window.MapboxUSAMap = (function () {
           });
           if (this._data) this._applyData(this._data);
         });
+
+        // Auto-recover from GPU/WebGL context loss (e.g. after long uptime)
+        this._map.on('webglcontextlost', () => {
+          console.warn('[MapboxUSAMap] WebGL context lost — reloading page to recover');
+          setTimeout(() => location.reload(), 2000);
+        });
       } catch (err) {
         console.error('[MapboxUSAMap] init failed:', err);
       }
