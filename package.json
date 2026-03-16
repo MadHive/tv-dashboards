@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "drizzle-kit": "^0.31.9",
-    "jsdom": "^28.1.0",
+    "jsdom": "^29.0.0",
     "whatwg-url": "16.0.1"
   }
 }
