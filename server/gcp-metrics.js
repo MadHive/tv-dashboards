@@ -1472,6 +1472,7 @@ export async function campaignDeliveryMapIHeartWidget(params = {}, widgetConfig 
     if (st) {
       if (!stateActivity[st]) stateActivity[st] = { impressions: 0, bids: 0, campaigns: 0 };
       stateActivity[st].impressions += z.impressions;
+      stateActivity[st].bids        += z.clicks * 50;
       stateActivity[st].campaigns   += z.zips;
     }
     if (z.lat && z.lon) {
@@ -1488,9 +1489,10 @@ export async function campaignDeliveryMapIHeartWidget(params = {}, widgetConfig 
 
   hotspots.sort((a, b) => b.impressions - a.impressions);
 
+  // Note: hotspots_z5 and regions are omitted — iHeart dashboard uses dots mode only (no heatmap layer needed)
   const totals = {
     impressions: hotspots.reduce((s, h) => s + h.impressions, 0),
-    bids:        hotspots.reduce((s, h) => s + (h.clicks * 50), 0),
+    bids:        hotspots.reduce((s, h) => s + (h.clicks * 50), 0), // clicks-based proxy; no Cloud Run data for client-scoped queries
     services:    1,
   };
 
