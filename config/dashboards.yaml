@@ -627,6 +627,20 @@ dashboards:
       columns: 1
       rows: 1
       gap: 0
+    clientBranding:
+      logoText: iHEART
+      logoSub: MEDIA
+      bg: '#0d0005'
+      bgSurface: '#150008'
+      bgCard: '#200010'
+      bgCardAlt: '#2a0015'
+      border: '#4a0015'
+      borderLit: '#8b0020'
+      accent: '#E30C3A'
+      accentDim: 'rgba(198,0,43,0.15)'
+      t2: '#e8c0c8'
+      t3: '#9e6070'
+      dotColor: '#3d0010'
     widgets:
       - id: usa-delivery-map-iheart
         type: usa-map-gl
@@ -651,6 +665,20 @@ dashboards:
       columns: 4
       rows: 2
       gap: 14
+    clientBranding:
+      logoText: iHEART
+      logoSub: MEDIA
+      bg: '#0d0005'
+      bgSurface: '#150008'
+      bgCard: '#200010'
+      bgCardAlt: '#2a0015'
+      border: '#4a0015'
+      borderLit: '#8b0020'
+      accent: '#E30C3A'
+      accentDim: 'rgba(198,0,43,0.15)'
+      t2: '#e8c0c8'
+      t3: '#9e6070'
+      dotColor: '#3d0010'
     widgets:
       - id: iheart-feeds-delivered
         type: stat-card

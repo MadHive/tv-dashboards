@@ -145,11 +145,46 @@
       document.getElementById('page-title').textContent = dash.name;
       document.getElementById('page-subtitle').textContent = dash.subtitle ? '/ ' + dash.subtitle : '';
 
+      // apply or restore client branding (colours + logo)
+      this._applyClientBranding(dash.clientBranding || null);
+
       // restart rotation progress bar
       this.resetRotationBar();
 
       // immediate data refresh for new page
       this.refreshData();
+    }
+
+    _applyClientBranding(brand) {
+      const r = document.documentElement;
+      const logoText = document.querySelector('.logo-text');
+      const logoSub  = document.querySelector('.logo-sub');
+
+      if (brand) {
+        const set = (v, k) => v && r.style.setProperty(k, v);
+        set(brand.bg,        '--bg');
+        set(brand.bgSurface, '--bg-surface');
+        set(brand.bgCard,    '--bg-card');
+        set(brand.bgCardAlt, '--bg-card-alt');
+        set(brand.border,    '--border');
+        set(brand.borderLit, '--border-lit');
+        set(brand.accent,    '--accent');
+        set(brand.accentDim, '--accent-dim');
+        set(brand.t2,        '--t2');
+        set(brand.t3,        '--t3');
+        set(brand.dotColor,  '--dot-color');
+        if (logoText) logoText.textContent = brand.logoText || logoText.textContent;
+        if (logoSub)  logoSub.textContent  = brand.logoSub  || logoSub.textContent;
+        document.body.dataset.clientBrand = 'active';
+      } else {
+        ['--bg','--bg-surface','--bg-card','--bg-card-alt',
+         '--border','--border-lit','--accent','--accent-dim',
+         '--t2','--t3','--dot-color'].forEach(v => r.style.removeProperty(v));
+        const t = this.config.global?.title || '';
+        if (logoText) logoText.textContent = t.split(' ')[0] || 'MADHIVE';
+        if (logoSub)  logoSub.textContent  = t.split(' ').slice(1).join(' ') || 'PLATFORM';
+        delete document.body.dataset.clientBrand;
+      }
     }
 
     // ---- rotation ----
