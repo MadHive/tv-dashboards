@@ -343,6 +343,65 @@ async function getDeliveryGeoZ5(days = 7, minImpressions = 500) {
   }
 }
 
+// ── iHeart-specific BigQuery delivery geo (filtered via meta_inst join) ──
+let _bqIHeartGeoCache = null;
+const BQ_IHEART_GEO_CACHE_TTL = 5 * 60 * 1000;
+
+async function getDeliveryGeoIHeart(days = 7, minImpressions = 50) {
+  const cacheKey = 'iheart:' + days + ':' + minImpressions;
+  if (_bqIHeartGeoCache && _bqIHeartGeoCache.key === cacheKey && Date.now() - _bqIHeartGeoCache.time < BQ_IHEART_GEO_CACHE_TTL) return _bqIHeartGeoCache.data;
+
+  try {
+    const sql = `
+      SELECT
+        SUBSTR(b.postal, 1, 3) AS zip3,
+        mg.region.code AS state,
+        ROUND(SUM(b.IM * z.internal_point_lat) / SUM(b.IM), 3) AS lat,
+        ROUND(SUM(b.IM * z.internal_point_lon) / SUM(b.IM), 3) AS lon,
+        SUM(b.IM) AS impressions,
+        SUM(b.CL) AS clicks,
+        COUNT(DISTINCT b.postal) AS zip_count,
+        ANY_VALUE(mg.city.name) AS city,
+        ANY_VALUE(mg.dma.name) AS dma
+      FROM \`mad-data.reporting.billable_agg\` b
+      JOIN \`mad-data.reporting.meta_inst\` mi ON b.inst_id_b64 = mi.inst_id_b64
+      LEFT JOIN \`mad-data.reporting.meta_geo\` mg
+        ON b.postal = mg.postal_code AND mg.country_code = 'US'
+      LEFT JOIN \`mad-data.public_data.zip_codes\` z
+        ON b.postal = z.zip_code
+      WHERE b.date_nyc >= DATE_SUB(CURRENT_DATE(), INTERVAL ${days} DAY)
+        AND b.country = 'US'
+        AND b.postal IS NOT NULL AND b.postal != ''
+        AND z.internal_point_lat IS NOT NULL
+        AND mi.client.name = 'iHeart'
+      GROUP BY 1, 2
+      HAVING impressions > ${minImpressions}
+      ORDER BY impressions DESC
+      LIMIT 500
+    `;
+
+    const [rows] = await bq.query({ query: sql, location: 'US' });
+
+    const results = rows.map(r => ({
+      zip3:        r.zip3,
+      state:       r.state,
+      lat:         r.lat,
+      lon:         r.lon,
+      impressions: Number(r.impressions),
+      clicks:      Number(r.clicks),
+      zips:        Number(r.zip_count),
+      city:        r.city || null,
+      dma:         r.dma || null,
+    }));
+    _bqIHeartGeoCache = { key: cacheKey, time: Date.now(), data: results };
+    logger.info(`[bq] iHeart delivery geo: ${results.length} zip3 prefixes loaded`);
+    return _bqIHeartGeoCache.data;
+  } catch (err) {
+    logger.error(`[bq] iHeart delivery geo query failed: ${err.message}`);
+    return _bqIHeartGeoCache ? _bqIHeartGeoCache.data : [];
+  }
+}
+
 // ── Pipeline sparkline history (persists across refreshes) ──
 const pipelineHistory = {
   ingest:    [], transform: [], store: [],
@@ -1379,6 +1438,71 @@ export async function campaignDeliveryMapWidget(params = {}, widgetConfig = {}) 
     label: (h.zip3 || '?') + ' (' + (h.state || '?') + ')',
     value: h.impressions || 0,
   }));
+  return { data, rawData: topHotspots };
+}
+
+export async function campaignDeliveryMapIHeartWidget(params = {}, widgetConfig = {}) {
+  const wc = {
+    id:        widgetConfig.id || params.widgetId || 'usa-delivery-map-iheart',
+    mapConfig: {
+      region:         params.region         || widgetConfig.mapConfig?.region,
+      timeWindow:     params.timeWindow     || widgetConfig.mapConfig?.timeWindow,
+      minImpressions: params.minImpressions || widgetConfig.mapConfig?.minImpressions,
+    },
+  };
+  const timeWindow = Math.max(1, Math.min(90, parseInt(wc.mapConfig.timeWindow) || 7));
+  const minImp     = parseInt(wc.mapConfig.minImpressions) >= 0 ? parseInt(wc.mapConfig.minImpressions) : 50;
+  const region     = wc.mapConfig.region || 'full';
+
+  const REGION_STATE_SETS = {
+    northeast: new Set(['ME','VT','NH','MA','RI','CT','NY','NJ','PA','DE','MD','DC','VA','WV']),
+    southeast: new Set(['NC','SC','GA','FL','AL','MS','TN','KY']),
+    northwest: new Set(['WA','OR','ID','MT','WY','ND','SD','MN','WI','MI']),
+    southwest: new Set(['CA','NV','AZ','NM','UT','CO','TX','OK','KS','NE']),
+  };
+  const regionStates = REGION_STATE_SETS[region] || null;
+
+  const geoData = await getDeliveryGeoIHeart(timeWindow, minImp);
+
+  const stateActivity = {};
+  const hotspots      = [];
+
+  (geoData || []).forEach(z => {
+    const st = z.state;
+    if (st) {
+      if (!stateActivity[st]) stateActivity[st] = { impressions: 0, bids: 0, campaigns: 0 };
+      stateActivity[st].impressions += z.impressions;
+      stateActivity[st].bids        += z.clicks * 50;
+      stateActivity[st].campaigns   += z.zips;
+    }
+    if (z.lat && z.lon) {
+      if (!regionStates || regionStates.has(z.state)) {
+        const snapped = snapToLand(z.lat, z.lon, z.state);
+        hotspots.push({
+          zip3: z.zip3, lat: snapped.lat, lon: snapped.lon,
+          impressions: z.impressions, clicks: z.clicks,
+          state: z.state, city: z.city || null,
+        });
+      }
+    }
+  });
+
+  hotspots.sort((a, b) => b.impressions - a.impressions);
+
+  // Note: hotspots_z5 and regions are omitted — iHeart dashboard uses dots mode only (no heatmap layer needed)
+  const totals = {
+    impressions: hotspots.reduce((s, h) => s + h.impressions, 0),
+    bids:        hotspots.reduce((s, h) => s + (h.clicks * 50), 0), // clicks-based proxy; no Cloud Run data for client-scoped queries
+    services:    1,
+  };
+
+  const data = { states: stateActivity, hotspots, totals, regions: {} };
+
+  const topHotspots = hotspots.slice(0, 20).map(h => ({
+    label: (h.zip3 || '?') + ' (' + (h.state || '?') + ')',
+    value: h.impressions || 0,
+  }));
+
   return { data, rawData: topHotspots };
 }
 

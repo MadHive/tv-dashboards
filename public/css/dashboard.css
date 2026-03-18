@@ -21,6 +21,7 @@
   --bg-card-alt: #1F0E42;
   --border:      #2E1860;
   --border-lit:  #4A2880;
+  --dot-color:   #2E1860;
 
   /* ── semantic accents ── */
   --accent:  #FDA4D4;
@@ -65,7 +66,7 @@ body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background-image: radial-gradient(circle, #2E1860 1px, transparent 1px);
+  background-image: radial-gradient(circle, var(--dot-color) 1px, transparent 1px);
   background-size: 40px 40px;
   opacity: 0.3;
   pointer-events: none;
@@ -1027,4 +1028,5 @@ body { animation: pageLoad 0.6s ease; }
   background: rgba(251, 113, 133, 0.2);
   color: #FB7185;
 }
+
 

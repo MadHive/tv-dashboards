@@ -64,9 +64,22 @@ window.MapboxUSAMap = (function () {
   // ── Config defaults + color schemes ──────────────────────────────────────
 
   var SCHEME_COLORS = {
-    brand: { particleNormal: '#67E8F9', particleFast: '#FDA4D4', stateGlowHigh: '#FDA4D4' },
-    cool:  { particleNormal: '#60A5FA', particleFast: '#FFFFFF', stateGlowHigh: '#e0f2fe' },
-    warm:  { particleNormal: '#fbbf24', particleFast: '#FF6B35', stateGlowHigh: '#fef08a' },
+    brand:  { particleNormal: '#67E8F9', particleFast: '#FDA4D4', stateGlowHigh: '#FDA4D4', choropleth: null },
+    cool:   { particleNormal: '#60A5FA', particleFast: '#FFFFFF', stateGlowHigh: '#e0f2fe', choropleth: null },
+    warm:   { particleNormal: '#fbbf24', particleFast: '#FF6B35', stateGlowHigh: '#fef08a', choropleth: null },
+    iheart: {
+      particleNormal: '#FF6B8A', particleFast: '#FFAABB', stateGlowHigh: '#FFAABB',
+      choropleth: [
+        'interpolate', ['linear'], ['get', 'intensity'],
+        0,    '#0d0005',
+        0.10, '#2d000e',
+        0.28, '#6b001a',
+        0.50, '#C6002B',
+        0.70, '#E30C3A',
+        0.88, '#FF4D6B',
+        1.0,  '#FF8FA3',
+      ],
+    },
   };
 
   function buildMapConfig(userConfig) {
@@ -77,6 +90,7 @@ window.MapboxUSAMap = (function () {
       showLeaderboard: true,
       mapStyle:        'mapbox',
       zoomViz:         'dots',
+      clientLogo:      null,
       ...(userConfig || {}),
     };
   }
@@ -844,6 +858,10 @@ window.MapboxUSAMap = (function () {
 
       if (this._map.getLayer('hotspot-labels'))
         this._map.setPaintProperty('hotspot-labels', 'text-color', s.particleNormal + 'aa');
+
+      if (this._map.getLayer('states-fill')) {
+        this._map.setPaintProperty('states-fill', 'fill-color', s.choropleth || CHOROPLETH);
+      }
     }
 
     _applyZoomViz(mode) {
@@ -997,6 +1015,18 @@ window.MapboxUSAMap = (function () {
       this._lbHeaderTotal.className   = 'mgl-lb-header-total';
       this._lbHeaderTotal.textContent = '\u2014';
       lb.insertBefore(this._lbHeaderTotal, lb.firstChild);
+
+      // Client logo overlay (top-left corner)
+      if (this._cfg.clientLogo) {
+        const logoWrap = document.createElement('div');
+        logoWrap.className = 'mgl-client-logo';
+        const logoImg = document.createElement('img');
+        logoImg.src = this._cfg.clientLogo;
+        logoImg.alt = '';
+        logoImg.onerror = () => logoWrap.remove();
+        logoWrap.appendChild(logoImg);
+        this._wrap.appendChild(logoWrap);
+      }
 
       // Bottom-left impressions total overlay
       const overlay = document.createElement('div');

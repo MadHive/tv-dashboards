@@ -17,12 +17,15 @@ const WidgetConfig = t.Object({
   thresholds: t.Optional(t.Object({
     warning: t.Optional(t.Number()), critical: t.Optional(t.Number()),
   })),
+  mglConfig:  t.Optional(t.Any()),
+  mapConfig:  t.Optional(t.Any()),
 });
 
 const DashboardShape = t.Object({
   id: t.String(), name: t.String(),
   subtitle: t.Optional(t.String()), icon: t.Optional(t.String()),
   grid: GridSchema, widgets: t.Array(WidgetConfig),
+  clientBranding: t.Optional(t.Any()),
 });
 
 export const dashboardModels = new Elysia({ name: 'dashboard.models' })

@@ -619,6 +619,128 @@ dashboards:
         source: gcp
         title: Bigtable Tables by Size
         type: bar-chart
+  - id: iheart-delivery-map
+    name: iHeart Media
+    subtitle: Delivery
+    icon: map
+    grid:
+      columns: 1
+      rows: 1
+      gap: 0
+    clientBranding:
+      logoText: iHEART
+      logoSub: MEDIA
+      bg: '#0d0005'
+      bgSurface: '#150008'
+      bgCard: '#200010'
+      bgCardAlt: '#2a0015'
+      border: '#4a0015'
+      borderLit: '#8b0020'
+      accent: '#E30C3A'
+      accentDim: 'rgba(198,0,43,0.15)'
+      t2: '#e8c0c8'
+      t3: '#9e6070'
+      dotColor: '#3d0010'
+    widgets:
+      - id: usa-delivery-map-iheart
+        type: usa-map-gl
+        title: ''
+        source: computed
+        queryId: campaign-delivery-map-iheart
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        mglConfig:
+          colorScheme: iheart
+          showLeaderboard: true
+          zoomViz: dots
+          clientLogo: /img/iheart-logo.svg
+  - id: iheart-metrics
+    name: iHeart Media
+    subtitle: Campaign Health
+    icon: chart-bar
+    grid:
+      columns: 4
+      rows: 2
+      gap: 14
+    clientBranding:
+      logoText: iHEART
+      logoSub: MEDIA
+      bg: '#0d0005'
+      bgSurface: '#150008'
+      bgCard: '#200010'
+      bgCardAlt: '#2a0015'
+      border: '#4a0015'
+      borderLit: '#8b0020'
+      accent: '#E30C3A'
+      accentDim: 'rgba(198,0,43,0.15)'
+      t2: '#e8c0c8'
+      t3: '#9e6070'
+      dotColor: '#3d0010'
+    widgets:
+      - id: iheart-feeds-delivered
+        type: stat-card
+        title: Data Feed Deliveries
+        source: gcp
+        queryId: iheart-datafeeds-delivered
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: iheart-export-failures-widget
+        type: stat-card
+        title: Export Failures
+        source: gcp
+        queryId: iheart-export-failures
+        position:
+          col: 2
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: iheart-win-rate-stat
+        type: big-number
+        title: Win Rate (p50)
+        source: gcp
+        queryId: iheart-win-rate
+        position:
+          col: 3
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        unit: '%'
+      - id: iheart-pacing-stat
+        type: big-number
+        title: Pacing Ratio (p50)
+        source: gcp
+        queryId: roger-pacing-ratio
+        position:
+          col: 4
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: iheart-win-rate-chart
+        type: line-chart
+        title: iHeart Win Rate (p50)
+        source: gcp
+        queryId: iheart-win-rate
+        position:
+          col: 1
+          row: 2
+          colSpan: 2
+          rowSpan: 1
+      - id: iheart-pacing-chart
+        type: line-chart
+        title: Pacing Ratio (p50)
+        source: gcp
+        queryId: roger-pacing-ratio
+        position:
+          col: 3
+          row: 2
+          colSpan: 2
+          rowSpan: 1
 global:
   refresh_interval: 8
   rotation_interval: 30

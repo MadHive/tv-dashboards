@@ -61,6 +61,14 @@ computed:
       widgetId: usa-delivery-map-sw
     widgetTypes:
       - usa-map
+  - id: campaign-delivery-map-iheart
+    name: Campaign Delivery Map (iHeart)
+    description: iHeart-only delivery heatmap — BigQuery impressions filtered to iHeart org via meta_inst join
+    function: campaignDeliveryMapIHeartWidget
+    params:
+      widgetId: usa-delivery-map-iheart
+    widgetTypes:
+      - usa-map-gl
   - id: core-cluster-size
     name: Core Cluster Nodes
     description: Total active containers across bidder, roger, and memcached
@@ -996,6 +1004,46 @@ gcp:
     filters: resource.type="k8s_container"
     updatedAt: '2026-03-04T17:27:52.824Z'
     createdAt: '2026-03-04T17:27:52.824Z'
+  - id: iheart-datafeeds-delivered
+    name: iHeart Data Feed Deliveries
+    metricType: logging.googleapis.com/user/reporter-datafeeds-delivered
+    project: mad-master
+    timeWindow: 60
+    aggregation:
+      perSeriesAligner: ALIGN_SUM
+      crossSeriesReducer: REDUCE_SUM
+      alignmentPeriod:
+        seconds: 3600
+    filters: 'resource.type="cloud_run_revision"'
+    widgetTypes:
+      - stat-card
+  - id: iheart-export-failures
+    name: iHeart Export Failures
+    metricType: logging.googleapis.com/user/reporter-failed-export
+    project: mad-master
+    timeWindow: 60
+    aggregation:
+      perSeriesAligner: ALIGN_SUM
+      crossSeriesReducer: REDUCE_SUM
+      alignmentPeriod:
+        seconds: 3600
+    filters: 'resource.type="cloud_run_revision"'
+    widgetTypes:
+      - stat-card
+  - id: iheart-win-rate
+    name: iHeart Win Rate (p50)
+    metricType: workload.googleapis.com/mhive/roger/campaign_win_rate
+    project: mad-master
+    timeWindow: 60
+    aggregation:
+      perSeriesAligner: ALIGN_DELTA
+      crossSeriesReducer: REDUCE_PERCENTILE_50
+      alignmentPeriod:
+        seconds: 60
+    filters: 'metric.parent_org_id="popErPc0MjpPi1i94r9M0gBNFrT8"'
+    widgetTypes:
+      - big-number
+      - line-chart
 vulntrack:
   - id: vulntrack-security-posture
     name: Security Posture Overview
