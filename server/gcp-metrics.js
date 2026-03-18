@@ -374,14 +374,14 @@ async function getDeliveryGeoByClient(clientName, days = 7, minImpressions = 50)
         AND b.country = 'US'
         AND b.postal IS NOT NULL AND b.postal != ''
         AND z.internal_point_lat IS NOT NULL
-        AND mi.client.name = '\${clientName}'
+        AND mi.client.name = @clientName
       GROUP BY 1, 2
       HAVING impressions > \${minImpressions}
       ORDER BY impressions DESC
       LIMIT 500
     `;
 
-    const [rows] = await bq.query({ query: sql, location: 'US' });
+    const [rows] = await bq.query({ query: sql, params: { clientName }, location: 'US' });
 
     const results = rows.map(r => ({
       zip3:        r.zip3,
@@ -1454,9 +1454,8 @@ export async function campaignDeliveryMapClientWidget(params = {}, widgetConfig 
   }
 
   const timeWindow = Math.max(1, Math.min(90, parseInt(params.timeWindow || widgetConfig.mapConfig?.timeWindow) || 7));
-  const minImp     = parseInt(params.minImpressions ?? widgetConfig.mapConfig?.minImpressions) >= 0
-    ? parseInt(params.minImpressions ?? widgetConfig.mapConfig?.minImpressions)
-    : 50;
+  const _rawMinImp = parseInt(params.minImpressions ?? widgetConfig.mapConfig?.minImpressions);
+  const minImp     = _rawMinImp >= 0 ? _rawMinImp : 50;
   const region     = params.region || widgetConfig.mapConfig?.region || 'full';
 
   const REGION_STATE_SETS = {
