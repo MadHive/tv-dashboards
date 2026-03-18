@@ -1023,6 +1023,7 @@ window.MapboxUSAMap = (function () {
         const logoImg = document.createElement('img');
         logoImg.src = this._cfg.clientLogo;
         logoImg.alt = '';
+        logoImg.onerror = () => logoWrap.remove();
         logoWrap.appendChild(logoImg);
         this._wrap.appendChild(logoWrap);
       }

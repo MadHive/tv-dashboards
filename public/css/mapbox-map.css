@@ -306,3 +306,21 @@
   filter: drop-shadow(0 0 12px rgba(103,232,249,0.85));
   cursor: default;
 }
+
+/* Client branding overlay on full-screen map widget */
+.mgl-client-logo {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 10;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  padding: 8px 14px;
+}
+.mgl-client-logo img {
+  height: 32px;
+  width: auto;
+  display: block;
+  opacity: 0.9;
+}

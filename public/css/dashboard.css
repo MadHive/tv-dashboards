@@ -1028,21 +1028,4 @@ body { animation: pageLoad 0.6s ease; }
   color: #FB7185;
 }
 
-/* Client branding overlay on full-screen map widget */
-.mgl-client-logo {
-  position: absolute;
-  top: 18px;
-  left: 18px;
-  z-index: 10;
-  pointer-events: none;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 8px;
-  padding: 8px 14px;
-}
-.mgl-client-logo img {
-  height: 32px;
-  width: auto;
-  display: block;
-  opacity: 0.9;
-}
 
