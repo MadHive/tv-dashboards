@@ -63,10 +63,56 @@ computed:
       - usa-map
   - id: campaign-delivery-map-iheart
     name: Campaign Delivery Map (iHeart)
-    description: iHeart-only delivery heatmap — BigQuery impressions filtered to iHeart org via meta_inst join
-    function: campaignDeliveryMapIHeartWidget
+    description: iHeart-only delivery heatmap via meta_inst join
+    function: campaignDeliveryMapClientWidget
     params:
+      clientName: iHeart
       widgetId: usa-delivery-map-iheart
+    widgetTypes:
+      - usa-map-gl
+  - id: campaign-delivery-map-fox
+    name: Campaign Delivery Map (FOX)
+    description: FOX-only delivery heatmap via meta_inst join
+    function: campaignDeliveryMapClientWidget
+    params:
+      clientName: FOX
+      widgetId: usa-delivery-map-fox
+    widgetTypes:
+      - usa-map-gl
+  - id: campaign-delivery-map-hearst
+    name: Campaign Delivery Map (Hearst)
+    description: Hearst-only delivery heatmap via meta_inst join
+    function: campaignDeliveryMapClientWidget
+    params:
+      clientName: Hearst
+      widgetId: usa-delivery-map-hearst
+    widgetTypes:
+      - usa-map-gl
+  - id: campaign-delivery-map-nexstar
+    name: Campaign Delivery Map (Nexstar)
+    description: Nexstar-only delivery heatmap via meta_inst join
+    function: campaignDeliveryMapClientWidget
+    params:
+      clientName: Nexstar Media Group
+      widgetId: usa-delivery-map-nexstar
+    widgetTypes:
+      - usa-map-gl
+  - id: campaign-delivery-map-scripps
+    name: Campaign Delivery Map (EW Scripps)
+    description: EW Scripps-only delivery heatmap via meta_inst join
+    function: campaignDeliveryMapClientWidget
+    params:
+      clientName: EW Scripps
+      widgetId: usa-delivery-map-scripps
+    widgetTypes:
+      - usa-map-gl
+  - id: campaign-delivery-map-cox
+    name: Campaign Delivery Map (Cox)
+    description: Cox-only delivery heatmap via meta_inst join
+    function: campaignDeliveryMapClientWidget
+    params:
+      clientName: Cox
+      widgetId: usa-delivery-map-cox
     widgetTypes:
       - usa-map-gl
   - id: core-cluster-size
@@ -1041,6 +1087,76 @@ gcp:
       alignmentPeriod:
         seconds: 60
     filters: 'metric.parent_org_id="popErPc0MjpPi1i94r9M0gBNFrT8"'
+    widgetTypes:
+      - big-number
+      - line-chart
+  - id: fox-win-rate
+    name: FOX Win Rate (p50)
+    metricType: workload.googleapis.com/mhive/roger/campaign_win_rate
+    project: mad-master
+    timeWindow: 60
+    aggregation:
+      perSeriesAligner: ALIGN_DELTA
+      crossSeriesReducer: REDUCE_PERCENTILE_50
+      alignmentPeriod:
+        seconds: 60
+    filters: 'metric.parent_org_id="KnfaABPhsYmEii2PRGC5HDNrHURa"'
+    widgetTypes:
+      - big-number
+      - line-chart
+  - id: hearst-win-rate
+    name: Hearst Win Rate (p50)
+    metricType: workload.googleapis.com/mhive/roger/campaign_win_rate
+    project: mad-master
+    timeWindow: 60
+    aggregation:
+      perSeriesAligner: ALIGN_DELTA
+      crossSeriesReducer: REDUCE_PERCENTILE_50
+      alignmentPeriod:
+        seconds: 60
+    filters: 'metric.parent_org_id="yfSFThMib3rB0bnnSdrrM7tvMSqF"'
+    widgetTypes:
+      - big-number
+      - line-chart
+  - id: nexstar-win-rate
+    name: Nexstar Win Rate (p50)
+    metricType: workload.googleapis.com/mhive/roger/campaign_win_rate
+    project: mad-master
+    timeWindow: 60
+    aggregation:
+      perSeriesAligner: ALIGN_DELTA
+      crossSeriesReducer: REDUCE_PERCENTILE_50
+      alignmentPeriod:
+        seconds: 60
+    filters: 'metric.parent_org_id="N6WSKUog3hq2PMHh4sTsmiADteE5"'
+    widgetTypes:
+      - big-number
+      - line-chart
+  - id: scripps-win-rate
+    name: EW Scripps Win Rate (p50)
+    metricType: workload.googleapis.com/mhive/roger/campaign_win_rate
+    project: mad-master
+    timeWindow: 60
+    aggregation:
+      perSeriesAligner: ALIGN_DELTA
+      crossSeriesReducer: REDUCE_PERCENTILE_50
+      alignmentPeriod:
+        seconds: 60
+    filters: 'metric.parent_org_id="oQRQL2OLWEc66UrAOPEFdE2FovnU"'
+    widgetTypes:
+      - big-number
+      - line-chart
+  - id: cox-win-rate
+    name: Cox Win Rate (p50)
+    metricType: workload.googleapis.com/mhive/roger/campaign_win_rate
+    project: mad-master
+    timeWindow: 60
+    aggregation:
+      perSeriesAligner: ALIGN_DELTA
+      crossSeriesReducer: REDUCE_PERCENTILE_50
+      alignmentPeriod:
+        seconds: 60
+    filters: 'metric.parent_org_id="Zmw3FbjDKGVcZ5G9FtXhY1KhUHOw"'
     widgetTypes:
       - big-number
       - line-chart

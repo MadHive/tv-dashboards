@@ -741,6 +741,621 @@ dashboards:
           row: 2
           colSpan: 2
           rowSpan: 1
+  # ── FOX ─────────────────────────────────────────────────────────────────────
+  - id: fox-delivery-map
+    name: FOX
+    subtitle: Delivery
+    icon: map
+    grid:
+      columns: 1
+      rows: 1
+      gap: 0
+    clientBranding:
+      logoText: FOX
+      logoSub: MEDIA
+      bg: '#0a0f1a'
+      bgSurface: '#0f1826'
+      bgCard: '#14202f'
+      bgCardAlt: '#1a2a3f'
+      border: '#1a3a5c'
+      borderLit: '#2a5a8c'
+      accent: '#F5A524'
+      accentDim: 'rgba(245,165,36,0.15)'
+      t2: '#c8d8e8'
+      t3: '#7090a8'
+      dotColor: '#1a2f44'
+    widgets:
+      - id: usa-delivery-map-fox
+        type: usa-map-gl
+        title: ''
+        source: computed
+        queryId: campaign-delivery-map-fox
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        mglConfig:
+          colorScheme: warm
+          showLeaderboard: true
+          zoomViz: dots
+          clientLogo: /img/fox-logo.svg
+  - id: fox-metrics
+    name: FOX
+    subtitle: Campaign Health
+    icon: chart-bar
+    grid:
+      columns: 4
+      rows: 2
+      gap: 14
+    clientBranding:
+      logoText: FOX
+      logoSub: MEDIA
+      bg: '#0a0f1a'
+      bgSurface: '#0f1826'
+      bgCard: '#14202f'
+      bgCardAlt: '#1a2a3f'
+      border: '#1a3a5c'
+      borderLit: '#2a5a8c'
+      accent: '#F5A524'
+      accentDim: 'rgba(245,165,36,0.15)'
+      t2: '#c8d8e8'
+      t3: '#7090a8'
+      dotColor: '#1a2f44'
+    widgets:
+      - id: fox-feeds-delivered
+        type: stat-card
+        title: Data Feed Deliveries
+        source: gcp
+        queryId: iheart-datafeeds-delivered
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: fox-export-failures
+        type: stat-card
+        title: Export Failures
+        source: gcp
+        queryId: iheart-export-failures
+        position:
+          col: 2
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: fox-win-rate-stat
+        type: big-number
+        title: Win Rate (p50)
+        source: gcp
+        queryId: fox-win-rate
+        position:
+          col: 3
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        unit: '%'
+      - id: fox-pacing-stat
+        type: big-number
+        title: Pacing Ratio (p50)
+        source: gcp
+        queryId: roger-pacing-ratio
+        position:
+          col: 4
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: fox-win-rate-chart
+        type: line-chart
+        title: FOX Win Rate (p50)
+        source: gcp
+        queryId: fox-win-rate
+        position:
+          col: 1
+          row: 2
+          colSpan: 2
+          rowSpan: 1
+      - id: fox-pacing-chart
+        type: line-chart
+        title: Pacing Ratio (p50)
+        source: gcp
+        queryId: roger-pacing-ratio
+        position:
+          col: 3
+          row: 2
+          colSpan: 2
+          rowSpan: 1
+  # ── HEARST ───────────────────────────────────────────────────────────────────
+  - id: hearst-delivery-map
+    name: Hearst
+    subtitle: Delivery
+    icon: map
+    grid:
+      columns: 1
+      rows: 1
+      gap: 0
+    clientBranding:
+      logoText: HEARST
+      logoSub: MEDIA
+      bg: '#010a1a'
+      bgSurface: '#051224'
+      bgCard: '#081830'
+      bgCardAlt: '#0c2040'
+      border: '#0a2a5c'
+      borderLit: '#1040a0'
+      accent: '#C8A84B'
+      accentDim: 'rgba(200,168,75,0.15)'
+      t2: '#c0ccdc'
+      t3: '#6080a0'
+      dotColor: '#091830'
+    widgets:
+      - id: usa-delivery-map-hearst
+        type: usa-map-gl
+        title: ''
+        source: computed
+        queryId: campaign-delivery-map-hearst
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        mglConfig:
+          colorScheme: warm
+          showLeaderboard: true
+          zoomViz: dots
+          clientLogo: /img/hearst-logo.svg
+  - id: hearst-metrics
+    name: Hearst
+    subtitle: Campaign Health
+    icon: chart-bar
+    grid:
+      columns: 4
+      rows: 2
+      gap: 14
+    clientBranding:
+      logoText: HEARST
+      logoSub: MEDIA
+      bg: '#010a1a'
+      bgSurface: '#051224'
+      bgCard: '#081830'
+      bgCardAlt: '#0c2040'
+      border: '#0a2a5c'
+      borderLit: '#1040a0'
+      accent: '#C8A84B'
+      accentDim: 'rgba(200,168,75,0.15)'
+      t2: '#c0ccdc'
+      t3: '#6080a0'
+      dotColor: '#091830'
+    widgets:
+      - id: hearst-feeds-delivered
+        type: stat-card
+        title: Data Feed Deliveries
+        source: gcp
+        queryId: iheart-datafeeds-delivered
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: hearst-export-failures
+        type: stat-card
+        title: Export Failures
+        source: gcp
+        queryId: iheart-export-failures
+        position:
+          col: 2
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: hearst-win-rate-stat
+        type: big-number
+        title: Win Rate (p50)
+        source: gcp
+        queryId: hearst-win-rate
+        position:
+          col: 3
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        unit: '%'
+      - id: hearst-pacing-stat
+        type: big-number
+        title: Pacing Ratio (p50)
+        source: gcp
+        queryId: roger-pacing-ratio
+        position:
+          col: 4
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: hearst-win-rate-chart
+        type: line-chart
+        title: Hearst Win Rate (p50)
+        source: gcp
+        queryId: hearst-win-rate
+        position:
+          col: 1
+          row: 2
+          colSpan: 2
+          rowSpan: 1
+      - id: hearst-pacing-chart
+        type: line-chart
+        title: Pacing Ratio (p50)
+        source: gcp
+        queryId: roger-pacing-ratio
+        position:
+          col: 3
+          row: 2
+          colSpan: 2
+          rowSpan: 1
+  # ── NEXSTAR ──────────────────────────────────────────────────────────────────
+  - id: nexstar-delivery-map
+    name: Nexstar
+    subtitle: Delivery
+    icon: map
+    grid:
+      columns: 1
+      rows: 1
+      gap: 0
+    clientBranding:
+      logoText: NEXSTAR
+      logoSub: MEDIA GROUP
+      bg: '#050a14'
+      bgSurface: '#081222'
+      bgCard: '#0c1a30'
+      bgCardAlt: '#102040'
+      border: '#0a2a60'
+      borderLit: '#1050b0'
+      accent: '#1E88E5'
+      accentDim: 'rgba(30,136,229,0.15)'
+      t2: '#b8cce0'
+      t3: '#6080a0'
+      dotColor: '#0a1a30'
+    widgets:
+      - id: usa-delivery-map-nexstar
+        type: usa-map-gl
+        title: ''
+        source: computed
+        queryId: campaign-delivery-map-nexstar
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        mglConfig:
+          colorScheme: cool
+          showLeaderboard: true
+          zoomViz: dots
+          clientLogo: /img/nexstar-logo.svg
+  - id: nexstar-metrics
+    name: Nexstar
+    subtitle: Campaign Health
+    icon: chart-bar
+    grid:
+      columns: 4
+      rows: 2
+      gap: 14
+    clientBranding:
+      logoText: NEXSTAR
+      logoSub: MEDIA GROUP
+      bg: '#050a14'
+      bgSurface: '#081222'
+      bgCard: '#0c1a30'
+      bgCardAlt: '#102040'
+      border: '#0a2a60'
+      borderLit: '#1050b0'
+      accent: '#1E88E5'
+      accentDim: 'rgba(30,136,229,0.15)'
+      t2: '#b8cce0'
+      t3: '#6080a0'
+      dotColor: '#0a1a30'
+    widgets:
+      - id: nexstar-feeds-delivered
+        type: stat-card
+        title: Data Feed Deliveries
+        source: gcp
+        queryId: iheart-datafeeds-delivered
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: nexstar-export-failures
+        type: stat-card
+        title: Export Failures
+        source: gcp
+        queryId: iheart-export-failures
+        position:
+          col: 2
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: nexstar-win-rate-stat
+        type: big-number
+        title: Win Rate (p50)
+        source: gcp
+        queryId: nexstar-win-rate
+        position:
+          col: 3
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        unit: '%'
+      - id: nexstar-pacing-stat
+        type: big-number
+        title: Pacing Ratio (p50)
+        source: gcp
+        queryId: roger-pacing-ratio
+        position:
+          col: 4
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: nexstar-win-rate-chart
+        type: line-chart
+        title: Nexstar Win Rate (p50)
+        source: gcp
+        queryId: nexstar-win-rate
+        position:
+          col: 1
+          row: 2
+          colSpan: 2
+          rowSpan: 1
+      - id: nexstar-pacing-chart
+        type: line-chart
+        title: Pacing Ratio (p50)
+        source: gcp
+        queryId: roger-pacing-ratio
+        position:
+          col: 3
+          row: 2
+          colSpan: 2
+          rowSpan: 1
+  # ── EW SCRIPPS ───────────────────────────────────────────────────────────────
+  - id: scripps-delivery-map
+    name: EW Scripps
+    subtitle: Delivery
+    icon: map
+    grid:
+      columns: 1
+      rows: 1
+      gap: 0
+    clientBranding:
+      logoText: SCRIPPS
+      logoSub: MEDIA
+      bg: '#020810'
+      bgSurface: '#040f1c'
+      bgCard: '#071528'
+      bgCardAlt: '#0a1c34'
+      border: '#0a2040'
+      borderLit: '#0f3060'
+      accent: '#E8541A'
+      accentDim: 'rgba(232,84,26,0.15)'
+      t2: '#c8c0b8'
+      t3: '#908070'
+      dotColor: '#0a1a28'
+    widgets:
+      - id: usa-delivery-map-scripps
+        type: usa-map-gl
+        title: ''
+        source: computed
+        queryId: campaign-delivery-map-scripps
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        mglConfig:
+          colorScheme: warm
+          showLeaderboard: true
+          zoomViz: dots
+          clientLogo: /img/scripps-logo.svg
+  - id: scripps-metrics
+    name: EW Scripps
+    subtitle: Campaign Health
+    icon: chart-bar
+    grid:
+      columns: 4
+      rows: 2
+      gap: 14
+    clientBranding:
+      logoText: SCRIPPS
+      logoSub: MEDIA
+      bg: '#020810'
+      bgSurface: '#040f1c'
+      bgCard: '#071528'
+      bgCardAlt: '#0a1c34'
+      border: '#0a2040'
+      borderLit: '#0f3060'
+      accent: '#E8541A'
+      accentDim: 'rgba(232,84,26,0.15)'
+      t2: '#c8c0b8'
+      t3: '#908070'
+      dotColor: '#0a1a28'
+    widgets:
+      - id: scripps-feeds-delivered
+        type: stat-card
+        title: Data Feed Deliveries
+        source: gcp
+        queryId: iheart-datafeeds-delivered
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: scripps-export-failures
+        type: stat-card
+        title: Export Failures
+        source: gcp
+        queryId: iheart-export-failures
+        position:
+          col: 2
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: scripps-win-rate-stat
+        type: big-number
+        title: Win Rate (p50)
+        source: gcp
+        queryId: scripps-win-rate
+        position:
+          col: 3
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        unit: '%'
+      - id: scripps-pacing-stat
+        type: big-number
+        title: Pacing Ratio (p50)
+        source: gcp
+        queryId: roger-pacing-ratio
+        position:
+          col: 4
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: scripps-win-rate-chart
+        type: line-chart
+        title: EW Scripps Win Rate (p50)
+        source: gcp
+        queryId: scripps-win-rate
+        position:
+          col: 1
+          row: 2
+          colSpan: 2
+          rowSpan: 1
+      - id: scripps-pacing-chart
+        type: line-chart
+        title: Pacing Ratio (p50)
+        source: gcp
+        queryId: roger-pacing-ratio
+        position:
+          col: 3
+          row: 2
+          colSpan: 2
+          rowSpan: 1
+  # ── COX ──────────────────────────────────────────────────────────────────────
+  - id: cox-delivery-map
+    name: Cox Media Group
+    subtitle: Delivery
+    icon: map
+    grid:
+      columns: 1
+      rows: 1
+      gap: 0
+    clientBranding:
+      logoText: COX
+      logoSub: MEDIA GROUP
+      bg: '#030810'
+      bgSurface: '#051018'
+      bgCard: '#081520'
+      bgCardAlt: '#0c1c2c'
+      border: '#0a2040'
+      borderLit: '#105090'
+      accent: '#0091D5'
+      accentDim: 'rgba(0,145,213,0.15)'
+      t2: '#b8ccdc'
+      t3: '#607890'
+      dotColor: '#081830'
+    widgets:
+      - id: usa-delivery-map-cox
+        type: usa-map-gl
+        title: ''
+        source: computed
+        queryId: campaign-delivery-map-cox
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        mglConfig:
+          colorScheme: cool
+          showLeaderboard: true
+          zoomViz: dots
+          clientLogo: /img/cox-logo.svg
+  - id: cox-metrics
+    name: Cox Media Group
+    subtitle: Campaign Health
+    icon: chart-bar
+    grid:
+      columns: 4
+      rows: 2
+      gap: 14
+    clientBranding:
+      logoText: COX
+      logoSub: MEDIA GROUP
+      bg: '#030810'
+      bgSurface: '#051018'
+      bgCard: '#081520'
+      bgCardAlt: '#0c1c2c'
+      border: '#0a2040'
+      borderLit: '#105090'
+      accent: '#0091D5'
+      accentDim: 'rgba(0,145,213,0.15)'
+      t2: '#b8ccdc'
+      t3: '#607890'
+      dotColor: '#081830'
+    widgets:
+      - id: cox-feeds-delivered
+        type: stat-card
+        title: Data Feed Deliveries
+        source: gcp
+        queryId: iheart-datafeeds-delivered
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: cox-export-failures
+        type: stat-card
+        title: Export Failures
+        source: gcp
+        queryId: iheart-export-failures
+        position:
+          col: 2
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: cox-win-rate-stat
+        type: big-number
+        title: Win Rate (p50)
+        source: gcp
+        queryId: cox-win-rate
+        position:
+          col: 3
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        unit: '%'
+      - id: cox-pacing-stat
+        type: big-number
+        title: Pacing Ratio (p50)
+        source: gcp
+        queryId: roger-pacing-ratio
+        position:
+          col: 4
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: cox-win-rate-chart
+        type: line-chart
+        title: Cox Win Rate (p50)
+        source: gcp
+        queryId: cox-win-rate
+        position:
+          col: 1
+          row: 2
+          colSpan: 2
+          rowSpan: 1
+      - id: cox-pacing-chart
+        type: line-chart
+        title: Pacing Ratio (p50)
+        source: gcp
+        queryId: roger-pacing-ratio
+        position:
+          col: 3
+          row: 2
+          colSpan: 2
+          rowSpan: 1
 global:
   refresh_interval: 8
   rotation_interval: 30

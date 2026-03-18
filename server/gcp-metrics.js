@@ -343,13 +343,14 @@ async function getDeliveryGeoZ5(days = 7, minImpressions = 500) {
   }
 }
 
-// ── iHeart-specific BigQuery delivery geo (filtered via meta_inst join) ──
-let _bqIHeartGeoCache = null;
-const BQ_IHEART_GEO_CACHE_TTL = 5 * 60 * 1000;
+// ── Per-client BigQuery delivery geo cache ──────────────────────────────────
+const _bqClientGeoCache  = new Map(); // key: 'ClientName:days:minImp' → { time, data }
+const BQ_CLIENT_GEO_CACHE_TTL = 5 * 60 * 1000;
 
-async function getDeliveryGeoIHeart(days = 7, minImpressions = 50) {
-  const cacheKey = 'iheart:' + days + ':' + minImpressions;
-  if (_bqIHeartGeoCache && _bqIHeartGeoCache.key === cacheKey && Date.now() - _bqIHeartGeoCache.time < BQ_IHEART_GEO_CACHE_TTL) return _bqIHeartGeoCache.data;
+async function getDeliveryGeoByClient(clientName, days = 7, minImpressions = 50) {
+  const cacheKey = `${clientName}:${days}:${minImpressions}`;
+  const cached   = _bqClientGeoCache.get(cacheKey);
+  if (cached && Date.now() - cached.time < BQ_CLIENT_GEO_CACHE_TTL) return cached.data;
 
   try {
     const sql = `
@@ -369,18 +370,18 @@ async function getDeliveryGeoIHeart(days = 7, minImpressions = 50) {
         ON b.postal = mg.postal_code AND mg.country_code = 'US'
       LEFT JOIN \`mad-data.public_data.zip_codes\` z
         ON b.postal = z.zip_code
-      WHERE b.date_nyc >= DATE_SUB(CURRENT_DATE(), INTERVAL ${days} DAY)
+      WHERE b.date_nyc >= DATE_SUB(CURRENT_DATE(), INTERVAL \${days} DAY)
         AND b.country = 'US'
         AND b.postal IS NOT NULL AND b.postal != ''
         AND z.internal_point_lat IS NOT NULL
-        AND mi.client.name = 'iHeart'
+        AND mi.client.name = @clientName
       GROUP BY 1, 2
-      HAVING impressions > ${minImpressions}
+      HAVING impressions > \${minImpressions}
       ORDER BY impressions DESC
       LIMIT 500
     `;
 
-    const [rows] = await bq.query({ query: sql, location: 'US' });
+    const [rows] = await bq.query({ query: sql, params: { clientName }, location: 'US' });
 
     const results = rows.map(r => ({
       zip3:        r.zip3,
@@ -393,12 +394,13 @@ async function getDeliveryGeoIHeart(days = 7, minImpressions = 50) {
       city:        r.city || null,
       dma:         r.dma || null,
     }));
-    _bqIHeartGeoCache = { key: cacheKey, time: Date.now(), data: results };
-    logger.info(`[bq] iHeart delivery geo: ${results.length} zip3 prefixes loaded`);
-    return _bqIHeartGeoCache.data;
+    _bqClientGeoCache.set(cacheKey, { time: Date.now(), data: results });
+    logger.info(`[bq] ${clientName} delivery geo: ${results.length} zip3 prefixes loaded`);
+    return results;
   } catch (err) {
-    logger.error(`[bq] iHeart delivery geo query failed: ${err.message}`);
-    return _bqIHeartGeoCache ? _bqIHeartGeoCache.data : [];
+    logger.error(`[bq] ${clientName} delivery geo query failed: ${err.message}`);
+    const stale = _bqClientGeoCache.get(cacheKey);
+    return stale ? stale.data : [];
   }
 }
 
@@ -1441,18 +1443,20 @@ export async function campaignDeliveryMapWidget(params = {}, widgetConfig = {}) 
   return { data, rawData: topHotspots };
 }
 
-export async function campaignDeliveryMapIHeartWidget(params = {}, widgetConfig = {}) {
-  const wc = {
-    id:        widgetConfig.id || params.widgetId || 'usa-delivery-map-iheart',
-    mapConfig: {
-      region:         params.region         || widgetConfig.mapConfig?.region,
-      timeWindow:     params.timeWindow     || widgetConfig.mapConfig?.timeWindow,
-      minImpressions: params.minImpressions || widgetConfig.mapConfig?.minImpressions,
-    },
-  };
-  const timeWindow = Math.max(1, Math.min(90, parseInt(wc.mapConfig.timeWindow) || 7));
-  const minImp     = parseInt(wc.mapConfig.minImpressions) >= 0 ? parseInt(wc.mapConfig.minImpressions) : 50;
-  const region     = wc.mapConfig.region || 'full';
+export async function campaignDeliveryMapClientWidget(params = {}, widgetConfig = {}) {
+  const clientName = params.clientName || widgetConfig.mapConfig?.clientName;
+  if (!clientName) {
+    logger.error('[computed] campaignDeliveryMapClientWidget: params.clientName is required');
+    return {
+      data:    { states: {}, hotspots: [], totals: { impressions: 0, bids: 0, services: 1 }, regions: {} },
+      rawData: [],
+    };
+  }
+
+  const timeWindow = Math.max(1, Math.min(90, parseInt(params.timeWindow || widgetConfig.mapConfig?.timeWindow) || 7));
+  const _rawMinImp = parseInt(params.minImpressions ?? widgetConfig.mapConfig?.minImpressions);
+  const minImp     = _rawMinImp >= 0 ? _rawMinImp : 50;
+  const region     = params.region || widgetConfig.mapConfig?.region || 'full';
 
   const REGION_STATE_SETS = {
     northeast: new Set(['ME','VT','NH','MA','RI','CT','NY','NJ','PA','DE','MD','DC','VA','WV']),
@@ -1462,7 +1466,7 @@ export async function campaignDeliveryMapIHeartWidget(params = {}, widgetConfig 
   };
   const regionStates = REGION_STATE_SETS[region] || null;
 
-  const geoData = await getDeliveryGeoIHeart(timeWindow, minImp);
+  const geoData = await getDeliveryGeoByClient(clientName, timeWindow, minImp);
 
   const stateActivity = {};
   const hotspots      = [];
@@ -1489,10 +1493,10 @@ export async function campaignDeliveryMapIHeartWidget(params = {}, widgetConfig 
 
   hotspots.sort((a, b) => b.impressions - a.impressions);
 
-  // Note: hotspots_z5 and regions are omitted — iHeart dashboard uses dots mode only (no heatmap layer needed)
+  // hotspots_z5 and regions omitted — client dashboards use dots mode only
   const totals = {
     impressions: hotspots.reduce((s, h) => s + h.impressions, 0),
-    bids:        hotspots.reduce((s, h) => s + (h.clicks * 50), 0), // clicks-based proxy; no Cloud Run data for client-scoped queries
+    bids:        hotspots.reduce((s, h) => s + (h.clicks * 50), 0), // clicks-based proxy
     services:    1,
   };
 
