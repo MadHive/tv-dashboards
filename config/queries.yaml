@@ -1060,7 +1060,7 @@ gcp:
       crossSeriesReducer: REDUCE_SUM
       alignmentPeriod:
         seconds: 3600
-    filters: 'resource.type="cloud_run_revision"'
+    filters: resource.type="cloud_run_revision"
     widgetTypes:
       - stat-card
   - id: iheart-export-failures
@@ -1073,7 +1073,7 @@ gcp:
       crossSeriesReducer: REDUCE_SUM
       alignmentPeriod:
         seconds: 3600
-    filters: 'resource.type="cloud_run_revision"'
+    filters: resource.type="cloud_run_revision"
     widgetTypes:
       - stat-card
   - id: iheart-win-rate
@@ -1086,7 +1086,7 @@ gcp:
       crossSeriesReducer: REDUCE_PERCENTILE_50
       alignmentPeriod:
         seconds: 60
-    filters: 'metric.parent_org_id="popErPc0MjpPi1i94r9M0gBNFrT8"'
+    filters: metric.parent_org_id="popErPc0MjpPi1i94r9M0gBNFrT8"
     widgetTypes:
       - big-number
       - line-chart
@@ -1100,7 +1100,7 @@ gcp:
       crossSeriesReducer: REDUCE_PERCENTILE_50
       alignmentPeriod:
         seconds: 60
-    filters: 'metric.parent_org_id="KnfaABPhsYmEii2PRGC5HDNrHURa"'
+    filters: metric.parent_org_id="KnfaABPhsYmEii2PRGC5HDNrHURa"
     widgetTypes:
       - big-number
       - line-chart
@@ -1114,7 +1114,7 @@ gcp:
       crossSeriesReducer: REDUCE_PERCENTILE_50
       alignmentPeriod:
         seconds: 60
-    filters: 'metric.parent_org_id="yfSFThMib3rB0bnnSdrrM7tvMSqF"'
+    filters: metric.parent_org_id="yfSFThMib3rB0bnnSdrrM7tvMSqF"
     widgetTypes:
       - big-number
       - line-chart
@@ -1128,7 +1128,7 @@ gcp:
       crossSeriesReducer: REDUCE_PERCENTILE_50
       alignmentPeriod:
         seconds: 60
-    filters: 'metric.parent_org_id="N6WSKUog3hq2PMHh4sTsmiADteE5"'
+    filters: metric.parent_org_id="N6WSKUog3hq2PMHh4sTsmiADteE5"
     widgetTypes:
       - big-number
       - line-chart
@@ -1142,7 +1142,7 @@ gcp:
       crossSeriesReducer: REDUCE_PERCENTILE_50
       alignmentPeriod:
         seconds: 60
-    filters: 'metric.parent_org_id="oQRQL2OLWEc66UrAOPEFdE2FovnU"'
+    filters: metric.parent_org_id="oQRQL2OLWEc66UrAOPEFdE2FovnU"
     widgetTypes:
       - big-number
       - line-chart
@@ -1156,10 +1156,68 @@ gcp:
       crossSeriesReducer: REDUCE_PERCENTILE_50
       alignmentPeriod:
         seconds: 60
-    filters: 'metric.parent_org_id="Zmw3FbjDKGVcZ5G9FtXhY1KhUHOw"'
+    filters: metric.parent_org_id="Zmw3FbjDKGVcZ5G9FtXhY1KhUHOw"
     widgetTypes:
       - big-number
       - line-chart
+  - id: transaction-state-bytes-in-43c4
+    name: Transaction State Bytes In
+    widgetTypes: []
+    metricType: managedkafka.googleapis.com/byte_in_count
+    project: mad-master
+    timeWindow: 30
+    aggregation:
+      perSeriesAligner: ALIGN_RATE
+      crossSeriesReducer: REDUCE_SUM
+      alignmentPeriod: 60s
+    filters: >-
+      resource.type="managedkafka.googleapis.com/Topic" resource.label."cluster_id"="rtb"
+      resource.label."topic_id"="transaction-state" resource.label."location"="us-east4"
+    updatedAt: '2026-03-19T19:04:35.200Z'
+    createdAt: '2026-03-19T19:04:26.372Z'
+  - id: transaction-state-storage-d3fa
+    name: Transaction State Storage
+    widgetTypes: []
+    metricType: managedkafka.googleapis.com/byte_size
+    project: mad-master
+    timeWindow: 30
+    aggregation:
+      perSeriesAligner: ALIGN_MEAN
+      crossSeriesReducer: REDUCE_SUM
+      alignmentPeriod: 60s
+    filters: >-
+      resource.type="managedkafka.googleapis.com/TopicPartition" resource.label."cluster_id"="rtb"
+      resource.label."location"="us-east4" resource.label."topic_id"="transaction-state"
+    updatedAt: '2026-03-19T19:04:35.206Z'
+    createdAt: '2026-03-19T19:04:26.381Z'
+  - id: bid-events-messages-in-08e5
+    name: Bid-events messages in
+    widgetTypes: []
+    metricType: managedkafka.googleapis.com/message_in_count
+    project: mad-master
+    timeWindow: 30
+    aggregation:
+      perSeriesAligner: ALIGN_RATE
+      crossSeriesReducer: REDUCE_SUM
+      alignmentPeriod: 1800s
+    filters: resource.type="managedkafka.googleapis.com/Topic" resource.label."topic_id"="bid-events"
+    updatedAt: '2026-03-19T19:04:26.386Z'
+    createdAt: '2026-03-19T19:04:26.386Z'
+  - id: bid-events-bytes-in-43c4
+    name: Bid events bytes in
+    widgetTypes: []
+    metricType: managedkafka.googleapis.com/byte_in_count
+    project: mad-master
+    timeWindow: 30
+    aggregation:
+      perSeriesAligner: ALIGN_RATE
+      crossSeriesReducer: REDUCE_SUM
+      alignmentPeriod: 60s
+    filters: >-
+      resource.type="managedkafka.googleapis.com/Topic" resource.label."cluster_id"="rtb"
+      resource.label."topic_id"="bid-events" resource.label."location"="us-east4"
+    updatedAt: '2026-03-19T19:04:35.194Z'
+    createdAt: '2026-03-19T19:04:35.194Z'
 vulntrack:
   - id: vulntrack-security-posture
     name: Security Posture Overview
