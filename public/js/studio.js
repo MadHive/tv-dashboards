@@ -458,11 +458,15 @@
       setVal('prop-logo-url',    brand.logoImage || '');
       setVal('prop-logo-text',   brand.logoText  || '');
       setVal('prop-logo-sub',    brand.logoSub   || '');
-      setVal('prop-color-bg',    brand.bg        || '#0E0320');
-      setVal('prop-color-accent',brand.accent    || '#FDA4D4');
-      setVal('prop-color-bgcard',brand.bgCard    || '#1A0B38');
-      setVal('prop-color-border',brand.border    || '#2E1860');
-      setVal('prop-color-dot',   brand.dotColor  || '#2E1860');
+      setVal('prop-color-bg',      brand.bg        || '#0E0320');
+      setVal('prop-color-accent',  brand.accent    || '#FDA4D4');
+      setVal('prop-color-bgcard',  brand.bgCard    || '#1A0B38');
+      setVal('prop-color-border',  brand.border    || '#2E1860');
+      setVal('prop-color-dot',     brand.dotColor  || '#2E1860');
+      setVal('prop-color-surface', brand.bgSurface || '#160730');
+      setVal('prop-color-borderlit',brand.borderLit|| '#4A2880');
+      setVal('prop-color-t2',      brand.t2        || '#D0C4E4');
+      setVal('prop-color-t3',      brand.t3        || '#8B75B0');
 
       // Logo preview
       const previewImg = document.getElementById('logo-preview-img');
@@ -498,7 +502,8 @@
 
       // Bind branding inputs to applyDashboardProps
       ['prop-logo-url','prop-logo-text','prop-logo-sub',
-       'prop-color-bg','prop-color-accent','prop-color-bgcard','prop-color-border','prop-color-dot'
+       'prop-color-bg','prop-color-accent','prop-color-bgcard','prop-color-border','prop-color-dot',
+       'prop-color-surface','prop-color-borderlit','prop-color-t2','prop-color-t3'
       ].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.oninput = () => this.applyDashboardProps();
@@ -557,6 +562,9 @@
         set(brand.borderLit, '--border-lit');
         set(brand.accent,    '--accent');
         set(brand.dotColor,  '--dot-color');
+        set(brand.bgSurface, '--bg-surface');
+        set(brand.t2,        '--t2');
+        set(brand.t3,        '--t3');
       } else {
         ['--bg','--bg-card','--bg-card-alt','--border','--border-lit','--accent','--dot-color']
           .forEach(v => r.style.removeProperty(v));
