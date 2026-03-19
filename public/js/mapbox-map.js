@@ -175,7 +175,7 @@ window.MapboxUSAMap = (function () {
           style:              initialStyle,
           bounds:             USA_BOUNDS,
           fitBoundsOptions:   { padding: 20 },
-          interactive:        false,
+          interactive:        document.body.classList.contains('studio-body'),
           attributionControl: false,
         });
 
