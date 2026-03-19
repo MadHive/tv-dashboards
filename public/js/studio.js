@@ -566,6 +566,108 @@
     }
 
     /* ─────────────────────────────────────────────
+       Query Picker Panel
+    ───────────────────────────────────────────── */
+
+    async showQueryPicker(wc) {
+      const panel   = document.getElementById('query-picker-panel');
+      const content = document.getElementById('properties-content');
+      if (!panel || !content) return;
+
+      content.style.display = 'none';
+      panel.style.display   = 'flex';
+      panel.style.flexDirection = 'column';
+
+      const closeBtn = document.getElementById('qp-close');
+      if (closeBtn) closeBtn.onclick = () => this._closeQueryPicker();
+
+      let allQueries = [];
+      try {
+        const res     = await fetch('/api/queries/');
+        const data    = await res.json();
+        const grouped = data.queries || {};
+        ['gcp', 'bigquery', 'computed', 'vulntrack'].forEach(src => {
+          (grouped[src] || []).forEach(q => allQueries.push(Object.assign({}, q, { _source: src })));
+        });
+      } catch (_) { /* empty list is fine */ }
+
+      const renderList = (filter) => {
+        const list = document.getElementById('qp-list');
+        if (!list) return;
+        while (list.firstChild) list.removeChild(list.firstChild);
+
+        const lower   = (filter || '').toLowerCase();
+        const matches = allQueries.filter(q =>
+          !lower
+          || q.id.toLowerCase().includes(lower)
+          || (q.name || '').toLowerCase().includes(lower)
+          || (q.description || '').toLowerCase().includes(lower)
+        );
+
+        const sources = {};
+        matches.forEach(q => {
+          if (!sources[q._source]) sources[q._source] = [];
+          sources[q._source].push(q);
+        });
+
+        Object.keys(sources).forEach(src => {
+          const hdr = document.createElement('div');
+          hdr.className   = 'qp-group-header';
+          hdr.textContent = src.toUpperCase();
+          list.appendChild(hdr);
+
+          sources[src].forEach(q => {
+            const row = document.createElement('div');
+            row.className = 'qp-row' + (q.id === wc.queryId ? ' qp-row-selected' : '');
+
+            const idEl = document.createElement('div');
+            idEl.className   = 'qp-row-id';
+            idEl.textContent = q.id;
+
+            const nameEl = document.createElement('div');
+            nameEl.className   = 'qp-row-name';
+            nameEl.textContent = q.name || '';
+
+            row.appendChild(idEl);
+            row.appendChild(nameEl);
+
+            row.addEventListener('click', () => {
+              wc.queryId = q.id;
+              wc.source  = q._source;
+              this.markDirty();
+              this._closeQueryPicker();
+              this.showWidgetProps(wc.id);
+            });
+            list.appendChild(row);
+          });
+        });
+
+        if (matches.length === 0) {
+          const empty = document.createElement('div');
+          empty.className   = 'qp-empty';
+          empty.textContent = 'No queries match';
+          list.appendChild(empty);
+        }
+      };
+
+      renderList('');
+
+      const searchEl = document.getElementById('qp-search');
+      if (searchEl) {
+        searchEl.value   = '';
+        searchEl.oninput = () => renderList(searchEl.value);
+        setTimeout(() => searchEl.focus(), 50);
+      }
+    }
+
+    _closeQueryPicker() {
+      const panel   = document.getElementById('query-picker-panel');
+      const content = document.getElementById('properties-content');
+      if (panel)   panel.style.display   = 'none';
+      if (content) content.style.display = 'flex';
+    }
+
+    /* ─────────────────────────────────────────────
        Widget Properties Panel
     ───────────────────────────────────────────── */
 
@@ -643,9 +745,10 @@
         }
       }
 
-      // Always load queries for current source (even if no queryId assigned yet)
-      this.loadQueryOptions(wc.source || 'gcp', wc.queryId || '');
-      this.updateDataSummary(wc.source, wc.queryId);
+      // Populate query ID text input
+      const queryEl = document.getElementById('prop-query');
+      if (queryEl) queryEl.value = wc.queryId || '';
+      this.updateDataSummary(wc.source || 'gcp', wc.queryId || '');
       this.bindWidgetPropListeners(wc);
     }
 
@@ -706,20 +809,27 @@
           wc.source = sourceEl.value;
           wc.queryId = '';
           if (browseBtn) browseBtn.style.display = (wc.source === 'gcp') ? '' : 'none';
-          await self.loadQueryOptions(wc.source, '');
+          const qEl = document.getElementById('prop-query');
+          if (qEl) qEl.value = '';
           self.updateDataSummary(wc.source, wc.queryId);
           self.markDirty();
         };
       }
 
-      // Special: query selection
-      const queryEl = document.getElementById('prop-query');
+      // Special: query ID text input + Browse button
+      const queryEl   = document.getElementById('prop-query');
+      const browseQueriesBtn = document.getElementById('browse-queries-btn');
+
       if (queryEl) {
-        queryEl.onchange = function () {
-          wc.queryId = queryEl.value;
-          self.updateDataSummary(wc.source, wc.queryId);
-          self.markDirty();
+        queryEl.oninput = () => {
+          wc.queryId = queryEl.value.trim();
+          this.updateDataSummary(wc.source || 'gcp', wc.queryId);
+          this.markDirty();
         };
+      }
+
+      if (browseQueriesBtn) {
+        browseQueriesBtn.onclick = () => this.showQueryPicker(wc);
       }
 
       // Delete widget button
@@ -778,56 +888,14 @@
       srcEl.textContent = SOURCE_LABELS[source] || source || 'Unknown';
 
       if (queryId) {
-        // Try to find query name in the loaded dropdown
-        const sel = document.getElementById('prop-query');
-        const opt = sel && sel.querySelector('option[value="' + queryId + '"]');
-        queryEl.textContent   = opt ? opt.textContent : queryId;
-        queryEl.className     = 'data-summary-query';
+        queryEl.textContent = queryId;
+        queryEl.className   = 'data-summary-query';
       } else {
         queryEl.textContent = source === 'gcp' ? 'Built-in metrics (no saved query)' : 'No query selected';
         queryEl.className   = 'data-summary-query none';
       }
     }
 
-    async loadQueryOptions(source, selectedId) {
-      const sel = document.getElementById('prop-query');
-      if (!sel) return;
-
-      // Clear and add default
-      sel.textContent = '';
-      const defaultOpt = document.createElement('option');
-      defaultOpt.value = '';
-      defaultOpt.textContent = '\u2014 select query \u2014';
-      sel.appendChild(defaultOpt);
-
-      try {
-        const res = await fetch('/api/queries/' + source);
-        const data = await res.json();
-        const queries = data.queries || data;
-        if (Array.isArray(queries) && queries.length > 0) {
-          queries.forEach((q) => {
-            const opt = document.createElement('option');
-            opt.value = q.id;
-            opt.textContent = q.name;
-            if (q.id === selectedId) opt.selected = true;
-            sel.appendChild(opt);
-          });
-        } else {
-          const emptyOpt = document.createElement('option');
-          emptyOpt.value = '';
-          emptyOpt.disabled = true;
-          emptyOpt.textContent = 'No saved queries for this source';
-          sel.appendChild(emptyOpt);
-        }
-      } catch (_) {
-        // Empty dropdown is fine
-      }
-
-      // Refresh summary now that query names are loaded in the dropdown
-      const srcSelect = document.getElementById('prop-source');
-      const currentSource = srcSelect ? srcSelect.value : source;
-      this.updateDataSummary(currentSource, selectedId);
-    }
 
     /* ─────────────────────────────────────────────
        Widget Deletion

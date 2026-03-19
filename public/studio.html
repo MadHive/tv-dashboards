@@ -285,26 +285,30 @@
           <details class="props-section" open>
             <summary>Data</summary>
             <div>
-              <!-- Current data summary — always shows what's powering this widget -->
               <div id="data-summary" class="data-summary">
                 <span class="data-summary-source" id="data-summary-source"></span>
                 <span class="data-summary-sep">&#8250;</span>
                 <span class="data-summary-query" id="data-summary-query"></span>
               </div>
               <label>
-                Change Source
+                Source
                 <select id="prop-source">
                   <option value="gcp">GCP Cloud Monitoring</option>
                   <option value="bigquery">BigQuery</option>
+                  <option value="computed">Computed</option>
                   <option value="vulntrack">VulnTrack</option>
                   <option value="mock">Mock</option>
                 </select>
               </label>
               <button id="browse-metrics-btn" class="studio-btn secondary small" style="display:none">&#128270; Browse GCP Metrics</button>
               <label>
-                Change Query
-                <select id="prop-query"></select>
+                Query ID
+                <div class="query-id-row">
+                  <input id="prop-query" type="text" placeholder="query-id" class="query-id-input">
+                  <button type="button" id="browse-queries-btn" class="studio-btn secondary small">Browse</button>
+                </div>
               </label>
+              <div id="query-id-hint" class="query-id-hint" style="display:none"></div>
               <button id="new-query-btn" class="studio-btn secondary small">+ New Query</button>
             </div>
           </details>
@@ -499,6 +503,18 @@
           <button id="qe-save-as-new" class="studio-btn secondary small">Save as New</button>
           <button id="qe-assign"      class="studio-btn secondary small">Assign to Widget</button>
         </div>
+      </div>
+
+      <!-- Query picker panel -->
+      <div id="query-picker-panel" class="query-picker-panel" style="display:none">
+        <div class="qp-header">
+          <span class="qp-title">Browse Queries</span>
+          <button id="qp-close" class="modal-close">&#215;</button>
+        </div>
+        <div class="qp-search-wrap">
+          <input id="qp-search" type="text" class="qp-search" placeholder="Search by name or ID...">
+        </div>
+        <div id="qp-list" class="qp-list"></div>
       </div>
 
       <!-- Data source editor panel — two views: query list (default) + credentials -->
