@@ -319,11 +319,31 @@
   padding: 8px 14px;
 }
 .mgl-client-logo img {
-  height: 32px;
-  width: auto;
-  display: block;
-  opacity: 0.9;
+  width:       100%;
+  height:      100%;
+  object-fit:  contain;
+  display:     block;
+  opacity:     0.9;
 }
+
+/* ── Overlay resize handle ────────────────────────────────────────────────── */
+.mgl-resize-se {
+  position:       absolute;
+  bottom:         -6px;
+  right:          -6px;
+  width:          14px;
+  height:         14px;
+  background:     rgba(253,164,212,0.85);
+  border-radius:  3px;
+  cursor:         se-resize;
+  pointer-events: auto;
+  z-index:        20;
+  display:        none;
+}
+body.studio-body .mgl-resize-se { display: block; }
+
+/* Leaderboard overflow visible in studio so resize handle isn't clipped */
+body.studio-body .mgl-leaderboard { overflow: visible; }
 
 /* ── Studio drag affordances ──────────────────────────────────────────────── */
 /* pointer-events and cursor are set inline by _makeDraggable() in JS;        */

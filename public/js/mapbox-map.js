@@ -793,11 +793,68 @@ window.MapboxUSAMap = (function () {
       if (key === 'leaderboard' && !el.style.width) {
         el.style.width = '340px';
       }
+      if (pos.width)  el.style.width  = pos.width;
+      if (pos.height) el.style.height = pos.height;
     }
 
     _saveOverlayPosition(key, el) {
       if (!this._overlayPositions) this._overlayPositions = {};
       this._overlayPositions[key] = { top: el.style.top, left: el.style.left };
+    }
+
+    _saveOverlaySize(key, el) {
+      if (!this._overlayPositions) this._overlayPositions = {};
+      if (!this._overlayPositions[key]) this._overlayPositions[key] = {};
+      const pos = this._overlayPositions[key];
+      if (el.style.width)  pos.width  = el.style.width;
+      else                 delete pos.width;
+      if (el.style.height) pos.height = el.style.height;
+      else                 delete pos.height;
+    }
+
+    _addResizeHandles(el, key) {
+      if (!document.body.classList.contains('studio-body')) return;
+
+      const handle = document.createElement('div');
+      handle.className = 'mgl-resize-se';
+
+      const self = this;
+      let startW, startH, startX, startY;
+
+      handle.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        handle.setPointerCapture(e.pointerId);
+        startW = el.offsetWidth;
+        startH = el.offsetHeight;
+        startX = e.clientX;
+        startY = e.clientY;
+      });
+
+      handle.addEventListener('pointermove', function (e) {
+        if (e.buttons === 0) return;
+        const cr = self._wrap.getBoundingClientRect();
+        const er = el.getBoundingClientRect();
+        let nw = startW + (e.clientX - startX);
+        let nh = startH + (e.clientY - startY);
+        nw = Math.max(80, nw);
+        nh = Math.max(40, nh);
+        nw = Math.min(nw, cr.width  - er.left + cr.left);
+        nh = Math.min(nh, cr.height - er.top  + cr.top);
+        el.style.width  = nw + 'px';
+        el.style.height = nh + 'px';
+      });
+
+      handle.addEventListener('pointerup', function (e) {
+        handle.releasePointerCapture(e.pointerId);
+        self._saveOverlaySize(key, el);
+        self._wrap.dispatchEvent(new CustomEvent('mgl-overlay-moved', {
+          bubbles: true,
+          detail: { positions: Object.assign({}, self._overlayPositions) },
+        }));
+      });
+
+      el.appendChild(handle);
     }
 
     _makeDraggable(el, key) {
@@ -1054,6 +1111,7 @@ window.MapboxUSAMap = (function () {
         this._wrap.appendChild(panel);
         this._applyOverlayPosition(panel, key);
         this._makeDraggable(panel, key);
+        this._addResizeHandles(panel, key);
 
         this._regionPanels[key] = { panel, impEl, bidsEl, svcEl };
       });
@@ -1086,6 +1144,7 @@ window.MapboxUSAMap = (function () {
       this._wrap.appendChild(lb);
       this._applyOverlayPosition(lb, 'leaderboard');
       this._makeDraggable(lb, 'leaderboard');
+      this._addResizeHandles(lb, 'leaderboard');
 
       // Leaderboard header total (above title)
       this._lbHeaderTotal = document.createElement('div');
@@ -1105,6 +1164,7 @@ window.MapboxUSAMap = (function () {
         this._wrap.appendChild(logoWrap);
         this._applyOverlayPosition(logoWrap, 'clientLogo');
         this._makeDraggable(logoWrap, 'clientLogo');
+        this._addResizeHandles(logoWrap, 'clientLogo');
       }
 
       // Bottom-left impressions total overlay
@@ -1129,6 +1189,7 @@ window.MapboxUSAMap = (function () {
       this._wrap.appendChild(overlay);
       this._applyOverlayPosition(overlay, 'totalOverlay');
       this._makeDraggable(overlay, 'totalOverlay');
+      this._addResizeHandles(overlay, 'totalOverlay');
     }
 
     _renderLeaderboard(states, maxImp, totals) {
