@@ -1307,6 +1307,19 @@ window.MapboxUSAMap = (function () {
       if (this._totalAnimId) { cancelAnimationFrame(this._totalAnimId); this._totalAnimId = null; }
       const start    = this._displayedTotal;
       const end      = targetTotal;
+      // Skip animation if value hasn't changed meaningfully (< 0.5% delta)
+      // or if this is the first render (start=0 → just set immediately, no dramatic count-up)
+      const delta = Math.abs(end - start);
+      const threshold = Math.max(end * 0.005, 1000);
+      if (delta < threshold || start === 0) {
+        const fmt2 = (n) =>
+          n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' :
+          n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' :
+          n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
+        this._totalValueEl.textContent = fmt2(end);
+        this._displayedTotal = end;
+        return;
+      }
       const duration = 800;
       const t0       = performance.now();
 
