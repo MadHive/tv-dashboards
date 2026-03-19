@@ -59,23 +59,30 @@ initDatabase();
 
 // Use config manager for loading (with caching)
 let cachedConfig = null;
-let cacheTime = 0;
-const CACHE_TTL = 5000; // 5 seconds
+let cachedConfigMtime = 0;
+
+function getConfigMtime() {
+  try {
+    const s = require('fs').statSync('./config/dashboards.yaml');
+    return s.mtimeMs;
+  } catch (_) { return 0; }
+}
 
 function loadConfig() {
-  const now = Date.now();
-  if (cachedConfig && (now - cacheTime) < CACHE_TTL) {
+  const mtime = getConfigMtime();
+  // Re-read whenever the file has changed — works across multiple Bun workers sharing SO_REUSEPORT
+  if (cachedConfig && mtime === cachedConfigMtime) {
     return cachedConfig;
   }
 
   cachedConfig = loadConfigFromFile();
-  cacheTime = now;
+  cachedConfigMtime = mtime;
   return cachedConfig;
 }
 
 function invalidateConfigCache() {
   cachedConfig = null;
-  cacheTime = 0;
+  cachedConfigMtime = 0;
 }
 
 export async function getData(dashboardId) {
