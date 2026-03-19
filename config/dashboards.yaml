@@ -75,8 +75,10 @@ dashboards:
               top: 147.691px
               left: 286.43px
             central:
-              top: 170.438px
-              left: 880.828px
+              top: 135.711px
+              left: 741.48px
+              width: 445.414px
+              height: 256.895px
             east:
               top: 181.66px
               left: 1603.11px
@@ -86,6 +88,9 @@ dashboards:
             leaderboard:
               top: 701.453px
               left: 1589.55px
+          particleSpeed: 0.5
+          zoomViz: heatmap
+          initialZoom: 5.5
   - grid:
       columns: 1
       gap: 0
