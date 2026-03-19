@@ -272,8 +272,8 @@
           const res = await fetch('/api/config');
           if (!res.ok) return;
           const newConfig = await res.json();
-          const oldDashes = this.config.dashboards;
           const newDashes = newConfig.dashboards;
+          const oldDashes = this.config ? this.config.dashboards : [];
           let changed = oldDashes.length !== newDashes.length;
           if (!changed) {
             for (let i = 0; i < newDashes.length; i++) {
@@ -289,6 +289,25 @@
             }
           }
           if (changed) {
+            // Check if any map widget configs changed (positions, resize, mglConfig)
+            // If so, reload the page so new MapboxUSAMap instances get the updated positions
+            let mglChanged = false;
+            newConfig.dashboards.forEach((d, i) => {
+              const oldDash = oldDashes[i] || {};
+              (d.widgets || []).forEach((w, j) => {
+                const oldW = ((oldDash.widgets) || [])[j] || {};
+                if (JSON.stringify(w.mglConfig) !== JSON.stringify(oldW.mglConfig)) {
+                  mglChanged = true;
+                }
+              });
+            });
+
+            if (mglChanged) {
+              // Map positions or config changed — full reload to reinit widget instances
+              window.location.reload();
+              return;
+            }
+
             this.config = newConfig;
             // Re-apply branding for whatever page is currently showing
             const activeDashes = newConfig.dashboards.filter(d => !d.excluded);
