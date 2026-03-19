@@ -92,6 +92,7 @@ window.MapboxUSAMap = (function () {
       zoomViz:         'dots',
       clientLogo:      null,
       initialZoom:     null,
+      initialCenter:   null,
       logoFit:         'cover',
       ...(userConfig || {}),
     };
@@ -194,11 +195,29 @@ window.MapboxUSAMap = (function () {
             }
           });
           if (this._data) this._applyData(this._data);
-          // Apply configured initial zoom (after fitBounds completes)
+          // Apply configured initial center + zoom (overrides default USA fitBounds)
+          if (this._cfg.initialCenter && this._cfg.initialCenter.lng !== undefined) {
+            this._map.setCenter([this._cfg.initialCenter.lng, this._cfg.initialCenter.lat]);
+          }
           if (this._cfg.initialZoom) {
             this._map.setZoom(this._cfg.initialZoom);
           }
         });
+
+        // In studio mode: save map center+zoom to mglConfig when user pans or zooms
+        if (document.body.classList.contains('studio-body')) {
+          const saveViewport = () => {
+            if (!self._map) return;
+            const c = self._map.getCenter();
+            const z = self._map.getZoom();
+            self._wrap.dispatchEvent(new CustomEvent('mgl-viewport-changed', {
+              bubbles: true,
+              detail: { center: { lng: c.lng, lat: c.lat }, zoom: z },
+            }));
+          };
+          self._map.on('moveend', saveViewport);
+          self._map.on('zoomend', saveViewport);
+        }
 
         // Auto-recover from GPU/WebGL context loss (e.g. after long uptime)
         this._map.on('webglcontextlost', () => {
@@ -818,49 +837,10 @@ window.MapboxUSAMap = (function () {
 
     _addResizeHandles(el, key) {
       if (!document.body.classList.contains('studio-body')) return;
-
+      // Resize handle element — purely visual; interaction is handled by _makeInteractive
       const handle = document.createElement('div');
       handle.className = 'mgl-resize-se';
-
-      const self = this;
-      let startW, startH, startX, startY;
-
-      handle.addEventListener('pointerdown', function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        handle.setPointerCapture(e.pointerId);
-        startW = el.offsetWidth;
-        startH = el.offsetHeight;
-        startX = e.clientX;
-        startY = e.clientY;
-      });
-
-      handle.addEventListener('pointermove', function (e) {
-        if (e.buttons === 0) return;
-        const cr = self._wrap.getBoundingClientRect();
-        const er = el.getBoundingClientRect();
-        let nw = startW + (e.clientX - startX);
-        let nh = startH + (e.clientY - startY);
-        nw = Math.max(80, nw);
-        nh = Math.max(40, nh);
-        nw = Math.min(nw, cr.width  - er.left + cr.left);
-        nh = Math.min(nh, cr.height - er.top  + cr.top);
-        el.style.width  = nw + 'px';
-        el.style.height = nh + 'px';
-        // Store current width for scale application on pointerup
-      });
-
-      handle.addEventListener('pointerup', function (e) {
-        handle.releasePointerCapture(e.pointerId);
-        // Apply text scaling only on release (not during drag — avoids jarring text changes)
-        self._applyOverlayScale(el, key, el.style.width);
-        self._saveOverlaySize(key, el);
-        self._wrap.dispatchEvent(new CustomEvent('mgl-overlay-moved', {
-          bubbles: true,
-          detail: { positions: Object.assign({}, self._overlayPositions) },
-        }));
-      });
-
+      handle.style.pointerEvents = 'none'; // parent overlay handles all events
       el.appendChild(handle);
     }
 
@@ -909,44 +889,75 @@ window.MapboxUSAMap = (function () {
       el.style.pointerEvents = 'auto';
       el.style.cursor = 'grab';
 
+      const RESIZE_ZONE = 48; // px from bottom-right corner treated as resize zone
       const self = this;
-      let startX = 0, startY = 0;
+      let mode = null; // 'drag' | 'resize'
+      let startX = 0, startY = 0, startW = 0, startH = 0;
 
       el.addEventListener('pointerdown', function (e) {
-        // Don't start drag if the click landed on the resize handle
-        if (e.target && e.target.classList && e.target.classList.contains('mgl-resize-se')) return;
         e.preventDefault();
-        el.setPointerCapture(e.pointerId);
-        el.style.cursor = 'grabbing';
-
-        const cr = self._wrap.getBoundingClientRect();
         const er = el.getBoundingClientRect();
-        el.style.top    = (er.top  - cr.top)  + 'px';
-        el.style.left   = (er.left - cr.left) + 'px';
-        el.style.right  = 'auto';
-        el.style.bottom = 'auto';
-        if (key === 'leaderboard') el.style.width = er.width + 'px';
+        // Determine mode from click position
+        mode = (e.clientX > er.right - RESIZE_ZONE && e.clientY > er.bottom - RESIZE_ZONE)
+          ? 'resize' : 'drag';
 
-        startX = e.clientX - el.offsetLeft;
-        startY = e.clientY - el.offsetTop;
+        el.setPointerCapture(e.pointerId); // single capture on the overlay always
+
+        if (mode === 'drag') {
+          el.style.cursor = 'grabbing';
+          const cr = self._wrap.getBoundingClientRect();
+          el.style.top    = (er.top  - cr.top)  + 'px';
+          el.style.left   = (er.left - cr.left) + 'px';
+          el.style.right  = 'auto';
+          el.style.bottom = 'auto';
+          if (key === 'leaderboard') el.style.width = er.width + 'px';
+          startX = e.clientX - el.offsetLeft;
+          startY = e.clientY - el.offsetTop;
+        } else {
+          el.style.cursor = 'se-resize';
+          startW = el.offsetWidth;
+          startH = el.offsetHeight;
+          startX = e.clientX;
+          startY = e.clientY;
+        }
       });
 
       el.addEventListener('pointermove', function (e) {
-        if (e.buttons === 0) return;
-        const cr  = self._wrap.getBoundingClientRect();
-        const er  = el.getBoundingClientRect();
-        let nx = e.clientX - startX;
-        let ny = e.clientY - startY;
-        nx = Math.max(0, Math.min(nx, cr.width  - er.width));
-        ny = Math.max(0, Math.min(ny, cr.height - er.height));
-        el.style.left = nx + 'px';
-        el.style.top  = ny + 'px';
+        if (e.buttons === 0 || !mode) return;
+        if (mode === 'drag') {
+          const cr = self._wrap.getBoundingClientRect();
+          const er = el.getBoundingClientRect();
+          let nx = e.clientX - startX;
+          let ny = e.clientY - startY;
+          nx = Math.max(0, Math.min(nx, cr.width  - er.width));
+          ny = Math.max(0, Math.min(ny, cr.height - er.height));
+          el.style.left = nx + 'px';
+          el.style.top  = ny + 'px';
+        } else {
+          const cr = self._wrap.getBoundingClientRect();
+          const er = el.getBoundingClientRect();
+          let nw = startW + (e.clientX - startX);
+          let nh = startH + (e.clientY - startY);
+          nw = Math.max(80, nw);
+          nh = Math.max(40, nh);
+          nw = Math.min(nw, cr.width  - (er.left - cr.left));
+          nh = Math.min(nh, cr.height - (er.top  - cr.top));
+          el.style.width  = nw + 'px';
+          el.style.height = nh + 'px';
+        }
       });
 
       el.addEventListener('pointerup', function (e) {
-        el.style.cursor = 'grab';
         el.releasePointerCapture(e.pointerId);
-        self._saveOverlayPosition(key, el);
+        if (mode === 'drag') {
+          el.style.cursor = 'grab';
+          self._saveOverlayPosition(key, el);
+        } else {
+          el.style.cursor = 'grab';
+          self._applyOverlayScale(el, key, el.style.width); // scale text only on release
+          self._saveOverlaySize(key, el);
+        }
+        mode = null;
         self._wrap.dispatchEvent(new CustomEvent('mgl-overlay-moved', {
           bubbles: true,
           detail: { positions: Object.assign({}, self._overlayPositions) },
