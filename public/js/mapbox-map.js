@@ -91,6 +91,7 @@ window.MapboxUSAMap = (function () {
       mapStyle:        'mapbox',
       zoomViz:         'dots',
       clientLogo:      null,
+      initialZoom:     null,
       ...(userConfig || {}),
     };
   }
@@ -190,6 +191,10 @@ window.MapboxUSAMap = (function () {
             }
           });
           if (this._data) this._applyData(this._data);
+          // Apply configured initial zoom (after fitBounds completes)
+          if (this._cfg.initialZoom) {
+            this._map.setZoom(this._cfg.initialZoom);
+          }
         });
 
         // Auto-recover from GPU/WebGL context loss (e.g. after long uptime)

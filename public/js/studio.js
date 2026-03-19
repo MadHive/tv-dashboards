@@ -98,6 +98,18 @@
     async save() {
       if (this.activeDashIdx < 0) return;
       const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
+
+      // Propagate clientBranding.logoImage to all usa-map-gl widget mglConfigs
+      this.modifiedConfig.dashboards.forEach(dash => {
+        const logoUrl = dash.clientBranding && dash.clientBranding.logoImage;
+        if (!logoUrl) return;
+        (dash.widgets || []).forEach(wc => {
+          if (wc.type === 'usa-map-gl') {
+            wc.mglConfig = Object.assign({}, wc.mglConfig || {}, { clientLogo: logoUrl });
+          }
+        });
+      });
+
       try {
         const res = await fetch('/api/dashboards/' + dash.id, {
           method: 'PUT',
@@ -137,7 +149,9 @@
       const dashes = (this.modifiedConfig && this.modifiedConfig.dashboards) || [];
       dashes.forEach((dash, i) => {
         const item = document.createElement('div');
-        item.className = 'dashboard-nav-item' + (i === this.activeDashIdx ? ' active' : '');
+        item.className = 'dashboard-nav-item'
+          + (i === this.activeDashIdx ? ' active' : '')
+          + (dash.excluded ? ' excluded' : '');
         item.setAttribute('draggable', 'true');
         item.dataset.idx = i;
 
@@ -167,10 +181,21 @@
         delBtn.textContent = '\u2715';
         delBtn.title = 'Delete';
 
+        const toggle = document.createElement('button');
+        toggle.className = 'rot-toggle' + (dash.excluded ? ' rot-off' : '');
+        toggle.title = dash.excluded ? 'Excluded from rotation' : 'In rotation';
+        toggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dash.excluded = !dash.excluded;
+          this.markDirty();
+          this.renderSidebar();
+        });
+
         item.appendChild(handle);
         item.appendChild(thumb);
         item.appendChild(name);
         item.appendChild(count);
+        item.appendChild(toggle);
         item.appendChild(delBtn);
 
         item.addEventListener('click', (e) => {
@@ -205,6 +230,20 @@
 
         list.appendChild(item);
       });
+
+      // Status counter
+      let counter = document.getElementById('dash-rotation-count');
+      if (!counter) {
+        counter = document.createElement('div');
+        counter.id = 'dash-rotation-count';
+        counter.className = 'dash-rotation-count';
+        list.parentElement.appendChild(counter);
+      }
+      const total    = dashes.length;
+      const excluded = dashes.filter(d => d.excluded).length;
+      counter.textContent = excluded > 0
+        ? `${total} dashboards \u00b7 ${excluded} excluded`
+        : `${total} dashboards`;
     }
 
     async _reorderDashboard(fromIdx, toIdx) {
@@ -387,6 +426,83 @@
       if (colsEl) colsEl.oninput = () => this.applyDashboardProps();
       if (rowsEl) rowsEl.oninput = () => this.applyDashboardProps();
       if (gapEl) gapEl.oninput = () => this.applyDashboardProps();
+
+      // Icon picker
+      const iconGrid = document.getElementById('dash-icon-grid');
+      if (iconGrid) {
+        iconGrid.querySelectorAll('.dash-icon-opt').forEach(btn => {
+          btn.classList.toggle('selected', btn.dataset.icon === (dash.icon || 'bolt'));
+          btn.onclick = () => {
+            iconGrid.querySelectorAll('.dash-icon-opt').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            this.applyDashboardProps();
+          };
+        });
+      }
+
+      // Rotation toggle (props panel)
+      const rotBtn = document.getElementById('prop-dash-rotation');
+      if (rotBtn) {
+        rotBtn.className = 'rot-toggle' + (dash.excluded ? ' rot-off' : '');
+        rotBtn.onclick = () => {
+          dash.excluded = !dash.excluded;
+          rotBtn.className = 'rot-toggle' + (dash.excluded ? ' rot-off' : '');
+          this.markDirty();
+          this.renderSidebar();
+        };
+      }
+
+      // Branding
+      const brand  = dash.clientBranding || {};
+      const setVal = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = v; };
+      setVal('prop-logo-url',    brand.logoImage || '');
+      setVal('prop-logo-text',   brand.logoText  || '');
+      setVal('prop-logo-sub',    brand.logoSub   || '');
+      setVal('prop-color-bg',    brand.bg        || '#0E0320');
+      setVal('prop-color-accent',brand.accent    || '#FDA4D4');
+      setVal('prop-color-bgcard',brand.bgCard    || '#1A0B38');
+      setVal('prop-color-border',brand.border    || '#2E1860');
+      setVal('prop-color-dot',   brand.dotColor  || '#2E1860');
+
+      // Logo preview
+      const previewImg = document.getElementById('logo-preview-img');
+      const logoPh     = document.getElementById('logo-drop-placeholder');
+      if (previewImg && logoPh) {
+        if (brand.logoImage) {
+          previewImg.src = brand.logoImage;
+          previewImg.style.display = '';
+          logoPh.style.display = 'none';
+        } else {
+          previewImg.style.display = 'none';
+          logoPh.style.display = '';
+        }
+      }
+
+      // Logo file upload (bind once)
+      const fileInput = document.getElementById('logo-file-input');
+      const dropZone  = document.getElementById('logo-drop-zone');
+      if (fileInput && !fileInput._bound) {
+        fileInput._bound = true;
+        fileInput.onchange = () => this._handleLogoUpload(fileInput.files[0]);
+        if (dropZone) {
+          dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+          dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+          dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            const f = e.dataTransfer.files[0];
+            if (f) this._handleLogoUpload(f);
+          });
+        }
+      }
+
+      // Bind branding inputs to applyDashboardProps
+      ['prop-logo-url','prop-logo-text','prop-logo-sub',
+       'prop-color-bg','prop-color-accent','prop-color-bgcard','prop-color-border','prop-color-dot'
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.oninput = () => this.applyDashboardProps();
+      });
     }
 
     applyDashboardProps() {
@@ -405,9 +521,150 @@
       if (rowsEl) dash.grid.rows = parseInt(rowsEl.value) || dash.grid.rows;
       if (gapEl) dash.grid.gap = parseInt(gapEl.value) || 0;
 
+      // Icon
+      const iconGrid = document.getElementById('dash-icon-grid');
+      const selIcon  = iconGrid && iconGrid.querySelector('.dash-icon-opt.selected');
+      if (selIcon) dash.icon = selIcon.dataset.icon;
+
+      // Branding
+      if (!dash.clientBranding) dash.clientBranding = {};
+      const gb = (id) => { const el = document.getElementById(id); return el ? (el.value || undefined) : undefined; };
+      dash.clientBranding.logoImage = gb('prop-logo-url');
+      dash.clientBranding.logoText  = gb('prop-logo-text');
+      dash.clientBranding.logoSub   = gb('prop-logo-sub');
+      dash.clientBranding.bg        = gb('prop-color-bg');
+      dash.clientBranding.accent    = gb('prop-color-accent');
+      dash.clientBranding.bgCard    = gb('prop-color-bgcard');
+      dash.clientBranding.border    = gb('prop-color-border');
+      dash.clientBranding.dotColor  = gb('prop-color-dot');
+
       this.markDirty();
       this.renderCanvas();
       this.renderSidebar();
+    }
+
+    async _handleLogoUpload(file) {
+      if (!file) return;
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        const res  = await fetch('/api/assets/upload', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.success && data.url) {
+          const urlEl = document.getElementById('prop-logo-url');
+          if (urlEl) { urlEl.value = data.url; urlEl.dispatchEvent(new Event('input')); }
+          const previewImg = document.getElementById('logo-preview-img');
+          const logoPh    = document.getElementById('logo-drop-placeholder');
+          if (previewImg) { previewImg.src = data.url; previewImg.style.display = ''; }
+          if (logoPh) logoPh.style.display = 'none';
+        } else {
+          alert('Upload failed: ' + (data.error || 'unknown error'));
+        }
+      } catch (err) {
+        alert('Upload error: ' + err.message);
+      }
+    }
+
+    /* ─────────────────────────────────────────────
+       Query Picker Panel
+    ───────────────────────────────────────────── */
+
+    async showQueryPicker(wc) {
+      const panel   = document.getElementById('query-picker-panel');
+      const content = document.getElementById('properties-content');
+      if (!panel || !content) return;
+
+      content.style.display = 'none';
+      panel.style.display   = 'flex';
+      panel.style.flexDirection = 'column';
+
+      const closeBtn = document.getElementById('qp-close');
+      if (closeBtn) closeBtn.onclick = () => this._closeQueryPicker();
+
+      let allQueries = [];
+      try {
+        const res     = await fetch('/api/queries/');
+        const data    = await res.json();
+        const grouped = data.queries || {};
+        ['gcp', 'bigquery', 'computed', 'vulntrack'].forEach(src => {
+          (grouped[src] || []).forEach(q => allQueries.push(Object.assign({}, q, { _source: src })));
+        });
+      } catch (_) { /* empty list is fine */ }
+
+      const renderList = (filter) => {
+        const list = document.getElementById('qp-list');
+        if (!list) return;
+        while (list.firstChild) list.removeChild(list.firstChild);
+
+        const lower   = (filter || '').toLowerCase();
+        const matches = allQueries.filter(q =>
+          !lower
+          || q.id.toLowerCase().includes(lower)
+          || (q.name || '').toLowerCase().includes(lower)
+          || (q.description || '').toLowerCase().includes(lower)
+        );
+
+        const sources = {};
+        matches.forEach(q => {
+          if (!sources[q._source]) sources[q._source] = [];
+          sources[q._source].push(q);
+        });
+
+        Object.keys(sources).forEach(src => {
+          const hdr = document.createElement('div');
+          hdr.className   = 'qp-group-header';
+          hdr.textContent = src.toUpperCase();
+          list.appendChild(hdr);
+
+          sources[src].forEach(q => {
+            const row = document.createElement('div');
+            row.className = 'qp-row' + (q.id === wc.queryId ? ' qp-row-selected' : '');
+
+            const idEl = document.createElement('div');
+            idEl.className   = 'qp-row-id';
+            idEl.textContent = q.id;
+
+            const nameEl = document.createElement('div');
+            nameEl.className   = 'qp-row-name';
+            nameEl.textContent = q.name || '';
+
+            row.appendChild(idEl);
+            row.appendChild(nameEl);
+
+            row.addEventListener('click', () => {
+              wc.queryId = q.id;
+              wc.source  = q._source;
+              this.markDirty();
+              this._closeQueryPicker();
+              this.showWidgetProps(wc.id);
+            });
+            list.appendChild(row);
+          });
+        });
+
+        if (matches.length === 0) {
+          const empty = document.createElement('div');
+          empty.className   = 'qp-empty';
+          empty.textContent = 'No queries match';
+          list.appendChild(empty);
+        }
+      };
+
+      renderList('');
+
+      const searchEl = document.getElementById('qp-search');
+      if (searchEl) {
+        searchEl.value   = '';
+        searchEl.oninput = () => renderList(searchEl.value);
+        setTimeout(() => searchEl.focus(), 50);
+      }
+    }
+
+    _closeQueryPicker() {
+      const panel   = document.getElementById('query-picker-panel');
+      const content = document.getElementById('properties-content');
+      if (panel)   panel.style.display   = 'none';
+      if (content) content.style.display = 'flex';
     }
 
     /* ─────────────────────────────────────────────
@@ -485,12 +742,28 @@
           set('prop-mgl-leaderboard', String(mgl.showLeaderboard !== false));
           set('prop-mgl-mapstyle', mgl.mapStyle || 'brand');
           set('prop-mgl-zoomviz',  mgl.zoomViz  || 'dots');
+          // Region picker
+          const regionGroup = document.getElementById('prop-region-group');
+          if (regionGroup) {
+            const currentRegion = (wc.mapConfig && wc.mapConfig.region) || '';
+            regionGroup.querySelectorAll('.region-btn').forEach(btn =>
+              btn.classList.toggle('selected', btn.dataset.region === currentRegion));
+          }
+          // Zoom slider
+          const zoomSlider = document.getElementById('prop-mgl-zoom');
+          const zoomVal    = document.getElementById('prop-mgl-zoom-val');
+          if (zoomSlider) {
+            const z = (wc.mglConfig && wc.mglConfig.initialZoom) || 4;
+            zoomSlider.value = z;
+            if (zoomVal) zoomVal.textContent = z;
+          }
         }
       }
 
-      // Always load queries for current source (even if no queryId assigned yet)
-      this.loadQueryOptions(wc.source || 'gcp', wc.queryId || '');
-      this.updateDataSummary(wc.source, wc.queryId);
+      // Populate query ID text input
+      const queryEl = document.getElementById('prop-query');
+      if (queryEl) queryEl.value = wc.queryId || '';
+      this.updateDataSummary(wc.source || 'gcp', wc.queryId || '');
       this.bindWidgetPropListeners(wc);
     }
 
@@ -551,20 +824,27 @@
           wc.source = sourceEl.value;
           wc.queryId = '';
           if (browseBtn) browseBtn.style.display = (wc.source === 'gcp') ? '' : 'none';
-          await self.loadQueryOptions(wc.source, '');
+          const qEl = document.getElementById('prop-query');
+          if (qEl) qEl.value = '';
           self.updateDataSummary(wc.source, wc.queryId);
           self.markDirty();
         };
       }
 
-      // Special: query selection
-      const queryEl = document.getElementById('prop-query');
+      // Special: query ID text input + Browse button
+      const queryEl   = document.getElementById('prop-query');
+      const browseQueriesBtn = document.getElementById('browse-queries-btn');
+
       if (queryEl) {
-        queryEl.onchange = function () {
-          wc.queryId = queryEl.value;
-          self.updateDataSummary(wc.source, wc.queryId);
-          self.markDirty();
+        queryEl.oninput = () => {
+          wc.queryId = queryEl.value.trim();
+          this.updateDataSummary(wc.source || 'gcp', wc.queryId);
+          this.markDirty();
         };
+      }
+
+      if (browseQueriesBtn) {
+        browseQueriesBtn.onclick = () => this.showQueryPicker(wc);
       }
 
       // Delete widget button
@@ -603,6 +883,29 @@
       bind('prop-mgl-leaderboard', (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showLeaderboard: v === 'true' }; });
       bind('prop-mgl-mapstyle', (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), mapStyle: v }; });
       bind('prop-mgl-zoomviz',  (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), zoomViz: v }; });
+      // Region buttons
+      const regionGroup = document.getElementById('prop-region-group');
+      if (regionGroup) {
+        regionGroup.querySelectorAll('.region-btn').forEach(btn => {
+          btn.onclick = () => {
+            regionGroup.querySelectorAll('.region-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            if (!wc.mapConfig) wc.mapConfig = {};
+            wc.mapConfig.region = btn.dataset.region || undefined;
+            self.markDirty();
+          };
+        });
+      }
+      // Zoom slider
+      const zoomSlider2 = document.getElementById('prop-mgl-zoom');
+      const zoomVal2    = document.getElementById('prop-mgl-zoom-val');
+      if (zoomSlider2) {
+        zoomSlider2.oninput = () => {
+          if (zoomVal2) zoomVal2.textContent = zoomSlider2.value;
+          wc.mglConfig = Object.assign({}, wc.mglConfig || {}, { initialZoom: parseFloat(zoomSlider2.value) });
+          self.markDirty();
+        };
+      }
     }
 
     /* ─────────────────────────────────────────────
@@ -623,56 +926,14 @@
       srcEl.textContent = SOURCE_LABELS[source] || source || 'Unknown';
 
       if (queryId) {
-        // Try to find query name in the loaded dropdown
-        const sel = document.getElementById('prop-query');
-        const opt = sel && sel.querySelector('option[value="' + queryId + '"]');
-        queryEl.textContent   = opt ? opt.textContent : queryId;
-        queryEl.className     = 'data-summary-query';
+        queryEl.textContent = queryId;
+        queryEl.className   = 'data-summary-query';
       } else {
         queryEl.textContent = source === 'gcp' ? 'Built-in metrics (no saved query)' : 'No query selected';
         queryEl.className   = 'data-summary-query none';
       }
     }
 
-    async loadQueryOptions(source, selectedId) {
-      const sel = document.getElementById('prop-query');
-      if (!sel) return;
-
-      // Clear and add default
-      sel.textContent = '';
-      const defaultOpt = document.createElement('option');
-      defaultOpt.value = '';
-      defaultOpt.textContent = '\u2014 select query \u2014';
-      sel.appendChild(defaultOpt);
-
-      try {
-        const res = await fetch('/api/queries/' + source);
-        const data = await res.json();
-        const queries = data.queries || data;
-        if (Array.isArray(queries) && queries.length > 0) {
-          queries.forEach((q) => {
-            const opt = document.createElement('option');
-            opt.value = q.id;
-            opt.textContent = q.name;
-            if (q.id === selectedId) opt.selected = true;
-            sel.appendChild(opt);
-          });
-        } else {
-          const emptyOpt = document.createElement('option');
-          emptyOpt.value = '';
-          emptyOpt.disabled = true;
-          emptyOpt.textContent = 'No saved queries for this source';
-          sel.appendChild(emptyOpt);
-        }
-      } catch (_) {
-        // Empty dropdown is fine
-      }
-
-      // Refresh summary now that query names are loaded in the dropdown
-      const srcSelect = document.getElementById('prop-source');
-      const currentSource = srcSelect ? srcSelect.value : source;
-      this.updateDataSummary(currentSource, selectedId);
-    }
 
     /* ─────────────────────────────────────────────
        Widget Deletion

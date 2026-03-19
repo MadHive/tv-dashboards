@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="/css/dashboard.css?v=12">
-  <link rel="stylesheet" href="/css/studio.css?v=11">
+  <link rel="stylesheet" href="/css/studio.css?v=12">
   <link rel="stylesheet" href="/css/query-explorer.css?v=1">
   <link rel="stylesheet" href="/css/mapbox-gl.css">
   <link rel="stylesheet" href="/css/mapbox-map.css?v=16">
@@ -151,28 +151,95 @@
         <!-- Dashboard props -->
         <div id="dashboard-props" style="display:none">
           <h3 class="props-heading">Dashboard</h3>
-          <label>
-            Name
-            <input id="prop-dash-name" type="text">
-          </label>
-          <label>
-            Subtitle
-            <input id="prop-dash-subtitle" type="text">
-          </label>
-          <div class="props-grid-2">
-            <label>
-              Columns
-              <input id="prop-dash-cols" type="number" min="1" max="12">
-            </label>
-            <label>
-              Rows
-              <input id="prop-dash-rows" type="number" min="1" max="12">
-            </label>
-          </div>
-          <label>
-            Gap (px)
-            <input id="prop-dash-gap" type="number" min="0" max="40">
-          </label>
+
+          <details class="props-section" open>
+            <summary>Basic</summary>
+            <div class="props-body">
+              <label>Name <input id="prop-dash-name" type="text"></label>
+              <label>Subtitle <input id="prop-dash-subtitle" type="text"></label>
+              <div class="props-grid-2">
+                <label>Columns <input id="prop-dash-cols" type="number" min="1" max="12"></label>
+                <label>Rows    <input id="prop-dash-rows" type="number" min="1" max="12"></label>
+              </div>
+              <label>Gap (px) <input id="prop-dash-gap" type="number" min="0" max="40"></label>
+            </div>
+          </details>
+
+          <details class="props-section" open>
+            <summary>Icon</summary>
+            <div class="props-body">
+              <div class="dash-icon-grid" id="dash-icon-grid">
+                <button class="dash-icon-opt" data-icon="bolt"   title="Bolt">&#9889;</button>
+                <button class="dash-icon-opt" data-icon="grid"   title="Grid">&#9783;</button>
+                <button class="dash-icon-opt" data-icon="server" title="Server">&#8982;</button>
+                <button class="dash-icon-opt" data-icon="flow"   title="Flow">&#8644;</button>
+                <button class="dash-icon-opt" data-icon="data"   title="Data">&#9016;</button>
+                <button class="dash-icon-opt" data-icon="shield" title="Shield">&#9768;</button>
+                <button class="dash-icon-opt" data-icon="map"    title="Map">&#9675;</button>
+              </div>
+            </div>
+          </details>
+
+          <details class="props-section" open>
+            <summary>Rotation</summary>
+            <div class="props-body">
+              <div class="rotation-toggle-row">
+                <div>
+                  <div class="rotation-toggle-label">Include in slideshow</div>
+                  <div class="rotation-toggle-hint">When off, dashboard stays in the list but skips TV rotation</div>
+                </div>
+                <button id="prop-dash-rotation" class="rot-toggle" aria-label="Toggle rotation"></button>
+              </div>
+            </div>
+          </details>
+
+          <details class="props-section">
+            <summary>Branding</summary>
+            <div class="props-body">
+
+              <div class="prop-label">Logo</div>
+              <div class="logo-drop-zone" id="logo-drop-zone">
+                <img id="logo-preview-img" class="logo-preview-img" style="display:none" src="" alt="Logo preview">
+                <div id="logo-drop-placeholder">
+                  <div style="font-size:22px">&#128444;</div>
+                  <div class="logo-drop-hint-text">Drop image or <label class="logo-browse-link" for="logo-file-input">browse</label></div>
+                  <div class="logo-drop-hint">SVG, PNG, JPG, WebP &middot; max 2 MB</div>
+                </div>
+                <input type="file" id="logo-file-input" accept=".svg,.png,.jpg,.jpeg,.webp" style="display:none">
+              </div>
+              <label>Logo URL <input id="prop-logo-url" type="text" placeholder="/img/client-logo.svg"></label>
+
+              <div class="props-grid-2">
+                <label>Logo Text <input id="prop-logo-text" type="text" placeholder="MADHIVE"></label>
+                <label>Logo Sub  <input id="prop-logo-sub"  type="text" placeholder="PLATFORM"></label>
+              </div>
+
+              <div class="prop-label" style="margin-top:6px">Brand Colors</div>
+              <div class="color-picker-list">
+                <div class="color-picker-row">
+                  <input type="color" id="prop-color-bg"     value="#0E0320">
+                  <label for="prop-color-bg">Background</label>
+                </div>
+                <div class="color-picker-row">
+                  <input type="color" id="prop-color-accent" value="#FDA4D4">
+                  <label for="prop-color-accent">Accent</label>
+                </div>
+                <div class="color-picker-row">
+                  <input type="color" id="prop-color-bgcard" value="#1A0B38">
+                  <label for="prop-color-bgcard">Card BG</label>
+                </div>
+                <div class="color-picker-row">
+                  <input type="color" id="prop-color-border" value="#2E1860">
+                  <label for="prop-color-border">Border</label>
+                </div>
+                <div class="color-picker-row">
+                  <input type="color" id="prop-color-dot"    value="#2E1860">
+                  <label for="prop-color-dot">Dot Grid</label>
+                </div>
+              </div>
+
+            </div>
+          </details>
         </div>
 
         <!-- Widget props -->
@@ -218,26 +285,30 @@
           <details class="props-section" open>
             <summary>Data</summary>
             <div>
-              <!-- Current data summary — always shows what's powering this widget -->
               <div id="data-summary" class="data-summary">
                 <span class="data-summary-source" id="data-summary-source"></span>
                 <span class="data-summary-sep">&#8250;</span>
                 <span class="data-summary-query" id="data-summary-query"></span>
               </div>
               <label>
-                Change Source
+                Source
                 <select id="prop-source">
                   <option value="gcp">GCP Cloud Monitoring</option>
                   <option value="bigquery">BigQuery</option>
+                  <option value="computed">Computed</option>
                   <option value="vulntrack">VulnTrack</option>
                   <option value="mock">Mock</option>
                 </select>
               </label>
               <button id="browse-metrics-btn" class="studio-btn secondary small" style="display:none">&#128270; Browse GCP Metrics</button>
               <label>
-                Change Query
-                <select id="prop-query"></select>
+                Query ID
+                <div class="query-id-row">
+                  <input id="prop-query" type="text" placeholder="query-id" class="query-id-input">
+                  <button type="button" id="browse-queries-btn" class="studio-btn secondary small">Browse</button>
+                </div>
               </label>
+              <div id="query-id-hint" class="query-id-hint" style="display:none"></div>
               <button id="new-query-btn" class="studio-btn secondary small">+ New Query</button>
             </div>
           </details>
@@ -354,6 +425,21 @@
                   <option value="heatmap">Heatmap</option>
                 </select>
               </label>
+              <label>Region
+                <div class="region-btn-group" id="prop-region-group">
+                  <button type="button" class="region-btn" data-region="">All US</button>
+                  <button type="button" class="region-btn" data-region="northeast">NE</button>
+                  <button type="button" class="region-btn" data-region="southeast">SE</button>
+                  <button type="button" class="region-btn" data-region="northwest">NW</button>
+                  <button type="button" class="region-btn" data-region="southwest">SW</button>
+                </div>
+              </label>
+              <label>Initial Zoom
+                <div class="zoom-slider-row">
+                  <input type="range" id="prop-mgl-zoom" min="2" max="10" step="0.5" value="4">
+                  <span id="prop-mgl-zoom-val">4</span>
+                </div>
+              </label>
             </div>
           </details>
 
@@ -432,6 +518,18 @@
           <button id="qe-save-as-new" class="studio-btn secondary small">Save as New</button>
           <button id="qe-assign"      class="studio-btn secondary small">Assign to Widget</button>
         </div>
+      </div>
+
+      <!-- Query picker panel -->
+      <div id="query-picker-panel" class="query-picker-panel" style="display:none">
+        <div class="qp-header">
+          <span class="qp-title">Browse Queries</span>
+          <button id="qp-close" class="modal-close">&#215;</button>
+        </div>
+        <div class="qp-search-wrap">
+          <input id="qp-search" type="text" class="qp-search" placeholder="Search by name or ID...">
+        </div>
+        <div id="qp-list" class="qp-list"></div>
       </div>
 
       <!-- Data source editor panel — two views: query list (default) + credentials -->
@@ -571,7 +669,7 @@
   <script src="/js/charts.js?v=18"></script>
   <script src="/js/widgets.js?v=11"></script>
   <script src="/js/mapbox-gl.min.js"></script>
-  <script src="/js/mapbox-map.js?v=16"></script>
+  <script src="/js/mapbox-map.js?v=17"></script>
   <script src="/js/query-editor.js?v=1"></script>
   <script src="/js/query-explorer.js?v=1"></script>
   <script src="/js/studio-canvas.js?v=5"></script>

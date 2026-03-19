@@ -82,7 +82,7 @@
     // ---- render all dashboard pages ----
     renderPages() {
       const container = document.getElementById('dashboard-container');
-      this.config.dashboards.forEach((dash) => {
+      this.config.dashboards.filter(d => !d.excluded).forEach((dash) => {
         const page = document.createElement('div');
         page.className = 'dashboard-page';
         page.style.gridTemplateColumns = `repeat(${dash.grid.columns}, 1fr)`;
@@ -118,7 +118,7 @@
     // ---- navigation dots ----
     renderNavDots() {
       const dotsContainer = document.getElementById('nav-dots');
-      this.config.dashboards.forEach((dash, i) => {
+      this.config.dashboards.filter(d => !d.excluded).forEach((dash, i) => {
         const dot = document.createElement('button');
         dot.className = 'nav-dot';
         dot.title = dash.name;
@@ -175,11 +175,34 @@
         set(brand.dotColor,  '--dot-color');
         if (logoText) logoText.textContent = brand.logoText || logoText.textContent;
         if (logoSub)  logoSub.textContent  = brand.logoSub  || logoSub.textContent;
+        // Logo image in top-bar
+        const logoWrap = document.querySelector('.top-left');
+        if (logoWrap) {
+          let logoImg = logoWrap.querySelector('.brand-logo-img');
+          if (brand.logoImage) {
+            if (!logoImg) {
+              logoImg = document.createElement('img');
+              logoImg.className = 'brand-logo-img';
+              logoImg.alt = '';
+              logoImg.style.cssText = 'height:28px;width:auto;opacity:0.9;margin-right:8px;';
+              logoImg.onerror = () => logoImg.remove();
+              logoWrap.prepend(logoImg);
+            }
+            logoImg.src = brand.logoImage;
+          } else if (logoImg) {
+            logoImg.remove();
+          }
+        }
         document.body.dataset.clientBrand = 'active';
       } else {
         ['--bg','--bg-surface','--bg-card','--bg-card-alt',
          '--border','--border-lit','--accent','--accent-dim',
          '--t2','--t3','--dot-color'].forEach(v => r.style.removeProperty(v));
+        const logoWrap = document.querySelector('.top-left');
+        if (logoWrap) {
+          const logoImg = logoWrap.querySelector('.brand-logo-img');
+          if (logoImg) logoImg.remove();
+        }
         const t = this.config.global?.title || '';
         if (logoText) logoText.textContent = t.split(' ')[0] || 'MADHIVE';
         if (logoSub)  logoSub.textContent  = t.split(' ').slice(1).join(' ') || 'PLATFORM';

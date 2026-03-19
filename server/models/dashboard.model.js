@@ -26,6 +26,7 @@ const DashboardShape = t.Object({
   subtitle: t.Optional(t.String()), icon: t.Optional(t.String()),
   grid: GridSchema, widgets: t.Array(WidgetConfig),
   clientBranding: t.Optional(t.Any()),
+  excluded:       t.Optional(t.Boolean()),
 });
 
 export const dashboardModels = new Elysia({ name: 'dashboard.models' })
