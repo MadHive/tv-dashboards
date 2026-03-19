@@ -425,6 +425,21 @@
                   <option value="heatmap">Heatmap</option>
                 </select>
               </label>
+              <label>Region
+                <div class="region-btn-group" id="prop-region-group">
+                  <button type="button" class="region-btn" data-region="">All US</button>
+                  <button type="button" class="region-btn" data-region="northeast">NE</button>
+                  <button type="button" class="region-btn" data-region="southeast">SE</button>
+                  <button type="button" class="region-btn" data-region="northwest">NW</button>
+                  <button type="button" class="region-btn" data-region="southwest">SW</button>
+                </div>
+              </label>
+              <label>Initial Zoom
+                <div class="zoom-slider-row">
+                  <input type="range" id="prop-mgl-zoom" min="2" max="10" step="0.5" value="4">
+                  <span id="prop-mgl-zoom-val">4</span>
+                </div>
+              </label>
             </div>
           </details>
 
@@ -654,7 +669,7 @@
   <script src="/js/charts.js?v=18"></script>
   <script src="/js/widgets.js?v=11"></script>
   <script src="/js/mapbox-gl.min.js"></script>
-  <script src="/js/mapbox-map.js?v=16"></script>
+  <script src="/js/mapbox-map.js?v=17"></script>
   <script src="/js/query-editor.js?v=1"></script>
   <script src="/js/query-explorer.js?v=1"></script>
   <script src="/js/studio-canvas.js?v=5"></script>

@@ -742,6 +742,21 @@
           set('prop-mgl-leaderboard', String(mgl.showLeaderboard !== false));
           set('prop-mgl-mapstyle', mgl.mapStyle || 'brand');
           set('prop-mgl-zoomviz',  mgl.zoomViz  || 'dots');
+          // Region picker
+          const regionGroup = document.getElementById('prop-region-group');
+          if (regionGroup) {
+            const currentRegion = (wc.mapConfig && wc.mapConfig.region) || '';
+            regionGroup.querySelectorAll('.region-btn').forEach(btn =>
+              btn.classList.toggle('selected', btn.dataset.region === currentRegion));
+          }
+          // Zoom slider
+          const zoomSlider = document.getElementById('prop-mgl-zoom');
+          const zoomVal    = document.getElementById('prop-mgl-zoom-val');
+          if (zoomSlider) {
+            const z = (wc.mglConfig && wc.mglConfig.initialZoom) || 4;
+            zoomSlider.value = z;
+            if (zoomVal) zoomVal.textContent = z;
+          }
         }
       }
 
@@ -868,6 +883,29 @@
       bind('prop-mgl-leaderboard', (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showLeaderboard: v === 'true' }; });
       bind('prop-mgl-mapstyle', (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), mapStyle: v }; });
       bind('prop-mgl-zoomviz',  (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), zoomViz: v }; });
+      // Region buttons
+      const regionGroup = document.getElementById('prop-region-group');
+      if (regionGroup) {
+        regionGroup.querySelectorAll('.region-btn').forEach(btn => {
+          btn.onclick = () => {
+            regionGroup.querySelectorAll('.region-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            if (!wc.mapConfig) wc.mapConfig = {};
+            wc.mapConfig.region = btn.dataset.region || undefined;
+            self.markDirty();
+          };
+        });
+      }
+      // Zoom slider
+      const zoomSlider2 = document.getElementById('prop-mgl-zoom');
+      const zoomVal2    = document.getElementById('prop-mgl-zoom-val');
+      if (zoomSlider2) {
+        zoomSlider2.oninput = () => {
+          if (zoomVal2) zoomVal2.textContent = zoomSlider2.value;
+          wc.mglConfig = Object.assign({}, wc.mglConfig || {}, { initialZoom: parseFloat(zoomSlider2.value) });
+          self.markDirty();
+        };
+      }
     }
 
     /* ─────────────────────────────────────────────

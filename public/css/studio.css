@@ -2040,3 +2040,18 @@ body.studio-body {
 .qp-row-id   { font-family: monospace; font-size: 11px; color: #d0c4e4; }
 .qp-row-name { font-size: 10px; color: #8B75B0; margin-top: 1px; }
 .qp-empty    { font-size: 11px; color: #4A2880; text-align: center; padding: 20px; }
+
+/* Region button group */
+.region-btn-group { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
+.region-btn {
+  padding: 4px 8px; background: #1a0b38; border: 1px solid #2E1860;
+  border-radius: 4px; font-size: 11px; color: #a090c0; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.region-btn:hover    { border-color: #4A2880; background: #2a1060; }
+.region-btn.selected { border-color: #7c3aed; background: rgba(124,58,237,0.18); color: #d4b8ff; }
+
+/* Zoom slider */
+.zoom-slider-row { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
+.zoom-slider-row input[type="range"] { flex: 1; accent-color: #7c3aed; }
+.zoom-slider-row span { font-size: 12px; color: #d0c4e4; width: 20px; text-align: right; }
