@@ -72,17 +72,20 @@ dashboards:
         mglConfig:
           overlayPositions:
             west:
-              top: 275.938px
-              left: 342.031px
+              top: 147.691px
+              left: 286.43px
             central:
-              top: 263.023px
-              left: 1095.36px
+              top: 170.438px
+              left: 880.828px
             east:
-              top: 265.602px
-              left: 1701.22px
+              top: 181.66px
+              left: 1603.11px
             totalOverlay:
               top: 1006.46px
               left: 13.0547px
+            leaderboard:
+              top: 574.293px
+              left: 1638.7px
   - grid:
       columns: 1
       gap: 0
