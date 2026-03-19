@@ -324,3 +324,14 @@
   display: block;
   opacity: 0.9;
 }
+
+/* ── Studio drag affordances ──────────────────────────────────────────────── */
+/* pointer-events and cursor are set inline by _makeDraggable() in JS;        */
+/* these rules only add the visual hover outline in studio mode                */
+body.studio-body .mgl-leaderboard:hover,
+body.studio-body .mgl-total-overlay:hover,
+body.studio-body .mgl-region-panel:hover,
+body.studio-body .mgl-client-logo:hover {
+  outline: 1px dashed rgba(253,164,212,0.55);
+  outline-offset: 3px;
+}
