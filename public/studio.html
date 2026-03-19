@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="/css/studio.css?v=16">
   <link rel="stylesheet" href="/css/query-explorer.css?v=1">
   <link rel="stylesheet" href="/css/mapbox-gl.css">
-  <link rel="stylesheet" href="/css/mapbox-map.css?v=20">
+  <link rel="stylesheet" href="/css/mapbox-map.css?v=21">
 </head>
 <body class="studio-body">
 
@@ -441,6 +441,12 @@
                   <option value="heatmap">Heatmap</option>
                 </select>
               </label>
+              <label>Logo Fit
+                <select id="prop-mgl-logofit">
+                  <option value="cover" selected>Cover (fill, crop edges)</option>
+                  <option value="contain">Contain (full logo, may have space)</option>
+                </select>
+              </label>
               <label>Region
                 <div class="region-btn-group" id="prop-region-group">
                   <button type="button" class="region-btn" data-region="">All US</button>
@@ -691,7 +697,7 @@
   <script src="/js/charts.js?v=18"></script>
   <script src="/js/widgets.js?v=11"></script>
   <script src="/js/mapbox-gl.min.js"></script>
-  <script src="/js/mapbox-map.js?v=25"></script>
+  <script src="/js/mapbox-map.js?v=26"></script>
   <script src="/js/query-editor.js?v=1"></script>
   <script src="/js/query-explorer.js?v=1"></script>
   <script src="/js/studio-canvas.js?v=5"></script>
