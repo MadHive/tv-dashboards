@@ -911,6 +911,14 @@
       bind('prop-mgl-leaderboard', (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showLeaderboard: v === 'true' }; });
       bind('prop-mgl-mapstyle', (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), mapStyle: v }; });
       bind('prop-mgl-zoomviz',  (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), zoomViz: v }; });
+      const resetOverlayBtn = document.getElementById('reset-overlay-positions');
+      if (resetOverlayBtn) {
+        resetOverlayBtn.onclick = () => {
+          if (wc.mglConfig) delete wc.mglConfig.overlayPositions;
+          self.markDirty();
+          self.renderCanvas();
+        };
+      }
       // Region buttons
       const regionGroup = document.getElementById('prop-region-group');
       if (regionGroup) {

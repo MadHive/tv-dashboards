@@ -121,6 +121,17 @@ window.StudioCanvas = (function () {
       if (window.Widgets && window.Widgets.create) {
         try {
           widgetInstance = window.Widgets.create(wc.type, content, wc);
+          // For GL map widgets: persist overlay positions to mglConfig when user drags
+          if (wc.type === 'usa-map-gl') {
+            content.addEventListener('mgl-overlay-moved', function (e) {
+              if (!wc.mglConfig) wc.mglConfig = {};
+              wc.mglConfig.overlayPositions = e.detail.positions;
+              // Mark the studio config dirty so Save button activates
+              if (app && app.markDirty) {
+                app.markDirty();
+              }
+            });
+          }
         } catch (e) {
           content.textContent = wc.type;
         }
