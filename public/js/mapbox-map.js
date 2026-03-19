@@ -777,8 +777,8 @@ window.MapboxUSAMap = (function () {
 
         entry.panel.style.left   = x + 'px';
         entry.panel.style.top    = y + 'px';
-        entry.panel.style.right  = '';
-        entry.panel.style.bottom = '';
+        entry.panel.style.right  = 'auto';
+        entry.panel.style.bottom = 'auto';
         entry.panel.style.transform = '';
       });
     }
@@ -788,8 +788,8 @@ window.MapboxUSAMap = (function () {
       if (!pos) return;
       el.style.top    = pos.top;
       el.style.left   = pos.left;
-      el.style.right  = '';
-      el.style.bottom = '';
+      el.style.right  = 'auto';
+      el.style.bottom = 'auto';
       if (key === 'leaderboard' && !el.style.width) {
         el.style.width = '340px';
       }
@@ -891,8 +891,8 @@ window.MapboxUSAMap = (function () {
         const er = el.getBoundingClientRect();
         el.style.top    = (er.top  - cr.top)  + 'px';
         el.style.left   = (er.left - cr.left) + 'px';
-        el.style.right  = '';
-        el.style.bottom = '';
+        el.style.right  = 'auto';
+        el.style.bottom = 'auto';
         if (key === 'leaderboard') el.style.width = er.width + 'px';
 
         startX = e.clientX - el.offsetLeft;
