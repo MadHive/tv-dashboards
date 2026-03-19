@@ -84,8 +84,8 @@ dashboards:
               top: 1006.46px
               left: 13.0547px
             leaderboard:
-              top: 574.293px
-              left: 1638.7px
+              top: 701.453px
+              left: 1589.55px
   - grid:
       columns: 1
       gap: 0
