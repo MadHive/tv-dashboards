@@ -1967,3 +1967,44 @@ body.studio-body {
 .dashboard-nav-item.excluded { opacity: 0.45; }
 .dashboard-nav-item.excluded .nav-name { text-decoration: line-through; }
 .dash-rotation-count { font-size: 10px; color: #4A2880; letter-spacing: 0.5px; padding: 6px 8px 2px; }
+
+/* Dashboard icon picker */
+.dash-icon-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; }
+.dash-icon-opt {
+  padding: 6px 4px; background: #1a0b38; border: 1px solid #2E1860;
+  border-radius: 4px; font-size: 16px; cursor: pointer; color: #d0c4e4;
+  transition: border-color 0.15s, background 0.15s;
+}
+.dash-icon-opt:hover    { border-color: #4A2880; background: #2a1060; }
+.dash-icon-opt.selected { border-color: #FDA4D4; background: rgba(253,164,212,0.12); }
+
+/* Rotation row in props */
+.rotation-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.rotation-toggle-label { font-size: 12px; color: #d0c4e4; }
+.rotation-toggle-hint  { font-size: 10px; color: #6B55A0; margin-top: 2px; }
+
+/* Logo drop zone */
+.logo-drop-zone {
+  border: 1px dashed #4A2880; border-radius: 6px; padding: 12px;
+  text-align: center; background: rgba(124,58,237,0.04); cursor: pointer;
+  margin-bottom: 6px; transition: border-color 0.2s;
+  min-height: 60px; display: flex; align-items: center; justify-content: center;
+}
+.logo-drop-zone:hover, .logo-drop-zone.drag-over { border-color: #7c3aed; }
+.logo-drop-hint-text { font-size: 11px; color: #8B75B0; }
+.logo-drop-hint      { font-size: 10px; color: #4A2880; margin-top: 2px; }
+.logo-browse-link    { color: #FDA4D4; cursor: pointer; text-decoration: underline; }
+.logo-preview-img    { max-height: 40px; max-width: 100%; object-fit: contain; }
+
+/* Color pickers */
+.color-picker-list { display: flex; flex-direction: column; gap: 5px; }
+.color-picker-row  { display: flex; align-items: center; gap: 8px; }
+.color-picker-row input[type="color"] {
+  width: 28px; height: 28px; border: 1px solid #2E1860; border-radius: 4px;
+  background: none; cursor: pointer; padding: 1px; flex-shrink: 0;
+}
+.color-picker-row label { font-size: 11px; color: #c0b0d8; cursor: pointer; }
+
+/* Props body + label */
+.props-body { padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+.prop-label { font-size: 10px; color: #8B75B0; letter-spacing: 0.5px; text-transform: uppercase; }

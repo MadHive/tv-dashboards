@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="/css/dashboard.css?v=12">
-  <link rel="stylesheet" href="/css/studio.css?v=11">
+  <link rel="stylesheet" href="/css/studio.css?v=12">
   <link rel="stylesheet" href="/css/query-explorer.css?v=1">
   <link rel="stylesheet" href="/css/mapbox-gl.css">
   <link rel="stylesheet" href="/css/mapbox-map.css?v=16">
@@ -151,28 +151,95 @@
         <!-- Dashboard props -->
         <div id="dashboard-props" style="display:none">
           <h3 class="props-heading">Dashboard</h3>
-          <label>
-            Name
-            <input id="prop-dash-name" type="text">
-          </label>
-          <label>
-            Subtitle
-            <input id="prop-dash-subtitle" type="text">
-          </label>
-          <div class="props-grid-2">
-            <label>
-              Columns
-              <input id="prop-dash-cols" type="number" min="1" max="12">
-            </label>
-            <label>
-              Rows
-              <input id="prop-dash-rows" type="number" min="1" max="12">
-            </label>
-          </div>
-          <label>
-            Gap (px)
-            <input id="prop-dash-gap" type="number" min="0" max="40">
-          </label>
+
+          <details class="props-section" open>
+            <summary>Basic</summary>
+            <div class="props-body">
+              <label>Name <input id="prop-dash-name" type="text"></label>
+              <label>Subtitle <input id="prop-dash-subtitle" type="text"></label>
+              <div class="props-grid-2">
+                <label>Columns <input id="prop-dash-cols" type="number" min="1" max="12"></label>
+                <label>Rows    <input id="prop-dash-rows" type="number" min="1" max="12"></label>
+              </div>
+              <label>Gap (px) <input id="prop-dash-gap" type="number" min="0" max="40"></label>
+            </div>
+          </details>
+
+          <details class="props-section" open>
+            <summary>Icon</summary>
+            <div class="props-body">
+              <div class="dash-icon-grid" id="dash-icon-grid">
+                <button class="dash-icon-opt" data-icon="bolt"   title="Bolt">&#9889;</button>
+                <button class="dash-icon-opt" data-icon="grid"   title="Grid">&#9783;</button>
+                <button class="dash-icon-opt" data-icon="server" title="Server">&#8982;</button>
+                <button class="dash-icon-opt" data-icon="flow"   title="Flow">&#8644;</button>
+                <button class="dash-icon-opt" data-icon="data"   title="Data">&#9016;</button>
+                <button class="dash-icon-opt" data-icon="shield" title="Shield">&#9768;</button>
+                <button class="dash-icon-opt" data-icon="map"    title="Map">&#9675;</button>
+              </div>
+            </div>
+          </details>
+
+          <details class="props-section" open>
+            <summary>Rotation</summary>
+            <div class="props-body">
+              <div class="rotation-toggle-row">
+                <div>
+                  <div class="rotation-toggle-label">Include in slideshow</div>
+                  <div class="rotation-toggle-hint">When off, dashboard stays in the list but skips TV rotation</div>
+                </div>
+                <button id="prop-dash-rotation" class="rot-toggle" aria-label="Toggle rotation"></button>
+              </div>
+            </div>
+          </details>
+
+          <details class="props-section">
+            <summary>Branding</summary>
+            <div class="props-body">
+
+              <div class="prop-label">Logo</div>
+              <div class="logo-drop-zone" id="logo-drop-zone">
+                <img id="logo-preview-img" class="logo-preview-img" style="display:none" src="" alt="Logo preview">
+                <div id="logo-drop-placeholder">
+                  <div style="font-size:22px">&#128444;</div>
+                  <div class="logo-drop-hint-text">Drop image or <label class="logo-browse-link" for="logo-file-input">browse</label></div>
+                  <div class="logo-drop-hint">SVG, PNG, JPG, WebP &middot; max 2 MB</div>
+                </div>
+                <input type="file" id="logo-file-input" accept=".svg,.png,.jpg,.jpeg,.webp" style="display:none">
+              </div>
+              <label>Logo URL <input id="prop-logo-url" type="text" placeholder="/img/client-logo.svg"></label>
+
+              <div class="props-grid-2">
+                <label>Logo Text <input id="prop-logo-text" type="text" placeholder="MADHIVE"></label>
+                <label>Logo Sub  <input id="prop-logo-sub"  type="text" placeholder="PLATFORM"></label>
+              </div>
+
+              <div class="prop-label" style="margin-top:6px">Brand Colors</div>
+              <div class="color-picker-list">
+                <div class="color-picker-row">
+                  <input type="color" id="prop-color-bg"     value="#0E0320">
+                  <label for="prop-color-bg">Background</label>
+                </div>
+                <div class="color-picker-row">
+                  <input type="color" id="prop-color-accent" value="#FDA4D4">
+                  <label for="prop-color-accent">Accent</label>
+                </div>
+                <div class="color-picker-row">
+                  <input type="color" id="prop-color-bgcard" value="#1A0B38">
+                  <label for="prop-color-bgcard">Card BG</label>
+                </div>
+                <div class="color-picker-row">
+                  <input type="color" id="prop-color-border" value="#2E1860">
+                  <label for="prop-color-border">Border</label>
+                </div>
+                <div class="color-picker-row">
+                  <input type="color" id="prop-color-dot"    value="#2E1860">
+                  <label for="prop-color-dot">Dot Grid</label>
+                </div>
+              </div>
+
+            </div>
+          </details>
         </div>
 
         <!-- Widget props -->

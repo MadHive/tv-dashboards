@@ -98,6 +98,18 @@
     async save() {
       if (this.activeDashIdx < 0) return;
       const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
+
+      // Propagate clientBranding.logoImage to all usa-map-gl widget mglConfigs
+      this.modifiedConfig.dashboards.forEach(dash => {
+        const logoUrl = dash.clientBranding && dash.clientBranding.logoImage;
+        if (!logoUrl) return;
+        (dash.widgets || []).forEach(wc => {
+          if (wc.type === 'usa-map-gl') {
+            wc.mglConfig = Object.assign({}, wc.mglConfig || {}, { clientLogo: logoUrl });
+          }
+        });
+      });
+
       try {
         const res = await fetch('/api/dashboards/' + dash.id, {
           method: 'PUT',
@@ -414,6 +426,83 @@
       if (colsEl) colsEl.oninput = () => this.applyDashboardProps();
       if (rowsEl) rowsEl.oninput = () => this.applyDashboardProps();
       if (gapEl) gapEl.oninput = () => this.applyDashboardProps();
+
+      // Icon picker
+      const iconGrid = document.getElementById('dash-icon-grid');
+      if (iconGrid) {
+        iconGrid.querySelectorAll('.dash-icon-opt').forEach(btn => {
+          btn.classList.toggle('selected', btn.dataset.icon === (dash.icon || 'bolt'));
+          btn.onclick = () => {
+            iconGrid.querySelectorAll('.dash-icon-opt').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            this.applyDashboardProps();
+          };
+        });
+      }
+
+      // Rotation toggle (props panel)
+      const rotBtn = document.getElementById('prop-dash-rotation');
+      if (rotBtn) {
+        rotBtn.className = 'rot-toggle' + (dash.excluded ? ' rot-off' : '');
+        rotBtn.onclick = () => {
+          dash.excluded = !dash.excluded;
+          rotBtn.className = 'rot-toggle' + (dash.excluded ? ' rot-off' : '');
+          this.markDirty();
+          this.renderSidebar();
+        };
+      }
+
+      // Branding
+      const brand  = dash.clientBranding || {};
+      const setVal = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = v; };
+      setVal('prop-logo-url',    brand.logoImage || '');
+      setVal('prop-logo-text',   brand.logoText  || '');
+      setVal('prop-logo-sub',    brand.logoSub   || '');
+      setVal('prop-color-bg',    brand.bg        || '#0E0320');
+      setVal('prop-color-accent',brand.accent    || '#FDA4D4');
+      setVal('prop-color-bgcard',brand.bgCard    || '#1A0B38');
+      setVal('prop-color-border',brand.border    || '#2E1860');
+      setVal('prop-color-dot',   brand.dotColor  || '#2E1860');
+
+      // Logo preview
+      const previewImg = document.getElementById('logo-preview-img');
+      const logoPh     = document.getElementById('logo-drop-placeholder');
+      if (previewImg && logoPh) {
+        if (brand.logoImage) {
+          previewImg.src = brand.logoImage;
+          previewImg.style.display = '';
+          logoPh.style.display = 'none';
+        } else {
+          previewImg.style.display = 'none';
+          logoPh.style.display = '';
+        }
+      }
+
+      // Logo file upload (bind once)
+      const fileInput = document.getElementById('logo-file-input');
+      const dropZone  = document.getElementById('logo-drop-zone');
+      if (fileInput && !fileInput._bound) {
+        fileInput._bound = true;
+        fileInput.onchange = () => this._handleLogoUpload(fileInput.files[0]);
+        if (dropZone) {
+          dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+          dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+          dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            const f = e.dataTransfer.files[0];
+            if (f) this._handleLogoUpload(f);
+          });
+        }
+      }
+
+      // Bind branding inputs to applyDashboardProps
+      ['prop-logo-url','prop-logo-text','prop-logo-sub',
+       'prop-color-bg','prop-color-accent','prop-color-bgcard','prop-color-border','prop-color-dot'
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.oninput = () => this.applyDashboardProps();
+      });
     }
 
     applyDashboardProps() {
@@ -432,9 +521,48 @@
       if (rowsEl) dash.grid.rows = parseInt(rowsEl.value) || dash.grid.rows;
       if (gapEl) dash.grid.gap = parseInt(gapEl.value) || 0;
 
+      // Icon
+      const iconGrid = document.getElementById('dash-icon-grid');
+      const selIcon  = iconGrid && iconGrid.querySelector('.dash-icon-opt.selected');
+      if (selIcon) dash.icon = selIcon.dataset.icon;
+
+      // Branding
+      if (!dash.clientBranding) dash.clientBranding = {};
+      const gb = (id) => { const el = document.getElementById(id); return el ? (el.value || undefined) : undefined; };
+      dash.clientBranding.logoImage = gb('prop-logo-url');
+      dash.clientBranding.logoText  = gb('prop-logo-text');
+      dash.clientBranding.logoSub   = gb('prop-logo-sub');
+      dash.clientBranding.bg        = gb('prop-color-bg');
+      dash.clientBranding.accent    = gb('prop-color-accent');
+      dash.clientBranding.bgCard    = gb('prop-color-bgcard');
+      dash.clientBranding.border    = gb('prop-color-border');
+      dash.clientBranding.dotColor  = gb('prop-color-dot');
+
       this.markDirty();
       this.renderCanvas();
       this.renderSidebar();
+    }
+
+    async _handleLogoUpload(file) {
+      if (!file) return;
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        const res  = await fetch('/api/assets/upload', { method: 'POST', body: fd });
+        const data = await res.json();
+        if (data.success && data.url) {
+          const urlEl = document.getElementById('prop-logo-url');
+          if (urlEl) { urlEl.value = data.url; urlEl.dispatchEvent(new Event('input')); }
+          const previewImg = document.getElementById('logo-preview-img');
+          const logoPh    = document.getElementById('logo-drop-placeholder');
+          if (previewImg) { previewImg.src = data.url; previewImg.style.display = ''; }
+          if (logoPh) logoPh.style.display = 'none';
+        } else {
+          alert('Upload failed: ' + (data.error || 'unknown error'));
+        }
+      } catch (err) {
+        alert('Upload error: ' + err.message);
+      }
     }
 
     /* ─────────────────────────────────────────────
