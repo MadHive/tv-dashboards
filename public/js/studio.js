@@ -881,6 +881,52 @@
         deleteBtn.onclick = () => this.deleteSelectedWidget();
       }
 
+      // Preview live data button
+      const previewBtn = document.getElementById('preview-widget-data-btn');
+      const previewPanel = document.getElementById('widget-data-preview');
+      if (previewBtn && previewPanel) {
+        previewBtn.onclick = async () => {
+          const dash = self.modifiedConfig.dashboards[self.activeDashIdx];
+          if (!dash) return;
+          previewBtn.textContent = '\u23F3 Loading...';
+          previewBtn.disabled = true;
+          try {
+            const res = await fetch('/api/metrics/' + dash.id);
+            const all = await res.json();
+            const data = all[wc.id];
+            if (!data) {
+              previewPanel.textContent = 'No data returned for this widget.';
+              previewPanel.style.display = '';
+              return;
+            }
+            previewPanel.textContent = '';
+            previewPanel.style.display = '';
+            const summary = document.createElement('div');
+            summary.className = 'data-preview-summary';
+            // Build a human-readable summary
+            const entries = [];
+            if (data.states)   entries.push('States: ' + Object.keys(data.states).length);
+            if (data.hotspots) entries.push('Hotspots: ' + data.hotspots.length);
+            if (data.totals)   entries.push('Impressions: ' + (data.totals.impressions || 0).toLocaleString());
+            if (data.value !== undefined) entries.push('Value: ' + data.value);
+            if (data.sparkline) entries.push('Sparkline: ' + data.sparkline.length + ' pts');
+            if (entries.length === 0) entries.push('Data received (expand JSON below)');
+            summary.textContent = entries.join('  \u00b7  ');
+            const pre = document.createElement('pre');
+            pre.className = 'data-preview-json';
+            pre.textContent = JSON.stringify(data, null, 2).slice(0, 3000) + (JSON.stringify(data).length > 3000 ? '\n...(truncated)' : '');
+            previewPanel.appendChild(summary);
+            previewPanel.appendChild(pre);
+          } catch (err) {
+            previewPanel.textContent = 'Error: ' + err.message;
+            previewPanel.style.display = '';
+          } finally {
+            previewBtn.textContent = '\u{1F50E} Preview Live Data';
+            previewBtn.disabled = false;
+          }
+        };
+      }
+
       // New query button
       const newQueryBtn = document.getElementById('new-query-btn');
       if (newQueryBtn) {

@@ -2055,3 +2055,30 @@ body.studio-body {
 .zoom-slider-row { display: flex; align-items: center; gap: 8px; margin-top: 3px; }
 .zoom-slider-row input[type="range"] { flex: 1; accent-color: #7c3aed; }
 .zoom-slider-row span { font-size: 12px; color: #d0c4e4; width: 20px; text-align: right; }
+
+/* Data preview panel in widget properties */
+.widget-data-preview {
+  margin: 0 14px 10px;
+  background: #0d0226;
+  border: 1px solid #2E1860;
+  border-radius: 6px;
+  padding: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+.data-preview-summary {
+  font-size: 11px;
+  color: #4ADE80;
+  padding: 2px 0 6px;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid #2E1860;
+  margin-bottom: 6px;
+}
+.data-preview-json {
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  color: #a090c8;
+  white-space: pre-wrap;
+  word-break: break-all;
+  margin: 0;
+}
