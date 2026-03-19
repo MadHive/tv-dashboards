@@ -843,6 +843,23 @@ window.MapboxUSAMap = (function () {
         nh = Math.min(nh, cr.height - er.top  + cr.top);
         el.style.width  = nw + 'px';
         el.style.height = nh + 'px';
+        // Scale text proportionally for total overlay and leaderboard
+        if (key === 'totalOverlay') {
+          const scale = Math.max(0.4, Math.min(2.5, nw / 220));
+          const valEl = el.querySelector('.mgl-total-value');
+          const lblEl = el.querySelector('.mgl-total-label');
+          const subEl = el.querySelector('.mgl-total-sub');
+          if (valEl) valEl.style.fontSize = Math.round(72 * scale) + 'px';
+          if (lblEl) lblEl.style.fontSize = Math.round(12 * scale) + 'px';
+          if (subEl) subEl.style.fontSize = Math.round(13 * scale) + 'px';
+        }
+        if (key === 'leaderboard') {
+          const scale = Math.max(0.5, Math.min(2.0, nw / 340));
+          const titleEl = el.querySelector('.mgl-lb-title');
+          const hdrEl   = el.querySelector('.mgl-lb-header-total');
+          if (titleEl) titleEl.style.fontSize = Math.round(17 * scale) + 'px';
+          if (hdrEl)   hdrEl.style.fontSize   = Math.round(17 * scale) + 'px';
+        }
       });
 
       handle.addEventListener('pointerup', function (e) {
