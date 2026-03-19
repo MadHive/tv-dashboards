@@ -469,6 +469,45 @@ const app = new Elysia()
     detail: { tags: ['dashboards'], summary: 'Create new dashboard' },
   })
 
+  .post('/api/assets/upload', async ({ body }) => {
+    try {
+      const file = body.file;
+      if (!file) {
+        return new Response(JSON.stringify({ success: false, error: 'No file provided' }),
+          { status: 400, headers: { 'content-type': 'application/json' } });
+      }
+
+      const ALLOWED = ['image/svg+xml', 'image/png', 'image/jpeg', 'image/webp'];
+      const MAX_BYTES = 2 * 1024 * 1024;
+
+      if (!ALLOWED.includes(file.type)) {
+        return new Response(JSON.stringify({ success: false, error: 'File type not allowed. Use SVG, PNG, JPG, or WebP.' }),
+          { status: 400, headers: { 'content-type': 'application/json' } });
+      }
+
+      const bytes = await file.arrayBuffer();
+      if (bytes.byteLength > MAX_BYTES) {
+        return new Response(JSON.stringify({ success: false, error: 'File exceeds 2MB limit' }),
+          { status: 400, headers: { 'content-type': 'application/json' } });
+      }
+
+      const ext      = (file.name.match(/\.[^.]+$/) || [''])[0].toLowerCase();
+      const base     = file.name.replace(/\.[^.]+$/, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+      const prefix   = Math.random().toString(36).slice(2, 8);
+      const filename = `${prefix}-${base}${ext}`;
+
+      await Bun.write(`./public/img/${filename}`, bytes);
+      return { success: true, url: `/img/${filename}` };
+    } catch (err) {
+      return new Response(JSON.stringify({ success: false, error: err.message }),
+        { status: 500, headers: { 'content-type': 'application/json' } });
+    }
+  }, {
+    body: t.Object({ file: t.File() }),
+    type: 'formdata',
+    detail: { tags: ['assets'], summary: 'Upload a logo or image asset to public/img/' },
+  })
+
   .delete('/api/dashboards/:id', async ({ params }) => {
     try {
       const result = await deleteDashboard(params.id);
