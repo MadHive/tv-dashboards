@@ -139,6 +139,8 @@ window.MapboxUSAMap = (function () {
       this._visObs         = null;
       this._corridorPaths  = [];
       this._lastBounds     = null;
+      // Persisted overlay positions (from mglConfig.overlayPositions)
+      this._overlayPositions = Object.assign({}, (this._cfg && this._cfg.overlayPositions) || {});
 
       this._wrap = document.createElement('div');
       this._wrap.className = 'mgl-container';
@@ -754,6 +756,7 @@ window.MapboxUSAMap = (function () {
         const key   = dcKeyMap[dc.id];
         const entry = this._regionPanels[key];
         if (!entry?.panel) return;
+        if (this._overlayPositions && this._overlayPositions[key]) return;
 
         const px = this._map.project([dc.lon, dc.lat]);
 
@@ -777,6 +780,71 @@ window.MapboxUSAMap = (function () {
         entry.panel.style.right  = '';
         entry.panel.style.bottom = '';
         entry.panel.style.transform = '';
+      });
+    }
+
+    _applyOverlayPosition(el, key) {
+      const pos = this._overlayPositions && this._overlayPositions[key];
+      if (!pos) return;
+      el.style.top    = pos.top;
+      el.style.left   = pos.left;
+      el.style.right  = '';
+      el.style.bottom = '';
+      if (key === 'leaderboard' && !el.style.width) {
+        el.style.width = '340px';
+      }
+    }
+
+    _saveOverlayPosition(key, el) {
+      if (!this._overlayPositions) this._overlayPositions = {};
+      this._overlayPositions[key] = { top: el.style.top, left: el.style.left };
+    }
+
+    _makeDraggable(el, key) {
+      if (!document.body.classList.contains('studio-body')) return;
+      el.style.pointerEvents = 'auto';
+      el.style.cursor = 'grab';
+
+      const self = this;
+      let startX = 0, startY = 0;
+
+      el.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        el.setPointerCapture(e.pointerId);
+        el.style.cursor = 'grabbing';
+
+        const cr = self._wrap.getBoundingClientRect();
+        const er = el.getBoundingClientRect();
+        el.style.top    = (er.top  - cr.top)  + 'px';
+        el.style.left   = (er.left - cr.left) + 'px';
+        el.style.right  = '';
+        el.style.bottom = '';
+        if (key === 'leaderboard') el.style.width = er.width + 'px';
+
+        startX = e.clientX - el.offsetLeft;
+        startY = e.clientY - el.offsetTop;
+      });
+
+      el.addEventListener('pointermove', function (e) {
+        if (e.buttons === 0) return;
+        const cr  = self._wrap.getBoundingClientRect();
+        const er  = el.getBoundingClientRect();
+        let nx = e.clientX - startX;
+        let ny = e.clientY - startY;
+        nx = Math.max(0, Math.min(nx, cr.width  - er.width));
+        ny = Math.max(0, Math.min(ny, cr.height - er.height));
+        el.style.left = nx + 'px';
+        el.style.top  = ny + 'px';
+      });
+
+      el.addEventListener('pointerup', function (e) {
+        el.style.cursor = 'grab';
+        el.releasePointerCapture(e.pointerId);
+        self._saveOverlayPosition(key, el);
+        self._wrap.dispatchEvent(new CustomEvent('mgl-overlay-moved', {
+          bubbles: true,
+          detail: { positions: Object.assign({}, self._overlayPositions) },
+        }));
       });
     }
 
@@ -984,6 +1052,8 @@ window.MapboxUSAMap = (function () {
         panel.appendChild(impEl);
         panel.appendChild(metaEl);
         this._wrap.appendChild(panel);
+        this._applyOverlayPosition(panel, key);
+        this._makeDraggable(panel, key);
 
         this._regionPanels[key] = { panel, impEl, bidsEl, svcEl };
       });
@@ -1014,6 +1084,8 @@ window.MapboxUSAMap = (function () {
       lb.appendChild(this._lbTotals);
       this._lbEl = lb;
       this._wrap.appendChild(lb);
+      this._applyOverlayPosition(lb, 'leaderboard');
+      this._makeDraggable(lb, 'leaderboard');
 
       // Leaderboard header total (above title)
       this._lbHeaderTotal = document.createElement('div');
@@ -1031,6 +1103,8 @@ window.MapboxUSAMap = (function () {
         logoImg.onerror = () => logoWrap.remove();
         logoWrap.appendChild(logoImg);
         this._wrap.appendChild(logoWrap);
+        this._applyOverlayPosition(logoWrap, 'clientLogo');
+        this._makeDraggable(logoWrap, 'clientLogo');
       }
 
       // Bottom-left impressions total overlay
@@ -1053,6 +1127,8 @@ window.MapboxUSAMap = (function () {
       overlay.appendChild(this._totalValueEl);
       overlay.appendChild(sub);
       this._wrap.appendChild(overlay);
+      this._applyOverlayPosition(overlay, 'totalOverlay');
+      this._makeDraggable(overlay, 'totalOverlay');
     }
 
     _renderLeaderboard(states, maxImp, totals) {
