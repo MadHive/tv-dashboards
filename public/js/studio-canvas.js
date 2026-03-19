@@ -132,8 +132,10 @@ window.StudioCanvas = (function () {
             });
             content.addEventListener('mgl-viewport-changed', function (e) {
               if (!wc.mglConfig) wc.mglConfig = {};
-              wc.mglConfig.initialCenter = e.detail.center;
-              wc.mglConfig.initialZoom   = e.detail.zoom;
+              wc.mglConfig.initialCenter  = e.detail.center;
+              wc.mglConfig.initialZoom    = e.detail.zoom;
+              wc.mglConfig.initialPitch   = e.detail.pitch;
+              wc.mglConfig.initialBearing = e.detail.bearing;
               if (app && app.markDirty) app.markDirty();
             });
           }

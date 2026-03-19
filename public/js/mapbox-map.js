@@ -93,6 +93,8 @@ window.MapboxUSAMap = (function () {
       clientLogo:      null,
       initialZoom:     null,
       initialCenter:   null,
+      initialPitch:    null,
+      initialBearing:  null,
       logoFit:         'cover',
       ...(userConfig || {}),
     };
@@ -202,6 +204,12 @@ window.MapboxUSAMap = (function () {
           if (this._cfg.initialZoom) {
             this._map.setZoom(this._cfg.initialZoom);
           }
+          if (this._cfg.initialPitch !== null && this._cfg.initialPitch !== undefined) {
+            this._map.setPitch(this._cfg.initialPitch);
+          }
+          if (this._cfg.initialBearing !== null && this._cfg.initialBearing !== undefined) {
+            this._map.setBearing(this._cfg.initialBearing);
+          }
         });
 
         // In studio mode: save map center+zoom to mglConfig when user pans or zooms
@@ -210,13 +218,17 @@ window.MapboxUSAMap = (function () {
             if (!self._map) return;
             const c = self._map.getCenter();
             const z = self._map.getZoom();
+            const p = self._map.getPitch();
+            const b = self._map.getBearing();
             self._wrap.dispatchEvent(new CustomEvent('mgl-viewport-changed', {
               bubbles: true,
-              detail: { center: { lng: c.lng, lat: c.lat }, zoom: z },
+              detail: { center: { lng: c.lng, lat: c.lat }, zoom: z, pitch: p, bearing: b },
             }));
           };
-          self._map.on('moveend', saveViewport);
-          self._map.on('zoomend', saveViewport);
+          self._map.on('moveend',  saveViewport);
+          self._map.on('zoomend',  saveViewport);
+          self._map.on('pitchend', saveViewport);
+          self._map.on('rotateend', saveViewport);
         }
 
         // Auto-recover from GPU/WebGL context loss (e.g. after long uptime)

@@ -448,6 +448,13 @@
                   <label style="font-size:11px">Lng <input id="prop-mgl-center-lng" type="number" step="0.1" placeholder="-98.5"></label>
                 </div>
               </div>
+              <div>
+                <div style="font-size:10px;color:#8B75B0;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">Tilt &amp; Rotation</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+                  <label style="font-size:11px">Pitch (0-60°) <input id="prop-mgl-pitch" type="number" min="0" max="60" step="1" placeholder="0"></label>
+                  <label style="font-size:11px">Bearing (°) <input id="prop-mgl-bearing" type="number" min="-180" max="180" step="1" placeholder="0"></label>
+                </div>
+              </div>
               <label>Logo Fit
                 <select id="prop-mgl-logofit">
                   <option value="cover" selected>Cover (fill, crop edges)</option>
@@ -704,11 +711,11 @@
   <script src="/js/charts.js?v=18"></script>
   <script src="/js/widgets.js?v=11"></script>
   <script src="/js/mapbox-gl.min.js"></script>
-  <script src="/js/mapbox-map.js?v=29"></script>
+  <script src="/js/mapbox-map.js?v=30"></script>
   <script src="/js/query-editor.js?v=1"></script>
   <script src="/js/query-explorer.js?v=1"></script>
   <script src="/js/studio-canvas.js?v=5"></script>
-  <script src="/js/studio.js?v=21"></script>
+  <script src="/js/studio.js?v=22"></script>
 
 <!-- Query Explorer Modal -->
 <div id="qx-modal" class="studio-modal" style="display:none">
