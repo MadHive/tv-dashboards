@@ -66,6 +66,7 @@
       await this.refreshData();
       this.startRotation();
       this.startRefresh();
+      this.startConfigRefresh();
       this.bindKeys();
 
       // Pause button in bottom bar
@@ -262,6 +263,40 @@
     startRefresh() {
       const interval = (this.config.global.refresh_interval || 5) * 1000;
       this.refreshTimer = setInterval(() => this.refreshData(), interval);
+    }
+
+    startConfigRefresh() {
+      // Re-fetch config every 30s to pick up studio branding/exclusion changes without a full reload
+      setInterval(async () => {
+        try {
+          const res = await fetch('/api/config');
+          if (!res.ok) return;
+          const newConfig = await res.json();
+          const oldDashes = this.config.dashboards;
+          const newDashes = newConfig.dashboards;
+          let changed = oldDashes.length !== newDashes.length;
+          if (!changed) {
+            for (let i = 0; i < newDashes.length; i++) {
+              const o = oldDashes[i] || {};
+              const n = newDashes[i] || {};
+              if (JSON.stringify(n.clientBranding) !== JSON.stringify(o.clientBranding)
+                  || n.excluded !== o.excluded
+                  || n.icon !== o.icon
+                  || n.name !== o.name) {
+                changed = true;
+                break;
+              }
+            }
+          }
+          if (changed) {
+            this.config = newConfig;
+            // Re-apply branding for whatever page is currently showing
+            const activeDashes = newConfig.dashboards.filter(d => !d.excluded);
+            const dash = activeDashes[this.currentPage];
+            if (dash) this._applyClientBranding(dash.clientBranding || null);
+          }
+        } catch (_) { /* non-fatal */ }
+      }, 30000);
     }
 
     async refreshData() {
