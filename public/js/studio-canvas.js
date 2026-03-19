@@ -128,10 +128,13 @@ window.StudioCanvas = (function () {
             content.addEventListener('mgl-overlay-moved', function (e) {
               if (!wc.mglConfig) wc.mglConfig = {};
               wc.mglConfig.overlayPositions = e.detail.positions;
-              // Mark the studio config dirty so Save button activates
-              if (app && app.markDirty) {
-                app.markDirty();
-              }
+              if (app && app.markDirty) app.markDirty();
+            });
+            content.addEventListener('mgl-viewport-changed', function (e) {
+              if (!wc.mglConfig) wc.mglConfig = {};
+              wc.mglConfig.initialCenter = e.detail.center;
+              wc.mglConfig.initialZoom   = e.detail.zoom;
+              if (app && app.markDirty) app.markDirty();
             });
           }
         } catch (e) {
