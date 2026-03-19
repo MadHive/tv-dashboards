@@ -770,6 +770,7 @@
           set('prop-mgl-leaderboard', String(mgl.showLeaderboard !== false));
           set('prop-mgl-mapstyle', mgl.mapStyle || 'brand');
           set('prop-mgl-zoomviz',  mgl.zoomViz  || 'dots');
+          set('prop-mgl-logofit',   mgl.logoFit  || 'cover');
           // Region picker
           const regionGroup = document.getElementById('prop-region-group');
           if (regionGroup) {
@@ -957,6 +958,7 @@
       bind('prop-mgl-leaderboard', (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showLeaderboard: v === 'true' }; });
       bind('prop-mgl-mapstyle', (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), mapStyle: v }; });
       bind('prop-mgl-zoomviz',  (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), zoomViz: v }; });
+      bind('prop-mgl-logofit',  (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), logoFit: v }; });
       const resetOverlayBtn = document.getElementById('reset-overlay-positions');
       if (resetOverlayBtn) {
         resetOverlayBtn.onclick = () => {

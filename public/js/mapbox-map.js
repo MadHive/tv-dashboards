@@ -92,6 +92,7 @@ window.MapboxUSAMap = (function () {
       zoomViz:         'dots',
       clientLogo:      null,
       initialZoom:     null,
+      logoFit:         'cover',
       ...(userConfig || {}),
     };
   }
@@ -793,7 +794,10 @@ window.MapboxUSAMap = (function () {
       if (key === 'leaderboard' && !el.style.width) {
         el.style.width = '340px';
       }
-      if (pos.width)  el.style.width  = pos.width;
+      if (pos.width)  {
+        el.style.width  = pos.width;
+        this._applyOverlayScale(el, key, pos.width);
+      }
       if (pos.height) el.style.height = pos.height;
     }
 
@@ -843,23 +847,7 @@ window.MapboxUSAMap = (function () {
         nh = Math.min(nh, cr.height - er.top  + cr.top);
         el.style.width  = nw + 'px';
         el.style.height = nh + 'px';
-        // Scale text proportionally for total overlay and leaderboard
-        if (key === 'totalOverlay') {
-          const scale = Math.max(0.4, Math.min(2.5, nw / 220));
-          const valEl = el.querySelector('.mgl-total-value');
-          const lblEl = el.querySelector('.mgl-total-label');
-          const subEl = el.querySelector('.mgl-total-sub');
-          if (valEl) valEl.style.fontSize = Math.round(72 * scale) + 'px';
-          if (lblEl) lblEl.style.fontSize = Math.round(12 * scale) + 'px';
-          if (subEl) subEl.style.fontSize = Math.round(13 * scale) + 'px';
-        }
-        if (key === 'leaderboard') {
-          const scale = Math.max(0.5, Math.min(2.0, nw / 340));
-          const titleEl = el.querySelector('.mgl-lb-title');
-          const hdrEl   = el.querySelector('.mgl-lb-header-total');
-          if (titleEl) titleEl.style.fontSize = Math.round(17 * scale) + 'px';
-          if (hdrEl)   hdrEl.style.fontSize   = Math.round(17 * scale) + 'px';
-        }
+        self._applyOverlayScale(el, key, nw + 'px');
       });
 
       handle.addEventListener('pointerup', function (e) {
@@ -872,6 +860,46 @@ window.MapboxUSAMap = (function () {
       });
 
       el.appendChild(handle);
+    }
+
+    // Natural widths for each overlay type (used to compute scale factor)
+    _overlayNaturalWidths() {
+      return { leaderboard: 340, totalOverlay: 220, west: 160, central: 160, east: 160, clientLogo: 120 };
+    }
+
+    _applyOverlayScale(el, key, widthPx) {
+      if (!widthPx) return;
+      const nat = this._overlayNaturalWidths()[key];
+      if (!nat) return;
+      const nw = parseFloat(widthPx);
+      if (isNaN(nw) || nw <= 0) return;
+      const scale = Math.max(0.3, Math.min(3.0, nw / nat));
+
+      if (key === 'totalOverlay') {
+        const v = el.querySelector('.mgl-total-value');
+        const l = el.querySelector('.mgl-total-label');
+        const s = el.querySelector('.mgl-total-sub');
+        if (v) v.style.fontSize = Math.round(72 * scale) + 'px';
+        if (l) l.style.fontSize = Math.round(12 * scale) + 'px';
+        if (s) s.style.fontSize = Math.round(13 * scale) + 'px';
+      } else if (key === 'leaderboard') {
+        this._lbScale = Math.max(0.4, Math.min(2.5, scale));
+        const t = el.querySelector('.mgl-lb-title');
+        const h = el.querySelector('.mgl-lb-header-total');
+        if (t) t.style.fontSize = Math.round(17 * this._lbScale) + 'px';
+        if (h) h.style.fontSize = Math.round(17 * this._lbScale) + 'px';
+        // Re-render rows at new scale if data is available
+        if (this._data && this._data.states) {
+          this._renderLeaderboard(this._data.states, 1, this._data.totals || {});
+        }
+      } else if (key === 'west' || key === 'central' || key === 'east') {
+        const imp  = el.querySelector('.mgl-region-impressions');
+        const name = el.querySelector('.mgl-region-name');
+        const meta = el.querySelector('.mgl-region-meta');
+        if (imp)  imp.style.fontSize  = Math.round(40 * scale) + 'px';
+        if (name) name.style.fontSize = Math.round(16 * scale) + 'px';
+        if (meta) meta.style.fontSize = Math.round(13 * scale) + 'px';
+      }
     }
 
     _makeDraggable(el, key) {
@@ -1177,6 +1205,8 @@ window.MapboxUSAMap = (function () {
         logoImg.src = this._cfg.clientLogo;
         logoImg.alt = '';
         logoImg.onerror = () => logoWrap.remove();
+        // Apply fit mode: cover (default, crops to fill) or contain (full logo, may have space)
+        logoWrap.style.setProperty('--logo-fit', this._cfg.logoFit || 'cover');
         logoWrap.appendChild(logoImg);
         this._wrap.appendChild(logoWrap);
         this._applyOverlayPosition(logoWrap, 'clientLogo');
@@ -1273,6 +1303,14 @@ window.MapboxUSAMap = (function () {
         const tdImp = document.createElement('td');
         tdImp.className   = 'mgl-lb-imp-cell';
         tdImp.textContent = fmt(s.impressions);
+
+        // Apply leaderboard scale to row text if box has been resized
+        if (this._lbScale && this._lbScale !== 1) {
+          const fs = Math.round(18 * this._lbScale) + 'px';
+          tdRank.style.fontSize  = fs;
+          tdState.style.fontSize = fs;
+          tdImp.style.fontSize   = fs;
+        }
 
         // Percentage cell with inline mini-bar
         const tdPct = document.createElement('td');
