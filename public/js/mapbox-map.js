@@ -212,24 +212,9 @@ window.MapboxUSAMap = (function () {
           }
         });
 
-        // In studio mode: save map center+zoom to mglConfig when user pans or zooms
-        if (document.body.classList.contains('studio-body')) {
-          const saveViewport = () => {
-            if (!self._map) return;
-            const c = self._map.getCenter();
-            const z = self._map.getZoom();
-            const p = self._map.getPitch();
-            const b = self._map.getBearing();
-            self._wrap.dispatchEvent(new CustomEvent('mgl-viewport-changed', {
-              bubbles: true,
-              detail: { center: { lng: c.lng, lat: c.lat }, zoom: z, pitch: p, bearing: b },
-            }));
-          };
-          self._map.on('moveend',  saveViewport);
-          self._map.on('zoomend',  saveViewport);
-          self._map.on('pitchend', saveViewport);
-          self._map.on('rotateend', saveViewport);
-        }
+        // Note: viewport changes are NOT auto-captured from map events in studio mode.
+        // Reason: fitBounds fires moveend on init which would overwrite user-set values.
+        // Instead, use the Lat/Lng/Pitch/Bearing inputs in the Map GL Config panel.
 
         // Auto-recover from GPU/WebGL context loss (e.g. after long uptime)
         this._map.on('webglcontextlost', () => {

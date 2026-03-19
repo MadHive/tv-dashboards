@@ -298,6 +298,10 @@ window.StudioCanvas = (function () {
   }
 
   function addResizeHandles(card, wc, dash) {
+    // Don't add card-level resize handles for full-screen map widgets —
+    // they overlap the map overlay resize handles and trigger unwanted renderCanvas calls
+    if (wc.type === 'usa-map-gl' || wc.type === 'usa-map') return;
+
     // Right handle → resize colSpan
     const rightHandle = document.createElement('div');
     rightHandle.style.cssText = [
