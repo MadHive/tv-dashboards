@@ -123,6 +123,8 @@ window.StudioCanvas = (function () {
           widgetInstance = window.Widgets.create(wc.type, content, wc);
           // For GL map widgets: persist overlay positions to mglConfig when user drags
           if (wc.type === 'usa-map-gl') {
+            // Allow resize handles to extend outside the clipped canvas
+            canvas.classList.add('has-map-widget');
             content.addEventListener('mgl-overlay-moved', function (e) {
               if (!wc.mglConfig) wc.mglConfig = {};
               wc.mglConfig.overlayPositions = e.detail.positions;
