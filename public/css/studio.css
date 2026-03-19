@@ -2082,3 +2082,6 @@ body.studio-body {
   word-break: break-all;
   margin: 0;
 }
+
+/* Allow map overlay resize handles to extend outside the canvas boundary */
+.studio-canvas.has-map-widget { overflow: visible; }

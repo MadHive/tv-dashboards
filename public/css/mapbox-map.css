@@ -356,3 +356,9 @@ body.studio-body .mgl-client-logo:hover {
   outline: 1px dashed rgba(253,164,212,0.55);
   outline-offset: 3px;
 }
+
+/* Allow resize handles (positioned -6px outside overlays) to be visible in studio */
+body.studio-body .mgl-container    { overflow: visible; }
+body.studio-body .mgl-client-logo  { overflow: visible; }
+body.studio-body .mgl-total-overlay { overflow: visible; }
+body.studio-body .mgl-region-panel { overflow: visible; }
