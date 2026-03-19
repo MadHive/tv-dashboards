@@ -771,6 +771,11 @@
           set('prop-mgl-mapstyle', mgl.mapStyle || 'brand');
           set('prop-mgl-zoomviz',  mgl.zoomViz  || 'dots');
           set('prop-mgl-logofit',   mgl.logoFit  || 'cover');
+          const c = mgl.initialCenter;
+          const centerLatEl = document.getElementById('prop-mgl-center-lat');
+          const centerLngEl = document.getElementById('prop-mgl-center-lng');
+          if (centerLatEl) centerLatEl.value = (c && c.lat != null) ? c.lat : '';
+          if (centerLngEl) centerLngEl.value = (c && c.lng != null) ? c.lng : '';
           // Region picker
           const regionGroup = document.getElementById('prop-region-group');
           if (regionGroup) {
@@ -959,6 +964,23 @@
       bind('prop-mgl-mapstyle', (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), mapStyle: v }; });
       bind('prop-mgl-zoomviz',  (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), zoomViz: v }; });
       bind('prop-mgl-logofit',  (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), logoFit: v }; });
+
+      const bindCenter = () => {
+        const lat = parseFloat(document.getElementById('prop-mgl-center-lat')?.value);
+        const lng = parseFloat(document.getElementById('prop-mgl-center-lng')?.value);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          wc.mglConfig = { ...(wc.mglConfig || {}), initialCenter: { lat, lng } };
+        } else {
+          const mc = Object.assign({}, wc.mglConfig || {});
+          delete mc.initialCenter;
+          wc.mglConfig = mc;
+        }
+        self.markDirty();
+      };
+      const cLatEl = document.getElementById('prop-mgl-center-lat');
+      const cLngEl = document.getElementById('prop-mgl-center-lng');
+      if (cLatEl) cLatEl.oninput = bindCenter;
+      if (cLngEl) cLngEl.oninput = bindCenter;
       const resetOverlayBtn = document.getElementById('reset-overlay-positions');
       if (resetOverlayBtn) {
         resetOverlayBtn.onclick = () => {
