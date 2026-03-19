@@ -847,11 +847,13 @@ window.MapboxUSAMap = (function () {
         nh = Math.min(nh, cr.height - er.top  + cr.top);
         el.style.width  = nw + 'px';
         el.style.height = nh + 'px';
-        self._applyOverlayScale(el, key, nw + 'px');
+        // Store current width for scale application on pointerup
       });
 
       handle.addEventListener('pointerup', function (e) {
         handle.releasePointerCapture(e.pointerId);
+        // Apply text scaling only on release (not during drag — avoids jarring text changes)
+        self._applyOverlayScale(el, key, el.style.width);
         self._saveOverlaySize(key, el);
         self._wrap.dispatchEvent(new CustomEvent('mgl-overlay-moved', {
           bubbles: true,
@@ -911,6 +913,8 @@ window.MapboxUSAMap = (function () {
       let startX = 0, startY = 0;
 
       el.addEventListener('pointerdown', function (e) {
+        // Don't start drag if the click landed on the resize handle
+        if (e.target && e.target.classList && e.target.classList.contains('mgl-resize-se')) return;
         e.preventDefault();
         el.setPointerCapture(e.pointerId);
         el.style.cursor = 'grabbing';
