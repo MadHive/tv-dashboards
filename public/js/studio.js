@@ -137,7 +137,9 @@
       const dashes = (this.modifiedConfig && this.modifiedConfig.dashboards) || [];
       dashes.forEach((dash, i) => {
         const item = document.createElement('div');
-        item.className = 'dashboard-nav-item' + (i === this.activeDashIdx ? ' active' : '');
+        item.className = 'dashboard-nav-item'
+          + (i === this.activeDashIdx ? ' active' : '')
+          + (dash.excluded ? ' excluded' : '');
         item.setAttribute('draggable', 'true');
         item.dataset.idx = i;
 
@@ -167,10 +169,21 @@
         delBtn.textContent = '\u2715';
         delBtn.title = 'Delete';
 
+        const toggle = document.createElement('button');
+        toggle.className = 'rot-toggle' + (dash.excluded ? ' rot-off' : '');
+        toggle.title = dash.excluded ? 'Excluded from rotation' : 'In rotation';
+        toggle.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dash.excluded = !dash.excluded;
+          this.markDirty();
+          this.renderSidebar();
+        });
+
         item.appendChild(handle);
         item.appendChild(thumb);
         item.appendChild(name);
         item.appendChild(count);
+        item.appendChild(toggle);
         item.appendChild(delBtn);
 
         item.addEventListener('click', (e) => {
@@ -205,6 +218,20 @@
 
         list.appendChild(item);
       });
+
+      // Status counter
+      let counter = document.getElementById('dash-rotation-count');
+      if (!counter) {
+        counter = document.createElement('div');
+        counter.id = 'dash-rotation-count';
+        counter.className = 'dash-rotation-count';
+        list.parentElement.appendChild(counter);
+      }
+      const total    = dashes.length;
+      const excluded = dashes.filter(d => d.excluded).length;
+      counter.textContent = excluded > 0
+        ? `${total} dashboards \u00b7 ${excluded} excluded`
+        : `${total} dashboards`;
     }
 
     async _reorderDashboard(fromIdx, toIdx) {
