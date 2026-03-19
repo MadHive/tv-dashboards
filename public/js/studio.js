@@ -538,9 +538,29 @@
       dash.clientBranding.border    = gb('prop-color-border');
       dash.clientBranding.dotColor  = gb('prop-color-dot');
 
+      // Live preview: apply brand colors immediately to the studio page
+      this._previewBrandingInStudio(dash.clientBranding);
+
       this.markDirty();
       this.renderCanvas();
       this.renderSidebar();
+    }
+
+    _previewBrandingInStudio(brand) {
+      const r = document.documentElement;
+      if (brand && (brand.bg || brand.accent || brand.bgCard || brand.border || brand.dotColor)) {
+        const set = (v, k) => v && r.style.setProperty(k, v);
+        set(brand.bg,        '--bg');
+        set(brand.bgCard,    '--bg-card');
+        set(brand.bgCardAlt, '--bg-card-alt');
+        set(brand.border,    '--border');
+        set(brand.borderLit, '--border-lit');
+        set(brand.accent,    '--accent');
+        set(brand.dotColor,  '--dot-color');
+      } else {
+        ['--bg','--bg-card','--bg-card-alt','--border','--border-lit','--accent','--dot-color']
+          .forEach(v => r.style.removeProperty(v));
+      }
     }
 
     async _handleLogoUpload(file) {
