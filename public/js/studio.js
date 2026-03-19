@@ -776,6 +776,10 @@
           const centerLngEl = document.getElementById('prop-mgl-center-lng');
           if (centerLatEl) centerLatEl.value = (c && c.lat != null) ? c.lat : '';
           if (centerLngEl) centerLngEl.value = (c && c.lng != null) ? c.lng : '';
+          const pitchEl   = document.getElementById('prop-mgl-pitch');
+          const bearingEl = document.getElementById('prop-mgl-bearing');
+          if (pitchEl)   pitchEl.value   = (mgl.initialPitch   != null) ? mgl.initialPitch   : '';
+          if (bearingEl) bearingEl.value = (mgl.initialBearing != null) ? mgl.initialBearing : '';
           // Region picker
           const regionGroup = document.getElementById('prop-region-group');
           if (regionGroup) {
@@ -981,6 +985,19 @@
       const cLngEl = document.getElementById('prop-mgl-center-lng');
       if (cLatEl) cLatEl.oninput = bindCenter;
       if (cLngEl) cLngEl.oninput = bindCenter;
+
+      const pitchEl   = document.getElementById('prop-mgl-pitch');
+      const bearingEl = document.getElementById('prop-mgl-bearing');
+      if (pitchEl) pitchEl.oninput = () => {
+        const v = parseFloat(pitchEl.value);
+        wc.mglConfig = { ...(wc.mglConfig || {}), initialPitch: isNaN(v) ? null : Math.max(0, Math.min(60, v)) };
+        self.markDirty();
+      };
+      if (bearingEl) bearingEl.oninput = () => {
+        const v = parseFloat(bearingEl.value);
+        wc.mglConfig = { ...(wc.mglConfig || {}), initialBearing: isNaN(v) ? null : v };
+        self.markDirty();
+      };
       const resetOverlayBtn = document.getElementById('reset-overlay-positions');
       if (resetOverlayBtn) {
         resetOverlayBtn.onclick = () => {
