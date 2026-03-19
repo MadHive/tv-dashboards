@@ -50,25 +50,39 @@ dashboards:
           row: 1
           colSpan: 1
           rowSpan: 1
-  - grid:
-      columns: 1
-      gap: 0
-      rows: 1
-    icon: map
-    id: campaign-delivery-gl
+  - id: campaign-delivery-gl
     name: Campaign Delivery
     subtitle: Nationwide
+    icon: map
+    grid:
+      columns: 1
+      rows: 1
+      gap: 0
     widgets:
       - id: usa-delivery-map-gl
+        type: usa-map-gl
+        title: ''
+        source: computed
+        queryId: campaign-delivery-map
         position:
           col: 1
-          colSpan: 1
           row: 1
+          colSpan: 1
           rowSpan: 1
-        queryId: campaign-delivery-map
-        source: computed
-        title: ''
-        type: usa-map-gl
+        mglConfig:
+          overlayPositions:
+            west:
+              top: 275.938px
+              left: 342.031px
+            central:
+              top: 263.023px
+              left: 1095.36px
+            east:
+              top: 265.602px
+              left: 1701.22px
+            totalOverlay:
+              top: 1006.46px
+              left: 13.0547px
   - grid:
       columns: 1
       gap: 0
@@ -637,7 +651,7 @@ dashboards:
       border: '#4a0015'
       borderLit: '#8b0020'
       accent: '#E30C3A'
-      accentDim: 'rgba(198,0,43,0.15)'
+      accentDim: rgba(198,0,43,0.15)
       t2: '#e8c0c8'
       t3: '#9e6070'
       dotColor: '#3d0010'
@@ -675,7 +689,7 @@ dashboards:
       border: '#4a0015'
       borderLit: '#8b0020'
       accent: '#E30C3A'
-      accentDim: 'rgba(198,0,43,0.15)'
+      accentDim: rgba(198,0,43,0.15)
       t2: '#e8c0c8'
       t3: '#9e6070'
       dotColor: '#3d0010'
@@ -741,7 +755,6 @@ dashboards:
           row: 2
           colSpan: 2
           rowSpan: 1
-  # ── FOX ─────────────────────────────────────────────────────────────────────
   - id: fox-delivery-map
     name: FOX
     subtitle: Delivery
@@ -760,7 +773,7 @@ dashboards:
       border: '#1a3a5c'
       borderLit: '#2a5a8c'
       accent: '#F5A524'
-      accentDim: 'rgba(245,165,36,0.15)'
+      accentDim: rgba(245,165,36,0.15)
       t2: '#c8d8e8'
       t3: '#7090a8'
       dotColor: '#1a2f44'
@@ -798,7 +811,7 @@ dashboards:
       border: '#1a3a5c'
       borderLit: '#2a5a8c'
       accent: '#F5A524'
-      accentDim: 'rgba(245,165,36,0.15)'
+      accentDim: rgba(245,165,36,0.15)
       t2: '#c8d8e8'
       t3: '#7090a8'
       dotColor: '#1a2f44'
@@ -864,7 +877,6 @@ dashboards:
           row: 2
           colSpan: 2
           rowSpan: 1
-  # ── HEARST ───────────────────────────────────────────────────────────────────
   - id: hearst-delivery-map
     name: Hearst
     subtitle: Delivery
@@ -883,7 +895,7 @@ dashboards:
       border: '#0a2a5c'
       borderLit: '#1040a0'
       accent: '#C8A84B'
-      accentDim: 'rgba(200,168,75,0.15)'
+      accentDim: rgba(200,168,75,0.15)
       t2: '#c0ccdc'
       t3: '#6080a0'
       dotColor: '#091830'
@@ -921,7 +933,7 @@ dashboards:
       border: '#0a2a5c'
       borderLit: '#1040a0'
       accent: '#C8A84B'
-      accentDim: 'rgba(200,168,75,0.15)'
+      accentDim: rgba(200,168,75,0.15)
       t2: '#c0ccdc'
       t3: '#6080a0'
       dotColor: '#091830'
@@ -987,7 +999,6 @@ dashboards:
           row: 2
           colSpan: 2
           rowSpan: 1
-  # ── NEXSTAR ──────────────────────────────────────────────────────────────────
   - id: nexstar-delivery-map
     name: Nexstar
     subtitle: Delivery
@@ -1006,7 +1017,7 @@ dashboards:
       border: '#0a2a60'
       borderLit: '#1050b0'
       accent: '#1E88E5'
-      accentDim: 'rgba(30,136,229,0.15)'
+      accentDim: rgba(30,136,229,0.15)
       t2: '#b8cce0'
       t3: '#6080a0'
       dotColor: '#0a1a30'
@@ -1044,7 +1055,7 @@ dashboards:
       border: '#0a2a60'
       borderLit: '#1050b0'
       accent: '#1E88E5'
-      accentDim: 'rgba(30,136,229,0.15)'
+      accentDim: rgba(30,136,229,0.15)
       t2: '#b8cce0'
       t3: '#6080a0'
       dotColor: '#0a1a30'
@@ -1110,7 +1121,6 @@ dashboards:
           row: 2
           colSpan: 2
           rowSpan: 1
-  # ── EW SCRIPPS ───────────────────────────────────────────────────────────────
   - id: scripps-delivery-map
     name: EW Scripps
     subtitle: Delivery
@@ -1129,7 +1139,7 @@ dashboards:
       border: '#0a2040'
       borderLit: '#0f3060'
       accent: '#E8541A'
-      accentDim: 'rgba(232,84,26,0.15)'
+      accentDim: rgba(232,84,26,0.15)
       t2: '#c8c0b8'
       t3: '#908070'
       dotColor: '#0a1a28'
@@ -1167,7 +1177,7 @@ dashboards:
       border: '#0a2040'
       borderLit: '#0f3060'
       accent: '#E8541A'
-      accentDim: 'rgba(232,84,26,0.15)'
+      accentDim: rgba(232,84,26,0.15)
       t2: '#c8c0b8'
       t3: '#908070'
       dotColor: '#0a1a28'
@@ -1233,7 +1243,6 @@ dashboards:
           row: 2
           colSpan: 2
           rowSpan: 1
-  # ── COX ──────────────────────────────────────────────────────────────────────
   - id: cox-delivery-map
     name: Cox Media Group
     subtitle: Delivery
@@ -1252,7 +1261,7 @@ dashboards:
       border: '#0a2040'
       borderLit: '#105090'
       accent: '#0091D5'
-      accentDim: 'rgba(0,145,213,0.15)'
+      accentDim: rgba(0,145,213,0.15)
       t2: '#b8ccdc'
       t3: '#607890'
       dotColor: '#081830'
@@ -1290,7 +1299,7 @@ dashboards:
       border: '#0a2040'
       borderLit: '#105090'
       accent: '#0091D5'
-      accentDim: 'rgba(0,145,213,0.15)'
+      accentDim: rgba(0,145,213,0.15)
       t2: '#b8ccdc'
       t3: '#607890'
       dotColor: '#081830'
