@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: "03-query-data-workflow/03-04-PLAN.md — checkpoint:human-verify FAILED (gaps found in 03-01, 03-02, 03-03)"
-last_updated: "2026-03-20T19:35:00.000Z"
+stopped_at: Completed 03-query-data-workflow/03-05-PLAN.md
+last_updated: "2026-03-20T20:25:33.209Z"
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 11
+  completed_plans: 11
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Operators and clients can see mission-critical metrics at a glance — the admin must make it easy to configure exactly what's shown, and the TV display must be visually clear and client-branded.
-**Current focus:** Phase 03 — Query & Data Workflow
+**Current focus:** Phase 03 — query-data-workflow
 
 ## Current Position
 
-Phase: 03 (Query & Data Workflow) — EXECUTING
-Plan: 2 of 4
+Phase: 03 (query-data-workflow) — COMPLETE
+Plan: 5 of 5
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Plan: 2 of 4
 | Phase 03-query-data-workflow P02 | 4 | 2 tasks | 4 files |
 | Phase 03-query-data-workflow P03 | 3 | 2 tasks | 4 files |
 | Phase 03-query-data-workflow P04 | 15 | 1 tasks | 4 files |
+| Phase 03-query-data-workflow P05 | 30 | 4 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,8 @@ Recent decisions affecting current work:
 - [Phase 03-query-data-workflow]: BQ_MANIFEST as static constant — stable mad-data schema avoids browser-side BigQuery auth complexity
 - [Phase 03-query-data-workflow]: BigQuery/VulnTrack _apply() assigns source+queryId directly without server-side query creation
 - [Phase 03-query-data-workflow]: VulnTrack tab always rendered for discoverability; disconnected state shown as message in mb-list
+- [Phase 03-query-data-workflow]: Datasource/health methods were inside MetricBrowser class body instead of StudioApp — structural relocation fixed all three runtime bugs (health section, query explorer, credential editor) with no logic changes
+- [Phase 03-query-data-workflow]: GCP health error 'Saved query not found: kafka-writes-madmaster' is real data inconsistency (widget references deleted query ID), not a code bug — health section correctly surfaces it
 
 ### Pending Todos
 
@@ -108,6 +111,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T19:17:32.771Z
-Stopped at: Completed 03-query-data-workflow/03-04-PLAN.md (checkpoint: awaiting human verify)
+Last session: 2026-03-20T20:25:33.205Z
+Stopped at: Completed 03-query-data-workflow/03-05-PLAN.md
 Resume file: None
