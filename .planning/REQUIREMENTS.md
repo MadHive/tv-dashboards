@@ -29,7 +29,7 @@
 
 ### Multi-Source Metrics
 
-- [ ] **METR-01**: User can browse and search metrics across all connected data sources in a unified metric browser
+- [x] **METR-01**: User can browse and search metrics across all connected data sources in a unified metric browser
 
 ### TV Display
 
@@ -93,7 +93,7 @@
 | QRYX-02 | Phase 3 | Complete |
 | DSRC-01 | Phase 3 | Complete |
 | DSRC-02 | Phase 3 | Complete |
-| METR-01 | Phase 3 | Pending |
+| METR-01 | Phase 3 | Complete |
 | TVUX-01 | Phase 4 | Pending |
 | TVUX-02 | Phase 4 | Pending |
 | FOUN-01 | Phase 5 | Pending |

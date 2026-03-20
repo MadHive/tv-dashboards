@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 03-query-data-workflow/03-03-PLAN.md
-last_updated: "2026-03-20T19:11:06.752Z"
+stopped_at: "Completed 03-query-data-workflow/03-04-PLAN.md (checkpoint: awaiting human verify)"
+last_updated: "2026-03-20T19:17:32.773Z"
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
 ---
 
 # Project State
@@ -51,6 +51,7 @@ Plan: 2 of 4
 | Phase 03-query-data-workflow P01 | 8 | 2 tasks | 8 files |
 | Phase 03-query-data-workflow P02 | 4 | 2 tasks | 4 files |
 | Phase 03-query-data-workflow P03 | 3 | 2 tasks | 4 files |
+| Phase 03-query-data-workflow P04 | 15 | 1 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,9 @@ Recent decisions affecting current work:
 - [Phase 03-query-data-workflow]: mirrorValidateCredFields pure function in tests mirrors DOM _validateCredForm without JSDOM
 - [Phase 03-query-data-workflow]: _assignTargetWidgetId pattern: stores widget ID before opening query editor so qe-assign routes to direct assign instead of canvas-dim pick flow
 - [Phase 03-query-data-workflow]: _selectResultFormat detects table/summary/json/empty from data shape — timestamp key on array[0] distinguishes time-series from table arrays
+- [Phase 03-query-data-workflow]: BQ_MANIFEST as static constant — stable mad-data schema avoids browser-side BigQuery auth complexity
+- [Phase 03-query-data-workflow]: BigQuery/VulnTrack _apply() assigns source+queryId directly without server-side query creation
+- [Phase 03-query-data-workflow]: VulnTrack tab always rendered for discoverability; disconnected state shown as message in mb-list
 
 ### Pending Todos
 
@@ -99,6 +103,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T19:11:06.746Z
-Stopped at: Completed 03-query-data-workflow/03-03-PLAN.md
+Last session: 2026-03-20T19:17:32.771Z
+Stopped at: Completed 03-query-data-workflow/03-04-PLAN.md (checkpoint: awaiting human verify)
 Resume file: None
