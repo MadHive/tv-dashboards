@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Phase 2 UI-SPEC approved
-last_updated: "2026-03-20T15:52:18.177Z"
+stopped_at: Completed 02-01-PLAN.md (dashboard wizard + duplicate)
+last_updated: "2026-03-20T17:00:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 6
+  completed_plans: 4
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Operators and clients can see mission-critical metrics at a glance — the admin must make it easy to configure exactly what's shown, and the TV display must be visually clear and client-branded.
-**Current focus:** Phase 2 — Dashboard Management (next)
+**Current focus:** Phase 2 — Dashboard Management
 
 ## Current Position
 
-Phase: 1 (Widget Control) — COMPLETE
-Plan: 3 of 3 — ALL COMPLETE
+Phase: 2 (Dashboard Management) — EXECUTING
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -67,6 +67,9 @@ Recent decisions affecting current work:
 - [01-02]: updateSectionVisibility(type) class method as single source of truth for all section show/hide logic
 - [Phase 01-widget-control]: Mismatch warning heuristic: orphan queryId triggers warning; found query hides it — no shape-compatibility matrix in Phase 1
 - [Phase 01-widget-control]: Format string rendering in widgets.js deferred to stretch goal — field stored but not applied to TV display values
+- [02-01]: Duplicate sets name to "Copy of [name]" client-side, overriding server's "[name] (Copy)" format — per user decision
+- [02-01]: TypeBox schema for duplicate route must wrap response in {success, dashboard} — bare object silently breaks Elysia validation
+- [02-01]: renderSidebar() is NOT called after inline rename commit — span text updated directly to preserve focus state
 
 ### Pending Todos
 
@@ -79,6 +82,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T15:52:18.171Z
-Stopped at: Phase 2 UI-SPEC approved
-Resume file: .planning/phases/02-dashboard-management/02-UI-SPEC.md
+Last session: 2026-03-20T17:00:00.000Z
+Stopped at: Completed 02-01-PLAN.md (dashboard wizard + duplicate)
+Resume file: .planning/phases/02-dashboard-management/02-02-PLAN.md
