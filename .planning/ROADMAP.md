@@ -60,13 +60,14 @@ Plans:
   3. User opens the data source health dashboard and sees per-source status, last-success timestamp, and recent error messages for all 17 connected sources
   4. User edits credentials for a data source and cannot save until client-side and server-side validation pass; invalid credentials surface a clear error message
   5. User opens the metric browser and searches across all connected sources in one unified interface, then assigns a metric directly to a widget
-**Plans**: 4 plans
+**Plans**: 5 plans
 
 Plans:
 - [ ] 03-01-PLAN.md — Server-side health telemetry fields + Wave 0 test scaffolds
 - [ ] 03-02-PLAN.md — Data source health UI section + credential validation
 - [ ] 03-03-PLAN.md — Query builder (Build Query button, result preview, one-click assign)
 - [ ] 03-04-PLAN.md — Unified metric browser with multi-source tabs
+- [ ] 03-05-PLAN.md — Gap closure: fix health section, query explorer, and credential editor runtime bugs
 
 ### Phase 4: TV Display Polish
 **Goal**: TV dashboards look sharp and client-branded — charts, gauges, and maps render with improved clarity; each client's logo, color scheme, and font are applied to their dashboard frame
@@ -110,6 +111,6 @@ Phase 4 (TV polish) is independent of phases 2 and 3 and may overlap.
 |-------|----------------|--------|-----------|
 | 1. Widget Control | 3/3 | Complete    | 2026-03-20 |
 | 2. Dashboard Management | 3/3 | Complete    | 2026-03-20 |
-| 3. Query & Data Workflow | 4/4 | Complete   | 2026-03-20 |
+| 3. Query & Data Workflow | 4/5 | Gap Closure | - |
 | 4. TV Display Polish | 0/2 | Not started | - |
 | 5. Foundation | 0/5 | Not started | - |
