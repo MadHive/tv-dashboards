@@ -816,6 +816,9 @@
       const queryEl = document.getElementById('prop-query');
       if (queryEl) queryEl.value = wc.queryId || '';
       this.updateDataSummary(wc.source || 'gcp', wc.queryId || '');
+      // Always hide mismatch warning when selecting a widget (fresh state)
+      const warningEl = document.getElementById('type-mismatch-warning');
+      if (warningEl) warningEl.style.display = 'none';
       this.bindWidgetPropListeners(wc);
     }
 
@@ -839,8 +842,50 @@
       bind('prop-y-label', (v) => { wc.yLabel = v; });
       bind('prop-legend', (v) => { wc.legendLabels = v; });
       bind('prop-type', (v) => {
+        const oldType = wc.type;
         wc.type = v;
+
+        // --- Config preservation/clearing ---
+        // Clear map config when leaving usa-map
+        if (oldType === 'usa-map' && v !== 'usa-map') {
+          delete wc.mapConfig;
+        }
+        // Clear mgl config when leaving usa-map-gl
+        if (oldType === 'usa-map-gl' && v !== 'usa-map-gl') {
+          delete wc.mglConfig;
+        }
+        // Clear axis/legend labels when switching to a type that doesn't use them
+        const labelsTypes = ['bar-chart', 'line-chart', 'stacked-bar-chart', 'donut-ring', 'sankey', 'heatmap', 'treemap', 'pipeline-flow', 'multi-metric-card', 'status-grid', 'table'];
+        if (!labelsTypes.includes(v)) {
+          delete wc.xLabel;
+          delete wc.yLabel;
+          delete wc.legendLabels;
+          const xl = document.getElementById('prop-x-label');
+          const yl = document.getElementById('prop-y-label');
+          const lg = document.getElementById('prop-legend');
+          if (xl) xl.value = '';
+          if (yl) yl.value = '';
+          if (lg) lg.value = '';
+        }
+        // Thresholds, unit, min, max, format — preserved across all types (no clearing)
+
+        // --- Auto-match query / mismatch warning ---
+        const warningEl = document.getElementById('type-mismatch-warning');
+        if (wc.queryId && self.queries) {
+          const sourceQueries = self.queries[wc.source || 'gcp'] || [];
+          const found = sourceQueries.find(q => q.id === wc.queryId);
+          if (!found && warningEl) {
+            // Orphan query — can't verify compatibility
+            warningEl.style.display = '';
+          } else if (warningEl) {
+            warningEl.style.display = 'none';
+          }
+        } else if (warningEl) {
+          warningEl.style.display = 'none';
+        }
+
         self.updateSectionVisibility(v);
+        self.updateDataSummary(wc.source || 'gcp', wc.queryId || '');
       });
       bind('prop-col', (v) => {
         const desired = parseInt(v) || wc.position.col;
