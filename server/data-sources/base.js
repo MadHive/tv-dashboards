@@ -18,6 +18,8 @@ export class DataSource {
     this.config = config;
     this.isConnected = false;
     this.lastError = null;
+    this.lastSuccessAt = null;      // Unix timestamp ms — set on successful connection
+    this.sessionErrorCount = 0;     // Incremented each time lastError is set
   }
 
   /**
@@ -73,12 +75,14 @@ export class DataSource {
     try {
       this.isConnected = await this.testConnection();
       if (this.isConnected) {
+        this.lastSuccessAt = Date.now();
         logger.info(`[${this.name}] Connected successfully`);
       } else {
         logger.warn(`[${this.name}] Connection test failed`);
       }
     } catch (error) {
       this.lastError = error;
+      this.sessionErrorCount++;
       logger.error({ dataSource: this.name, error: error.message }, 'Data source initialization error');
       this.isConnected = false;
     }

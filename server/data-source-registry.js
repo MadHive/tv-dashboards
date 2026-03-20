@@ -248,7 +248,9 @@ class DataSourceRegistry {
       health[name] = {
         isConnected: source.isConnected,
         lastError: source.lastError?.message || null,
-        isReady: source.isReady()
+        isReady: source.isReady(),
+        lastSuccessAt: source.lastSuccessAt || null,
+        sessionErrorCount: source.sessionErrorCount || 0
       };
     }
     return health;

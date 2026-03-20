@@ -640,7 +640,10 @@ const app = new Elysia()
         { status: 500, headers: { 'content-type': 'application/json' } }
       );
     }
-  }, { detail: { tags: ['data-sources'], summary: 'Get data source health' } })
+  }, {
+    response: { 200: 'datasource.health' },
+    detail: { tags: ['data-sources'], summary: 'Get data source health' },
+  })
 
   .get('/api/data-sources/:name/metrics', ({ params }) => {
     try {
