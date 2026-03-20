@@ -76,11 +76,11 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. Charts, gauges, sparklines, and Mapbox maps render visibly sharper on the TV display — crisp lines, readable labels, no aliasing artifacts
   2. Each client dashboard frame displays the correct client logo, applies the client's primary color scheme, and uses the client's configured font — distinct from the MadHive internal ops style
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 04-01: Widget visual polish (charts, gauges, map styling)
-- [ ] 04-02: Per-client branding (logo, color scheme, font per client frame)
+- [ ] 04-01-PLAN.md — Widget visual polish: canvas draw params (gauge glow, sparkline thickness), CSS font sizes, contrast, threshold pulse animation
+- [ ] 04-02-PLAN.md — Per-client branding: logoImage + logoFont YAML fields, Google Font link injection in _applyClientBranding(), unit tests
 
 ### Phase 5: Foundation
 **Goal**: The codebase is clean, tested, and ready to scale — all 23 legacy widgets run through the modern query system; every API route and data pipeline has test coverage; the JS bundles load fast
