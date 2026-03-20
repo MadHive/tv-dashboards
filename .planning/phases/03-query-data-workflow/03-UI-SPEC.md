@@ -44,8 +44,8 @@ Declared values (must be multiples of 4):
 | 3xl | 64px | Not used in phase 3 studio panels |
 
 Exceptions:
-- Properties panel and sidebar use 14px horizontal padding (matches existing `.prop-row` and `.dashboard-nav-item` — do not change to 16px; preserve parity with Phase 1/2)
-- Sidebar section header padding: 10px vertical, 14px horizontal (matches `.sidebar-section-header`)
+- Properties panel and sidebar use 14px horizontal padding — frozen legacy value — do not modify; matches existing `studio.css` rule exactly.
+- Sidebar section header padding: 10px vertical, 14px horizontal — frozen legacy value — do not modify; matches existing `studio.css` rule exactly.
 - Query builder `Run Query` button: minimum touch target height 32px (studio environment, mouse-only)
 - Health section status dot: 8px diameter, 4px gap to status label (matches `.ds-status-dot`)
 
@@ -57,16 +57,20 @@ Exceptions:
 
 | Role | Size | Weight | Line Height | Font |
 |------|------|--------|-------------|------|
-| Body / form labels | 14px | 500 (medium) | 1.5 | DM Sans (`--font-body`) |
+| Body / form labels | 14px | 400 (regular) | 1.5 | DM Sans (`--font-body`) |
 | Label / section headers | 10px | 600 (semibold) | 1.2 | Space Grotesk (`--font-display`), uppercase, letter-spacing 2px |
 | Query name / result count | 14px | 600 (semibold) | 1.3 | DM Sans (`--font-body`) |
 | Mono / metric type / code | 12px | 400 (regular) | 1.5 | IBM Plex Mono (`--font-mono`) |
+| Modal header | 20px | 600 (semibold) | 1.2 | Space Grotesk (`--font-display`) |
 
 Rules:
-- Body copy and form field values: 14px, weight 500, `--font-body`
+- Body copy and form field values: 14px, weight 400, `--font-body`
 - All section headers (HEALTH, QUERY, SOURCES): 10px, weight 600, uppercase, letter-spacing 2px, `--font-display` — matches existing `.sidebar-section-header` exactly
 - Metric type strings, query IDs, timestamps, result cell values: 12px, weight 400, `--font-mono`
-- No new font sizes or weights may be introduced; use these four roles exclusively
+- Source names in health rows: 14px, weight 400, `--font-body` (not 13px — consolidated to declared body size)
+- Modal header (query editor modal): 20px, weight 600, `--font-display`
+- No new font sizes or weights may be introduced; use these five roles exclusively
+- Only two weights are permitted: 400 (regular) and 600 (semibold) — weight 500 is not used
 
 > Source: `public/css/studio.css` — extracted from `.sidebar-section-header`, `.qe-name`, `.qe-label`, `.qe-input`, `.ds-status-dot` context
 
@@ -108,6 +112,8 @@ All components extend existing DOM patterns — no new component files created o
 
 ### Query Builder Panel (QRYX-01, QRYX-02)
 
+**Focal point:** Primary visual anchor: the "Run Query" button (pink primary, full-width in action row) — draws the eye first on panel open.
+
 **Widget-scoped flow (right panel slot):**
 - Entry: "Build Query" button added to the "Data" section of the properties panel
   - Style: `.studio-btn.secondary.small` — matches existing secondary small buttons in properties panel
@@ -115,7 +121,7 @@ All components extend existing DOM patterns — no new component files created o
 - Panel opens in the right `#query-editor-panel` slot (replaces properties content via `style.display` toggle — existing pattern)
 - Panel header: shows query name (editable inline `<input>`) + source badge (`.qe-source-badge`)
 - Config row: Source `<select>` + metric type `<input>` — uses existing `.qe-label`, `.qe-select`, `.qe-input`
-- Action row: "Run Query" button (`.studio-btn.primary.small`) + "Cancel" button (`.studio-btn.ghost.small`)
+- Action row: "Run Query" button (`.studio-btn.primary.small`) + "Close Editor" button (`.studio-btn.ghost.small`)
 - Result area: `.qe-results` container (existing class) — table for structured data, pre-formatted JSON for raw results, summary stats row for time-series (3 labels: data points, time range, last value)
 - Result truncation: 100 rows max for table; display truncation notice as `.results-truncated` text below table ("Showing first 100 rows")
 - After successful run: "Assign to Widget" button appears below results (`.studio-btn.primary`, full width of panel) — sets widget `queryId` + `source`, closes panel, shows success toast
@@ -136,7 +142,7 @@ All components extend existing DOM patterns — no new component files created o
 - Expanded state: shows a compact grid of source health rows — one row per data source
 - Per-source health row layout (horizontal, 14px height):
   - Status dot (`.ds-status-dot` 8px circle) — green=connected, amber=mock, red=disconnected, grey=unknown
-  - Source name (13px, `--font-body`, `--t2`)
+  - Source name (14px, `--font-body`, `--t2`)
   - Last-success timestamp (10px, `--font-mono`, `--t3`, right-aligned, format: "5m ago" / "2h ago" / "never")
   - Error count badge (only shown when > 0): red pill with count, 10px mono
 - On click of a source row: expands inline to show last error message (12px, `--font-mono`, `--red`, 2-line clamp with "show more" link)
@@ -187,6 +193,7 @@ All interactive elements must implement exactly these four states:
 | Primary CTA — assign result to widget | "Assign to Widget" |
 | Primary CTA — save freestanding query | "Save Query" |
 | Primary CTA — save credentials | "Save Credentials" (existing, unchanged) |
+| Secondary CTA — close widget query panel | "Close Editor" |
 | Empty state — query results (before run) | "Run the query to see results here." |
 | Empty state — query results (no data returned) | "No results returned. Check your metric type and time range." |
 | Empty state — health section (no sources) | "No data sources configured." |
@@ -222,7 +229,7 @@ No external component registries used. All components are hand-coded vanilla JS 
 
 These rules apply only to Phase 3 and are not in scope for the shared studio pattern library:
 
-1. **Query editor panel exclusivity:** Opening the query builder from the properties panel replaces the properties content; returning is via "Cancel" button or clicking a different widget on canvas. The panel toggle mechanism is `style.display` — the same as existing right-panel panels.
+1. **Query editor panel exclusivity:** Opening the query builder from the properties panel replaces the properties content; returning is via "Close Editor" button (closes the panel and returns to the properties panel view) or clicking a different widget on canvas. The panel toggle mechanism is `style.display` — the same as existing right-panel panels.
 
 2. **Result format selection:** The result preview format is chosen automatically by the executor based on data shape — table for arrays of objects, `<pre>` block for raw JSON, summary stats for time-series (point count + time range + last value). No user toggle required.
 
