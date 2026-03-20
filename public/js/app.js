@@ -102,6 +102,13 @@
           title.textContent = wc.title;
           card.appendChild(title);
 
+          if (wc.subtitle) {
+            const subtitle = document.createElement('div');
+            subtitle.className = 'widget-subtitle';
+            subtitle.textContent = wc.subtitle;
+            card.appendChild(subtitle);
+          }
+
           const content = document.createElement('div');
           content.className = 'widget-content';
           card.appendChild(content);

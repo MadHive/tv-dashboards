@@ -111,6 +111,14 @@ window.StudioCanvas = (function () {
       title.textContent = wc.title;
       card.appendChild(title);
 
+      // Subtitle (optional)
+      if (wc.subtitle) {
+        var subtitle = document.createElement('div');
+        subtitle.className = 'widget-subtitle';
+        subtitle.textContent = wc.subtitle;
+        card.appendChild(subtitle);
+      }
+
       // Content (widget renders into this)
       const content = document.createElement('div');
       content.className = 'widget-content';
@@ -140,7 +148,17 @@ window.StudioCanvas = (function () {
             });
           }
         } catch (e) {
-          content.textContent = wc.type;
+          var ph = document.createElement('div');
+          ph.className = 'widget-placeholder';
+          var typeName = document.createElement('div');
+          typeName.className = 'widget-placeholder-type';
+          typeName.textContent = wc.type;
+          var badge = document.createElement('span');
+          badge.className = 'widget-placeholder-badge';
+          badge.textContent = 'beta';
+          ph.appendChild(typeName);
+          ph.appendChild(badge);
+          content.appendChild(ph);
         }
       }
       widgetInstances[wc.id] = widgetInstance;
