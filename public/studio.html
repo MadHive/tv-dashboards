@@ -269,6 +269,15 @@
                 <input id="prop-title" type="text">
               </label>
               <label>
+                Subtitle
+                <input id="prop-subtitle" type="text" placeholder="e.g. Last 24h &middot; GCP East">
+              </label>
+              <label>
+                Value Format
+                <input id="prop-format" type="text" placeholder="${value}K or %.2f ms">
+                <span class="props-field-hint">Tokens: ${value} ${unit}</span>
+              </label>
+              <label>
                 Type
                 <select id="prop-type">
                   <option value="big-number">Big Number</option>
@@ -287,12 +296,12 @@
                   <option value="line-chart">Line Chart</option>
                   <option value="sparkline">Sparkline</option>
                   <option value="donut-ring">Donut / Ring</option>
-                  <option value="sankey">Sankey</option>
-                  <option value="heatmap">Heatmap</option>
-                  <option value="treemap">Treemap</option>
-                  <option value="table">Table</option>
-                  <option value="multi-metric-card">Multi Metric</option>
-                  <option value="stacked-bar-chart">Stacked Bar</option>
+                  <option value="sankey">Sankey (beta)</option>
+                  <option value="heatmap">Heatmap (beta)</option>
+                  <option value="treemap">Treemap (beta)</option>
+                  <option value="table">Table (beta)</option>
+                  <option value="multi-metric-card">Multi Metric (beta)</option>
+                  <option value="stacked-bar-chart">Stacked Bar (beta)</option>
                   <option value="globe">Globe (cobe)</option>
                 </select>
               </label>
@@ -306,6 +315,10 @@
                 <span class="data-summary-source" id="data-summary-source"></span>
                 <span class="data-summary-sep">&#8250;</span>
                 <span class="data-summary-query" id="data-summary-query"></span>
+              </div>
+              <div id="type-mismatch-warning" class="type-mismatch-warning" style="display:none">
+                <span class="warning-icon">&#9888;</span>
+                <span class="warning-text">Data shape may not match this widget type. Verify or reassign the query.</span>
               </div>
               <label>
                 Source
@@ -333,7 +346,7 @@
           <details class="props-section" open>
             <summary>Position</summary>
             <div>
-              <p class="props-hint">Drag to reposition · resize handles for col/row spans · or edit below</p>
+              <p class="props-hint">Enter values or drag widget on canvas &mdash; both stay in sync</p>
               <div class="props-grid-2">
                 <label>Col <input id="prop-col"     type="number" min="1"></label>
                 <label>Row <input id="prop-row"     type="number" min="1"></label>
@@ -368,6 +381,24 @@
                   <input id="prop-crit" type="number">
                 </label>
               </div>
+            </div>
+          </details>
+
+          <details class="props-section" id="labels-section" style="display:none">
+            <summary>Labels</summary>
+            <div>
+              <label>
+                X Axis
+                <input id="prop-x-label" type="text" placeholder="e.g. Time">
+              </label>
+              <label>
+                Y Axis
+                <input id="prop-y-label" type="text" placeholder="e.g. Requests/s">
+              </label>
+              <label>
+                Legend Labels
+                <input id="prop-legend" type="text" placeholder="Comma-separated, e.g. East, West, Central">
+              </label>
             </div>
           </details>
 
