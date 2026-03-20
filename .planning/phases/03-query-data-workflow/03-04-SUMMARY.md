@@ -12,11 +12,10 @@ requires:
     provides: query builder and result preview infrastructure
 
 provides:
-  - Multi-source metric browser with GCP, BigQuery, VulnTrack tabs
+  - Multi-source metric browser with GCP, BigQuery, VulnTrack tabs (code only — not verified end-to-end)
   - BQ_MANIFEST static table manifest (7 mad-data tables)
   - VT_MANIFEST static curated VulnTrack endpoint list
   - Source tab strip dynamically built from /api/data-sources connection status
-  - Universal metric assignment for all source tabs via _apply()
 
 affects:
   - 05-foundation (legacy widget migration — metric browser is the discovery UI)
@@ -42,13 +41,12 @@ key-decisions:
   - "VT_MANIFEST disconnected state shows message in mb-list (not greyed tab) — tab always rendered for discoverability; disconnected message guides user to Sources tab"
   - "BigQuery/VulnTrack _apply() assigns source+queryId directly without server-side query creation — manifest items have stable IDs, no server round-trip needed"
   - "mirrorBuildSourceTabs pure function defined inside IIFE alongside class — enables unit testing of tab logic without JSDOM"
-  - "_buildSourceTabs() called before _load() via .then() chain — ensures tab strip is visible immediately when GCP metrics start loading"
 
 patterns-established:
   - "Pure mirror functions for DOM-free unit testing of browser logic (established in 03-01, extended here)"
   - "Manifest-based source browsing: static arrays with {name, description} rendered by shared _renderManifestRows()"
 
-requirements-completed: [METR-01]
+requirements-completed: []
 
 # Metrics
 duration: 15min
@@ -57,27 +55,24 @@ completed: 2026-03-20
 
 # Phase 3 Plan 4: Metric Browser Sources Summary
 
-**Multi-source metric browser with GCP/BigQuery/VulnTrack tab strip, static manifests, and universal widget assignment via /api/data-sources-driven tab visibility**
+**Multi-source metric browser tab strip implemented (b205db3) but Phase 3 end-to-end verification FAILED — health section empty, query browser non-functional, credentials UI broken**
 
 ## Performance
 
-- **Duration:** ~15 min
+- **Duration:** ~15 min (Task 1) + checkpoint
 - **Started:** 2026-03-20T19:15:00Z
-- **Completed:** 2026-03-20T19:30:00Z
-- **Tasks:** 1 of 2 (Task 2 is human checkpoint)
+- **Completed:** 2026-03-20T19:30:00Z (checkpoint only; verification not approved)
+- **Tasks:** 1 of 2 completed (Task 2 checkpoint: FAILED)
 - **Files modified:** 4
 
 ## Accomplishments
 
 - Extended MetricBrowser with 5 new methods: `_buildSourceTabs`, `_switchSourceTab`, `_renderBigQueryManifest`, `_renderVulnTrackManifest`, `_renderManifestRows`
 - GCP tab always present; BigQuery and VulnTrack tabs built dynamically from `/api/data-sources` connection status
-- Disconnected sources appear with `disabled` class (greyed out, non-clickable)
-- VulnTrack shows human-readable disconnected message when not connected
+- Disconnected sources handled via in-list message when not connected
 - 12 unit tests written (zero test.todo calls), all passing
 
 ## Task Commits
-
-Each task was committed atomically:
 
 1. **Task 1: Add source tab strip to metric browser and implement BigQuery/VulnTrack tabs** - `b205db3` (feat)
 
@@ -90,30 +85,74 @@ Each task was committed atomically:
 
 ## Decisions Made
 
-- BQ_MANIFEST is a static constant (7 known mad-data tables) rather than a live API fetch — the mad-data schema is stable and avoids browser-side BigQuery auth complexity
-- VulnTrack tab is always rendered (for discoverability) but shows a "not connected" message in mb-list when `isConnected` is false — tab is not greyed out, only non-browsable sources (elasticsearch, datadog, etc.) are excluded
-- BigQuery and VulnTrack assignment in `_apply()` creates a queryId from the manifest item name and assigns directly to the widget without a server round-trip
-- Search filtering for BigQuery/VulnTrack uses `onkeyup` on `#mb-search` with a closure checking `_activeSourceTab` — this avoids conflicting with the GCP tab's `input` handler
+- BQ_MANIFEST is a static constant (7 known mad-data tables) rather than a live API fetch
+- VulnTrack tab is always rendered but shows a "not connected" message in mb-list when not connected
+- BigQuery and VulnTrack assignment in `_apply()` creates a queryId from the manifest item name and assigns directly to the widget
 
 ## Deviations from Plan
 
-None - plan executed exactly as written. The VulnTrack tab rendering decision (always render, show message in list when disconnected) matches the UI spec wording that "disconnected sources appear greyed out and are not clickable" — interpreted as the tab being visually present but message-gated.
+None during Task 1 execution. Task 2 (human-verify checkpoint) returned FAILED status.
+
+## Verification Result: FAILED
+
+Task 2 was a `checkpoint:human-verify` gate. The human tested the complete Phase 3 workflow at http://tv:3000/admin and reported the following issues.
+
+### Gaps Found
+
+**Gap 1: Health section is empty**
+- **Symptom:** The HEALTH section in the Sources tab renders but shows no data — no source rows, no status dots, no timestamps, no error badges.
+- **Scope:** Affects plans 03-01 (health telemetry server side) and 03-02 (health section UI + auto-refresh).
+- **Plans to revisit:** 03-01 and/or 03-02.
+
+**Gap 2: Query browser does not work in the query explorer**
+- **Symptom:** Opening the query explorer (Queries tab, "+ New Query", or "Build Query" from widget properties) does not produce a working query browser — functionality is broken or non-functional.
+- **Scope:** Affects plan 03-03 (query builder, Build Query button, result preview, one-click assign).
+- **Plans to revisit:** 03-03.
+
+**Gap 3: No way to view or save credentials**
+- **Symptom:** The credential editing flow in the Sources tab is broken — users cannot view existing credential fields or save new credentials. The "Edit Credentials" and "Save Credentials" UI path does not work end-to-end.
+- **Scope:** Affects plan 03-02 (credential validation) and possibly 03-01 (data-source credential endpoints).
+- **Plans to revisit:** 03-01 and/or 03-02.
+
+### Summary of Gaps
+
+| Gap | Area | Severity | Plans Affected |
+|-----|------|----------|----------------|
+| Health section empty | Sources tab HEALTH section | High — primary Phase 3 feature | 03-01, 03-02 |
+| Query browser non-functional | Query explorer / Build Query flow | High — core query workflow | 03-03 |
+| Credentials UI broken | Sources tab Edit/Save Credentials | High — data source management | 03-01, 03-02 |
+
+All three gaps indicate that prior plans in Phase 3 (03-01 through 03-03) produced incomplete implementations that passed unit tests but do not function correctly in the running application. Phase 3 is NOT complete and requires remediation before proceeding to Phase 4 or Phase 5.
 
 ## Issues Encountered
 
-None. Pre-existing test failures (2 unrelated `SyntaxError: Export named 'saveQuery'/'getQuery' not found`) confirmed pre-existing via git stash verification.
+Human verification at Task 2 revealed that the Phase 3 implementation is partially working across three distinct areas. The metric browser source tabs from Task 1 of this plan were not reported as broken, but the Phase 3 features implemented in plans 03-01, 03-02, and 03-03 are all non-functional to varying degrees.
 
 ## User Setup Required
 
-None - no external service configuration required.
+None.
 
 ## Next Phase Readiness
 
-- All 5 Phase 3 requirements are implemented across plans 03-01 through 03-04
-- Human verification checkpoint (Task 2) required before Phase 3 is considered complete
-- Phase 4 (TV polish) is independent and can proceed in parallel
-- Phase 5 (foundation/legacy migration) depends on this metric browser for widget re-assignment
+Phase 3 is NOT ready to advance. The following remediation is required before Phase 3 can be marked complete:
+
+1. Fix health section: investigate 03-01 health endpoint responses and 03-02 HEALTH section rendering
+2. Fix query browser: investigate 03-03 query explorer open/run/assign flow
+3. Fix credentials UI: investigate 03-01/03-02 Edit/Save Credentials path
+4. Re-run human verification after all three gaps are resolved
+
+Phase 4 (TV polish) may proceed independently as it has no dependency on Phase 3.
 
 ---
 *Phase: 03-query-data-workflow*
-*Completed: 2026-03-20*
+*Status: GAPS_FOUND — verification failed, remediation required*
+*Completed: 2026-03-20 (partial — Task 1 only)*
+
+## Self-Check: FAILED
+
+Verification at Task 2 (checkpoint:human-verify) was NOT approved. The human reported:
+- Health section is empty (renders, no data)
+- Query browser does not work in query explorer
+- No way to view or save credentials
+
+Task 1 commit b205db3 exists and is valid. Task 2 did not pass. Phase 3 requires remediation across plans 03-01, 03-02, and 03-03 before this plan's acceptance criteria ("Human verifies complete Phase 3 workflow") can be met.

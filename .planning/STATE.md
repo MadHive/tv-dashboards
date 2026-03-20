@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: "Completed 03-query-data-workflow/03-04-PLAN.md (checkpoint: awaiting human verify)"
-last_updated: "2026-03-20T19:17:32.773Z"
+stopped_at: "03-query-data-workflow/03-04-PLAN.md — checkpoint:human-verify FAILED (gaps found in 03-01, 03-02, 03-03)"
+last_updated: "2026-03-20T19:35:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 3
@@ -100,6 +100,11 @@ None yet.
 
 - [Phase 1]: Studio properties panel is partial today — confirm current extent of WDGT-01/02/03 before planning to avoid rework
 - [Phase 5]: FOUN-01 (legacy widget migration) requires queries.yaml entries for all 23 hardcoded widgets; verify auto-assign-queries.js is idempotent before use
+- [Phase 3 — GAPS FOUND 2026-03-20]: Human verification of 03-04 checkpoint FAILED. Three gaps reported:
+  (1) Health section in Sources tab renders empty (no source rows, no data) — affects 03-01/03-02
+  (2) Query browser non-functional inside query explorer — affects 03-03
+  (3) Credentials UI broken (cannot view or save credentials) — affects 03-01/03-02
+  Phase 3 requires remediation before it can be marked complete. Phase 4 may proceed independently.
 
 ## Session Continuity
 
