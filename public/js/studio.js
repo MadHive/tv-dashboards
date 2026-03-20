@@ -411,8 +411,10 @@
       const widgetProps = document.getElementById('widget-props');
       const qe  = document.getElementById('query-editor-panel');
       const dse = document.getElementById('datasource-editor-panel');
+      const multiProps = document.getElementById('multi-select-props');
       if (qe)  qe.style.display  = 'none';
       if (dse) dse.style.display = 'none';
+      if (multiProps) multiProps.style.display = 'none';
 
       if (placeholder) placeholder.style.display = 'none';
       if (content) content.style.display = 'flex';
@@ -746,8 +748,10 @@
       // Hide all alternate right-panel views before showing widget props
       const qe  = document.getElementById('query-editor-panel');
       const dse = document.getElementById('datasource-editor-panel');
+      const multiProps = document.getElementById('multi-select-props');
       if (qe)  qe.style.display  = 'none';
       if (dse) dse.style.display = 'none';
+      if (multiProps) multiProps.style.display = 'none';
 
       if (placeholder) placeholder.style.display = 'none';
       if (content) content.style.display = 'flex';
@@ -843,12 +847,14 @@
       const widgetProps = document.getElementById('widget-props');
       const qe  = document.getElementById('query-editor-panel');
       const dse = document.getElementById('datasource-editor-panel');
+      const multiProps = document.getElementById('multi-select-props');
       if (qe)  qe.style.display  = 'none';
       if (dse) dse.style.display = 'none';
       if (placeholder) placeholder.style.display = 'none';
       if (content) content.style.display = 'flex';
       if (dashProps) dashProps.style.display = 'none';
       if (widgetProps) widgetProps.style.display = 'none';
+      if (multiProps) { multiProps.style.display = 'block'; multiProps.textContent = ''; }
 
       const count = this.selectedWidgetIds.size;
 
@@ -938,9 +944,8 @@
       container.appendChild(typeLabel);
       container.appendChild(typeSelect);
 
-      // Clear and populate
-      content.textContent = '';
-      content.appendChild(container);
+      // Populate the dedicated multi-select panel (preserves widget-props/dashboard-props DOM)
+      if (multiProps) multiProps.appendChild(container);
     }
 
     _updateClipboardIndicator() {
