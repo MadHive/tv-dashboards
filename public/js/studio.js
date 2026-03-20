@@ -699,6 +699,23 @@
        Widget Properties Panel
     ───────────────────────────────────────────── */
 
+    updateSectionVisibility(type) {
+      const displaySection = document.getElementById('display-section');
+      if (displaySection) {
+        const showDisplayTypes = ['gauge', 'gauge-row', 'progress-bar', 'big-number', 'stat-card', 'line-chart', 'bar-chart'];
+        displaySection.style.display = showDisplayTypes.includes(type) ? '' : 'none';
+      }
+      const mapSection = document.getElementById('map-config-section');
+      if (mapSection) mapSection.style.display = type === 'usa-map' ? '' : 'none';
+      const mglSection = document.getElementById('mgl-config-section');
+      if (mglSection) mglSection.style.display = type === 'usa-map-gl' ? '' : 'none';
+      const labelsSection = document.getElementById('labels-section');
+      if (labelsSection) {
+        const showLabelsTypes = ['bar-chart', 'line-chart', 'stacked-bar-chart', 'donut-ring', 'sankey', 'heatmap', 'treemap', 'pipeline-flow', 'multi-metric-card', 'status-grid', 'table'];
+        labelsSection.style.display = showLabelsTypes.includes(type) ? '' : 'none';
+      }
+    }
+
     showWidgetProps(widgetId) {
       this.selectedWidgetId = widgetId;
 
@@ -730,6 +747,8 @@
       };
 
       set('prop-title', wc.title || '');
+      set('prop-subtitle', wc.subtitle || '');
+      set('prop-format', wc.format || '');
       set('prop-type', wc.type || 'big-number');
       set('prop-source', wc.source || 'gcp');
       set('prop-col', wc.position.col);
@@ -741,6 +760,9 @@
       set('prop-max', wc.max !== undefined ? wc.max : '');
       set('prop-warn', wc.thresholds && wc.thresholds.warning !== undefined ? wc.thresholds.warning : '');
       set('prop-crit', wc.thresholds && wc.thresholds.critical !== undefined ? wc.thresholds.critical : '');
+      set('prop-x-label', wc.xLabel || '');
+      set('prop-y-label', wc.yLabel || '');
+      set('prop-legend', wc.legendLabels || '');
       if (wc.type === 'usa-map') {
         const mc = wc.mapConfig || {};
         set('prop-map-timewindow',     mc.timeWindow     !== undefined ? mc.timeWindow     : 7);
@@ -749,19 +771,11 @@
         set('prop-map-zoom',           mc.zoom           || 'on');
       }
 
-      // Show/hide Display section based on type
-      const displaySection = document.getElementById('display-section');
-      if (displaySection) {
-        const showDisplayTypes = ['gauge', 'gauge-row', 'progress-bar', 'big-number', 'stat-card', 'line-chart', 'bar-chart'];
-        displaySection.style.display = showDisplayTypes.includes(wc.type) ? '' : 'none';
-      }
-      const mapSection = document.getElementById('map-config-section');
-      if (mapSection) {
-        mapSection.style.display = wc.type === 'usa-map' ? '' : 'none';
-      }
+      // Show/hide sections based on widget type
+      this.updateSectionVisibility(wc.type);
+
       const mglSection = document.getElementById('mgl-config-section');
       if (mglSection) {
-        mglSection.style.display = wc.type === 'usa-map-gl' ? '' : 'none';
         if (wc.type === 'usa-map-gl') {
           const mgl = wc.mglConfig || {};
           set('prop-mgl-scheme',      mgl.colorScheme    || 'brand');
@@ -819,23 +833,93 @@
       }
 
       bind('prop-title', (v) => { wc.title = v; });
+      bind('prop-subtitle', (v) => { wc.subtitle = v; });
+      bind('prop-format', (v) => { wc.format = v; });
+      bind('prop-x-label', (v) => { wc.xLabel = v; });
+      bind('prop-y-label', (v) => { wc.yLabel = v; });
+      bind('prop-legend', (v) => { wc.legendLabels = v; });
       bind('prop-type', (v) => {
         wc.type = v;
-        // Update display section visibility on type change
-        const displaySection = document.getElementById('display-section');
-        if (displaySection) {
-          const showDisplayTypes = ['gauge', 'gauge-row', 'progress-bar', 'big-number', 'stat-card', 'line-chart', 'bar-chart'];
-          displaySection.style.display = showDisplayTypes.includes(v) ? '' : 'none';
-        }
-        const mapSec = document.getElementById('map-config-section');
-        if (mapSec) mapSec.style.display = v === 'usa-map' ? '' : 'none';
-        const mglSec = document.getElementById('mgl-config-section');
-        if (mglSec) mglSec.style.display = v === 'usa-map-gl' ? '' : 'none';
+        self.updateSectionVisibility(v);
       });
-      bind('prop-col', (v) => { wc.position.col = parseInt(v) || wc.position.col; });
-      bind('prop-row', (v) => { wc.position.row = parseInt(v) || wc.position.row; });
-      bind('prop-colspan', (v) => { wc.position.colSpan = Math.max(1, parseInt(v) || 1); });
-      bind('prop-rowspan', (v) => { wc.position.rowSpan = Math.max(1, parseInt(v) || 1); });
+      bind('prop-col', (v) => {
+        const desired = parseInt(v) || wc.position.col;
+        const dash = self.modifiedConfig.dashboards[self.activeDashIdx];
+        if (dash && window.StudioCanvas && window.StudioCanvas.snapToNearest) {
+          const snapped = window.StudioCanvas.snapToNearest(
+            dash, desired, wc.position.row,
+            wc.position.colSpan || 1, wc.position.rowSpan || 1, wc.id
+          );
+          wc.position.col = snapped.col;
+          wc.position.row = snapped.row;
+          const colEl = document.getElementById('prop-col');
+          if (colEl) colEl.value = wc.position.col;
+          const rowEl = document.getElementById('prop-row');
+          if (rowEl) rowEl.value = wc.position.row;
+        } else {
+          wc.position.col = desired;
+        }
+      });
+      bind('prop-row', (v) => {
+        const desired = parseInt(v) || wc.position.row;
+        const dash = self.modifiedConfig.dashboards[self.activeDashIdx];
+        if (dash && window.StudioCanvas && window.StudioCanvas.snapToNearest) {
+          const snapped = window.StudioCanvas.snapToNearest(
+            dash, wc.position.col, desired,
+            wc.position.colSpan || 1, wc.position.rowSpan || 1, wc.id
+          );
+          wc.position.col = snapped.col;
+          wc.position.row = snapped.row;
+          const colEl = document.getElementById('prop-col');
+          if (colEl) colEl.value = wc.position.col;
+          const rowEl = document.getElementById('prop-row');
+          if (rowEl) rowEl.value = wc.position.row;
+        } else {
+          wc.position.row = desired;
+        }
+      });
+      bind('prop-colspan', (v) => {
+        const desired = Math.max(1, parseInt(v) || 1);
+        const dash = self.modifiedConfig.dashboards[self.activeDashIdx];
+        if (dash && window.StudioCanvas && window.StudioCanvas.snapToNearest) {
+          const snapped = window.StudioCanvas.snapToNearest(
+            dash, wc.position.col, wc.position.row,
+            desired, wc.position.rowSpan || 1, wc.id
+          );
+          wc.position.colSpan = desired;
+          wc.position.col = snapped.col;
+          wc.position.row = snapped.row;
+          const colEl = document.getElementById('prop-col');
+          if (colEl) colEl.value = wc.position.col;
+          const rowEl = document.getElementById('prop-row');
+          if (rowEl) rowEl.value = wc.position.row;
+          const csEl = document.getElementById('prop-colspan');
+          if (csEl) csEl.value = wc.position.colSpan;
+        } else {
+          wc.position.colSpan = desired;
+        }
+      });
+      bind('prop-rowspan', (v) => {
+        const desired = Math.max(1, parseInt(v) || 1);
+        const dash = self.modifiedConfig.dashboards[self.activeDashIdx];
+        if (dash && window.StudioCanvas && window.StudioCanvas.snapToNearest) {
+          const snapped = window.StudioCanvas.snapToNearest(
+            dash, wc.position.col, wc.position.row,
+            wc.position.colSpan || 1, desired, wc.id
+          );
+          wc.position.rowSpan = desired;
+          wc.position.col = snapped.col;
+          wc.position.row = snapped.row;
+          const colEl = document.getElementById('prop-col');
+          if (colEl) colEl.value = wc.position.col;
+          const rowEl = document.getElementById('prop-row');
+          if (rowEl) rowEl.value = wc.position.row;
+          const rsEl = document.getElementById('prop-rowspan');
+          if (rsEl) rsEl.value = wc.position.rowSpan;
+        } else {
+          wc.position.rowSpan = desired;
+        }
+      });
       bind('prop-unit', (v) => { wc.unit = v; });
       bind('prop-min', (v) => { wc.min = v !== '' ? parseFloat(v) : undefined; });
       bind('prop-max', (v) => { wc.max = v !== '' ? parseFloat(v) : undefined; });

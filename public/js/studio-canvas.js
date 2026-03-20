@@ -265,9 +265,11 @@ window.StudioCanvas = (function () {
   }
 
   function _snapToNearest(dash, desiredCol, desiredRow, colSpan, rowSpan, excludeId) {
-    // If desired position is open, use it
-    if (!_hasCollision(dash, desiredCol, desiredRow, colSpan, rowSpan, excludeId)) {
-      return { col: desiredCol, row: desiredRow };
+    // Clamp desired position to valid grid range before checking collision
+    var dc = Math.max(1, Math.min(dash.grid.columns - colSpan + 1, desiredCol));
+    var dr = Math.max(1, Math.min(dash.grid.rows    - rowSpan + 1, desiredRow));
+    if (!_hasCollision(dash, dc, dr, colSpan, rowSpan, excludeId)) {
+      return { col: dc, row: dr };
     }
     // Search in direction order: right, down, left, up — expanding radius
     var maxR = Math.max(dash.grid.columns, dash.grid.rows);
