@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: "Completed 01-widget-control-01-01-PLAN.md"
-last_updated: "2026-03-20T14:14:08Z"
+stopped_at: "Completed 01-widget-control-01-02-PLAN.md"
+last_updated: "2026-03-20T14:24:36Z"
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -24,25 +24,25 @@ See: .planning/PROJECT.md (updated 2026-03-20)
 ## Current Position
 
 Phase: 1 (Widget Control) — EXECUTING
-Plan: 2 of 3 (Plan 01 complete)
+Plan: 3 of 3 (Plans 01 and 02 complete)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 1
-- Average duration: 2 min
-- Total execution time: 0.03 hours
+- Total plans completed: 2
+- Average duration: 5 min
+- Total execution time: 0.17 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-widget-control | 1 | 2 min | 2 min |
+| 01-widget-control | 2 | 10 min | 5 min |
 
 **Recent Trend:**
 
-- Last 5 plans: 01-01 (2 min)
+- Last 5 plans: 01-01 (2 min), 01-02 (8 min)
 - Trend: -
 
 *Updated after each plan completion*
@@ -61,6 +61,9 @@ Recent decisions affecting current work:
 - [01-01]: Labels section and type-mismatch-warning div start hidden — Plans 02/03 toggle visibility based on widget type
 - [01-01]: var used in studio-canvas.js catch block to match surrounding IIFE code style
 - [01-01]: Wave 0 tests use test.todo() for snap-to-nearest and auto-match — Plans 02/03 fill them in
+- [01-02]: _snapToNearest clamps desiredCol/Row to grid bounds before no-collision fast-path check — prevents returning out-of-bounds positions when desired slot fits without collision
+- [01-02]: StudioCanvas.hasCollision and StudioCanvas.snapToNearest exposed on public API — avoids duplicating algorithm in studio.js
+- [01-02]: updateSectionVisibility(type) class method as single source of truth for all section show/hide logic
 
 ### Pending Todos
 
@@ -73,6 +76,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T14:14:08Z
-Stopped at: Completed 01-widget-control-01-01-PLAN.md
-Resume file: .planning/phases/01-widget-control/01-02-PLAN.md
+Last session: 2026-03-20T14:24:36Z
+Stopped at: Completed 01-widget-control-01-02-PLAN.md
+Resume file: .planning/phases/01-widget-control/01-03-PLAN.md
