@@ -57,7 +57,7 @@ completed: 2026-03-20
 - **Duration:** 5 min
 - **Started:** 2026-03-20T14:27:30Z
 - **Completed:** 2026-03-20T14:32:30Z
-- **Tasks:** 2 of 3 complete (Task 3 is a human-verify checkpoint — paused)
+- **Tasks:** 3 of 3 complete
 - **Files modified:** 2
 
 ## Accomplishments
@@ -74,7 +74,7 @@ Each task was committed atomically:
 
 1. **Task 1: Type-switch auto-match, config preservation, and mismatch warning** - `901df30` (feat)
 2. **Task 2: Fill in test.todo scaffolds with real tests** - `07297fa` (test)
-3. **Task 3: Human verify in browser** - CHECKPOINT (awaiting user verification)
+3. **Task 3: Human verify in browser** - approved (human-verify checkpoint passed)
 
 ## Files Created/Modified
 - `public/js/studio.js` - Expanded prop-type bind handler with config clearing, mismatch warning, oldType capture; added warning hide in showWidgetProps
@@ -97,8 +97,8 @@ None - no external service configuration required.
 
 ## Next Phase Readiness
 - WDGT-01, WDGT-02, WDGT-03 implementation complete
-- Task 3 (browser verification) is a blocking checkpoint — user must verify in browser before phase is marked complete
 - All widget-config tests passing (16/16)
+- Browser verification passed — all 10 manual steps confirmed by user
 - Pre-existing test failures in GCP data source and query route tests are unrelated to this plan
 
 ---
