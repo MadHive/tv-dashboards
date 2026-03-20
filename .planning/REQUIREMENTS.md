@@ -24,7 +24,7 @@
 
 ### Data Source Management (Admin)
 
-- [ ] **DSRC-01**: User can view a health dashboard showing per-source status, last-success time, and recent errors
+- [x] **DSRC-01**: User can view a health dashboard showing per-source status, last-success time, and recent errors
 - [ ] **DSRC-02**: User can validate credential format/auth before saving (client-side + server-side check)
 
 ### Multi-Source Metrics
@@ -91,7 +91,7 @@
 | DASH-03 | Phase 2 | Complete |
 | QRYX-01 | Phase 3 | Pending |
 | QRYX-02 | Phase 3 | Pending |
-| DSRC-01 | Phase 3 | Pending |
+| DSRC-01 | Phase 3 | Complete |
 | DSRC-02 | Phase 3 | Pending |
 | METR-01 | Phase 3 | Pending |
 | TVUX-01 | Phase 4 | Pending |
