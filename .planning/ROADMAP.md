@@ -43,12 +43,12 @@ Plans:
   1. User completes the new dashboard wizard (name, layout choice, initial widgets) and the dashboard appears in the TV rotation immediately
   2. User duplicates an existing dashboard; a new independent copy appears in the sidebar with all widgets intact and editable
   3. User multi-selects widgets on the canvas and pastes them onto a different dashboard, with positions and data source assignments preserved
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: New dashboard creation wizard
-- [ ] 02-02: Dashboard duplication
-- [ ] 02-03: Multi-select, copy, and paste across dashboards
+- [ ] 02-01-PLAN.md — Dashboard creation wizard modal + duplicate button with inline rename
+- [ ] 02-02-PLAN.md — Multi-select (shift+click, rubber-band) + multi-select properties panel
+- [ ] 02-03-PLAN.md — Clipboard Ctrl+C/V + cross-dashboard paste with collision resolution
 
 ### Phase 3: Query & Data Workflow
 **Goal**: Admin users can build and test queries against any connected source from within the editor, preview live results before assigning them, and see the health of every data source without leaving the admin UI
