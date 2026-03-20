@@ -40,7 +40,6 @@ Declared values (all multiples of 4 — enforced for all new Phase 1 elements):
 | sm | 8px | Input gap-within-label for new field groups, props-section inner gap |
 | md | 8px | props-section inner div padding for new sections |
 | lg | 16px | Properties panel outer padding for new sections |
-| xl | 20px | Canvas wrapper padding (established: padding: 20px) |
 
 All new fields added in Phase 1 use the established `.props-section > div` gap of 8px between fields.
 
@@ -50,6 +49,7 @@ The following values exist in the current codebase and are NOT part of the Phase
 
 | Location | Value | Reason not changed |
 |----------|---------|--------------------|
+| Canvas wrapper padding | 20px | Established canvas layout value — changing breaks proportions |
 | `.props-grid-2` gap | 6px | Established layout grid — changing breaks existing panel proportions |
 | `<summary>` padding | 7px 10px | Established collapsible section chrome — visual regression risk |
 | Label gap-to-input | 3px | Compact panel density — established and unchanged |
@@ -180,7 +180,7 @@ Shown directly below `#data-summary` when a type change occurs and no auto-match
 </div>
 ```
 
-Style: background rgba(251,191,36,0.08), border 1px solid rgba(251,191,36,0.3), border-radius 4px, padding 6px 8px, font-size 11px, color var(--amber), font-family var(--font-display), letter-spacing 0.5px, display flex, align-items center, gap 6px.
+Style: background rgba(251,191,36,0.08), border 1px solid rgba(251,191,36,0.3), border-radius 4px, padding 4px 8px, font-size 11px, color var(--amber), font-family var(--font-display), letter-spacing 0.5px, display flex, align-items center, gap 8px.
 
 #### Unimplemented widget placeholder on canvas
 
@@ -190,7 +190,7 @@ When a widget type has no working renderer or renders empty, the canvas cell sho
 Grey card fill: var(--bg-card-alt)
 Centered content:
   — Type name in 11px Space Grotesk, color var(--t3), letter-spacing 1.5px, text-transform uppercase
-  — Below: small badge "(beta)" — 9px, background rgba(251,191,36,0.12), border 1px solid rgba(251,191,36,0.3), color var(--amber), border-radius 3px, padding 1px 6px, font-family var(--font-mono), font-weight 600
+  — Below: small badge "(beta)" — 9px, background rgba(251,191,36,0.12), border 1px solid rgba(251,191,36,0.3), color var(--amber), border-radius 3px, padding 0 8px, font-family var(--font-mono), font-weight 600
 ```
 
 No separate CSS class needed — the existing `.canvas-placeholder` pattern is the model; a new `.widget-placeholder` class is added following the same structure.
