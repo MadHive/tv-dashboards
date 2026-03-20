@@ -184,7 +184,7 @@ bigquery:
     sql: SELECT COUNT(*) as value FROM test_table
     widgetTypes:
       - big-number
-    updatedAt: '2026-03-09T20:06:13.774Z'
+    updatedAt: '2026-03-20T17:38:46.792Z'
     createdAt: '2026-02-26T17:39:15.018Z'
   - id: update-test
     name: Updated Name
@@ -192,42 +192,42 @@ bigquery:
     widgetTypes:
       - big-number
       - stat-card
-    updatedAt: '2026-03-09T20:06:13.782Z'
+    updatedAt: '2026-03-20T17:38:46.799Z'
     createdAt: '2026-02-26T17:39:15.024Z'
   - id: retrieve-test
     name: Retrieve Test
     sql: SELECT * FROM test
     widgetTypes:
       - big-number
-    updatedAt: '2026-03-09T20:06:13.785Z'
+    updatedAt: '2026-03-20T17:38:46.802Z'
     createdAt: '2026-02-26T17:39:15.026Z'
   - id: list-test-1
     name: List Test 1
     sql: SELECT 1
     widgetTypes:
       - big-number
-    updatedAt: '2026-03-09T20:06:13.789Z'
+    updatedAt: '2026-03-20T17:38:46.807Z'
     createdAt: '2026-02-26T17:39:15.028Z'
   - id: list-test-2
     name: List Test 2
     sql: SELECT 2
     widgetTypes:
       - stat-card
-    updatedAt: '2026-03-09T20:06:13.792Z'
+    updatedAt: '2026-03-20T17:38:46.810Z'
     createdAt: '2026-02-26T17:39:15.028Z'
   - id: backup-test
     name: Backup Test
     sql: SELECT 1
     widgetTypes:
       - big-number
-    updatedAt: '2026-03-09T20:06:13.802Z'
+    updatedAt: '2026-03-20T17:38:46.823Z'
     createdAt: '2026-02-26T17:39:15.032Z'
   - id: persist-test
     name: Persistence Test
     sql: SELECT COUNT(*) as value
     widgetTypes:
       - big-number
-    updatedAt: '2026-03-09T20:06:13.805Z'
+    updatedAt: '2026-03-20T17:38:46.826Z'
     createdAt: '2026-02-26T17:39:15.033Z'
   - id: delivery-geo-map
     name: Campaign Delivery Geo Map
@@ -326,7 +326,7 @@ gcp:
     widgetTypes:
       - big-number
       - line-chart
-    updatedAt: '2026-03-09T20:06:13.777Z'
+    updatedAt: '2026-03-20T17:38:46.794Z'
     createdAt: '2026-02-26T17:39:15.022Z'
   - id: monitoring-googleapis-com-uptime-check-request-latency-1772562367145
     name: Request latency
