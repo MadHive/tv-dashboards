@@ -680,6 +680,73 @@ window.Widgets = (function () {
   }
 
   // ===========================================================================
+  // Globe Widget (cobe)
+  // ===========================================================================
+  function globeWidget(container, config) {
+    container.innerHTML = '';
+    container.style.position = 'relative';
+
+    if (!window.createGlobe) {
+      container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#8B75B0;font-size:12px;">Globe unavailable</div>';
+      return { update() {} };
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText = 'width:100%;height:100%;display:block;';
+    container.appendChild(canvas);
+
+    const rect = container.getBoundingClientRect();
+    const w = Math.max(rect.width, 200);
+    const h = Math.max(rect.height, 200);
+
+    const cfg = config.globeConfig || {};
+    let phi = cfg.phi !== undefined ? cfg.phi : 0;
+
+    let globe = window.createGlobe(canvas, {
+      devicePixelRatio: window.devicePixelRatio || 1,
+      width: w,
+      height: h,
+      phi,
+      theta: cfg.theta || 0.3,
+      dark: cfg.dark !== undefined ? cfg.dark : 1,
+      diffuse: cfg.diffuse || 1.2,
+      mapSamples: cfg.mapSamples || 16000,
+      mapBrightness: cfg.mapBrightness || 6,
+      baseColor: cfg.baseColor || [0.06, 0.01, 0.13],
+      markerColor: cfg.markerColor || [0.99, 0.64, 0.85],
+      glowColor: cfg.glowColor || [0.4, 0.2, 0.6],
+      markers: [],
+      onRender(state) {
+        state.phi = phi;
+        phi += 0.003;
+      }
+    });
+
+    // Auto-resize
+    const ro = new ResizeObserver(entries => {
+      for (const e of entries) {
+        const { width, height } = e.contentRect;
+        if (globe && width > 0 && height > 0) {
+          globe.update({ width, height });
+        }
+      }
+    });
+    ro.observe(container);
+
+    return {
+      update(data) {
+        if (!globe) return;
+        const markers = (data && data.markers) ? data.markers : [];
+        globe.update({ markers });
+      },
+      destroy() {
+        if (globe) { globe.destroy(); globe = null; }
+        ro.disconnect();
+      }
+    };
+  }
+
+  // ===========================================================================
   // Factory
   // ===========================================================================
   function create(type, container, config) {
@@ -708,6 +775,7 @@ window.Widgets = (function () {
       case 'table':          return table(container, config);
       case 'treemap':        return treemap(container, config);
       case 'donut-ring':     return donutRing(container, config);
+      case 'globe':         return globeWidget(container, config);
       default:
         console.warn('[widgets] unknown type:', type);
         container.textContent = 'Unknown widget: ' + type;
