@@ -12,7 +12,7 @@ The v2 initiative improves a live, working system — 23 dashboards on display n
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Widget Control** - Admin users can configure any widget's content, size, and visualization type from the properties panel without touching YAML
+- [x] **Phase 1: Widget Control** - Admin users can configure any widget's content, size, and visualization type from the properties panel without touching YAML (completed 2026-03-20)
 - [ ] **Phase 2: Dashboard Management** - Admin users can create new dashboards, duplicate existing ones, and move widgets across dashboards
 - [ ] **Phase 3: Query & Data Workflow** - Admin users can write, test, preview, and assign queries to widgets; data source health is visible at a glance
 - [ ] **Phase 4: TV Display Polish** - TV dashboards display sharper visuals and full per-client branding (logo, colors, font)
@@ -109,7 +109,7 @@ Phase 4 (TV polish) is independent of phases 2 and 3 and may overlap.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Widget Control | 2/3 | In Progress|  |
+| 1. Widget Control | 3/3 | Complete   | 2026-03-20 |
 | 2. Dashboard Management | 0/3 | Not started | - |
 | 3. Query & Data Workflow | 0/5 | Not started | - |
 | 4. TV Display Polish | 0/2 | Not started | - |
