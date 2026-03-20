@@ -2688,6 +2688,412 @@
         }, 300);
       }, 3000);
     }
+
+    /* ─────────────────────────────────────────────
+       Data Source List + Editor
+    ───────────────────────────────────────────── */
+
+    async renderDatasourceList() {
+      const list = document.getElementById('datasource-list');
+      if (!list) return;
+      list.textContent = '';
+      try {
+        const res  = await fetch('/api/data-sources');
+        const data = await res.json();
+        const sources = data.sources || [];
+        if (!sources.length) {
+          const empty = document.createElement('div');
+          empty.className = 'mb-status';
+          empty.textContent = 'No data sources configured';
+          list.appendChild(empty);
+          return;
+        }
+        sources.forEach(src => {
+          const row  = document.createElement('div');
+          row.className = 'ds-row';
+          const dot  = document.createElement('span');
+          dot.className = 'ds-status-dot ' + (src.isConnected ? 'green' : src.lastError ? 'red' : 'grey');
+          const name = document.createElement('span');
+          name.className   = 'ds-name';
+          name.textContent = src.name;
+          const type = document.createElement('span');
+          type.className   = 'ds-type';
+          type.textContent = src.isConnected ? 'connected' : (src.lastError ? 'error' : 'not configured');
+          row.appendChild(dot);
+          row.appendChild(name);
+          row.appendChild(type);
+          row.addEventListener('click', () => this.openDatasourceEditor(src));
+          list.appendChild(row);
+        });
+      } catch (e) {
+        this.showToast('Failed to load data sources: ' + e.message, 'error');
+      }
+    }
+
+    async openDatasourceEditor(src) {
+      const props   = document.getElementById('properties-placeholder');
+      const content = document.getElementById('properties-content');
+      const qe      = document.getElementById('query-editor-panel');
+      const dse     = document.getElementById('datasource-editor-panel');
+      [props, content, qe].forEach(el => { if (el) el.style.display = 'none'; });
+      if (dse) dse.style.display = 'flex';
+
+      document.getElementById('dse-name').textContent = src.name;
+      const statusEl = document.getElementById('dse-status');
+      statusEl.textContent = src.isConnected ? 'connected' : 'not connected';
+      statusEl.style.color = src.isConnected ? 'var(--green)' : 'var(--red)';
+
+      // Default view: query list
+      this._showDseQueryView();
+      await this._loadSourceQueries(src);
+
+      // Close button
+      document.getElementById('dse-close').onclick = () => {
+        if (dse) dse.style.display = 'none';
+        this.showDashboardProps();
+      };
+
+      // Toggle to credential form
+      const editCredsBtn = document.getElementById('dse-edit-creds');
+      if (editCredsBtn) {
+        editCredsBtn.onclick = () => {
+          this._showDseCredView();
+          this._loadCredentialForm(src);
+        };
+      }
+
+      // Back button
+      const backBtn = document.getElementById('dse-back');
+      if (backBtn) {
+        backBtn.onclick = () => {
+          this._showDseQueryView();
+        };
+      }
+    }
+
+    _showDseQueryView() {
+      const qv = document.getElementById('dse-query-view');
+      const cv = document.getElementById('dse-cred-view');
+      if (qv) qv.style.display = 'flex';
+      if (cv) cv.style.display = 'none';
+    }
+
+    _showDseCredView() {
+      const qv = document.getElementById('dse-query-view');
+      const cv = document.getElementById('dse-cred-view');
+      if (qv) qv.style.display = 'none';
+      if (cv) cv.style.display = 'flex';
+    }
+
+    async _loadSourceQueries(src) {
+      const listEl = document.getElementById('dse-query-list');
+      if (!listEl) return;
+      listEl.textContent = '';
+
+      try {
+        const res  = await fetch('/api/queries/' + encodeURIComponent(src.name));
+        const data = await res.json();
+        const queries = data.queries || [];
+
+        if (!queries.length) {
+          const empty = document.createElement('div');
+          empty.className = 'mb-status';
+          empty.textContent = src.isConnected
+            ? 'No saved queries for this source'
+            : 'Configure credentials to enable queries';
+          listEl.appendChild(empty);
+          return;
+        }
+
+        queries.forEach(q => {
+          const row    = document.createElement('div');
+          row.className = 'dse-query-row';
+
+          const nameEl = document.createElement('span');
+          nameEl.className = 'dse-query-row-name';
+          nameEl.textContent = q.name;
+
+          const runBtn = document.createElement('button');
+          runBtn.className = 'dse-query-row-run';
+          runBtn.textContent = '\u25b6 Run';
+
+          row.appendChild(nameEl);
+          row.appendChild(runBtn);
+
+          // Click row → open in query editor panel
+          row.addEventListener('click', (e) => {
+            if (e.target === runBtn) return;
+            document.getElementById('datasource-editor-panel').style.display = 'none';
+            this.openQueryEditor(q, src.name);
+          });
+
+          // Run button → open query editor and auto-run
+          runBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('datasource-editor-panel').style.display = 'none';
+            this.openQueryEditor(q, src.name);
+            // Auto-run after a short delay so the panel is ready
+            setTimeout(() => this._runQuery(), 200);
+          });
+
+          listEl.appendChild(row);
+        });
+      } catch (e) {
+        const err = document.createElement('div');
+        err.className = 'mb-status';
+        err.textContent = 'Failed to load queries';
+        listEl.appendChild(err);
+      }
+    }
+
+    async _loadCredentialForm(src) {
+      const fieldsEl = document.getElementById('dse-fields');
+      if (!fieldsEl) return;
+      fieldsEl.textContent = '';
+
+      try {
+        const schemaRes  = await fetch('/api/data-sources/schemas');
+        const schemaData = await schemaRes.json().catch(() => ({ schemas: {} }));
+        const schema = (schemaData.schemas && schemaData.schemas[src.name]) || { fields: [] };
+        (schema.fields || []).forEach(field => {
+          const label = document.createElement('label');
+          label.className = 'qe-label';
+          label.appendChild(document.createTextNode(field.description || field.name));
+          const input = document.createElement('input');
+          input.className         = 'qe-input';
+          input.type              = field.secure ? 'password' : 'text';
+          input.dataset.field     = field.name;
+          input.dataset.key       = field.name;
+          input.dataset.envVar    = field.envVar || '';
+          input.dataset.required  = field.required ? 'true' : 'false';
+          input.placeholder    = field.secure
+            ? '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (stored)'
+            : (field.default || '');
+          label.appendChild(input);
+          if (field.envVar) {
+            const hint = document.createElement('div');
+            hint.className   = 'props-hint';
+            hint.textContent = 'env: ' + field.envVar;
+            label.appendChild(hint);
+          }
+          fieldsEl.appendChild(label);
+        });
+      } catch (e) {
+        const err = document.createElement('div');
+        err.className   = 'mb-status';
+        err.textContent = 'Schema unavailable';
+        fieldsEl.appendChild(err);
+      }
+
+      // Wire test + save buttons
+      const resultEl = document.getElementById('dse-test-result');
+
+      document.getElementById('dse-test').onclick = async () => {
+        const btn = document.getElementById('dse-test');
+        btn.setAttribute('disabled', '');
+        resultEl.textContent = 'Testing\u2026';
+        resultEl.style.color = 'var(--t3)';
+        const t0 = Date.now();
+        try {
+          const res  = await fetch('/api/data-sources/' + encodeURIComponent(src.name) + '/test', { method: 'POST' });
+          const data = await res.json();
+          const ms   = Date.now() - t0;
+          if (data.connected || data.success) {
+            resultEl.textContent = '\u2713 Connected (' + ms + 'ms)';
+            resultEl.style.color = 'var(--green)';
+          } else {
+            resultEl.textContent = '\u2717 Failed \u2014 ' + (data.error || 'Unknown');
+            resultEl.style.color = 'var(--red)';
+          }
+        } catch (e) {
+          resultEl.textContent = '\u2717 ' + e.message;
+          resultEl.style.color = 'var(--red)';
+        } finally {
+          btn.removeAttribute('disabled');
+        }
+      };
+
+      document.getElementById('dse-save').onclick = async () => {
+        const saveBtn = document.getElementById('dse-save');
+        // Remove any existing error banner
+        const existingBanner = document.getElementById('dse-fields') && document.getElementById('dse-fields').querySelector('.validation-banner');
+        if (existingBanner) existingBanner.remove();
+        // Client-side validation before network request
+        if (!this._validateCredForm()) return;
+        const inputs  = document.querySelectorAll('#dse-fields input[data-field]');
+        const body    = {};
+        inputs.forEach(inp => {
+          if (inp.value.trim() && inp.dataset.envVar) body[inp.dataset.envVar] = inp.value.trim();
+        });
+        if (!Object.keys(body).length) {
+          resultEl.textContent = 'No credentials entered';
+          resultEl.style.color = 'var(--amber)';
+          return;
+        }
+        saveBtn.disabled = true;
+        resultEl.textContent = 'Saving\u2026';
+        resultEl.style.color = 'var(--t3)';
+        try {
+          const res  = await fetch('/api/data-sources/' + encodeURIComponent(src.name) + '/credentials', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            const banner = document.createElement('div');
+            banner.className = 'validation-error validation-banner';
+            banner.textContent = 'Could not save credentials: ' + (data.error || 'Unknown error') + '. Check your API key format.';
+            document.getElementById('dse-fields').prepend(banner);
+            resultEl.textContent = '\u2717 ' + (data.error || 'Save failed');
+            resultEl.style.color = 'var(--red)';
+            return;
+          }
+          if (data.connected) {
+            resultEl.textContent = '\u2713 Saved and connected';
+            resultEl.style.color = 'var(--green)';
+          } else {
+            resultEl.textContent = '\u2713 Saved \u2014 ' + (data.message || 'not yet connected');
+            resultEl.style.color = 'var(--amber)';
+          }
+          inputs.forEach(inp => { if (inp.type === 'password') inp.value = ''; });
+          this.renderDatasourceList();
+        } catch (e) {
+          resultEl.textContent = '\u2717 ' + e.message;
+          resultEl.style.color = 'var(--red)';
+        } finally {
+          saveBtn.disabled = false;
+        }
+      };
+    }
+
+    /* ─────────────────────────────────────────────
+       Credential Validation
+    ───────────────────────────────────────────── */
+
+    _validateCredForm() {
+      const fieldsContainer = document.getElementById('dse-fields');
+      if (!fieldsContainer) return true;
+      const inputs = fieldsContainer.querySelectorAll('input[data-key]');
+      let valid = true;
+      inputs.forEach(input => {
+        // Remove previous error
+        const existingErr = input.parentElement.querySelector('.validation-error');
+        if (existingErr) existingErr.remove();
+        const val = input.value.trim();
+        const required = input.hasAttribute('required') || input.dataset.required === 'true';
+        if (required && !val) {
+          const errEl = document.createElement('div');
+          errEl.className = 'validation-error';
+          errEl.textContent = 'Required.';
+          input.parentElement.appendChild(errEl);
+          valid = false;
+        }
+      });
+      return valid;
+    }
+
+    /* ─────────────────────────────────────────────
+       Health Section (Sources Tab)
+    ───────────────────────────────────────────── */
+
+    _formatRelativeTime(ts) {
+      if (!ts) return 'never';
+      const diff = Math.floor((Date.now() - ts) / 1000);
+      if (diff < 60) return diff + 's ago';
+      if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+      if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+      return Math.floor(diff / 86400) + 'd ago';
+    }
+
+    async _renderHealthSection() {
+      const content = document.getElementById('health-section-content');
+      if (!content) return;
+      content.textContent = '';
+      try {
+        const res  = await fetch('/api/data-sources/health');
+        const data = await res.json();
+        const health = data.health || {};
+        Object.entries(health).forEach(([sourceName, src]) => {
+          const row = document.createElement('div');
+          row.className = 'health-row';
+
+          const dot = document.createElement('span');
+          dot.className = 'ds-status-dot ' + (
+            src.isConnected ? 'green' :
+            (src.isReady && !src.isConnected) ? 'amber' :
+            src.lastError ? 'red' : 'grey'
+          );
+
+          const nameEl = document.createElement('span');
+          nameEl.className   = 'ds-name';
+          nameEl.textContent = sourceName;
+
+          if (src.sessionErrorCount > 0) {
+            const badge = document.createElement('span');
+            badge.className   = 'health-error-badge';
+            badge.textContent = src.sessionErrorCount;
+            row.appendChild(dot);
+            row.appendChild(nameEl);
+            row.appendChild(badge);
+          } else {
+            row.appendChild(dot);
+            row.appendChild(nameEl);
+          }
+
+          const ts = document.createElement('span');
+          ts.className   = 'health-timestamp';
+          ts.textContent = this._formatRelativeTime(src.lastSuccessAt);
+          row.appendChild(ts);
+
+          if (src.lastError) {
+            const detail = document.createElement('div');
+            detail.className   = 'health-error-detail';
+            detail.textContent = src.lastError;
+            detail.style.display = 'none';
+            row.addEventListener('click', () => {
+              if (detail.style.display === 'none') {
+                detail.style.display = '';
+                detail.classList.add('expanded');
+              } else {
+                detail.style.display = 'none';
+                detail.classList.remove('expanded');
+              }
+            });
+            content.appendChild(row);
+            content.appendChild(detail);
+          } else {
+            content.appendChild(row);
+          }
+        });
+        if (!Object.keys(health).length) {
+          const msg = document.createElement('div');
+          msg.className   = 'mb-status';
+          msg.textContent = 'No sources found';
+          content.appendChild(msg);
+        }
+      } catch (e) {
+        const msg = document.createElement('div');
+        msg.className   = 'mb-status';
+        msg.textContent = 'Health check unavailable. Retrying in 30s.';
+        content.appendChild(msg);
+      }
+    }
+
+    _startHealthPolling() {
+      if (this._healthPollInterval) return;
+      this._renderHealthSection();
+      this._healthPollInterval = setInterval(() => this._renderHealthSection(), 30000);
+      const dot = document.getElementById('health-poll-dot');
+      if (dot) dot.style.display = '';
+    }
+
+    _stopHealthPolling() {
+      clearInterval(this._healthPollInterval);
+      this._healthPollInterval = null;
+      const dot = document.getElementById('health-poll-dot');
+      if (dot) dot.style.display = 'none';
+    }
   }
 
   /* ─────────────────────────────────────────────
@@ -3167,412 +3573,6 @@
         applyBtn.textContent = 'Apply to Widget';
         applyBtn.removeAttribute('disabled');
       }
-    }
-
-    /* ─────────────────────────────────────────────
-       Data Source List + Editor
-    ───────────────────────────────────────────── */
-
-    async renderDatasourceList() {
-      const list = document.getElementById('datasource-list');
-      if (!list) return;
-      list.textContent = '';
-      try {
-        const res  = await fetch('/api/data-sources');
-        const data = await res.json();
-        const sources = data.sources || [];
-        if (!sources.length) {
-          const empty = document.createElement('div');
-          empty.className = 'mb-status';
-          empty.textContent = 'No data sources configured';
-          list.appendChild(empty);
-          return;
-        }
-        sources.forEach(src => {
-          const row  = document.createElement('div');
-          row.className = 'ds-row';
-          const dot  = document.createElement('span');
-          dot.className = 'ds-status-dot ' + (src.isConnected ? 'green' : src.lastError ? 'red' : 'grey');
-          const name = document.createElement('span');
-          name.className   = 'ds-name';
-          name.textContent = src.name;
-          const type = document.createElement('span');
-          type.className   = 'ds-type';
-          type.textContent = src.isConnected ? 'connected' : (src.lastError ? 'error' : 'not configured');
-          row.appendChild(dot);
-          row.appendChild(name);
-          row.appendChild(type);
-          row.addEventListener('click', () => this.openDatasourceEditor(src));
-          list.appendChild(row);
-        });
-      } catch (e) {
-        this.showToast('Failed to load data sources: ' + e.message, 'error');
-      }
-    }
-
-    async openDatasourceEditor(src) {
-      const props   = document.getElementById('properties-placeholder');
-      const content = document.getElementById('properties-content');
-      const qe      = document.getElementById('query-editor-panel');
-      const dse     = document.getElementById('datasource-editor-panel');
-      [props, content, qe].forEach(el => { if (el) el.style.display = 'none'; });
-      if (dse) dse.style.display = 'flex';
-
-      document.getElementById('dse-name').textContent = src.name;
-      const statusEl = document.getElementById('dse-status');
-      statusEl.textContent = src.isConnected ? 'connected' : 'not connected';
-      statusEl.style.color = src.isConnected ? 'var(--green)' : 'var(--red)';
-
-      // Default view: query list
-      this._showDseQueryView();
-      await this._loadSourceQueries(src);
-
-      // Close button
-      document.getElementById('dse-close').onclick = () => {
-        if (dse) dse.style.display = 'none';
-        this.showDashboardProps();
-      };
-
-      // Toggle to credential form
-      const editCredsBtn = document.getElementById('dse-edit-creds');
-      if (editCredsBtn) {
-        editCredsBtn.onclick = () => {
-          this._showDseCredView();
-          this._loadCredentialForm(src);
-        };
-      }
-
-      // Back button
-      const backBtn = document.getElementById('dse-back');
-      if (backBtn) {
-        backBtn.onclick = () => {
-          this._showDseQueryView();
-        };
-      }
-    }
-
-    _showDseQueryView() {
-      const qv = document.getElementById('dse-query-view');
-      const cv = document.getElementById('dse-cred-view');
-      if (qv) qv.style.display = 'flex';
-      if (cv) cv.style.display = 'none';
-    }
-
-    _showDseCredView() {
-      const qv = document.getElementById('dse-query-view');
-      const cv = document.getElementById('dse-cred-view');
-      if (qv) qv.style.display = 'none';
-      if (cv) cv.style.display = 'flex';
-    }
-
-    async _loadSourceQueries(src) {
-      const listEl = document.getElementById('dse-query-list');
-      if (!listEl) return;
-      listEl.textContent = '';
-
-      try {
-        const res  = await fetch('/api/queries/' + encodeURIComponent(src.name));
-        const data = await res.json();
-        const queries = data.queries || [];
-
-        if (!queries.length) {
-          const empty = document.createElement('div');
-          empty.className = 'mb-status';
-          empty.textContent = src.isConnected
-            ? 'No saved queries for this source'
-            : 'Configure credentials to enable queries';
-          listEl.appendChild(empty);
-          return;
-        }
-
-        queries.forEach(q => {
-          const row    = document.createElement('div');
-          row.className = 'dse-query-row';
-
-          const nameEl = document.createElement('span');
-          nameEl.className = 'dse-query-row-name';
-          nameEl.textContent = q.name;
-
-          const runBtn = document.createElement('button');
-          runBtn.className = 'dse-query-row-run';
-          runBtn.textContent = '\u25b6 Run';
-
-          row.appendChild(nameEl);
-          row.appendChild(runBtn);
-
-          // Click row \u2192 open in query editor panel
-          row.addEventListener('click', (e) => {
-            if (e.target === runBtn) return;
-            document.getElementById('datasource-editor-panel').style.display = 'none';
-            this.openQueryEditor(q, src.name);
-          });
-
-          // Run button \u2192 open query editor and auto-run
-          runBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.getElementById('datasource-editor-panel').style.display = 'none';
-            this.openQueryEditor(q, src.name);
-            // Auto-run after a short delay so the panel is ready
-            setTimeout(() => this._runQuery(), 200);
-          });
-
-          listEl.appendChild(row);
-        });
-      } catch (e) {
-        const err = document.createElement('div');
-        err.className = 'mb-status';
-        err.textContent = 'Failed to load queries';
-        listEl.appendChild(err);
-      }
-    }
-
-    async _loadCredentialForm(src) {
-      const fieldsEl = document.getElementById('dse-fields');
-      if (!fieldsEl) return;
-      fieldsEl.textContent = '';
-
-      try {
-        const schemaRes  = await fetch('/api/data-sources/schemas');
-        const schemaData = await schemaRes.json().catch(() => ({ schemas: {} }));
-        const schema = (schemaData.schemas && schemaData.schemas[src.name]) || { fields: [] };
-        (schema.fields || []).forEach(field => {
-          const label = document.createElement('label');
-          label.className = 'qe-label';
-          label.appendChild(document.createTextNode(field.description || field.name));
-          const input = document.createElement('input');
-          input.className         = 'qe-input';
-          input.type              = field.secure ? 'password' : 'text';
-          input.dataset.field     = field.name;
-          input.dataset.key       = field.name;
-          input.dataset.envVar    = field.envVar || '';
-          input.dataset.required  = field.required ? 'true' : 'false';
-          input.placeholder    = field.secure
-            ? '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (stored)'
-            : (field.default || '');
-          label.appendChild(input);
-          if (field.envVar) {
-            const hint = document.createElement('div');
-            hint.className   = 'props-hint';
-            hint.textContent = 'env: ' + field.envVar;
-            label.appendChild(hint);
-          }
-          fieldsEl.appendChild(label);
-        });
-      } catch (e) {
-        const err = document.createElement('div');
-        err.className   = 'mb-status';
-        err.textContent = 'Schema unavailable';
-        fieldsEl.appendChild(err);
-      }
-
-      // Wire test + save buttons
-      const resultEl = document.getElementById('dse-test-result');
-
-      document.getElementById('dse-test').onclick = async () => {
-        const btn = document.getElementById('dse-test');
-        btn.setAttribute('disabled', '');
-        resultEl.textContent = 'Testing\u2026';
-        resultEl.style.color = 'var(--t3)';
-        const t0 = Date.now();
-        try {
-          const res  = await fetch('/api/data-sources/' + encodeURIComponent(src.name) + '/test', { method: 'POST' });
-          const data = await res.json();
-          const ms   = Date.now() - t0;
-          if (data.connected || data.success) {
-            resultEl.textContent = '\u2713 Connected (' + ms + 'ms)';
-            resultEl.style.color = 'var(--green)';
-          } else {
-            resultEl.textContent = '\u2717 Failed \u2014 ' + (data.error || 'Unknown');
-            resultEl.style.color = 'var(--red)';
-          }
-        } catch (e) {
-          resultEl.textContent = '\u2717 ' + e.message;
-          resultEl.style.color = 'var(--red)';
-        } finally {
-          btn.removeAttribute('disabled');
-        }
-      };
-
-      document.getElementById('dse-save').onclick = async () => {
-        const saveBtn = document.getElementById('dse-save');
-        // Remove any existing error banner
-        const existingBanner = document.getElementById('dse-fields') && document.getElementById('dse-fields').querySelector('.validation-banner');
-        if (existingBanner) existingBanner.remove();
-        // Client-side validation before network request
-        if (!this._validateCredForm()) return;
-        const inputs  = document.querySelectorAll('#dse-fields input[data-field]');
-        const body    = {};
-        inputs.forEach(inp => {
-          if (inp.value.trim() && inp.dataset.envVar) body[inp.dataset.envVar] = inp.value.trim();
-        });
-        if (!Object.keys(body).length) {
-          resultEl.textContent = 'No credentials entered';
-          resultEl.style.color = 'var(--amber)';
-          return;
-        }
-        saveBtn.disabled = true;
-        resultEl.textContent = 'Saving\u2026';
-        resultEl.style.color = 'var(--t3)';
-        try {
-          const res  = await fetch('/api/data-sources/' + encodeURIComponent(src.name) + '/credentials', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-          });
-          const data = await res.json();
-          if (!res.ok) {
-            const banner = document.createElement('div');
-            banner.className = 'validation-error validation-banner';
-            banner.textContent = 'Could not save credentials: ' + (data.error || 'Unknown error') + '. Check your API key format.';
-            document.getElementById('dse-fields').prepend(banner);
-            resultEl.textContent = '\u2717 ' + (data.error || 'Save failed');
-            resultEl.style.color = 'var(--red)';
-            return;
-          }
-          if (data.connected) {
-            resultEl.textContent = '\u2713 Saved and connected';
-            resultEl.style.color = 'var(--green)';
-          } else {
-            resultEl.textContent = '\u2713 Saved \u2014 ' + (data.message || 'not yet connected');
-            resultEl.style.color = 'var(--amber)';
-          }
-          inputs.forEach(inp => { if (inp.type === 'password') inp.value = ''; });
-          this.renderDatasourceList();
-        } catch (e) {
-          resultEl.textContent = '\u2717 ' + e.message;
-          resultEl.style.color = 'var(--red)';
-        } finally {
-          saveBtn.disabled = false;
-        }
-      };
-    }
-
-    /* ─────────────────────────────────────────────
-       Credential Validation
-    ───────────────────────────────────────────── */
-
-    _validateCredForm() {
-      const fieldsContainer = document.getElementById('dse-fields');
-      if (!fieldsContainer) return true;
-      const inputs = fieldsContainer.querySelectorAll('input[data-key]');
-      let valid = true;
-      inputs.forEach(input => {
-        // Remove previous error
-        const existingErr = input.parentElement.querySelector('.validation-error');
-        if (existingErr) existingErr.remove();
-        const val = input.value.trim();
-        const required = input.hasAttribute('required') || input.dataset.required === 'true';
-        if (required && !val) {
-          const errEl = document.createElement('div');
-          errEl.className = 'validation-error';
-          errEl.textContent = 'Required.';
-          input.parentElement.appendChild(errEl);
-          valid = false;
-        }
-      });
-      return valid;
-    }
-
-    /* ─────────────────────────────────────────────
-       Health Section (Sources Tab)
-    ───────────────────────────────────────────── */
-
-    _formatRelativeTime(ts) {
-      if (!ts) return 'never';
-      const diff = Math.floor((Date.now() - ts) / 1000);
-      if (diff < 60) return diff + 's ago';
-      if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
-      if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
-      return Math.floor(diff / 86400) + 'd ago';
-    }
-
-    async _renderHealthSection() {
-      const content = document.getElementById('health-section-content');
-      if (!content) return;
-      content.textContent = '';
-      try {
-        const res  = await fetch('/api/data-sources/health');
-        const data = await res.json();
-        const health = data.health || {};
-        Object.entries(health).forEach(([sourceName, src]) => {
-          const row = document.createElement('div');
-          row.className = 'health-row';
-
-          const dot = document.createElement('span');
-          dot.className = 'ds-status-dot ' + (
-            src.isConnected ? 'green' :
-            (src.isReady && !src.isConnected) ? 'amber' :
-            src.lastError ? 'red' : 'grey'
-          );
-
-          const nameEl = document.createElement('span');
-          nameEl.className   = 'ds-name';
-          nameEl.textContent = sourceName;
-
-          if (src.sessionErrorCount > 0) {
-            const badge = document.createElement('span');
-            badge.className   = 'health-error-badge';
-            badge.textContent = src.sessionErrorCount;
-            row.appendChild(dot);
-            row.appendChild(nameEl);
-            row.appendChild(badge);
-          } else {
-            row.appendChild(dot);
-            row.appendChild(nameEl);
-          }
-
-          const ts = document.createElement('span');
-          ts.className   = 'health-timestamp';
-          ts.textContent = this._formatRelativeTime(src.lastSuccessAt);
-          row.appendChild(ts);
-
-          if (src.lastError) {
-            const detail = document.createElement('div');
-            detail.className   = 'health-error-detail';
-            detail.textContent = src.lastError;
-            detail.style.display = 'none';
-            row.addEventListener('click', () => {
-              if (detail.style.display === 'none') {
-                detail.style.display = '';
-                detail.classList.add('expanded');
-              } else {
-                detail.style.display = 'none';
-                detail.classList.remove('expanded');
-              }
-            });
-            content.appendChild(row);
-            content.appendChild(detail);
-          } else {
-            content.appendChild(row);
-          }
-        });
-        if (!Object.keys(health).length) {
-          const msg = document.createElement('div');
-          msg.className   = 'mb-status';
-          msg.textContent = 'No sources found';
-          content.appendChild(msg);
-        }
-      } catch (e) {
-        const msg = document.createElement('div');
-        msg.className   = 'mb-status';
-        msg.textContent = 'Health check unavailable. Retrying in 30s.';
-        content.appendChild(msg);
-      }
-    }
-
-    _startHealthPolling() {
-      if (this._healthPollInterval) return;
-      this._renderHealthSection();
-      this._healthPollInterval = setInterval(() => this._renderHealthSection(), 30000);
-      const dot = document.getElementById('health-poll-dot');
-      if (dot) dot.style.display = '';
-    }
-
-    _stopHealthPolling() {
-      clearInterval(this._healthPollInterval);
-      this._healthPollInterval = null;
-      const dot = document.getElementById('health-poll-dot');
-      if (dot) dot.style.display = 'none';
     }
 
     _setStatus(msg) {
