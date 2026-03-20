@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Widget Control** - Admin users can configure any widget's content, size, and visualization type from the properties panel without touching YAML (completed 2026-03-20)
 - [x] **Phase 2: Dashboard Management** - Admin users can create new dashboards, duplicate existing ones, and move widgets across dashboards (completed 2026-03-20)
-- [ ] **Phase 3: Query & Data Workflow** - Admin users can write, test, preview, and assign queries to widgets; data source health is visible at a glance (GAPS_FOUND 2026-03-20 — remediation required: health section empty, query browser broken, credentials UI broken)
+- [x] **Phase 3: Query & Data Workflow** - Admin users can write, test, preview, and assign queries to widgets; data source health is visible at a glance (completed 2026-03-20)
 - [ ] **Phase 4: TV Display Polish** - TV dashboards display sharper visuals and full per-client branding (logo, colors, font)
 - [ ] **Phase 5: Foundation** - All 23 legacy widgets migrated to the query system; API, pipeline, and UI tests in place; JS bundles split for faster load
 
