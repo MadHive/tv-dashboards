@@ -28,12 +28,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. User selects any widget on the canvas and edits its title and display labels in the properties panel; the TV display reflects the change after save
   2. User enters numeric W, H, X, Y values in the properties panel and the widget snaps to those exact grid coordinates
   3. User changes a widget's visualization type (e.g. big-number to gauge) from the properties panel; the widget re-renders as the new type without losing its data source assignment
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: Properties panel — title and label editing
-- [ ] 01-02: Properties panel — numeric size and position overrides
-- [ ] 01-03: Properties panel — visualization type switcher
+- [ ] 01-01-PLAN.md — HTML/CSS foundation + subtitle rendering + Wave 0 test scaffolds
+- [ ] 01-02-PLAN.md — Property field wiring (set/bind) + position snap-to-nearest collision
+- [ ] 01-03-PLAN.md — Type-switch auto-match, config preservation, mismatch warnings + tests
 
 ### Phase 2: Dashboard Management
 **Goal**: Admin users can stand up new dashboards and reorganize widgets without manual YAML authoring
@@ -109,7 +109,7 @@ Phase 4 (TV polish) is independent of phases 2 and 3 and may overlap.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Widget Control | 0/3 | Not started | - |
+| 1. Widget Control | 0/3 | Planning complete | - |
 | 2. Dashboard Management | 0/3 | Not started | - |
 | 3. Query & Data Workflow | 0/5 | Not started | - |
 | 4. TV Display Polish | 0/2 | Not started | - |
