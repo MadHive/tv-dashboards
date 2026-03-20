@@ -19,8 +19,8 @@
 
 ### Query Builder (Admin)
 
-- [ ] **QRYX-01**: User can write and execute a query against any connected data source from within the admin UI
-- [ ] **QRYX-02**: User can preview live query results before assigning the query to a widget
+- [x] **QRYX-01**: User can write and execute a query against any connected data source from within the admin UI
+- [x] **QRYX-02**: User can preview live query results before assigning the query to a widget
 
 ### Data Source Management (Admin)
 
@@ -89,8 +89,8 @@
 | DASH-01 | Phase 2 | Complete |
 | DASH-02 | Phase 2 | Complete |
 | DASH-03 | Phase 2 | Complete |
-| QRYX-01 | Phase 3 | Pending |
-| QRYX-02 | Phase 3 | Pending |
+| QRYX-01 | Phase 3 | Complete |
+| QRYX-02 | Phase 3 | Complete |
 | DSRC-01 | Phase 3 | Complete |
 | DSRC-02 | Phase 3 | Complete |
 | METR-01 | Phase 3 | Pending |
