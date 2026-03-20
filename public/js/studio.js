@@ -37,6 +37,7 @@
       this.bindSettings();
       this.bindWidgetPaletteModal();
       this.bindSidebarTabs();
+      this.bindKeyboard();
 
       if (this.modifiedConfig && this.modifiedConfig.dashboards && this.modifiedConfig.dashboards.length > 0) {
         this.selectDashboard(0);
@@ -1382,6 +1383,97 @@
       // Add widget button
       if (addWidgetBtn) {
         addWidgetBtn.addEventListener('click', () => this.openWidgetPalette());
+      }
+    }
+
+    /* ─────────────────────────────────────────────
+       Keyboard Shortcuts (Ctrl+C / Ctrl+V)
+    ───────────────────────────────────────────── */
+
+    bindKeyboard() {
+      document.addEventListener('keydown', (e) => {
+        // Do not intercept when typing in inputs
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+
+        if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+          e.preventDefault();
+          this.handleCtrlC();
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+          e.preventDefault();
+          this.handleCtrlV();
+        }
+      });
+    }
+
+    handleCtrlC() {
+      if (!this.selectedWidgetIds || this.selectedWidgetIds.size === 0) return;
+      const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
+      if (!dash) return;
+      this._widgetClipboard = [...this.selectedWidgetIds]
+        .map(id => dash.widgets.find(w => w.id === id))
+        .filter(Boolean)
+        .map(w => JSON.parse(JSON.stringify(w)));
+      this._updateClipboardIndicator();
+    }
+
+    handleCtrlV() {
+      if (!this._widgetClipboard || this._widgetClipboard.length === 0) return;
+      const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
+      if (!dash) return;
+      if (!dash.widgets) dash.widgets = [];
+
+      const pastedIds = [];
+      let placementFailed = 0;
+
+      this._widgetClipboard.forEach(w => {
+        const clone = JSON.parse(JSON.stringify(w));
+        clone.id = clone.type + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+
+        // Try original position first, then snap to nearest collision-free slot
+        const snapped = window.StudioCanvas && window.StudioCanvas.snapToNearest
+          ? window.StudioCanvas.snapToNearest(
+              dash,
+              clone.position.col,
+              clone.position.row,
+              clone.position.colSpan || 1,
+              clone.position.rowSpan || 1,
+              null
+            )
+          : { col: clone.position.col, row: clone.position.row };
+
+        // Check if there is still a collision after snapping
+        if (window.StudioCanvas && window.StudioCanvas.hasCollision &&
+            window.StudioCanvas.hasCollision(dash, snapped.col, snapped.row, clone.position.colSpan || 1, clone.position.rowSpan || 1, clone.id)) {
+          placementFailed++;
+        }
+        clone.position.col = snapped.col;
+        clone.position.row = snapped.row;
+        dash.widgets.push(clone);
+        pastedIds.push(clone.id);
+      });
+
+      // Clear clipboard (one-shot paste)
+      this._widgetClipboard = [];
+
+      // Select pasted widgets
+      this.selectedWidgetIds = new Set(pastedIds);
+      this.selectedWidgetId = pastedIds.length === 1 ? pastedIds[0] : null;
+
+      this.markDirty();
+      this.renderCanvas();
+      this._updateClipboardIndicator();
+
+      if (placementFailed > 0 && placementFailed === pastedIds.length) {
+        this.showToast('Paste failed -- dashboard may be full', 'error');
+      } else {
+        this.showToast(pastedIds.length + ' widget(s) pasted', 'success');
+      }
+
+      if (pastedIds.length >= 2) {
+        this.showMultiSelectProps();
+      } else if (pastedIds.length === 1) {
+        this.showWidgetProps(pastedIds[0]);
       }
     }
 
