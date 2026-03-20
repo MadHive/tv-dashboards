@@ -13,7 +13,7 @@ The v2 initiative improves a live, working system — 23 dashboards on display n
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Widget Control** - Admin users can configure any widget's content, size, and visualization type from the properties panel without touching YAML (completed 2026-03-20)
-- [ ] **Phase 2: Dashboard Management** - Admin users can create new dashboards, duplicate existing ones, and move widgets across dashboards
+- [x] **Phase 2: Dashboard Management** - Admin users can create new dashboards, duplicate existing ones, and move widgets across dashboards (completed 2026-03-20)
 - [ ] **Phase 3: Query & Data Workflow** - Admin users can write, test, preview, and assign queries to widgets; data source health is visible at a glance
 - [ ] **Phase 4: TV Display Polish** - TV dashboards display sharper visuals and full per-client branding (logo, colors, font)
 - [ ] **Phase 5: Foundation** - All 23 legacy widgets migrated to the query system; API, pipeline, and UI tests in place; JS bundles split for faster load
@@ -110,7 +110,7 @@ Phase 4 (TV polish) is independent of phases 2 and 3 and may overlap.
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Widget Control | 3/3 | Complete    | 2026-03-20 |
-| 2. Dashboard Management | 2/3 | In Progress|  |
+| 2. Dashboard Management | 3/3 | Complete   | 2026-03-20 |
 | 3. Query & Data Workflow | 0/5 | Not started | - |
 | 4. TV Display Polish | 0/2 | Not started | - |
 | 5. Foundation | 0/5 | Not started | - |
