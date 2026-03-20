@@ -30,6 +30,7 @@
       this.loadSettings();
       this.bindTopBar();
       this.bindSidebarActions();
+      this.bindDashboardWizard();
       this.bindCollapsibles();
       this.bindSettings();
       this.bindWidgetPaletteModal();
@@ -191,15 +192,25 @@
           this.renderSidebar();
         });
 
+        const dupBtn = document.createElement('button');
+        dupBtn.className = 'nav-duplicate';
+        dupBtn.textContent = '\u29C9';
+        dupBtn.title = 'Duplicate dashboard';
+        dupBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.duplicateDashboard(dash.id, dash.name);
+        });
+
         item.appendChild(handle);
         item.appendChild(thumb);
         item.appendChild(name);
         item.appendChild(count);
+        item.appendChild(dupBtn);
         item.appendChild(toggle);
         item.appendChild(delBtn);
 
         item.addEventListener('click', (e) => {
-          if (e.target === delBtn || e.target === handle) return;
+          if (e.target === delBtn || e.target === dupBtn || e.target === handle) return;
           this.selectDashboard(i);
         });
 
@@ -1226,96 +1237,346 @@
 
     bindSidebarActions() {
       const newDashBtn = document.getElementById('new-dashboard-btn');
-      const newDashForm = document.getElementById('new-dashboard-form');
-      const cancelBtn = document.getElementById('cancel-new-dash-btn');
       const addWidgetBtn = document.getElementById('add-widget-btn');
 
-      if (newDashBtn && newDashForm) {
+      // Open wizard on + button click
+      if (newDashBtn) {
         newDashBtn.addEventListener('click', () => {
-          newDashForm.style.display = newDashForm.style.display === 'none' ? 'block' : 'none';
-        });
-      }
-
-      if (cancelBtn && newDashForm) {
-        cancelBtn.addEventListener('click', () => {
-          newDashForm.style.display = 'none';
-        });
-      }
-
-      // Icon picker
-      const iconOpts = document.querySelectorAll('.icon-opt');
-      iconOpts.forEach((opt) => {
-        opt.addEventListener('click', () => {
-          iconOpts.forEach((o) => o.classList.remove('selected'));
-          opt.classList.add('selected');
-        });
-      });
-
-      // New dashboard form submit
-      if (newDashForm) {
-        newDashForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-
-          const nameEl = document.getElementById('new-dash-name');
-          const subtitleEl = document.getElementById('new-dash-subtitle');
-          const colsEl = document.getElementById('new-dash-cols');
-          const rowsEl = document.getElementById('new-dash-rows');
-          const selectedIcon = document.querySelector('.icon-opt.selected');
-
-          const name = nameEl ? nameEl.value.trim() : '';
-          const subtitle = subtitleEl ? subtitleEl.value.trim() : '';
-          const cols = parseInt(colsEl ? colsEl.value : '4') || 4;
-          const rows = parseInt(rowsEl ? rowsEl.value : '2') || 2;
-          const icon = selectedIcon ? selectedIcon.getAttribute('data-icon') : 'bolt';
-
-          const id = name
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-|-$/g, '');
-
-          const newDash = {
-            id,
-            name,
-            subtitle,
-            icon,
-            grid: { columns: cols, rows: rows, gap: 14 },
-            widgets: [],
-          };
-
-          try {
-            const res = await fetch('/api/dashboards', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(newDash),
-            });
-            if (!res.ok) {
-              const err = await res.json().catch(() => ({ message: res.statusText }));
-              throw new Error(err.message || res.statusText);
-            }
-
-            await this.loadConfig();
-            this.renderSidebar();
-            newDashForm.style.display = 'none';
-            newDashForm.reset();
-
-            // Restore icon-opt selection after reset
-            const firstIcon = document.querySelector('.icon-opt');
-            if (firstIcon) {
-              document.querySelectorAll('.icon-opt').forEach((o) => o.classList.remove('selected'));
-              firstIcon.classList.add('selected');
-            }
-
-            const newIdx = this.modifiedConfig.dashboards.findIndex((d) => d.id === id);
-            if (newIdx >= 0) this.selectDashboard(newIdx);
-          } catch (err) {
-            this.showToast('Error: ' + err.message, 'error');
-          }
+          this.openDashboardWizard();
         });
       }
 
       // Add widget button
       if (addWidgetBtn) {
         addWidgetBtn.addEventListener('click', () => this.openWidgetPalette());
+      }
+    }
+
+    /* ─────────────────────────────────────────────
+       Dashboard Creation Wizard
+    ───────────────────────────────────────────── */
+
+    openDashboardWizard() {
+      const modal = document.getElementById('dashboard-wizard-modal');
+      if (!modal) return;
+
+      // Show modal
+      modal.style.display = 'flex';
+
+      // Reset to step 1
+      const step1 = document.getElementById('wizard-step-1');
+      const step2 = document.getElementById('wizard-step-2');
+      if (step1) step1.style.display = '';
+      if (step2) step2.style.display = 'none';
+
+      // Reset step indicator
+      const stepEls = modal.querySelectorAll('.wizard-step');
+      stepEls.forEach((s, idx) => {
+        s.classList.remove('active', 'completed');
+        if (idx === 0) s.classList.add('active');
+      });
+
+      // Reset form fields
+      const nameEl = document.getElementById('wiz-dash-name');
+      const subtitleEl = document.getElementById('wiz-dash-subtitle');
+      const colsEl = document.getElementById('wiz-dash-cols');
+      const rowsEl = document.getElementById('wiz-dash-rows');
+      if (nameEl) nameEl.value = '';
+      if (subtitleEl) subtitleEl.value = '';
+      if (colsEl) colsEl.value = '4';
+      if (rowsEl) rowsEl.value = '2';
+
+      // Reset icon selection — first icon selected
+      const wizIconOpts = modal.querySelectorAll('.wizard-icon-opt');
+      wizIconOpts.forEach((o, idx) => {
+        o.classList.toggle('selected', idx === 0);
+      });
+
+      // Clear widget tile selections
+      modal.querySelectorAll('.wizard-type-tile').forEach((t) => t.classList.remove('selected'));
+
+      // Reset footer nav
+      const nextBtn = document.getElementById('wizard-next-btn');
+      const backBtn = document.getElementById('wizard-back-btn');
+      if (nextBtn) nextBtn.textContent = 'Next';
+      if (backBtn) backBtn.style.display = 'none';
+
+      // Focus name input
+      if (nameEl) nameEl.focus();
+
+      // Store which step we're on
+      modal._wizardStep = 1;
+    }
+
+    closeWizard() {
+      const modal = document.getElementById('dashboard-wizard-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    wizardNext() {
+      const modal = document.getElementById('dashboard-wizard-modal');
+      if (!modal) return;
+      const step = modal._wizardStep || 1;
+
+      if (step === 1) {
+        // Validate name
+        const nameEl = document.getElementById('wiz-dash-name');
+        const name = nameEl ? nameEl.value.trim() : '';
+        if (!name) {
+          // Flash border
+          if (nameEl) {
+            nameEl.style.borderColor = 'var(--red)';
+            setTimeout(() => { nameEl.style.borderColor = ''; }, 600);
+          }
+          return;
+        }
+
+        // Advance to step 2
+        const step1El = document.getElementById('wizard-step-1');
+        const step2El = document.getElementById('wizard-step-2');
+        if (step1El) step1El.style.display = 'none';
+        if (step2El) step2El.style.display = '';
+
+        // Update step indicator
+        const stepEls = modal.querySelectorAll('.wizard-step');
+        stepEls.forEach((s, idx) => {
+          s.classList.remove('active', 'completed');
+          if (idx === 0) s.classList.add('completed');
+          if (idx === 1) s.classList.add('active');
+        });
+
+        // Update footer
+        const nextBtn = document.getElementById('wizard-next-btn');
+        const backBtn = document.getElementById('wizard-back-btn');
+        if (nextBtn) nextBtn.textContent = 'Create Dashboard';
+        if (backBtn) backBtn.style.display = '';
+
+        modal._wizardStep = 2;
+      } else {
+        // Step 2 — create the dashboard
+        this.wizardCreate();
+      }
+    }
+
+    wizardBack() {
+      const modal = document.getElementById('dashboard-wizard-modal');
+      if (!modal) return;
+
+      const step1El = document.getElementById('wizard-step-1');
+      const step2El = document.getElementById('wizard-step-2');
+      if (step1El) step1El.style.display = '';
+      if (step2El) step2El.style.display = 'none';
+
+      // Update step indicator
+      const stepEls = modal.querySelectorAll('.wizard-step');
+      stepEls.forEach((s, idx) => {
+        s.classList.remove('active', 'completed');
+        if (idx === 0) s.classList.add('active');
+      });
+
+      // Update footer
+      const nextBtn = document.getElementById('wizard-next-btn');
+      const backBtn = document.getElementById('wizard-back-btn');
+      if (nextBtn) nextBtn.textContent = 'Next';
+      if (backBtn) backBtn.style.display = 'none';
+
+      modal._wizardStep = 1;
+    }
+
+    async wizardCreate() {
+      const modal = document.getElementById('dashboard-wizard-modal');
+      if (!modal) return;
+
+      const nameEl = document.getElementById('wiz-dash-name');
+      const subtitleEl = document.getElementById('wiz-dash-subtitle');
+      const colsEl = document.getElementById('wiz-dash-cols');
+      const rowsEl = document.getElementById('wiz-dash-rows');
+      const selectedIconEl = modal.querySelector('.wizard-icon-opt.selected');
+
+      const name = nameEl ? nameEl.value.trim() : '';
+      const subtitle = subtitleEl ? subtitleEl.value.trim() : '';
+      const cols = parseInt(colsEl ? colsEl.value : '4') || 4;
+      const rows = parseInt(rowsEl ? rowsEl.value : '2') || 2;
+      const icon = selectedIconEl ? selectedIconEl.getAttribute('data-icon') : 'bolt';
+
+      // Gather selected widget types
+      const selectedTiles = modal.querySelectorAll('.wizard-type-tile.selected');
+      const widgets = [];
+      let col = 1;
+      let row = 1;
+      selectedTiles.forEach((tile) => {
+        const type = tile.getAttribute('data-type');
+        const id = type + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+        widgets.push({
+          id,
+          type,
+          title: '',
+          position: { col, row, colSpan: 1, rowSpan: 1 },
+        });
+        col++;
+        if (col > cols) {
+          col = 1;
+          row++;
+        }
+      });
+
+      const dashId = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+
+      const newDash = {
+        id: dashId,
+        name,
+        subtitle,
+        icon,
+        grid: { columns: cols, rows, gap: 14 },
+        widgets,
+      };
+
+      try {
+        const res = await fetch('/api/dashboards', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newDash),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ message: res.statusText }));
+          throw new Error(err.message || res.statusText);
+        }
+        const created = await res.json();
+
+        await this.loadConfig();
+        this.renderSidebar();
+
+        const newIdx = this.modifiedConfig.dashboards.findIndex(
+          (d) => d.id === (created.dashboard ? created.dashboard.id : dashId)
+        );
+        if (newIdx >= 0) this.selectDashboard(newIdx);
+
+        this.closeWizard();
+        this.showToast('Dashboard created', 'success');
+      } catch (err) {
+        this.showToast('Failed to create dashboard: ' + err.message, 'error');
+      }
+    }
+
+    bindDashboardWizard() {
+      const modal = document.getElementById('dashboard-wizard-modal');
+      if (!modal) return;
+
+      // Close button
+      const closeBtn = document.getElementById('wizard-close');
+      if (closeBtn) closeBtn.addEventListener('click', () => this.closeWizard());
+
+      // Backdrop click
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) this.closeWizard();
+      });
+
+      // Next/create button
+      const nextBtn = document.getElementById('wizard-next-btn');
+      if (nextBtn) nextBtn.addEventListener('click', () => this.wizardNext());
+
+      // Back button
+      const backBtn = document.getElementById('wizard-back-btn');
+      if (backBtn) backBtn.addEventListener('click', () => this.wizardBack());
+
+      // Wizard icon picker
+      modal.addEventListener('click', (e) => {
+        const iconOpt = e.target.closest('.wizard-icon-opt');
+        if (iconOpt) {
+          modal.querySelectorAll('.wizard-icon-opt').forEach((o) => o.classList.remove('selected'));
+          iconOpt.classList.add('selected');
+        }
+      });
+
+      // Widget type tile selection
+      modal.addEventListener('click', (e) => {
+        const tile = e.target.closest('.wizard-type-tile');
+        if (tile) tile.classList.toggle('selected');
+      });
+
+      // Escape key — close wizard if open
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.style.display !== 'none') {
+          this.closeWizard();
+        }
+      });
+    }
+
+    /* ─────────────────────────────────────────────
+       Dashboard Duplication
+    ───────────────────────────────────────────── */
+
+    async duplicateDashboard(dashId, originalName) {
+      try {
+        const res = await fetch('/api/dashboards/' + dashId + '/duplicate', { method: 'POST' });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ message: res.statusText }));
+          throw new Error(err.message || res.statusText);
+        }
+        const newDash = await res.json();
+
+        await this.loadConfig();
+        this.renderSidebar();
+
+        const newIdx = this.modifiedConfig.dashboards.findIndex(
+          (d) => d.id === (newDash.dashboard ? newDash.dashboard.id : newDash.id)
+        );
+        if (newIdx < 0) return;
+
+        // Override server name with "Copy of [original]" per user decision
+        const copyName = 'Copy of ' + originalName;
+        this.modifiedConfig.dashboards[newIdx].name = copyName;
+        this.markDirty();
+
+        this.selectDashboard(newIdx);
+        this.showToast('Dashboard duplicated — rename it above', 'success');
+
+        // Trigger inline rename on the new nav item
+        const navItems = document.querySelectorAll('.dashboard-nav-item');
+        const newItem = navItems[newIdx];
+        if (!newItem) return;
+
+        const nameSpan = newItem.querySelector('.nav-name');
+        if (!nameSpan) return;
+
+        const input = document.createElement('input');
+        input.className = 'nav-name-edit';
+        input.value = copyName;
+        nameSpan.replaceWith(input);
+        input.focus();
+        input.select();
+
+        const commitRename = () => {
+          const val = input.value.trim() || copyName;
+          this.modifiedConfig.dashboards[newIdx].name = val;
+          this.markDirty();
+          const newSpan = document.createElement('span');
+          newSpan.className = 'nav-name';
+          newSpan.textContent = val;
+          input.replaceWith(newSpan);
+        };
+
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            commitRename();
+          }
+          if (e.key === 'Escape') {
+            const revertSpan = document.createElement('span');
+            revertSpan.className = 'nav-name';
+            revertSpan.textContent = copyName;
+            input.replaceWith(revertSpan);
+          }
+        });
+        input.addEventListener('blur', () => {
+          // Only commit if still in DOM (not already replaced by Escape)
+          if (input.parentNode) commitRename();
+        });
+      } catch (err) {
+        this.showToast('Duplication failed — try again', 'error');
       }
     }
 
