@@ -42,11 +42,7 @@ Declared values (multiples of 4 only). All tokens match the existing studio spac
 | 2xl | 48px | n/a in this phase |
 | 3xl | 64px | n/a in this phase |
 
-Exceptions:
-- Dashboard nav items use 7px vertical / 14px horizontal padding (existing, must not change)
-- Studio topbar: 20px horizontal padding (existing, must not change)
-- Sidebar section header: 10px vertical / 14px horizontal (existing, must not change)
-- Rubber-band selection rect: 2px dashed border, no padding token needed
+Note: Existing nav item padding, topbar padding, and sidebar section header padding are not modified by Phase 2 and are not part of this spacing contract. The rubber-band selection rect uses a 2px dashed border (border width, not a spacing token).
 
 ---
 
@@ -54,10 +50,12 @@ Exceptions:
 
 All sizes sourced from existing studio CSS. Source: `studio.css` + `dashboard.css`.
 
+Two weights only: 400 (regular) for body copy, 600 (semibold) for labels, headings, and captions.
+
 | Role | Size | Weight | Line Height | Font | Usage |
 |------|------|--------|-------------|------|-------|
-| Body | 13px | 500 | 1.4 | DM Sans | Nav item names, form input text, wizard body text |
-| Label | 11px | 700 | 1.2 | Space Grotesk, uppercase, letter-spacing 1.5px | Button labels, section headers, dirty indicator |
+| Body | 13px | 400 | 1.4 | DM Sans | Nav item names, form input text, wizard body text |
+| Label | 11px | 600 | 1.2 | Space Grotesk, uppercase, letter-spacing 1.5px | Button labels, section headers, dirty indicator |
 | Heading | 13px | 600 | 1.2 | Space Grotesk, letter-spacing 3px, uppercase | Modal header h2 |
 | Caption | 10px | 600 | 1.2 | Space Grotesk, letter-spacing 2px, uppercase | Nav widget count, sidebar section header labels |
 
@@ -162,7 +160,7 @@ Phase 2 introduces or extends the following components. Executors MUST match the
 When `selectedWidgetIds.size >= 2`, the properties panel header changes:
 
 - Title text: `"N WIDGETS SELECTED"` — 13px Space Grotesk, weight 600, letter-spacing 3px, uppercase, `--t1`.
-- Sub-hint: `"Ctrl+C to copy"` — 11px DM Sans, `--t3`, no letter-spacing.
+- Sub-hint: `"Ctrl+C to copy"` — 11px DM Sans, weight 400, no letter-spacing, `--t3`.
 - Shared editable fields shown below: Data source, Widget type only.
 - All non-shared fields hidden.
 - Single-select behavior restores on clicking one widget.
@@ -174,7 +172,7 @@ When `selectedWidgetIds.size >= 2`, the properties panel header changes:
 When `_widgetClipboard.length > 0`, show a subtle indicator in the canvas footer (`.studio-canvas-footer`).
 
 - Copy: `"N widgets copied — switch dashboard and Ctrl+V to paste"`
-- Font: 11px IBM Plex Mono, `--t3`, letter-spacing 0.5px.
+- Font: 11px IBM Plex Mono, weight 400, `--t3`, letter-spacing 0.5px.
 - Indicator disappears after paste (clipboard cleared).
 - Shown inline in the existing footer bar, left-aligned. No new surface required.
 
@@ -184,7 +182,7 @@ When `_widgetClipboard.length > 0`, show a subtle indicator in the canvas footer
 
 After duplication, the new dashboard nav item name becomes an inline `<input>` in place of the `.nav-name` span:
 
-- Same style as `.new-dashboard-form input` — 13px DM Sans, `--bg-card` bg, `--mh-pink` focus border.
+- Same style as `.new-dashboard-form input` — 13px DM Sans, weight 400, `--bg-card` bg, `--mh-pink` focus border.
 - Auto-focused on insertion.
 - Commit on Enter or blur (saves name).
 - Escape: reverts to `"Copy of [original name]"`.
