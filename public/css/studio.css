@@ -2245,6 +2245,23 @@ body.studio-body {
   color: #60A5FA !important;
 }
 
+/* ── Rubber-band selection rect ── */
+.rubber-band-rect {
+  position: absolute;
+  border: 1px dashed #60A5FA;
+  background: rgba(96, 165, 250, 0.08);
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* ── Clipboard indicator in canvas footer ── */
+.clipboard-indicator {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--t3);
+  letter-spacing: 0.5px;
+}
+
 /* ── Inline rename input for duplication ── */
 .nav-name-edit {
   background: var(--bg-card);

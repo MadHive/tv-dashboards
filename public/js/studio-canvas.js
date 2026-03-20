@@ -98,7 +98,17 @@ window.StudioCanvas = (function () {
       card.style.gridRow = wc.position.row + ' / span ' + (wc.position.rowSpan || 1);
       card.style.cursor = 'pointer';
       card.style.position = 'relative';
-      card.style.outline = '2px solid ' + (wc.id === app.selectedWidgetId ? '#FDA4D4' : 'transparent');
+      // Multi-select-aware outline
+      if (app.selectedWidgetIds && app.selectedWidgetIds.size >= 2 && app.selectedWidgetIds.has(wc.id)) {
+        card.style.outline = '2px dashed #60A5FA';
+        card.style.boxShadow = '0 0 0 2px rgba(96,165,250,0.10)';
+      } else if (wc.id === app.selectedWidgetId) {
+        card.style.outline = '2px solid #FDA4D4';
+        card.style.boxShadow = '';
+      } else {
+        card.style.outline = '2px solid transparent';
+        card.style.boxShadow = '';
+      }
       card.style.borderRadius = '4px';
       card.style.transition = 'outline 0.1s';
       card.style.overflow = 'hidden';
@@ -163,24 +173,70 @@ window.StudioCanvas = (function () {
       }
       widgetInstances[wc.id] = widgetInstance;
 
-      // Click: select widget
+      // Click: select widget (supports shift+click multi-select)
       card.addEventListener('click', function (e) {
         e.stopPropagation();
+
+        if (e.shiftKey) {
+          // Toggle this widget in/out of multi-select set
+          if (app.selectedWidgetIds.has(wc.id)) {
+            app.selectedWidgetIds.delete(wc.id);
+          } else {
+            app.selectedWidgetIds.add(wc.id);
+          }
+
+          var size = app.selectedWidgetIds.size;
+          if (size === 1) {
+            var singleId = Array.from(app.selectedWidgetIds)[0];
+            app.selectedWidgetId = singleId;
+            app.showWidgetProps(singleId);
+          } else if (size === 0) {
+            app.selectedWidgetId = null;
+            app.showDashboardProps();
+          } else {
+            app.selectedWidgetId = null;
+            app.showMultiSelectProps();
+          }
+
+          // Update outlines directly without re-rendering
+          page.querySelectorAll('.widget').forEach(function (el) {
+            var eid = el.dataset.widgetId;
+            if (size >= 2 && app.selectedWidgetIds.has(eid)) {
+              el.style.outline = '2px dashed #60A5FA';
+              el.style.boxShadow = '0 0 0 2px rgba(96,165,250,0.10)';
+            } else if (eid === app.selectedWidgetId) {
+              el.style.outline = '2px solid #FDA4D4';
+              el.style.boxShadow = '';
+            } else {
+              el.style.outline = '2px solid transparent';
+              el.style.boxShadow = '';
+            }
+          });
+          return;
+        }
+
+        // Normal single click — reset multi-select to just this widget
+        app.selectedWidgetIds = new Set([wc.id]);
+        app.selectedWidgetId = wc.id;
+
         // Update all outlines
         page.querySelectorAll('.widget').forEach(function (el) {
           el.style.outline = '2px solid ' +
             (el.dataset.widgetId === wc.id ? '#FDA4D4' : 'transparent');
+          el.style.boxShadow = '';
         });
         app.showWidgetProps(wc.id);
       });
 
       // Hover highlight
       card.addEventListener('mouseenter', function () {
+        if (app.selectedWidgetIds && app.selectedWidgetIds.has(wc.id)) return;
         if (wc.id !== app.selectedWidgetId) {
           card.style.outline = '2px solid rgba(253,164,212,0.5)';
         }
       });
       card.addEventListener('mouseleave', function () {
+        if (app.selectedWidgetIds && app.selectedWidgetIds.has(wc.id)) return;
         if (wc.id !== app.selectedWidgetId) {
           card.style.outline = '2px solid transparent';
         }
@@ -192,13 +248,120 @@ window.StudioCanvas = (function () {
 
     enableDropZone(page, dash);
 
-    // Click on empty canvas area (page background) -> deselect, show dashboard props
-    page.addEventListener('click', function () {
-      app.selectedWidgetId = null;
-      page.querySelectorAll('.widget').forEach(function (el) {
-        el.style.outline = '2px solid transparent';
-      });
-      app.showDashboardProps();
+    // Rubber-band selection on empty canvas area
+    var rbStartX = 0;
+    var rbStartY = 0;
+    var rbEl = null;
+    var rbActive = false;
+
+    page.addEventListener('mousedown', function (e) {
+      // Only start rubber-band on left button, not on widget or resize handle
+      if (e.button !== 0) return;
+      if (e.target.closest('.widget')) return;
+      if (e.target.closest('[style*="cursor:ew-resize"]') || e.target.closest('[style*="cursor:ns-resize"]')) return;
+
+      rbStartX = e.clientX;
+      rbStartY = e.clientY;
+      rbActive = false;
+
+      function onMove(ev) {
+        var dx = ev.clientX - rbStartX;
+        var dy = ev.clientY - rbStartY;
+        if (!rbActive && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+        rbActive = true;
+
+        if (!rbEl) {
+          rbEl = document.createElement('div');
+          rbEl.className = 'rubber-band-rect';
+          page.appendChild(rbEl);
+        }
+
+        var pageRect = page.getBoundingClientRect();
+        var x1 = Math.min(rbStartX, ev.clientX) - pageRect.left;
+        var y1 = Math.min(rbStartY, ev.clientY) - pageRect.top;
+        var x2 = Math.max(rbStartX, ev.clientX) - pageRect.left;
+        var y2 = Math.max(rbStartY, ev.clientY) - pageRect.top;
+
+        rbEl.style.left   = x1 + 'px';
+        rbEl.style.top    = y1 + 'px';
+        rbEl.style.width  = (x2 - x1) + 'px';
+        rbEl.style.height = (y2 - y1) + 'px';
+      }
+
+      function onUp(ev) {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+
+        if (rbEl && rbEl.parentNode) rbEl.parentNode.removeChild(rbEl);
+        rbEl = null;
+
+        if (!rbActive) {
+          // Tiny click on empty space — deselect
+          app.selectedWidgetId = null;
+          app.selectedWidgetIds = new Set();
+          page.querySelectorAll('.widget').forEach(function (el) {
+            el.style.outline = '2px solid transparent';
+            el.style.boxShadow = '';
+          });
+          app.showDashboardProps();
+          return;
+        }
+
+        // Compute selection rect in page-relative coords
+        var pageRect = page.getBoundingClientRect();
+        var selLeft   = Math.min(rbStartX, ev.clientX) - pageRect.left;
+        var selTop    = Math.min(rbStartY, ev.clientY) - pageRect.top;
+        var selRight  = Math.max(rbStartX, ev.clientX) - pageRect.left;
+        var selBottom = Math.max(rbStartY, ev.clientY) - pageRect.top;
+
+        var matched = [];
+        page.querySelectorAll('.widget').forEach(function (el) {
+          var cr = el.getBoundingClientRect();
+          var elLeft   = cr.left   - pageRect.left;
+          var elTop    = cr.top    - pageRect.top;
+          var elRight  = cr.right  - pageRect.left;
+          var elBottom = cr.bottom - pageRect.top;
+
+          // Intersection test
+          if (elLeft < selRight && elRight > selLeft && elTop < selBottom && elBottom > selTop) {
+            matched.push(el.dataset.widgetId);
+          }
+        });
+
+        app.selectedWidgetIds = new Set(matched);
+        var sz = matched.length;
+
+        if (sz === 0) {
+          app.selectedWidgetId = null;
+          app.showDashboardProps();
+        } else if (sz === 1) {
+          app.selectedWidgetId = matched[0];
+          app.showWidgetProps(matched[0]);
+        } else {
+          app.selectedWidgetId = null;
+          app.showMultiSelectProps();
+        }
+
+        // Update outlines
+        page.querySelectorAll('.widget').forEach(function (el) {
+          var eid = el.dataset.widgetId;
+          if (sz >= 2 && app.selectedWidgetIds.has(eid)) {
+            el.style.outline = '2px dashed #60A5FA';
+            el.style.boxShadow = '0 0 0 2px rgba(96,165,250,0.10)';
+          } else if (eid === app.selectedWidgetId) {
+            el.style.outline = '2px solid #FDA4D4';
+            el.style.boxShadow = '';
+          } else {
+            el.style.outline = '2px solid transparent';
+            el.style.boxShadow = '';
+          }
+        });
+
+        rbActive = false;
+      }
+
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
     });
 
     canvas.appendChild(page);

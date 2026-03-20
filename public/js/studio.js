@@ -12,6 +12,8 @@
       this.modifiedConfig = null;
       this.activeDashIdx = -1;
       this.selectedWidgetId = null;
+      this.selectedWidgetIds = new Set();
+      this._widgetClipboard = [];
       this.isDirty = false;
       this.themes = [];
     }
@@ -336,6 +338,7 @@
     selectDashboard(idx) {
       this.activeDashIdx = idx;
       this.selectedWidgetId = null;
+      this.selectedWidgetIds = new Set();
 
       // Update active class
       const items = document.querySelectorAll('.dashboard-nav-item');
@@ -831,6 +834,132 @@
       const warningEl = document.getElementById('type-mismatch-warning');
       if (warningEl) warningEl.style.display = 'none';
       this.bindWidgetPropListeners(wc);
+    }
+
+    showMultiSelectProps() {
+      const placeholder = document.getElementById('properties-placeholder');
+      const content = document.getElementById('properties-content');
+      const dashProps = document.getElementById('dashboard-props');
+      const widgetProps = document.getElementById('widget-props');
+      const qe  = document.getElementById('query-editor-panel');
+      const dse = document.getElementById('datasource-editor-panel');
+      if (qe)  qe.style.display  = 'none';
+      if (dse) dse.style.display = 'none';
+      if (placeholder) placeholder.style.display = 'none';
+      if (content) content.style.display = 'flex';
+      if (dashProps) dashProps.style.display = 'none';
+      if (widgetProps) widgetProps.style.display = 'none';
+
+      const count = this.selectedWidgetIds.size;
+
+      // Build multi-select panel using DOM, no innerHTML
+      const container = document.createElement('div');
+      container.style.padding = '16px';
+
+      const header = document.createElement('h3');
+      header.textContent = count + ' WIDGETS SELECTED';
+      header.style.cssText = [
+        'font-size:13px',
+        'font-family:var(--font-display)',
+        'font-weight:600',
+        'letter-spacing:3px',
+        'text-transform:uppercase',
+        'color:var(--t1)',
+        'margin:0 0 4px 0',
+      ].join(';');
+
+      const hint = document.createElement('p');
+      hint.textContent = 'Ctrl+C to copy';
+      hint.style.cssText = 'font-size:11px;font-family:var(--font-body);color:var(--t3);margin:0';
+
+      container.appendChild(header);
+      container.appendChild(hint);
+
+      // Get selected widget configs
+      const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
+      const selectedWidgets = dash
+        ? dash.widgets.filter(w => this.selectedWidgetIds.has(w.id))
+        : [];
+
+      // Source dropdown
+      const sourceLabel = document.createElement('div');
+      sourceLabel.textContent = 'SOURCE';
+      sourceLabel.style.cssText = 'font-size:11px;font-family:var(--font-display);font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin:16px 0 4px 0';
+
+      const sourceSelect = document.createElement('select');
+      sourceSelect.style.cssText = 'width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:3px;color:var(--t1);font-size:12px;padding:4px 6px';
+      ['gcp', 'bigquery', 'computed', 'vulntrack', 'mock'].forEach(function (s) {
+        var opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        sourceSelect.appendChild(opt);
+      });
+
+      // Pre-select if all share same source
+      var sourcesSet = new Set(selectedWidgets.map(w => w.source || 'gcp'));
+      if (sourcesSet.size === 1) sourceSelect.value = Array.from(sourcesSet)[0];
+
+      sourceSelect.onchange = () => {
+        selectedWidgets.forEach(w => { w.source = sourceSelect.value; });
+        this.markDirty();
+      };
+
+      // Type dropdown
+      const typeLabel = document.createElement('div');
+      typeLabel.textContent = 'TYPE';
+      typeLabel.style.cssText = 'font-size:11px;font-family:var(--font-display);font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin:12px 0 4px 0';
+
+      const typeSelect = document.createElement('select');
+      typeSelect.style.cssText = 'width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:3px;color:var(--t1);font-size:12px;padding:4px 6px';
+      [
+        'big-number','stat-card','gauge','gauge-row','bar-chart','line-chart','stacked-bar-chart',
+        'progress-bar','status-grid','alert-list','service-heatmap','pipeline-flow',
+        'usa-map','usa-map-gl','security-scorecard','donut-ring','sankey','heatmap',
+        'treemap','table','multi-metric-card','sparkline-grid','text-block',
+      ].forEach(function (t) {
+        var opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        typeSelect.appendChild(opt);
+      });
+
+      // Pre-select if all share same type
+      var typesSet = new Set(selectedWidgets.map(w => w.type || 'big-number'));
+      if (typesSet.size === 1) typeSelect.value = Array.from(typesSet)[0];
+
+      typeSelect.onchange = () => {
+        selectedWidgets.forEach(w => { w.type = typeSelect.value; });
+        this.markDirty();
+        this.renderCanvas();
+      };
+
+      container.appendChild(sourceLabel);
+      container.appendChild(sourceSelect);
+      container.appendChild(typeLabel);
+      container.appendChild(typeSelect);
+
+      // Clear and populate
+      content.textContent = '';
+      content.appendChild(container);
+    }
+
+    _updateClipboardIndicator() {
+      const footer = document.querySelector('.studio-canvas-footer');
+      if (!footer) return;
+
+      const existing = document.getElementById('clipboard-indicator');
+      const n = this._widgetClipboard ? this._widgetClipboard.length : 0;
+
+      if (n === 0) {
+        if (existing) existing.parentNode.removeChild(existing);
+        return;
+      }
+
+      var indicator = existing || document.createElement('span');
+      indicator.id = 'clipboard-indicator';
+      indicator.className = 'clipboard-indicator';
+      indicator.textContent = n + ' widget' + (n !== 1 ? 's' : '') + ' copied \u2014 navigate to target dashboard, then Ctrl+V to paste';
+      if (!existing) footer.insertBefore(indicator, footer.firstChild);
     }
 
     bindWidgetPropListeners(wc) {
