@@ -1203,7 +1203,6 @@
     ───────────────────────────────────────────── */
 
     deleteSelectedWidget() {
-      if (!confirm('Delete this widget?')) return;
       const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
       if (!dash) return;
       dash.widgets = dash.widgets.filter((w) => w.id !== this.selectedWidgetId);
