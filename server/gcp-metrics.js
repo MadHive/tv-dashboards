@@ -370,13 +370,13 @@ async function getDeliveryGeoByClient(clientName, days = 7, minImpressions = 50)
         ON b.postal = mg.postal_code AND mg.country_code = 'US'
       LEFT JOIN \`mad-data.public_data.zip_codes\` z
         ON b.postal = z.zip_code
-      WHERE b.date_nyc >= DATE_SUB(CURRENT_DATE(), INTERVAL \${days} DAY)
+      WHERE b.date_nyc >= DATE_SUB(CURRENT_DATE(), INTERVAL ${days} DAY)
         AND b.country = 'US'
         AND b.postal IS NOT NULL AND b.postal != ''
         AND z.internal_point_lat IS NOT NULL
         AND mi.client.name = @clientName
       GROUP BY 1, 2
-      HAVING impressions > \${minImpressions}
+      HAVING impressions > ${minImpressions}
       ORDER BY impressions DESC
       LIMIT 500
     `;
@@ -950,13 +950,13 @@ async function rtbInfra() {
       { alignmentPeriod: { seconds: 3600 }, perSeriesAligner: 'ALIGN_DELTA', crossSeriesReducer: 'REDUCE_SUM' }),
     query('mad-master', 'custom.googleapis.com/opencensus/grpc.io/client/roundtrip_latency',
       'resource.type = "k8s_container" AND resource.labels.container_name = "bidder"', 10,
-      { alignmentPeriod: { seconds: 60 }, perSeriesAligner: 'ALIGN_DELTA', crossSeriesReducer: 'REDUCE_PERCENTILE_50' }),
+      { alignmentPeriod: { seconds: 60 }, perSeriesAligner: 'ALIGN_DELTA' }),
     query('mad-master', 'custom.googleapis.com/opencensus/grpc.io/client/roundtrip_latency',
       'resource.type = "k8s_container" AND resource.labels.container_name = "bidder"', 10,
-      { alignmentPeriod: { seconds: 60 }, perSeriesAligner: 'ALIGN_DELTA', crossSeriesReducer: 'REDUCE_PERCENTILE_95' }),
+      { alignmentPeriod: { seconds: 60 }, perSeriesAligner: 'ALIGN_DELTA' }),
     query('mad-master', 'custom.googleapis.com/opencensus/grpc.io/client/roundtrip_latency',
       'resource.type = "k8s_container" AND resource.labels.container_name = "bidder"', 10,
-      { alignmentPeriod: { seconds: 60 }, perSeriesAligner: 'ALIGN_DELTA', crossSeriesReducer: 'REDUCE_PERCENTILE_99' }),
+      { alignmentPeriod: { seconds: 60 }, perSeriesAligner: 'ALIGN_DELTA' }),
     query('mad-master', 'custom.googleapis.com/opencensus/mhive/pipe/bytes_written',
       'resource.type = "k8s_container"', 10, AGG_RATE_SUM),
     query('mad-master', 'kubernetes.io/container/uptime',
@@ -1115,7 +1115,7 @@ async function dataInfra() {
       { alignmentPeriod: { seconds: 60 }, perSeriesAligner: 'ALIGN_MEAN', crossSeriesReducer: 'REDUCE_SUM' }),
     query('mad-master', 'managedkafka.googleapis.com/request_latencies',
       'resource.type = "managedkafka.googleapis.com/Cluster"', 10,
-      { alignmentPeriod: { seconds: 60 }, perSeriesAligner: 'ALIGN_DELTA', crossSeriesReducer: 'REDUCE_PERCENTILE_95' }),
+      { alignmentPeriod: { seconds: 60 }, perSeriesAligner: 'ALIGN_MEAN', crossSeriesReducer: 'REDUCE_MEAN' }),
     query('mad-master', 'custom.googleapis.com/opencensus/mhive/kafka/write_latency',
       'resource.type = "k8s_container"', 10,
       { alignmentPeriod: { seconds: 60 }, perSeriesAligner: 'ALIGN_DELTA', crossSeriesReducer: 'REDUCE_PERCENTILE_95' }),
