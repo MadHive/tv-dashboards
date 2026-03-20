@@ -43,13 +43,22 @@ Declared values (must be multiples of 4):
 | 2xl | 48px | Not used in phase 3 studio panels (panels are constrained width) |
 | 3xl | 64px | Not used in phase 3 studio panels |
 
-Exceptions:
-- Properties panel and sidebar use 14px horizontal padding — frozen legacy value — do not modify; matches existing `studio.css` rule exactly.
-- Sidebar section header padding: 10px vertical, 14px horizontal — frozen legacy value — do not modify; matches existing `studio.css` rule exactly.
-- Query builder `Run Query` button: minimum touch target height 32px (studio environment, mouse-only)
-- Health section status dot: 8px diameter, 4px gap to status label (matches `.ds-status-dot`)
+Touch target exception (grid-valid): Query builder "Run Query" button — minimum height 32px (studio environment, mouse-only).
+
+Health section status dot: 8px diameter, 4px gap to status label (matches `.ds-status-dot`).
 
 > Source: `public/css/studio.css` — existing spacing values extracted directly.
+
+---
+
+## Inherited CSS Overrides (not grid tokens)
+
+The following pixel values exist in `studio.css` as frozen legacy rules. They are NOT grid tokens and must NOT be treated as spacing scale values. Do not use them as spacing references for new elements. Do not modify them — the existing DOM depends on them exactly.
+
+- **Properties panel and sidebar horizontal padding: 14px** — frozen read-only value from existing `studio.css`. Do not change.
+- **Sidebar section header padding: 10px vertical, 14px horizontal** — frozen read-only value from existing `studio.css`. Do not change.
+
+These values are documented here for awareness only. New elements in Phase 3 must use grid-valid spacing tokens from the Spacing Scale table above.
 
 ---
 
