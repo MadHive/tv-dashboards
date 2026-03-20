@@ -2732,13 +2732,47 @@
     'appengine', 'monitoring', 'serviceruntime', 'custom',
   ];
 
+  // Static BigQuery table manifest for mad-data project
+  const BQ_MANIFEST = [
+    { name: 'mad-data.reporting.impressions', description: 'Ad impression events with campaign, device, and geo dimensions' },
+    { name: 'mad-data.reporting.bid_requests', description: 'Bid request log with win rates, CPM, and auction metadata' },
+    { name: 'mad-data.reporting.campaign_delivery', description: 'Campaign pacing, delivery stats, and budget utilization by day' },
+    { name: 'mad-data.reporting.win_events', description: 'Auction win events with DSP, advertiser, and creative details' },
+    { name: 'mad-data.reporting.segment_memberships', description: 'User segment membership counts and audience overlap' },
+    { name: 'mad-data.analytics.daily_summary', description: 'Aggregated daily KPIs: impressions, clicks, spend, CPM' },
+    { name: 'mad-data.analytics.client_performance', description: 'Per-client performance metrics: win rate, fill rate, eCPM' },
+  ];
+
+  // Static VulnTrack endpoint manifest
+  const VT_MANIFEST = [
+    { name: 'vulnerability-count', description: 'Total vulnerability count by severity' },
+    { name: 'asset-inventory', description: 'Asset inventory summary' },
+    { name: 'compliance-score', description: 'Overall compliance score' },
+    { name: 'scan-status', description: 'Latest scan status and results' },
+    { name: 'risk-score', description: 'Aggregated risk score across assets' },
+  ];
+
+  // Pure function: mirrors MetricBrowser._buildSourceTabs tab-building logic for testing
+  function mirrorBuildSourceTabs(sources) {
+    const BROWSABLE = ['bigquery', 'vulntrack'];
+    const tabs = [{ name: 'gcp', disabled: false }];
+    sources.forEach(src => {
+      if (BROWSABLE.includes(src.name)) {
+        tabs.push({ name: src.name, disabled: !src.isConnected });
+      }
+    });
+    return tabs;
+  }
+
   class MetricBrowser {
     constructor(studio) {
-      this.studio         = studio;
-      this.target         = null;
-      this.allDescriptors = [];
-      this.activeNs       = null;
-      this.selected       = null;
+      this.studio             = studio;
+      this.target             = null;
+      this.allDescriptors     = [];
+      this.activeNs           = null;
+      this.selected           = null;
+      this._activeSourceTab   = 'gcp';
+      this._sourcesCache      = [];
       this._bindModal();
     }
 
@@ -2759,9 +2793,10 @@
     }
 
     open(widgetConfig) {
-      this.target   = widgetConfig;
-      this.selected = null;
-      this.activeNs = null;
+      this.target             = widgetConfig;
+      this.selected           = null;
+      this.activeNs           = null;
+      this._activeSourceTab   = 'gcp';
 
       const projects = ['mad-master', 'mad-data', 'mad-audit', 'mad-looker-enterprise'];
       const sel = document.getElementById('mb-project');
@@ -2778,11 +2813,160 @@
       document.getElementById('mb-services').textContent = '';
       this._setStatus('Loading metrics\u2026');
       document.getElementById('metric-browser-modal').style.display = 'flex';
-      this._load();
+      this._buildSourceTabs().then(() => this._load());
     }
 
     close() {
       document.getElementById('metric-browser-modal').style.display = 'none';
+    }
+
+    async _buildSourceTabs() {
+      const container = document.getElementById('mb-source-tabs');
+      if (!container) return;
+      container.textContent = '';
+      this._sourcesCache = [];
+
+      // Fetch live source status
+      try {
+        const res  = await fetch('/api/data-sources');
+        const data = await res.json();
+        this._sourcesCache = data.sources || [];
+      } catch (_) {
+        // If fetch fails, render GCP-only tab strip
+      }
+
+      const BROWSABLE = ['bigquery', 'vulntrack'];
+      const SOURCE_LABELS = { gcp: 'GCP', bigquery: 'BigQuery', vulntrack: 'VulnTrack' };
+
+      // Always add GCP tab first (always enabled)
+      const gcpTab = document.createElement('div');
+      gcpTab.className = 'mb-source-tab active';
+      gcpTab.dataset.source = 'gcp';
+      gcpTab.textContent = 'GCP';
+      gcpTab.addEventListener('click', () => this._switchSourceTab('gcp'));
+      container.appendChild(gcpTab);
+
+      // Add tabs for browsable sources based on connection status
+      this._sourcesCache.forEach(src => {
+        if (!BROWSABLE.includes(src.name)) return;
+        const tab = document.createElement('div');
+        tab.className = 'mb-source-tab' + (src.isConnected ? '' : ' disabled');
+        tab.dataset.source = src.name;
+        tab.textContent = SOURCE_LABELS[src.name] || src.name;
+        if (src.isConnected) {
+          tab.addEventListener('click', () => this._switchSourceTab(src.name));
+        }
+        container.appendChild(tab);
+      });
+
+      this._activeSourceTab = 'gcp';
+    }
+
+    _switchSourceTab(sourceName) {
+      // Update active tab visual state
+      document.querySelectorAll('.mb-source-tab').forEach(el => {
+        el.classList.toggle('active', el.dataset.source === sourceName);
+      });
+      this._activeSourceTab = sourceName;
+
+      // Reset shared UI state
+      document.getElementById('mb-services').textContent = '';
+      document.getElementById('mb-list').textContent = '';
+      document.getElementById('mb-config-panel').style.display = 'none';
+      document.getElementById('mb-search').value = '';
+      this.selected = null;
+
+      const servicesPanel = document.querySelector('.mb-services-panel');
+      const projectSel    = document.getElementById('mb-project');
+      const titleEl       = document.querySelector('.mb-title');
+
+      if (sourceName === 'gcp') {
+        if (servicesPanel) servicesPanel.style.display = '';
+        if (projectSel)    projectSel.style.display = '';
+        if (titleEl)       titleEl.textContent = 'GCP Metrics';
+        this._load();
+      } else if (sourceName === 'bigquery') {
+        if (servicesPanel) servicesPanel.style.display = 'none';
+        if (projectSel)    projectSel.style.display = 'none';
+        if (titleEl)       titleEl.textContent = 'BigQuery Tables';
+        this._renderBigQueryManifest();
+      } else if (sourceName === 'vulntrack') {
+        if (servicesPanel) servicesPanel.style.display = 'none';
+        if (projectSel)    projectSel.style.display = 'none';
+        if (titleEl)       titleEl.textContent = 'VulnTrack Metrics';
+        this._renderVulnTrackManifest();
+      }
+    }
+
+    _renderBigQueryManifest() {
+      if (!BQ_MANIFEST.length) {
+        this._setStatus('No BigQuery tables available for this project.');
+        return;
+      }
+      const q = (document.getElementById('mb-search').value || '').toLowerCase();
+      const filtered = q
+        ? BQ_MANIFEST.filter(t => t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q))
+        : BQ_MANIFEST;
+      this._renderManifestRows(filtered);
+
+      // Wire search input for BigQuery filtering
+      const searchEl = document.getElementById('mb-search');
+      searchEl.onkeyup = () => {
+        if (this._activeSourceTab !== 'bigquery') return;
+        this._renderBigQueryManifest();
+      };
+    }
+
+    _renderVulnTrackManifest() {
+      const vtSrc = this._sourcesCache.find(s => s.name === 'vulntrack');
+      if (!vtSrc || !vtSrc.isConnected) {
+        this._setStatus('VulnTrack is not connected. Add credentials in the Sources tab.');
+        return;
+      }
+      const q = (document.getElementById('mb-search').value || '').toLowerCase();
+      const filtered = q
+        ? VT_MANIFEST.filter(t => t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q))
+        : VT_MANIFEST;
+      this._renderManifestRows(filtered);
+
+      // Wire search input for VulnTrack filtering
+      const searchEl = document.getElementById('mb-search');
+      searchEl.onkeyup = () => {
+        if (this._activeSourceTab !== 'vulntrack') return;
+        this._renderVulnTrackManifest();
+      };
+    }
+
+    _renderManifestRows(items) {
+      const list = document.getElementById('mb-list');
+      list.textContent = '';
+      if (!items.length) {
+        this._setStatus('No results match your search.');
+        return;
+      }
+      const frag = document.createDocumentFragment();
+      items.forEach(item => {
+        const card    = document.createElement('div');
+        const nameEl  = document.createElement('div');
+        const descEl  = document.createElement('div');
+        card.className  = 'mb-card' + (this.selected && this.selected.type === item.name ? ' selected' : '');
+        nameEl.className = 'mb-card-name';
+        descEl.className = 'mb-card-desc';
+        nameEl.textContent = item.name;
+        descEl.textContent = item.description;
+        card.appendChild(nameEl);
+        card.appendChild(descEl);
+        card.addEventListener('click', () => {
+          document.querySelectorAll('#mb-list .mb-card').forEach(el => el.classList.remove('selected'));
+          card.classList.add('selected');
+          this.selected = { type: item.name, displayName: item.name, source: this._activeSourceTab };
+          document.getElementById('mb-sel-type').textContent = item.name;
+          document.getElementById('mb-sel-name').textContent = item.description || item.name;
+          document.getElementById('mb-config-panel').style.display = 'flex';
+        });
+        frag.appendChild(card);
+      });
+      list.appendChild(frag);
     }
 
     async _load() {
@@ -2935,6 +3119,21 @@
         this.close();
         return;
       }
+
+      // Non-GCP sources: assign directly without creating a server-side query
+      if (this._activeSourceTab === 'bigquery' || this._activeSourceTab === 'vulntrack') {
+        const queryId = descriptor.type.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+        wc.source  = this._activeSourceTab;
+        wc.queryId = queryId;
+        this.studio.markDirty();
+        this.studio.renderCanvas();
+        this.studio.showWidgetProps(wc.id);
+        this.close();
+        this.studio.showToast('Metric applied: ' + (descriptor.displayName || descriptor.type), 'success');
+        return;
+      }
+
+      // GCP: create a query entry server-side
       const project    = document.getElementById('mb-project').value;
       const timeWindow = parseInt(document.getElementById('mb-time-window').value) || 60;
       const aligner    = document.getElementById('mb-aggregation').value;
