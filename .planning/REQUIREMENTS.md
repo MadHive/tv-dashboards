@@ -15,7 +15,7 @@
 
 - [x] **DASH-01**: User can create a new dashboard via a step-by-step wizard (name, layout, initial widgets)
 - [x] **DASH-02**: User can duplicate an existing dashboard as a starting point for a new one
-- [ ] **DASH-03**: User can multi-select widgets and copy/paste them across dashboards
+- [x] **DASH-03**: User can multi-select widgets and copy/paste them across dashboards
 
 ### Query Builder (Admin)
 
@@ -88,7 +88,7 @@
 | WDGT-03 | Phase 1 | Complete |
 | DASH-01 | Phase 2 | Complete |
 | DASH-02 | Phase 2 | Complete |
-| DASH-03 | Phase 2 | Pending |
+| DASH-03 | Phase 2 | Complete |
 | QRYX-01 | Phase 3 | Pending |
 | QRYX-02 | Phase 3 | Pending |
 | DSRC-01 | Phase 3 | Pending |
