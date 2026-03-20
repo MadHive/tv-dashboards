@@ -361,7 +361,6 @@
 
     async deleteDashboard(idx) {
       const dash = this.modifiedConfig.dashboards[idx];
-      if (!confirm('Delete "' + dash.name + '"?')) return;
 
       try {
         await fetch('/api/dashboards/' + dash.id, { method: 'DELETE' });
@@ -1426,6 +1425,10 @@
         if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
           e.preventDefault();
           this.handleCtrlV();
+        }
+        if ((e.key === 'Delete' || e.key === 'Backspace') && this.selectedWidgetId) {
+          e.preventDefault();
+          this.deleteSelectedWidget();
         }
       });
     }
