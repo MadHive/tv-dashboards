@@ -7,9 +7,9 @@
 
 ### Widget Configuration (Admin)
 
-- [ ] **WDGT-01**: User can edit a widget's title and display labels from the properties panel
-- [ ] **WDGT-02**: User can set numeric size (W×H) and position (X/Y) overrides for precise layout control
-- [ ] **WDGT-03**: User can switch a widget's visualization type (e.g. big-number → gauge) without recreating the widget
+- [x] **WDGT-01**: User can edit a widget's title and display labels from the properties panel
+- [x] **WDGT-02**: User can set numeric size (W×H) and position (X/Y) overrides for precise layout control
+- [x] **WDGT-03**: User can switch a widget's visualization type (e.g. big-number → gauge) without recreating the widget
 
 ### Dashboard Management (Admin)
 
@@ -83,9 +83,9 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WDGT-01 | Phase 1 | Pending |
-| WDGT-02 | Phase 1 | Pending |
-| WDGT-03 | Phase 1 | Pending |
+| WDGT-01 | Phase 1 | Complete |
+| WDGT-02 | Phase 1 | Complete |
+| WDGT-03 | Phase 1 | Complete |
 | DASH-01 | Phase 2 | Pending |
 | DASH-02 | Phase 2 | Pending |
 | DASH-03 | Phase 2 | Pending |

@@ -109,7 +109,7 @@ Phase 4 (TV polish) is independent of phases 2 and 3 and may overlap.
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Widget Control | 0/3 | Planning complete | - |
+| 1. Widget Control | 1/3 | In Progress|  |
 | 2. Dashboard Management | 0/3 | Not started | - |
 | 3. Query & Data Workflow | 0/5 | Not started | - |
 | 4. TV Display Polish | 0/2 | Not started | - |
