@@ -2198,7 +2198,12 @@
             p.style.display = p.id === 'panel-' + name ? 'flex' : 'none';
           });
           if (name === 'queries') this.renderQueryList();
-          if (name === 'datasources') this.renderDatasourceList();
+          if (name === 'datasources') {
+            this.renderDatasourceList();
+            this._startHealthPolling();
+          } else {
+            this._stopHealthPolling();
+          }
         });
       });
     }
@@ -3066,6 +3071,108 @@
           saveBtn.removeAttribute('disabled');
         }
       };
+    }
+
+    /* ─────────────────────────────────────────────
+       Health Section (Sources Tab)
+    ───────────────────────────────────────────── */
+
+    _formatRelativeTime(ts) {
+      if (!ts) return 'never';
+      const diff = Math.floor((Date.now() - ts) / 1000);
+      if (diff < 60) return diff + 's ago';
+      if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+      if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+      return Math.floor(diff / 86400) + 'd ago';
+    }
+
+    async _renderHealthSection() {
+      const content = document.getElementById('health-section-content');
+      if (!content) return;
+      content.textContent = '';
+      try {
+        const res  = await fetch('/api/data-sources/health');
+        const data = await res.json();
+        const health = data.health || {};
+        Object.entries(health).forEach(([sourceName, src]) => {
+          const row = document.createElement('div');
+          row.className = 'health-row';
+
+          const dot = document.createElement('span');
+          dot.className = 'ds-status-dot ' + (
+            src.isConnected ? 'green' :
+            (src.isReady && !src.isConnected) ? 'amber' :
+            src.lastError ? 'red' : 'grey'
+          );
+
+          const nameEl = document.createElement('span');
+          nameEl.className   = 'ds-name';
+          nameEl.textContent = sourceName;
+
+          if (src.sessionErrorCount > 0) {
+            const badge = document.createElement('span');
+            badge.className   = 'health-error-badge';
+            badge.textContent = src.sessionErrorCount;
+            row.appendChild(dot);
+            row.appendChild(nameEl);
+            row.appendChild(badge);
+          } else {
+            row.appendChild(dot);
+            row.appendChild(nameEl);
+          }
+
+          const ts = document.createElement('span');
+          ts.className   = 'health-timestamp';
+          ts.textContent = this._formatRelativeTime(src.lastSuccessAt);
+          row.appendChild(ts);
+
+          if (src.lastError) {
+            const detail = document.createElement('div');
+            detail.className   = 'health-error-detail';
+            detail.textContent = src.lastError;
+            detail.style.display = 'none';
+            row.addEventListener('click', () => {
+              if (detail.style.display === 'none') {
+                detail.style.display = '';
+                detail.classList.add('expanded');
+              } else {
+                detail.style.display = 'none';
+                detail.classList.remove('expanded');
+              }
+            });
+            content.appendChild(row);
+            content.appendChild(detail);
+          } else {
+            content.appendChild(row);
+          }
+        });
+        if (!Object.keys(health).length) {
+          const msg = document.createElement('div');
+          msg.className   = 'mb-status';
+          msg.textContent = 'No sources found';
+          content.appendChild(msg);
+        }
+      } catch (e) {
+        const msg = document.createElement('div');
+        msg.className   = 'mb-status';
+        msg.textContent = 'Health check unavailable. Retrying in 30s.';
+        content.appendChild(msg);
+      }
+    }
+
+    _startHealthPolling() {
+      if (this._healthPollInterval) return;
+      this._renderHealthSection();
+      this._healthPollInterval = setInterval(() => this._renderHealthSection(), 30000);
+      const dot = document.getElementById('health-poll-dot');
+      if (dot) dot.style.display = '';
+    }
+
+    _stopHealthPolling() {
+      clearInterval(this._healthPollInterval);
+      this._healthPollInterval = null;
+      const dot = document.getElementById('health-poll-dot');
+      if (dot) dot.style.display = 'none';
     }
 
     _setStatus(msg) {

@@ -1640,6 +1640,60 @@ body.studio-body {
 .ds-name { font-family: var(--font-body); font-size: 13px; color: var(--t2); flex: 1; }
 .ds-type { font-family: var(--font-mono); font-size: 10px; color: var(--t3); }
 
+/* Health section */
+.health-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 16px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--t2);
+}
+.health-row:hover { background: rgba(253,164,212,0.05); }
+.health-timestamp {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--t3);
+}
+.health-error-badge {
+  background: var(--red);
+  color: #fff;
+  border-radius: 8px;
+  padding: 0 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 16px;
+}
+.health-error-detail {
+  padding: 4px 16px 8px 28px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--red);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.health-error-detail.expanded {
+  -webkit-line-clamp: unset;
+}
+.health-poll-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mh-pink);
+  display: inline-block;
+  margin-left: 8px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
 /* ── Data Source Editor ── */
 .datasource-editor-panel {
   display: flex;
