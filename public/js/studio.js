@@ -2408,28 +2408,142 @@
         // Render widget preview in canvas
         this._renderQueryPreview(data.widgetData, previewType);
 
-        // Show raw value summary in results body
-        bodyEl.textContent = '';
-        const val = data.widgetData.value;
-        const summary = document.createElement('div');
-        summary.className = 'mb-status';
-        summary.textContent = val !== null && val !== undefined
-          ? 'Value: ' + (typeof val === 'number' ? val.toLocaleString() : val)
-          : 'No value returned';
-        bodyEl.appendChild(summary);
+        // Smart result format rendering
+        const resultsBody = bodyEl;
+        resultsBody.textContent = '';
+        const rawData = data.rawData || data.widgetData || data;
+        const fmt = this._selectResultFormat(rawData);
+        if (fmt === 'empty') {
+          const emptyDiv = document.createElement('div');
+          emptyDiv.className = 'mb-status';
+          emptyDiv.textContent = 'No results returned. Check your metric type and time range.';
+          resultsBody.appendChild(emptyDiv);
+        } else if (fmt === 'table') {
+          this._renderResultTable(rawData, resultsBody);
+        } else if (fmt === 'summary') {
+          this._renderResultSummary(rawData, resultsBody);
+        } else {
+          const pre = document.createElement('pre');
+          pre.className = 'qe-result-json';
+          pre.textContent = JSON.stringify(rawData, null, 2);
+          resultsBody.appendChild(pre);
+        }
       } catch (e) {
         statusEl.textContent = 'Error';
         statusEl.style.color = 'var(--red)';
-        const err = document.createElement('div');
-        err.style.color      = 'var(--red)';
-        err.style.padding    = '8px';
-        err.style.fontFamily = 'var(--font-mono)';
-        err.style.fontSize   = '11px';
-        err.textContent = e.message;
-        bodyEl.appendChild(err);
+        bodyEl.textContent = '';
+        const errDiv = document.createElement('div');
+        errDiv.className = 'mb-status';
+        errDiv.style.color = 'var(--red)';
+        errDiv.textContent = 'Query failed: ' + e.message + '. Check the metric type and try again.';
+        bodyEl.appendChild(errDiv);
       } finally {
         runBtn.removeAttribute('disabled');
       }
+    }
+
+    _selectResultFormat(data) {
+      if (data === null || data === undefined) return 'empty';
+      if (Array.isArray(data)) {
+        if (data.length === 0) return 'empty';
+        if (data[0] !== null && typeof data[0] === 'object' && !Array.isArray(data[0])) {
+          if (data[0].timestamp !== undefined) return 'summary';
+          return 'table';
+        }
+        return 'json';
+      }
+      if (typeof data === 'object' && (data.points !== undefined || data.timeSeries !== undefined)) {
+        return 'summary';
+      }
+      return 'json';
+    }
+
+    _renderResultTable(data, container) {
+      const MAX_ROWS = 100;
+      const total = data.length;
+      const rows = data.slice(0, MAX_ROWS);
+      const cols = Object.keys(rows[0]);
+
+      const table = document.createElement('table');
+      table.className = 'qe-result-table';
+
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      cols.forEach(col => {
+        const th = document.createElement('th');
+        th.textContent = col;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      rows.forEach(row => {
+        const tr = document.createElement('tr');
+        cols.forEach(col => {
+          const td = document.createElement('td');
+          const v = row[col];
+          if (v === null || v === undefined) {
+            td.textContent = '';
+          } else if (typeof v === 'object') {
+            td.textContent = JSON.stringify(v);
+          } else {
+            td.textContent = v;
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      container.appendChild(table);
+
+      if (total > MAX_ROWS) {
+        const truncated = document.createElement('div');
+        truncated.className = 'results-truncated';
+        truncated.textContent = 'Showing first 100 rows \u2014 ' + total + ' total returned.';
+        container.appendChild(truncated);
+      }
+    }
+
+    _renderResultSummary(data, container) {
+      const points = data.points || data.timeSeries || (Array.isArray(data) ? data : []);
+      const count = points.length;
+
+      const summaryDiv = document.createElement('div');
+      summaryDiv.className = 'qe-result-summary';
+
+      function makeStat(label, value) {
+        const stat = document.createElement('div');
+        stat.className = 'summary-stat';
+        const lbl = document.createElement('div');
+        lbl.className = 'summary-label';
+        lbl.textContent = label;
+        const val = document.createElement('div');
+        val.className = 'summary-value';
+        val.textContent = value !== null && value !== undefined ? String(value) : '\u2014';
+        stat.appendChild(lbl);
+        stat.appendChild(val);
+        return stat;
+      }
+
+      summaryDiv.appendChild(makeStat('Data Points', count));
+
+      if (count > 0) {
+        const first = points[0];
+        const last  = points[count - 1];
+        const firstTs = first.timestamp || first.startTime || '';
+        const lastTs  = last.timestamp  || last.endTime   || '';
+        const timeRange = firstTs && lastTs ? firstTs + ' \u2014 ' + lastTs : (firstTs || lastTs || '\u2014');
+        summaryDiv.appendChild(makeStat('Time Range', timeRange));
+
+        const lastVal = last.value !== undefined ? last.value
+          : last.doubleValue !== undefined ? last.doubleValue
+          : last.int64Value  !== undefined ? last.int64Value
+          : null;
+        summaryDiv.appendChild(makeStat('Last Value', lastVal));
+      }
+
+      container.appendChild(summaryDiv);
     }
 
     _renderQueryPreview(widgetData, widgetType) {
