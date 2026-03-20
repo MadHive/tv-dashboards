@@ -1212,11 +1212,35 @@
         };
       }
 
-      // New query button
+      // New query button — opens QueryExplorer modal for freestanding query creation
       const newQueryBtn = document.getElementById('new-query-btn');
       if (newQueryBtn) {
         newQueryBtn.onclick = () => {
-          if (window.queryEditor) window.queryEditor.open();
+          if (this.queryExplorer) {
+            this.queryExplorer.open();
+          } else {
+            this.showToast('Query explorer not available', 'error');
+          }
+        };
+      }
+
+      // Build Query button — opens query editor pre-populated from this widget
+      const buildQueryBtn = document.getElementById('build-query-btn');
+      if (buildQueryBtn) {
+        buildQueryBtn.onclick = () => {
+          const widgetId = this.selectedWidgetId;
+          if (!widgetId) return;
+          const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
+          const wc = dash && dash.widgets.find(w => w.id === widgetId);
+          if (!wc) return;
+          this._assignTargetWidgetId = widgetId;
+          const query = {
+            id: wc.queryId || '',
+            name: wc.title || wc.queryId || 'New Query',
+            metricType: wc.queryId || ''
+          };
+          const source = wc.source || 'gcp';
+          this.openQueryEditor(query, source);
         };
       }
 
@@ -2303,6 +2327,7 @@
     _bindQueryEditorActions() {
       document.getElementById('qe-close').onclick = () => {
         document.getElementById('query-editor-panel').style.display = 'none';
+        this._assignTargetWidgetId = null;
         this.showDashboardProps();
       };
 
@@ -2317,7 +2342,11 @@
       };
 
       document.getElementById('qe-assign').onclick = () => {
-        this._assignQueryToWidget();
+        if (this._assignTargetWidgetId) {
+          this._assignQueryToWidgetDirect(this._assignTargetWidgetId);
+        } else {
+          this._assignQueryToWidget();
+        }
       };
 
       const previewTypeSel = document.getElementById('qe-preview-type');
@@ -2504,6 +2533,27 @@
       });
 
       this.showToast('Click a widget to assign this query', 'info');
+    }
+
+    _assignQueryToWidgetDirect(widgetId) {
+      const q      = this._activeQuery;
+      const source = this._activeSource;
+      if (!q || !widgetId || this.activeDashIdx < 0) return;
+
+      const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
+      const wc   = dash && dash.widgets.find(w => w.id === widgetId);
+      if (!wc) return;
+
+      wc.source  = source;
+      wc.queryId = q.id;
+      this.markDirty();
+      this.renderCanvas();
+      this.showWidgetProps(widgetId);
+      this.showToast('Query assigned', 'success');
+
+      document.getElementById('query-editor-panel').style.display = 'none';
+      document.getElementById('properties-content').style.display = '';
+      this._assignTargetWidgetId = null;
     }
 
     /* ─────────────────────────────────────────────
