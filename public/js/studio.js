@@ -2977,10 +2977,12 @@
           label.className = 'qe-label';
           label.appendChild(document.createTextNode(field.description || field.name));
           const input = document.createElement('input');
-          input.className      = 'qe-input';
-          input.type           = field.secure ? 'password' : 'text';
-          input.dataset.field  = field.name;
-          input.dataset.envVar = field.envVar || '';
+          input.className         = 'qe-input';
+          input.type              = field.secure ? 'password' : 'text';
+          input.dataset.field     = field.name;
+          input.dataset.key       = field.name;
+          input.dataset.envVar    = field.envVar || '';
+          input.dataset.required  = field.required ? 'true' : 'false';
           input.placeholder    = field.secure
             ? '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (stored)'
             : (field.default || '');
@@ -3030,6 +3032,11 @@
 
       document.getElementById('dse-save').onclick = async () => {
         const saveBtn = document.getElementById('dse-save');
+        // Remove any existing error banner
+        const existingBanner = document.getElementById('dse-fields') && document.getElementById('dse-fields').querySelector('.validation-banner');
+        if (existingBanner) existingBanner.remove();
+        // Client-side validation before network request
+        if (!this._validateCredForm()) return;
         const inputs  = document.querySelectorAll('#dse-fields input[data-field]');
         const body    = {};
         inputs.forEach(inp => {
@@ -3040,7 +3047,7 @@
           resultEl.style.color = 'var(--amber)';
           return;
         }
-        saveBtn.setAttribute('disabled', '');
+        saveBtn.disabled = true;
         resultEl.textContent = 'Saving\u2026';
         resultEl.style.color = 'var(--t3)';
         try {
@@ -3051,6 +3058,10 @@
           });
           const data = await res.json();
           if (!res.ok) {
+            const banner = document.createElement('div');
+            banner.className = 'validation-error validation-banner';
+            banner.textContent = 'Could not save credentials: ' + (data.error || 'Unknown error') + '. Check your API key format.';
+            document.getElementById('dse-fields').prepend(banner);
             resultEl.textContent = '\u2717 ' + (data.error || 'Save failed');
             resultEl.style.color = 'var(--red)';
             return;
@@ -3068,9 +3079,35 @@
           resultEl.textContent = '\u2717 ' + e.message;
           resultEl.style.color = 'var(--red)';
         } finally {
-          saveBtn.removeAttribute('disabled');
+          saveBtn.disabled = false;
         }
       };
+    }
+
+    /* ─────────────────────────────────────────────
+       Credential Validation
+    ───────────────────────────────────────────── */
+
+    _validateCredForm() {
+      const fieldsContainer = document.getElementById('dse-fields');
+      if (!fieldsContainer) return true;
+      const inputs = fieldsContainer.querySelectorAll('input[data-key]');
+      let valid = true;
+      inputs.forEach(input => {
+        // Remove previous error
+        const existingErr = input.parentElement.querySelector('.validation-error');
+        if (existingErr) existingErr.remove();
+        const val = input.value.trim();
+        const required = input.hasAttribute('required') || input.dataset.required === 'true';
+        if (required && !val) {
+          const errEl = document.createElement('div');
+          errEl.className = 'validation-error';
+          errEl.textContent = 'Required.';
+          input.parentElement.appendChild(errEl);
+          valid = false;
+        }
+      });
+      return valid;
     }
 
     /* ─────────────────────────────────────────────
