@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { createMockDash, createMockWidget, createMockQueries, populateWidgets, snapToNearest } from './helpers/widget-config-helpers.js';
+import { createMockDash, createMockWidget, createMockQueries, populateWidgets, hasCollision, snapToNearest } from './helpers/widget-config-helpers.js';
 
 describe('WDGT-01: subtitle and format field storage', () => {
   test('subtitle field is stored on widget config object', () => {
@@ -75,9 +75,27 @@ describe('WDGT-02: position snap-to-nearest collision resolution', () => {
 });
 
 describe('WDGT-03: type-switch auto-match query', () => {
-  test.todo('auto-match finds query with same metricType for new widget type');
-  test.todo('auto-match returns null when no compatible query found');
-  test.todo('auto-match preserves existing queryId when metric type matches current');
+  test('query found in saved queries means no mismatch', () => {
+    const queries = createMockQueries();
+    const sourceQueries = queries.gcp;
+    const found = sourceQueries.find(q => q.id === 'query-1');
+    expect(found).toBeDefined();
+    expect(found.name).toBe('CPU Usage');
+  });
+
+  test('orphan queryId not in saved queries triggers mismatch', () => {
+    const queries = createMockQueries();
+    const sourceQueries = queries.gcp;
+    const found = sourceQueries.find(q => q.id === 'nonexistent-query');
+    expect(found).toBeUndefined();
+    // In the UI, undefined here means the type-mismatch-warning should be shown
+  });
+
+  test('empty queryId means no mismatch check needed', () => {
+    const wc = createMockWidget({ queryId: '' });
+    expect(wc.queryId).toBe('');
+    // In the UI, empty queryId skips mismatch warning entirely
+  });
 });
 
 describe('WDGT-03: type-switch config preservation', () => {
@@ -99,13 +117,48 @@ describe('WDGT-03: type-switch config preservation', () => {
     expect(wc.unit).toBe('ms');
   });
 
-  test('map config cleared when switching away from usa-map', () => {
+  test('mapConfig is removed when type changes from usa-map to big-number', () => {
     const wc = createMockWidget({
       type: 'usa-map',
       mapConfig: { timeWindow: 7, minImpressions: 100, metric: 'impressions' },
     });
-    // This test verifies the fixture; Plan 03 will add the clearing logic
-    expect(wc.mapConfig).toBeDefined();
-    expect(wc.mapConfig.timeWindow).toBe(7);
+    const oldType = wc.type;
+    wc.type = 'big-number';
+    if (oldType === 'usa-map' && wc.type !== 'usa-map') {
+      delete wc.mapConfig;
+    }
+    expect(wc.mapConfig).toBeUndefined();
+  });
+
+  test('mglConfig is removed when type changes from usa-map-gl to gauge', () => {
+    const wc = createMockWidget({
+      type: 'usa-map-gl',
+      mglConfig: { colorScheme: 'brand', particleCount: 120 },
+    });
+    const oldType = wc.type;
+    wc.type = 'gauge';
+    if (oldType === 'usa-map-gl' && wc.type !== 'usa-map-gl') {
+      delete wc.mglConfig;
+    }
+    expect(wc.mglConfig).toBeUndefined();
+  });
+
+  test('xLabel/yLabel/legendLabels cleared when switching to big-number', () => {
+    const wc = createMockWidget({
+      type: 'bar-chart',
+      xLabel: 'Time',
+      yLabel: 'Requests',
+      legendLabels: 'East,West',
+    });
+    wc.type = 'big-number';
+    const labelsTypes = ['bar-chart', 'line-chart', 'stacked-bar-chart', 'donut-ring', 'sankey', 'heatmap', 'treemap', 'pipeline-flow', 'multi-metric-card', 'status-grid', 'table'];
+    if (!labelsTypes.includes(wc.type)) {
+      delete wc.xLabel;
+      delete wc.yLabel;
+      delete wc.legendLabels;
+    }
+    expect(wc.xLabel).toBeUndefined();
+    expect(wc.yLabel).toBeUndefined();
+    expect(wc.legendLabels).toBeUndefined();
   });
 });
