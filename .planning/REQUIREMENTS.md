@@ -83,30 +83,30 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUN-01 | Phase ? | Pending |
-| FOUN-02 | Phase ? | Pending |
-| FOUN-03 | Phase ? | Pending |
-| FOUN-04 | Phase ? | Pending |
-| FOUN-05 | Phase ? | Pending |
-| WDGT-01 | Phase ? | Pending |
-| WDGT-02 | Phase ? | Pending |
-| WDGT-03 | Phase ? | Pending |
-| DASH-01 | Phase ? | Pending |
-| DASH-02 | Phase ? | Pending |
-| DASH-03 | Phase ? | Pending |
-| QRYX-01 | Phase ? | Pending |
-| QRYX-02 | Phase ? | Pending |
-| DSRC-01 | Phase ? | Pending |
-| DSRC-02 | Phase ? | Pending |
-| METR-01 | Phase ? | Pending |
-| TVUX-01 | Phase ? | Pending |
-| TVUX-02 | Phase ? | Pending |
+| WDGT-01 | Phase 1 | Pending |
+| WDGT-02 | Phase 1 | Pending |
+| WDGT-03 | Phase 1 | Pending |
+| DASH-01 | Phase 2 | Pending |
+| DASH-02 | Phase 2 | Pending |
+| DASH-03 | Phase 2 | Pending |
+| QRYX-01 | Phase 3 | Pending |
+| QRYX-02 | Phase 3 | Pending |
+| DSRC-01 | Phase 3 | Pending |
+| DSRC-02 | Phase 3 | Pending |
+| METR-01 | Phase 3 | Pending |
+| TVUX-01 | Phase 4 | Pending |
+| TVUX-02 | Phase 4 | Pending |
+| FOUN-01 | Phase 5 | Pending |
+| FOUN-02 | Phase 5 | Pending |
+| FOUN-03 | Phase 5 | Pending |
+| FOUN-04 | Phase 5 | Pending |
+| FOUN-05 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 18 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 18 ⚠️
+- Mapped to phases: 18
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-20*
-*Last updated: 2026-03-20 after initial definition*
+*Last updated: 2026-03-20 — traceability complete after roadmap creation*
