@@ -264,6 +264,32 @@ window.StudioCanvas = (function () {
     });
   }
 
+  function _snapToNearest(dash, desiredCol, desiredRow, colSpan, rowSpan, excludeId) {
+    // If desired position is open, use it
+    if (!_hasCollision(dash, desiredCol, desiredRow, colSpan, rowSpan, excludeId)) {
+      return { col: desiredCol, row: desiredRow };
+    }
+    // Search in direction order: right, down, left, up — expanding radius
+    var maxR = Math.max(dash.grid.columns, dash.grid.rows);
+    for (var d = 1; d <= maxR; d++) {
+      var candidates = [
+        { col: desiredCol + d, row: desiredRow },
+        { col: desiredCol,     row: desiredRow + d },
+        { col: desiredCol - d, row: desiredRow },
+        { col: desiredCol,     row: desiredRow - d },
+      ];
+      for (var i = 0; i < candidates.length; i++) {
+        var c = Math.max(1, Math.min(dash.grid.columns - colSpan + 1, candidates[i].col));
+        var r = Math.max(1, Math.min(dash.grid.rows    - rowSpan + 1, candidates[i].row));
+        if (!_hasCollision(dash, c, r, colSpan, rowSpan, excludeId)) {
+          return { col: c, row: r };
+        }
+      }
+    }
+    // No open slot found — return original position unchanged
+    return { col: desiredCol, row: desiredRow };
+  }
+
   function enableDropZone(page, dash) {
     page.addEventListener('dragover', function (e) {
       e.preventDefault();
@@ -289,6 +315,10 @@ window.StudioCanvas = (function () {
       var rowInput = document.getElementById('prop-row');
       if (colInput) colInput.value = col;
       if (rowInput) rowInput.value = row;
+      var colspanInput = document.getElementById('prop-colspan');
+      var rowspanInput = document.getElementById('prop-rowspan');
+      if (colspanInput) colspanInput.value = colSpan;
+      if (rowspanInput) rowspanInput.value = rowSpan;
     });
 
     page.addEventListener('drop', function (e) {
@@ -303,11 +333,10 @@ window.StudioCanvas = (function () {
       var col     = pos.col;
       var row     = pos.row;
 
-      // Reject blocked drops
-      if (_hasCollision(dash, col, row, colSpan, rowSpan, widgetId)) return;
-
-      wc.position.col = col;
-      wc.position.row = row;
+      // Snap to nearest open slot if collision
+      var snapped = _snapToNearest(dash, col, row, colSpan, rowSpan, widgetId);
+      wc.position.col = snapped.col;
+      wc.position.row = snapped.row;
 
       app.markDirty();
       app.renderCanvas();
@@ -421,5 +450,5 @@ window.StudioCanvas = (function () {
     });
   }
 
-  return { render: render };
+  return { render: render, hasCollision: _hasCollision, snapToNearest: _snapToNearest };
 })();
