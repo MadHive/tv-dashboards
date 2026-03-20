@@ -535,7 +535,7 @@ const app = new Elysia()
     try {
       const dashboard = await dashboardManager.duplicateDashboard(params.id);
       invalidateConfigCache();
-      return dashboard;
+      return { success: true, dashboard };
     } catch (error) {
       return new Response(
         JSON.stringify({ success: false, error: error.message }),
