@@ -5,6 +5,7 @@ status: draft
 shadcn_initialized: false
 preset: none
 created: 2026-03-20
+revised: 2026-03-20
 ---
 
 # Phase 1 — UI Design Contract: Widget Control
@@ -31,22 +32,27 @@ Source: dashboard.css :root, studio.css patterns. No changes — extend existing
 
 ## Spacing Scale
 
-Declared values (all multiples of 4):
+Declared values (all multiples of 4 — enforced for all new Phase 1 elements):
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| xs | 4px | Icon gaps, inline button gaps (.studio-actions gap: 8px → button icon gap: 4px) |
-| sm | 8px | Input gap-within-label (gap: 3px → 8px for new field groups), props-section inner gap |
-| md | 10px | props-section inner div padding (established: padding: 10px) |
-| lg | 14px | Properties panel outer padding (established: padding: 14px) |
+| xs | 4px | Icon gaps, inline button gaps |
+| sm | 8px | Input gap-within-label for new field groups, props-section inner gap |
+| md | 8px | props-section inner div padding for new sections |
+| lg | 16px | Properties panel outer padding for new sections |
 | xl | 20px | Canvas wrapper padding (established: padding: 20px) |
 
-Exceptions:
-- props-grid-2 gap stays at 6px (established pattern — do not change)
-- summary padding stays at 7px 10px (established pattern — do not change)
-- Label gap-to-input stays at 3px (established — preserves compact panel density)
-
 All new fields added in Phase 1 use the established `.props-section > div` gap of 8px between fields.
+
+### Pre-existing Inherited Values (Outside Phase 1 Spec Scope)
+
+The following values exist in the current codebase and are NOT part of the Phase 1 spacing contract. Phase 1 does not modify them. They are documented here for completeness only — they are not spec tokens and are not subject to the 4px-multiple rule:
+
+| Location | Value | Reason not changed |
+|----------|---------|--------------------|
+| `.props-grid-2` gap | 6px | Established layout grid — changing breaks existing panel proportions |
+| `<summary>` padding | 7px 10px | Established collapsible section chrome — visual regression risk |
+| Label gap-to-input | 3px | Compact panel density — established and unchanged |
 
 ---
 
@@ -54,12 +60,14 @@ All new fields added in Phase 1 use the established `.props-section > div` gap o
 
 All sizes are established in dashboard.css and studio.css. New Phase 1 elements inherit these roles exactly — no new sizes introduced.
 
+**Exactly 2 weights are used across all Phase 1 elements: 400 (regular) and 600 (semibold).**
+
 | Role | Size | Weight | Line Height | Font | Usage in Phase 1 |
 |------|------|--------|-------------|------|-----------------|
 | Props label | 10px | 600 | 1.2 | Space Grotesk | Field labels: "Subtitle", "Format", "X Axis Label", etc. |
 | Props input | 13px | 400 | 1.4 | DM Sans | Input field values — title, subtitle, format string, axis labels |
 | Section header | 10px | 600 | 1.2 | Space Grotesk | collapsible section `<summary>` text — "Labels", "Axis & Legend", etc. |
-| Warning badge | 10px | 500 | 1.0 | IBM Plex Mono | "(beta)" suffix on unimplemented type options |
+| Warning badge | 10px | 600 | 1.0 | IBM Plex Mono | "(beta)" suffix on unimplemented type options — semibold for emphasis |
 
 Source: studio.css `.studio-properties label` (10px Space Grotesk), `.studio-properties input` (13px DM Sans), `.props-section summary` (10px 600 Space Grotesk).
 
@@ -182,7 +190,7 @@ When a widget type has no working renderer or renders empty, the canvas cell sho
 Grey card fill: var(--bg-card-alt)
 Centered content:
   — Type name in 11px Space Grotesk, color var(--t3), letter-spacing 1.5px, text-transform uppercase
-  — Below: small badge "(beta)" — 9px, background rgba(251,191,36,0.12), border 1px solid rgba(251,191,36,0.3), color var(--amber), border-radius 3px, padding 1px 6px, font-family var(--font-mono)
+  — Below: small badge "(beta)" — 9px, background rgba(251,191,36,0.12), border 1px solid rgba(251,191,36,0.3), color var(--amber), border-radius 3px, padding 1px 6px, font-family var(--font-mono), font-weight 600
 ```
 
 No separate CSS class needed — the existing `.canvas-placeholder` pattern is the model; a new `.widget-placeholder` class is added following the same structure.
