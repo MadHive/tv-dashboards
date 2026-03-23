@@ -84,18 +84,23 @@ window.MapboxUSAMap = (function () {
 
   function buildMapConfig(userConfig) {
     return {
-      particleCount:   100,
-      particleSpeed:   1.0,
-      colorScheme:     'brand',
-      showLeaderboard: true,
-      mapStyle:        'mapbox',
-      zoomViz:         'dots',
-      clientLogo:      null,
-      initialZoom:     null,
-      initialCenter:   null,
-      initialPitch:    null,
-      initialBearing:  null,
-      logoFit:         'cover',
+      particleCount:      100,
+      particleSpeed:      1.0,
+      colorScheme:        'brand',
+      showLeaderboard:    true,
+      showRegionWest:     true,
+      showRegionCentral:  true,
+      showRegionEast:     true,
+      showTotalOverlay:   true,
+      showClientLogo:     true,
+      mapStyle:           'mapbox',
+      zoomViz:            'dots',
+      clientLogo:         null,
+      initialZoom:        null,
+      initialCenter:      null,
+      initialPitch:       null,
+      initialBearing:     null,
+      logoFit:            'cover',
       ...(userConfig || {}),
     };
   }
@@ -847,6 +852,30 @@ window.MapboxUSAMap = (function () {
       el.appendChild(handle);
     }
 
+    // Inject a small ✕ hide button on each overlay in studio mode.
+    // Clicking it hides that overlay and fires an mgl-overlay-hidden event
+    // so studio-canvas.js can persist the flag to wc.mglConfig.
+    _addOverlayHideBtn(el, cfgFlag) {
+      if (!document.body.classList.contains('studio-body')) return;
+      const self = this;
+      const btn = document.createElement('button');
+      btn.className   = 'mgl-overlay-hide-btn';
+      btn.type        = 'button';
+      btn.textContent = '\u2715'; // ✕
+      btn.title       = 'Hide this overlay (restore via Map GL Config panel)';
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        el.style.display = 'none';
+        // Persist the flag so it survives a save/reload cycle
+        self._wrap.dispatchEvent(new CustomEvent('mgl-overlay-hidden', {
+          bubbles: true,
+          detail:  { flag: cfgFlag, value: false },
+        }));
+      });
+      el.appendChild(btn);
+    }
+
     // Natural widths for each overlay type (used to compute scale factor)
     _overlayNaturalWidths() {
       return { leaderboard: 340, totalOverlay: 220, west: 160, central: 160, east: 160, clientLogo: 120 };
@@ -902,6 +931,8 @@ window.MapboxUSAMap = (function () {
 
       el.addEventListener('pointerdown', function (e) {
         e.preventDefault();
+        // Stop the click from bubbling to the map widget card and selecting the whole widget
+        e.stopPropagation();
         const er = el.getBoundingClientRect();
         // Determine mode from click position
         mode = (e.clientX > er.right - RESIZE_ZONE && e.clientY > er.bottom - RESIZE_ZONE)
@@ -1158,13 +1189,16 @@ window.MapboxUSAMap = (function () {
       // ── Regional data panels (WEST / CENTRAL / EAST) ────────────────────────
       this._regionPanels = {};
       [
-        { key: 'west',    label: 'WEST'    },
-        { key: 'central', label: 'CENTRAL' },
-        { key: 'east',    label: 'EAST'    },
-      ].forEach(({ key, label }) => {
+        { key: 'west',    label: 'WEST',    cfgFlag: 'showRegionWest'    },
+        { key: 'central', label: 'CENTRAL', cfgFlag: 'showRegionCentral' },
+        { key: 'east',    label: 'EAST',    cfgFlag: 'showRegionEast'    },
+      ].forEach(({ key, label, cfgFlag }) => {
         const panel = document.createElement('div');
         panel.className = 'mgl-region-panel';
         panel.style.position = 'absolute';
+
+        // Hide if the config flag is false
+        if (this._cfg[cfgFlag] === false) panel.style.display = 'none';
 
         const nameEl = document.createElement('div');
         nameEl.className   = 'mgl-region-name';
@@ -1186,6 +1220,7 @@ window.MapboxUSAMap = (function () {
         panel.appendChild(nameEl);
         panel.appendChild(impEl);
         panel.appendChild(metaEl);
+        this._addOverlayHideBtn(panel, cfgFlag);
         this._wrap.appendChild(panel);
         this._applyOverlayPosition(panel, key);
         this._makeDraggable(panel, key);
@@ -1200,6 +1235,9 @@ window.MapboxUSAMap = (function () {
     _buildLeaderboardDOM() {
       const lb = document.createElement('div');
       lb.className = 'mgl-leaderboard';
+
+      // Respect showLeaderboard flag
+      if (this._cfg.showLeaderboard === false) lb.style.display = 'none';
 
       const title = document.createElement('div');
       title.className = 'mgl-lb-title';
@@ -1219,6 +1257,7 @@ window.MapboxUSAMap = (function () {
       lb.appendChild(rowsWrap);
       lb.appendChild(this._lbTotals);
       this._lbEl = lb;
+      this._addOverlayHideBtn(lb, 'showLeaderboard');
       this._wrap.appendChild(lb);
       this._applyOverlayPosition(lb, 'leaderboard');
       this._makeDraggable(lb, 'leaderboard');
@@ -1234,13 +1273,17 @@ window.MapboxUSAMap = (function () {
       if (this._cfg.clientLogo) {
         const logoWrap = document.createElement('div');
         logoWrap.className = 'mgl-client-logo';
+
+        // Respect showClientLogo flag
+        if (this._cfg.showClientLogo === false) logoWrap.style.display = 'none';
+
         const logoImg = document.createElement('img');
         logoImg.src = this._cfg.clientLogo;
         logoImg.alt = '';
         logoImg.onerror = () => logoWrap.remove();
-        // Apply fit mode: cover (default, crops to fill) or contain (full logo, may have space)
         logoWrap.style.setProperty('--logo-fit', this._cfg.logoFit || 'cover');
         logoWrap.appendChild(logoImg);
+        this._addOverlayHideBtn(logoWrap, 'showClientLogo');
         this._wrap.appendChild(logoWrap);
         this._applyOverlayPosition(logoWrap, 'clientLogo');
         this._makeDraggable(logoWrap, 'clientLogo');
@@ -1250,6 +1293,9 @@ window.MapboxUSAMap = (function () {
       // Bottom-left impressions total overlay
       const overlay = document.createElement('div');
       overlay.className = 'mgl-total-overlay';
+
+      // Respect showTotalOverlay flag
+      if (this._cfg.showTotalOverlay === false) overlay.style.display = 'none';
 
       const lbl = document.createElement('div');
       lbl.className   = 'mgl-total-label';
@@ -1266,6 +1312,7 @@ window.MapboxUSAMap = (function () {
       overlay.appendChild(lbl);
       overlay.appendChild(this._totalValueEl);
       overlay.appendChild(sub);
+      this._addOverlayHideBtn(overlay, 'showTotalOverlay');
       this._wrap.appendChild(overlay);
       this._applyOverlayPosition(overlay, 'totalOverlay');
       this._makeDraggable(overlay, 'totalOverlay');
