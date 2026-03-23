@@ -218,7 +218,7 @@
         const delBtn = document.createElement('button');
         delBtn.className = 'nav-delete';
         delBtn.textContent = '\u2715';
-        delBtn.title = 'Delete';
+        delBtn.title = 'Delete dashboard';
 
         const toggle = document.createElement('button');
         toggle.className = 'rot-toggle' + (dash.excluded ? ' rot-off' : '');

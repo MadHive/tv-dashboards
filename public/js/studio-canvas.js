@@ -63,6 +63,22 @@ window.StudioCanvas = (function () {
     app = studioApp;
     const canvas = document.getElementById('studio-canvas');
     const dash = app.modifiedConfig.dashboards[app.activeDashIdx];
+    // expose deleteWidget to canvas controls
+    if (!app.deleteWidget) {
+      app.deleteWidget = function (widgetId) {
+        const d = app.modifiedConfig.dashboards[app.activeDashIdx];
+        if (!d) return;
+        d.widgets = d.widgets.filter(function (w) { return w.id !== widgetId; });
+        if (app.selectedWidgetId === widgetId) {
+          app.selectedWidgetId = null;
+          app.selectedWidgetIds = new Set();
+        }
+        app.markDirty();
+        app.renderCanvas();
+        app.renderSidebar();
+        app.showDashboardProps();
+      };
+    }
 
     // Clear canvas
     canvas.textContent = '';
@@ -117,6 +133,33 @@ window.StudioCanvas = (function () {
       card.style.overflow = 'hidden';
 
       addResizeHandles(card, wc, dash);
+
+      // Studio control bar — drag handle (≡) + delete (×), shown on card hover.
+      // Sits at z-index 100 so it's above the Mapbox canvas for map widgets.
+      var studioBar = document.createElement('div');
+      studioBar.className = 'studio-widget-bar';
+
+      var dragHandle = document.createElement('div');
+      dragHandle.className = 'studio-drag-handle';
+      dragHandle.textContent = '\u2630';  // ☰
+      dragHandle.title = 'Drag to move';
+
+      var deleteHandle = document.createElement('div');
+      deleteHandle.className = 'studio-delete-handle';
+      deleteHandle.textContent = '\u2715'; // ✕
+      deleteHandle.title = 'Remove widget';
+      deleteHandle.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (confirm('Remove "' + (wc.title || wc.type) + '"?')) {
+          app.deleteWidget(wc.id);
+        }
+      });
+
+      studioBar.appendChild(dragHandle);
+      studioBar.appendChild(deleteHandle);
+      card.appendChild(studioBar);
+
+      enableDrag(card, dragHandle, wc);
 
       // Title
       const title = document.createElement('div');
@@ -254,7 +297,6 @@ window.StudioCanvas = (function () {
         }
       });
 
-      enableDrag(card, wc);
       page.appendChild(card);
     });
 
@@ -392,11 +434,16 @@ window.StudioCanvas = (function () {
       .catch(function () {}); // fail silently — canvas still shows widget shells
   }
 
-  function enableDrag(card, wc) {
-    card.setAttribute('draggable', 'true');
+  function enableDrag(card, dragHandle, wc) {
+    // Only the dedicated handle initiates a drag — prevents Mapbox canvas from
+    // blocking drag start when the user grabs inside a map widget.
+    dragHandle.setAttribute('draggable', 'true');
 
+    // dragstart bubbles, so listening on card catches it after handle fires it
     card.addEventListener('dragstart', function (e) {
-      // Suppress the browser's default ghost image
+      // Only respond to drags that originated from our handle
+      if (!e.target.classList.contains('studio-drag-handle')) return;
+
       var blank = document.createElement('div');
       document.body.appendChild(blank);
       e.dataTransfer.setDragImage(blank, 0, 0);
@@ -526,20 +573,20 @@ window.StudioCanvas = (function () {
     // they overlap the map overlay resize handles and trigger unwanted renderCanvas calls
     if (wc.type === 'usa-map-gl' || wc.type === 'usa-map') return;
 
-    // Right handle → resize colSpan
+    // Right handle → resize colSpan (fully inside card to avoid overflow:hidden clipping)
     const rightHandle = document.createElement('div');
     rightHandle.style.cssText = [
-      'position:absolute', 'right:-4px', 'top:20%', 'height:60%', 'width:8px',
-      'cursor:ew-resize', 'background:rgba(253,164,212,0.7)', 'border-radius:4px',
-      'opacity:0', 'transition:opacity 0.15s', 'z-index:10'
+      'position:absolute', 'right:0', 'top:15%', 'height:70%', 'width:12px',
+      'cursor:ew-resize', 'background:rgba(253,164,212,0.6)', 'border-radius:4px 0 0 4px',
+      'opacity:0', 'transition:opacity 0.15s', 'z-index:15'
     ].join(';');
 
-    // Bottom handle → resize rowSpan
+    // Bottom handle → resize rowSpan (fully inside card)
     const bottomHandle = document.createElement('div');
     bottomHandle.style.cssText = [
-      'position:absolute', 'bottom:-4px', 'left:20%', 'width:60%', 'height:8px',
-      'cursor:ns-resize', 'background:rgba(253,164,212,0.7)', 'border-radius:4px',
-      'opacity:0', 'transition:opacity 0.15s', 'z-index:10'
+      'position:absolute', 'bottom:0', 'left:15%', 'width:70%', 'height:12px',
+      'cursor:ns-resize', 'background:rgba(253,164,212,0.6)', 'border-radius:4px 4px 0 0',
+      'opacity:0', 'transition:opacity 0.15s', 'z-index:15'
     ].join(';');
 
     card.appendChild(rightHandle);

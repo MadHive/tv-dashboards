@@ -2784,3 +2784,52 @@ body.studio-body {
   outline: none;
   box-shadow: 0 0 0 2px rgba(253, 164, 212, 0.1);
 }
+
+/* ── Studio widget control bar (drag handle + delete) ── */
+.studio-widget-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgba(14,3,32,0.75) 0%, transparent 100%);
+  border-radius: 4px 4px 0 0;
+}
+.widget:hover .studio-widget-bar,
+.widget[style*="FDA4D4"] .studio-widget-bar {
+  opacity: 1;
+  pointer-events: auto;
+}
+.studio-drag-handle {
+  cursor: grab;
+  font-size: 15px;
+  color: rgba(253,164,212,0.85);
+  padding: 3px 7px;
+  user-select: none;
+  line-height: 1;
+  border-radius: 3px;
+  transition: background 0.1s;
+}
+.studio-drag-handle:hover { background: rgba(253,164,212,0.15); }
+.studio-drag-handle:active { cursor: grabbing; }
+.studio-delete-handle {
+  cursor: pointer;
+  font-size: 12px;
+  color: rgba(253,164,212,0.7);
+  padding: 3px 7px;
+  border-radius: 3px;
+  line-height: 1;
+  transition: background 0.1s, color 0.1s;
+}
+.studio-delete-handle:hover {
+  background: rgba(239,68,68,0.25);
+  color: #ef4444;
+}
