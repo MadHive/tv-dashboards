@@ -20,4 +20,14 @@ export const dataSourceModels = new Elysia({ name: 'datasource.models' })
       connected: t.Boolean(),
       message:   t.Optional(t.String()),
     }),
+    'datasource.health': t.Object({
+      success: t.Boolean(),
+      health: t.Record(t.String(), t.Object({
+        isConnected:       t.Boolean(),
+        lastError:         t.Optional(t.Nullable(t.String())),
+        isReady:           t.Boolean(),
+        lastSuccessAt:     t.Optional(t.Nullable(t.Number())),
+        sessionErrorCount: t.Optional(t.Nullable(t.Number())),
+      })),
+    }),
   });

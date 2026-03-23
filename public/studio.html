@@ -50,27 +50,6 @@
             <button id="new-dashboard-btn" class="sidebar-add-btn" title="New dashboard">+</button>
           </div>
           <div id="dashboard-list"></div>
-          <form id="new-dashboard-form" class="new-dashboard-form" style="display:none">
-            <input id="new-dash-name" type="text" placeholder="Dashboard name" required>
-            <input id="new-dash-subtitle" type="text" placeholder="Subtitle (optional)">
-            <div style="display:flex;gap:8px;">
-              <input id="new-dash-cols" type="number" placeholder="Cols" value="4" min="1" max="12" style="flex:1">
-              <input id="new-dash-rows" type="number" placeholder="Rows" value="2" min="1" max="12" style="flex:1">
-            </div>
-            <div class="icon-picker">
-              <span class="icon-opt selected" data-icon="bolt" title="Bolt">&#9889;</span>
-              <span class="icon-opt" data-icon="grid" title="Grid">&#9783;</span>
-              <span class="icon-opt" data-icon="server" title="Server">&#128421;</span>
-              <span class="icon-opt" data-icon="flow" title="Flow">&#10608;</span>
-              <span class="icon-opt" data-icon="data" title="Data">&#128202;</span>
-              <span class="icon-opt" data-icon="shield" title="Shield">&#128737;</span>
-              <span class="icon-opt" data-icon="map" title="Map">&#128506;</span>
-            </div>
-            <div style="display:flex;gap:6px;">
-              <button type="submit" class="studio-btn primary small" style="flex:1">Create</button>
-              <button type="button" id="cancel-new-dash-btn" class="studio-btn secondary small" style="flex:1">Cancel</button>
-            </div>
-          </form>
         </div>
 
         <!-- Themes Section (collapsible) -->
@@ -126,6 +105,11 @@
 
       <!-- Data Sources panel -->
       <div class="sidebar-panel" id="panel-datasources" style="display:none">
+        <div class="sidebar-section-header collapsible" id="health-section-header" data-target="health-section-content">
+          HEALTH
+          <span class="health-poll-dot" id="health-poll-dot" title="Auto-refreshing every 30s" style="display:none"></span>
+        </div>
+        <div id="health-section-content" style="display:none"></div>
         <div id="datasource-list" class="datasource-list"></div>
       </div>
 
@@ -269,6 +253,15 @@
                 <input id="prop-title" type="text">
               </label>
               <label>
+                Subtitle
+                <input id="prop-subtitle" type="text" placeholder="e.g. Last 24h &middot; GCP East">
+              </label>
+              <label>
+                Value Format
+                <input id="prop-format" type="text" placeholder="${value}K or %.2f ms">
+                <span class="props-field-hint">Tokens: ${value} ${unit}</span>
+              </label>
+              <label>
                 Type
                 <select id="prop-type">
                   <option value="big-number">Big Number</option>
@@ -287,12 +280,13 @@
                   <option value="line-chart">Line Chart</option>
                   <option value="sparkline">Sparkline</option>
                   <option value="donut-ring">Donut / Ring</option>
-                  <option value="sankey">Sankey</option>
-                  <option value="heatmap">Heatmap</option>
-                  <option value="treemap">Treemap</option>
-                  <option value="table">Table</option>
-                  <option value="multi-metric-card">Multi Metric</option>
-                  <option value="stacked-bar-chart">Stacked Bar</option>
+                  <option value="sankey">Sankey (beta)</option>
+                  <option value="heatmap">Heatmap (beta)</option>
+                  <option value="treemap">Treemap (beta)</option>
+                  <option value="table">Table (beta)</option>
+                  <option value="multi-metric-card">Multi Metric (beta)</option>
+                  <option value="stacked-bar-chart">Stacked Bar (beta)</option>
+                  <option value="globe">Globe (cobe)</option>
                 </select>
               </label>
             </div>
@@ -305,6 +299,10 @@
                 <span class="data-summary-source" id="data-summary-source"></span>
                 <span class="data-summary-sep">&#8250;</span>
                 <span class="data-summary-query" id="data-summary-query"></span>
+              </div>
+              <div id="type-mismatch-warning" class="type-mismatch-warning" style="display:none">
+                <span class="warning-icon">&#9888;</span>
+                <span class="warning-text">Data shape may not match this widget type. Verify or reassign the query.</span>
               </div>
               <label>
                 Source
@@ -326,13 +324,14 @@
               </label>
               <div id="query-id-hint" class="query-id-hint" style="display:none"></div>
               <button id="new-query-btn" class="studio-btn secondary small">+ New Query</button>
+              <button id="build-query-btn" class="studio-btn secondary small">Build Query</button>
             </div>
           </details>
 
           <details class="props-section" open>
             <summary>Position</summary>
             <div>
-              <p class="props-hint">Drag to reposition · resize handles for col/row spans · or edit below</p>
+              <p class="props-hint">Enter values or drag widget on canvas &mdash; both stay in sync</p>
               <div class="props-grid-2">
                 <label>Col <input id="prop-col"     type="number" min="1"></label>
                 <label>Row <input id="prop-row"     type="number" min="1"></label>
@@ -367,6 +366,24 @@
                   <input id="prop-crit" type="number">
                 </label>
               </div>
+            </div>
+          </details>
+
+          <details class="props-section" id="labels-section" style="display:none">
+            <summary>Labels</summary>
+            <div>
+              <label>
+                X Axis
+                <input id="prop-x-label" type="text" placeholder="e.g. Time">
+              </label>
+              <label>
+                Y Axis
+                <input id="prop-y-label" type="text" placeholder="e.g. Requests/s">
+              </label>
+              <label>
+                Legend Labels
+                <input id="prop-legend" type="text" placeholder="Comma-separated, e.g. East, West, Central">
+              </label>
             </div>
           </details>
 
@@ -492,6 +509,9 @@
         </div>
       </div>
 
+      <!-- Multi-select properties panel -->
+      <div id="multi-select-props" style="display:none;padding:16px"></div>
+
       <!-- Query editor panel (shown when a query is open) -->
       <div id="query-editor-panel" style="display:none" class="query-editor-panel">
         <div class="qe-header">
@@ -542,6 +562,7 @@
                 <option value="table">Table</option>
                 <option value="multi-metric-card">Multi Metric</option>
                 <option value="stacked-bar-chart">Stacked Bar</option>
+                  <option value="globe">Globe (cobe)</option>
               </select>
             </label>
             <span id="qe-run-status" class="qe-run-status"></span>
@@ -648,6 +669,82 @@
     </div>
   </div>
 
+  <!-- Dashboard Creation Wizard Modal -->
+  <div id="dashboard-wizard-modal" class="studio-modal" style="display:none">
+    <div class="studio-modal-content" style="width:520px;max-width:90vw">
+      <div class="studio-modal-header">
+        <h2>NEW DASHBOARD</h2>
+        <button class="modal-close" id="wizard-close">&#215;</button>
+      </div>
+      <div class="studio-modal-body">
+        <!-- Step indicator -->
+        <div class="wizard-step-indicator">
+          <div class="wizard-step active" data-step="1">
+            <div class="wizard-step-dot">1</div>
+            <span class="wizard-step-label">CONFIGURE</span>
+          </div>
+          <div class="wizard-connector"></div>
+          <div class="wizard-step" data-step="2">
+            <div class="wizard-step-dot">2</div>
+            <span class="wizard-step-label">ADD WIDGETS</span>
+          </div>
+        </div>
+        <!-- Step 1: Configure -->
+        <div id="wizard-step-1" class="wizard-step-content">
+          <input id="wiz-dash-name" type="text" placeholder="Dashboard name" required style="width:100%;box-sizing:border-box;margin-bottom:8px">
+          <input id="wiz-dash-subtitle" type="text" placeholder="Subtitle (optional)" style="width:100%;box-sizing:border-box;margin-bottom:8px">
+          <div class="icon-picker" style="margin-bottom:8px">
+            <span class="icon-opt wizard-icon-opt selected" data-icon="bolt" title="Bolt">&#9889;</span>
+            <span class="icon-opt wizard-icon-opt" data-icon="grid" title="Grid">&#9783;</span>
+            <span class="icon-opt wizard-icon-opt" data-icon="server" title="Server">&#128421;</span>
+            <span class="icon-opt wizard-icon-opt" data-icon="flow" title="Flow">&#10608;</span>
+            <span class="icon-opt wizard-icon-opt" data-icon="data" title="Data">&#128202;</span>
+            <span class="icon-opt wizard-icon-opt" data-icon="shield" title="Shield">&#128737;</span>
+            <span class="icon-opt wizard-icon-opt" data-icon="map" title="Map">&#128506;</span>
+          </div>
+          <div style="display:flex;gap:8px">
+            <input id="wiz-dash-cols" type="number" placeholder="Cols" value="4" min="1" max="12" style="flex:1">
+            <input id="wiz-dash-rows" type="number" placeholder="Rows" value="2" min="1" max="12" style="flex:1">
+          </div>
+        </div>
+        <!-- Step 2: Widget type palette -->
+        <div id="wizard-step-2" class="wizard-step-content" style="display:none">
+          <div class="wizard-type-grid">
+            <button type="button" class="wizard-type-tile" data-type="big-number">Big Number</button>
+            <button type="button" class="wizard-type-tile" data-type="stat-card">Stat Card</button>
+            <button type="button" class="wizard-type-tile" data-type="gauge">Gauge</button>
+            <button type="button" class="wizard-type-tile" data-type="gauge-row">Gauge Row</button>
+            <button type="button" class="wizard-type-tile" data-type="bar-chart">Bar Chart</button>
+            <button type="button" class="wizard-type-tile" data-type="progress-bar">Progress Bar</button>
+            <button type="button" class="wizard-type-tile" data-type="status-grid">Status Grid</button>
+            <button type="button" class="wizard-type-tile" data-type="alert-list">Alert List</button>
+            <button type="button" class="wizard-type-tile" data-type="service-heatmap">Service Heatmap</button>
+            <button type="button" class="wizard-type-tile" data-type="pipeline-flow">Pipeline Flow</button>
+            <button type="button" class="wizard-type-tile" data-type="usa-map">USA Map</button>
+            <button type="button" class="wizard-type-tile" data-type="usa-map-gl">USA Map GL</button>
+            <button type="button" class="wizard-type-tile" data-type="security-scorecard">Security Scorecard</button>
+            <button type="button" class="wizard-type-tile" data-type="line-chart">Line Chart</button>
+            <button type="button" class="wizard-type-tile" data-type="sparkline">Sparkline</button>
+            <button type="button" class="wizard-type-tile" data-type="donut-ring">Donut Ring</button>
+            <button type="button" class="wizard-type-tile" data-type="sankey">Sankey</button>
+            <button type="button" class="wizard-type-tile" data-type="heatmap">Heatmap</button>
+            <button type="button" class="wizard-type-tile" data-type="treemap">Treemap</button>
+            <button type="button" class="wizard-type-tile" data-type="table">Table</button>
+            <button type="button" class="wizard-type-tile" data-type="multi-metric-card">Multi Metric</button>
+            <button type="button" class="wizard-type-tile" data-type="stacked-bar-chart">Stacked Bar</button>
+            <button type="button" class="wizard-type-tile" data-type="globe">Globe</button>
+          </div>
+          <p class="wizard-skip-hint">Skip to create a blank dashboard</p>
+        </div>
+        <!-- Footer nav -->
+        <div class="wizard-footer">
+          <button id="wizard-back-btn" class="studio-btn secondary" style="display:none">Back</button>
+          <button id="wizard-next-btn" class="studio-btn primary">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- GCP Metric Browser Modal -->
   <div id="metric-browser-modal" class="studio-modal" style="display:none">
     <div class="studio-modal-content mb-modal-content">
@@ -659,6 +756,9 @@
         <input id="mb-search" type="text" placeholder="Search 9000+ metrics by name, type, or description…" autocomplete="off">
         <button id="mb-close" class="modal-close">&#215;</button>
       </div>
+
+      <!-- Source tab strip: GCP | BigQuery | VulnTrack -->
+      <div id="mb-source-tabs" class="mb-source-tabs"></div>
 
       <!-- Two-panel body -->
       <div class="mb-body">
@@ -710,12 +810,13 @@
   <script src="/js/us-states.js?v=11"></script>
   <script src="/js/charts.js?v=18"></script>
   <script src="/js/widgets.js?v=11"></script>
+  <script src="/js/cobe.min.js"></script>
   <script src="/js/mapbox-gl.min.js"></script>
   <script src="/js/mapbox-map.js?v=31"></script>
   <script src="/js/query-editor.js?v=1"></script>
-  <script src="/js/query-explorer.js?v=1"></script>
+  <script src="/js/query-explorer.js?v=2"></script>
   <script src="/js/studio-canvas.js?v=5"></script>
-  <script src="/js/studio.js?v=23"></script>
+  <script src="/js/studio.js?v=25"></script>
 
 <!-- Query Explorer Modal -->
 <div id="qx-modal" class="studio-modal" style="display:none">
@@ -859,6 +960,7 @@
               <option value="table">Table</option>
               <option value="multi-metric-card">Multi Metric</option>
               <option value="stacked-bar-chart">Stacked Bar</option>
+                  <option value="globe">Globe (cobe)</option>
             </select>
           </label>
         </div>

@@ -313,18 +313,19 @@
   top: 18px;
   left: 18px;
   z-index: 10;
+  width: 120px;        /* constrain default — matches _overlayNaturalWidths() clientLogo: 120 */
+  max-height: 200px;   /* safety cap for very tall logos */
   pointer-events: none;
   background: rgba(0, 0, 0, 0.55);
   border-radius: 6px;
-  padding: 4px 6px;   /* minimal padding so logo breathes but uses full space */
+  padding: 4px 6px;
   overflow: hidden;
 }
 .mgl-client-logo img {
-  width:       100%;
-  height:      100%;
-  object-fit:  var(--logo-fit, cover);  /* cover = fill box (crop if needed); contain = show full logo */
-  display:     block;
-  opacity:     0.92;
+  width:    100%;
+  height:   auto;   /* scale proportionally — prevents 3000×4000 PNGs from covering the screen */
+  display:  block;
+  opacity:  0.92;
 }
 
 /* ── Overlay resize handle ────────────────────────────────────────────────── */

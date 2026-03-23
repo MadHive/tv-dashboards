@@ -535,6 +535,7 @@ window.QueryExplorer = (function () {
         const input = document.getElementById('qx-metric-type');
         if (input) input.value = metricType;
         this.app.metricBrowser._explorerCallback = null;
+        this._runQuery();
       };
       this.app.metricBrowser.open({ _explorerMode: true });
     }

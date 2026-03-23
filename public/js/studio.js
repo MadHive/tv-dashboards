@@ -12,6 +12,8 @@
       this.modifiedConfig = null;
       this.activeDashIdx = -1;
       this.selectedWidgetId = null;
+      this.selectedWidgetIds = new Set();
+      this._widgetClipboard = [];
       this.isDirty = false;
       this.themes = [];
     }
@@ -30,10 +32,12 @@
       this.loadSettings();
       this.bindTopBar();
       this.bindSidebarActions();
+      this.bindDashboardWizard();
       this.bindCollapsibles();
       this.bindSettings();
       this.bindWidgetPaletteModal();
       this.bindSidebarTabs();
+      this.bindKeyboard();
 
       if (this.modifiedConfig && this.modifiedConfig.dashboards && this.modifiedConfig.dashboards.length > 0) {
         this.selectDashboard(0);
@@ -191,15 +195,25 @@
           this.renderSidebar();
         });
 
+        const dupBtn = document.createElement('button');
+        dupBtn.className = 'nav-duplicate';
+        dupBtn.textContent = '\u29C9';
+        dupBtn.title = 'Duplicate dashboard';
+        dupBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.duplicateDashboard(dash.id, dash.name);
+        });
+
         item.appendChild(handle);
         item.appendChild(thumb);
         item.appendChild(name);
         item.appendChild(count);
+        item.appendChild(dupBtn);
         item.appendChild(toggle);
         item.appendChild(delBtn);
 
         item.addEventListener('click', (e) => {
-          if (e.target === delBtn || e.target === handle) return;
+          if (e.target === delBtn || e.target === dupBtn || e.target === handle) return;
           this.selectDashboard(i);
         });
 
@@ -325,6 +339,7 @@
     selectDashboard(idx) {
       this.activeDashIdx = idx;
       this.selectedWidgetId = null;
+      this.selectedWidgetIds = new Set();
 
       // Update active class
       const items = document.querySelectorAll('.dashboard-nav-item');
@@ -346,7 +361,6 @@
 
     async deleteDashboard(idx) {
       const dash = this.modifiedConfig.dashboards[idx];
-      if (!confirm('Delete "' + dash.name + '"?')) return;
 
       try {
         await fetch('/api/dashboards/' + dash.id, { method: 'DELETE' });
@@ -397,8 +411,10 @@
       const widgetProps = document.getElementById('widget-props');
       const qe  = document.getElementById('query-editor-panel');
       const dse = document.getElementById('datasource-editor-panel');
+      const multiProps = document.getElementById('multi-select-props');
       if (qe)  qe.style.display  = 'none';
       if (dse) dse.style.display = 'none';
+      if (multiProps) multiProps.style.display = 'none';
 
       if (placeholder) placeholder.style.display = 'none';
       if (content) content.style.display = 'flex';
@@ -699,6 +715,23 @@
        Widget Properties Panel
     ───────────────────────────────────────────── */
 
+    updateSectionVisibility(type) {
+      const displaySection = document.getElementById('display-section');
+      if (displaySection) {
+        const showDisplayTypes = ['gauge', 'gauge-row', 'progress-bar', 'big-number', 'stat-card', 'line-chart', 'bar-chart'];
+        displaySection.style.display = showDisplayTypes.includes(type) ? '' : 'none';
+      }
+      const mapSection = document.getElementById('map-config-section');
+      if (mapSection) mapSection.style.display = type === 'usa-map' ? '' : 'none';
+      const mglSection = document.getElementById('mgl-config-section');
+      if (mglSection) mglSection.style.display = type === 'usa-map-gl' ? '' : 'none';
+      const labelsSection = document.getElementById('labels-section');
+      if (labelsSection) {
+        const showLabelsTypes = ['bar-chart', 'line-chart', 'stacked-bar-chart', 'donut-ring', 'sankey', 'heatmap', 'treemap', 'pipeline-flow', 'multi-metric-card', 'status-grid', 'table'];
+        labelsSection.style.display = showLabelsTypes.includes(type) ? '' : 'none';
+      }
+    }
+
     showWidgetProps(widgetId) {
       this.selectedWidgetId = widgetId;
 
@@ -715,8 +748,10 @@
       // Hide all alternate right-panel views before showing widget props
       const qe  = document.getElementById('query-editor-panel');
       const dse = document.getElementById('datasource-editor-panel');
+      const multiProps = document.getElementById('multi-select-props');
       if (qe)  qe.style.display  = 'none';
       if (dse) dse.style.display = 'none';
+      if (multiProps) multiProps.style.display = 'none';
 
       if (placeholder) placeholder.style.display = 'none';
       if (content) content.style.display = 'flex';
@@ -730,6 +765,8 @@
       };
 
       set('prop-title', wc.title || '');
+      set('prop-subtitle', wc.subtitle || '');
+      set('prop-format', wc.format || '');
       set('prop-type', wc.type || 'big-number');
       set('prop-source', wc.source || 'gcp');
       set('prop-col', wc.position.col);
@@ -741,6 +778,9 @@
       set('prop-max', wc.max !== undefined ? wc.max : '');
       set('prop-warn', wc.thresholds && wc.thresholds.warning !== undefined ? wc.thresholds.warning : '');
       set('prop-crit', wc.thresholds && wc.thresholds.critical !== undefined ? wc.thresholds.critical : '');
+      set('prop-x-label', wc.xLabel || '');
+      set('prop-y-label', wc.yLabel || '');
+      set('prop-legend', wc.legendLabels || '');
       if (wc.type === 'usa-map') {
         const mc = wc.mapConfig || {};
         set('prop-map-timewindow',     mc.timeWindow     !== undefined ? mc.timeWindow     : 7);
@@ -749,19 +789,11 @@
         set('prop-map-zoom',           mc.zoom           || 'on');
       }
 
-      // Show/hide Display section based on type
-      const displaySection = document.getElementById('display-section');
-      if (displaySection) {
-        const showDisplayTypes = ['gauge', 'gauge-row', 'progress-bar', 'big-number', 'stat-card', 'line-chart', 'bar-chart'];
-        displaySection.style.display = showDisplayTypes.includes(wc.type) ? '' : 'none';
-      }
-      const mapSection = document.getElementById('map-config-section');
-      if (mapSection) {
-        mapSection.style.display = wc.type === 'usa-map' ? '' : 'none';
-      }
+      // Show/hide sections based on widget type
+      this.updateSectionVisibility(wc.type);
+
       const mglSection = document.getElementById('mgl-config-section');
       if (mglSection) {
-        mglSection.style.display = wc.type === 'usa-map-gl' ? '' : 'none';
         if (wc.type === 'usa-map-gl') {
           const mgl = wc.mglConfig || {};
           set('prop-mgl-scheme',      mgl.colorScheme    || 'brand');
@@ -802,7 +834,137 @@
       const queryEl = document.getElementById('prop-query');
       if (queryEl) queryEl.value = wc.queryId || '';
       this.updateDataSummary(wc.source || 'gcp', wc.queryId || '');
+      // Always hide mismatch warning when selecting a widget (fresh state)
+      const warningEl = document.getElementById('type-mismatch-warning');
+      if (warningEl) warningEl.style.display = 'none';
       this.bindWidgetPropListeners(wc);
+    }
+
+    showMultiSelectProps() {
+      const placeholder = document.getElementById('properties-placeholder');
+      const content = document.getElementById('properties-content');
+      const dashProps = document.getElementById('dashboard-props');
+      const widgetProps = document.getElementById('widget-props');
+      const qe  = document.getElementById('query-editor-panel');
+      const dse = document.getElementById('datasource-editor-panel');
+      const multiProps = document.getElementById('multi-select-props');
+      if (qe)  qe.style.display  = 'none';
+      if (dse) dse.style.display = 'none';
+      if (placeholder) placeholder.style.display = 'none';
+      if (content) content.style.display = 'flex';
+      if (dashProps) dashProps.style.display = 'none';
+      if (widgetProps) widgetProps.style.display = 'none';
+      if (multiProps) { multiProps.style.display = 'block'; multiProps.textContent = ''; }
+
+      const count = this.selectedWidgetIds.size;
+
+      // Build multi-select panel using DOM, no innerHTML
+      const container = document.createElement('div');
+      container.style.padding = '16px';
+
+      const header = document.createElement('h3');
+      header.textContent = count + ' WIDGETS SELECTED';
+      header.style.cssText = [
+        'font-size:13px',
+        'font-family:var(--font-display)',
+        'font-weight:600',
+        'letter-spacing:3px',
+        'text-transform:uppercase',
+        'color:var(--t1)',
+        'margin:0 0 4px 0',
+      ].join(';');
+
+      const hint = document.createElement('p');
+      hint.textContent = 'Ctrl+C to copy';
+      hint.style.cssText = 'font-size:11px;font-family:var(--font-body);color:var(--t3);margin:0';
+
+      container.appendChild(header);
+      container.appendChild(hint);
+
+      // Get selected widget configs
+      const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
+      const selectedWidgets = dash
+        ? dash.widgets.filter(w => this.selectedWidgetIds.has(w.id))
+        : [];
+
+      // Source dropdown
+      const sourceLabel = document.createElement('div');
+      sourceLabel.textContent = 'SOURCE';
+      sourceLabel.style.cssText = 'font-size:11px;font-family:var(--font-display);font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin:16px 0 4px 0';
+
+      const sourceSelect = document.createElement('select');
+      sourceSelect.style.cssText = 'width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:3px;color:var(--t1);font-size:12px;padding:4px 6px';
+      ['gcp', 'bigquery', 'computed', 'vulntrack', 'mock'].forEach(function (s) {
+        var opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        sourceSelect.appendChild(opt);
+      });
+
+      // Pre-select if all share same source
+      var sourcesSet = new Set(selectedWidgets.map(w => w.source || 'gcp'));
+      if (sourcesSet.size === 1) sourceSelect.value = Array.from(sourcesSet)[0];
+
+      sourceSelect.onchange = () => {
+        selectedWidgets.forEach(w => { w.source = sourceSelect.value; });
+        this.markDirty();
+      };
+
+      // Type dropdown
+      const typeLabel = document.createElement('div');
+      typeLabel.textContent = 'TYPE';
+      typeLabel.style.cssText = 'font-size:11px;font-family:var(--font-display);font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--t3);margin:12px 0 4px 0';
+
+      const typeSelect = document.createElement('select');
+      typeSelect.style.cssText = 'width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:3px;color:var(--t1);font-size:12px;padding:4px 6px';
+      [
+        'big-number','stat-card','gauge','gauge-row','bar-chart','line-chart','stacked-bar-chart',
+        'progress-bar','status-grid','alert-list','service-heatmap','pipeline-flow',
+        'usa-map','usa-map-gl','security-scorecard','donut-ring','sankey','heatmap',
+        'treemap','table','multi-metric-card','sparkline-grid','text-block',
+      ].forEach(function (t) {
+        var opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        typeSelect.appendChild(opt);
+      });
+
+      // Pre-select if all share same type
+      var typesSet = new Set(selectedWidgets.map(w => w.type || 'big-number'));
+      if (typesSet.size === 1) typeSelect.value = Array.from(typesSet)[0];
+
+      typeSelect.onchange = () => {
+        selectedWidgets.forEach(w => { w.type = typeSelect.value; });
+        this.markDirty();
+        this.renderCanvas();
+      };
+
+      container.appendChild(sourceLabel);
+      container.appendChild(sourceSelect);
+      container.appendChild(typeLabel);
+      container.appendChild(typeSelect);
+
+      // Populate the dedicated multi-select panel (preserves widget-props/dashboard-props DOM)
+      if (multiProps) multiProps.appendChild(container);
+    }
+
+    _updateClipboardIndicator() {
+      const footer = document.querySelector('.studio-canvas-footer');
+      if (!footer) return;
+
+      const existing = document.getElementById('clipboard-indicator');
+      const n = this._widgetClipboard ? this._widgetClipboard.length : 0;
+
+      if (n === 0) {
+        if (existing) existing.parentNode.removeChild(existing);
+        return;
+      }
+
+      var indicator = existing || document.createElement('span');
+      indicator.id = 'clipboard-indicator';
+      indicator.className = 'clipboard-indicator';
+      indicator.textContent = n + ' widget' + (n !== 1 ? 's' : '') + ' copied \u2014 navigate to target dashboard, then Ctrl+V to paste';
+      if (!existing) footer.insertBefore(indicator, footer.firstChild);
     }
 
     bindWidgetPropListeners(wc) {
@@ -819,23 +981,135 @@
       }
 
       bind('prop-title', (v) => { wc.title = v; });
+      bind('prop-subtitle', (v) => { wc.subtitle = v; });
+      bind('prop-format', (v) => { wc.format = v; });
+      bind('prop-x-label', (v) => { wc.xLabel = v; });
+      bind('prop-y-label', (v) => { wc.yLabel = v; });
+      bind('prop-legend', (v) => { wc.legendLabels = v; });
       bind('prop-type', (v) => {
+        const oldType = wc.type;
         wc.type = v;
-        // Update display section visibility on type change
-        const displaySection = document.getElementById('display-section');
-        if (displaySection) {
-          const showDisplayTypes = ['gauge', 'gauge-row', 'progress-bar', 'big-number', 'stat-card', 'line-chart', 'bar-chart'];
-          displaySection.style.display = showDisplayTypes.includes(v) ? '' : 'none';
+
+        // --- Config preservation/clearing ---
+        // Clear map config when leaving usa-map
+        if (oldType === 'usa-map' && v !== 'usa-map') {
+          delete wc.mapConfig;
         }
-        const mapSec = document.getElementById('map-config-section');
-        if (mapSec) mapSec.style.display = v === 'usa-map' ? '' : 'none';
-        const mglSec = document.getElementById('mgl-config-section');
-        if (mglSec) mglSec.style.display = v === 'usa-map-gl' ? '' : 'none';
+        // Clear mgl config when leaving usa-map-gl
+        if (oldType === 'usa-map-gl' && v !== 'usa-map-gl') {
+          delete wc.mglConfig;
+        }
+        // Clear axis/legend labels when switching to a type that doesn't use them
+        const labelsTypes = ['bar-chart', 'line-chart', 'stacked-bar-chart', 'donut-ring', 'sankey', 'heatmap', 'treemap', 'pipeline-flow', 'multi-metric-card', 'status-grid', 'table'];
+        if (!labelsTypes.includes(v)) {
+          delete wc.xLabel;
+          delete wc.yLabel;
+          delete wc.legendLabels;
+          const xl = document.getElementById('prop-x-label');
+          const yl = document.getElementById('prop-y-label');
+          const lg = document.getElementById('prop-legend');
+          if (xl) xl.value = '';
+          if (yl) yl.value = '';
+          if (lg) lg.value = '';
+        }
+        // Thresholds, unit, min, max, format — preserved across all types (no clearing)
+
+        // --- Auto-match query / mismatch warning ---
+        const warningEl = document.getElementById('type-mismatch-warning');
+        if (wc.queryId && self.queries) {
+          const sourceQueries = self.queries[wc.source || 'gcp'] || [];
+          const found = sourceQueries.find(q => q.id === wc.queryId);
+          if (!found && warningEl) {
+            // Orphan query — can't verify compatibility
+            warningEl.style.display = '';
+          } else if (warningEl) {
+            warningEl.style.display = 'none';
+          }
+        } else if (warningEl) {
+          warningEl.style.display = 'none';
+        }
+
+        self.updateSectionVisibility(v);
+        self.updateDataSummary(wc.source || 'gcp', wc.queryId || '');
       });
-      bind('prop-col', (v) => { wc.position.col = parseInt(v) || wc.position.col; });
-      bind('prop-row', (v) => { wc.position.row = parseInt(v) || wc.position.row; });
-      bind('prop-colspan', (v) => { wc.position.colSpan = Math.max(1, parseInt(v) || 1); });
-      bind('prop-rowspan', (v) => { wc.position.rowSpan = Math.max(1, parseInt(v) || 1); });
+      bind('prop-col', (v) => {
+        const desired = parseInt(v) || wc.position.col;
+        const dash = self.modifiedConfig.dashboards[self.activeDashIdx];
+        if (dash && window.StudioCanvas && window.StudioCanvas.snapToNearest) {
+          const snapped = window.StudioCanvas.snapToNearest(
+            dash, desired, wc.position.row,
+            wc.position.colSpan || 1, wc.position.rowSpan || 1, wc.id
+          );
+          wc.position.col = snapped.col;
+          wc.position.row = snapped.row;
+          const colEl = document.getElementById('prop-col');
+          if (colEl) colEl.value = wc.position.col;
+          const rowEl = document.getElementById('prop-row');
+          if (rowEl) rowEl.value = wc.position.row;
+        } else {
+          wc.position.col = desired;
+        }
+      });
+      bind('prop-row', (v) => {
+        const desired = parseInt(v) || wc.position.row;
+        const dash = self.modifiedConfig.dashboards[self.activeDashIdx];
+        if (dash && window.StudioCanvas && window.StudioCanvas.snapToNearest) {
+          const snapped = window.StudioCanvas.snapToNearest(
+            dash, wc.position.col, desired,
+            wc.position.colSpan || 1, wc.position.rowSpan || 1, wc.id
+          );
+          wc.position.col = snapped.col;
+          wc.position.row = snapped.row;
+          const colEl = document.getElementById('prop-col');
+          if (colEl) colEl.value = wc.position.col;
+          const rowEl = document.getElementById('prop-row');
+          if (rowEl) rowEl.value = wc.position.row;
+        } else {
+          wc.position.row = desired;
+        }
+      });
+      bind('prop-colspan', (v) => {
+        const desired = Math.max(1, parseInt(v) || 1);
+        const dash = self.modifiedConfig.dashboards[self.activeDashIdx];
+        if (dash && window.StudioCanvas && window.StudioCanvas.snapToNearest) {
+          const snapped = window.StudioCanvas.snapToNearest(
+            dash, wc.position.col, wc.position.row,
+            desired, wc.position.rowSpan || 1, wc.id
+          );
+          wc.position.colSpan = desired;
+          wc.position.col = snapped.col;
+          wc.position.row = snapped.row;
+          const colEl = document.getElementById('prop-col');
+          if (colEl) colEl.value = wc.position.col;
+          const rowEl = document.getElementById('prop-row');
+          if (rowEl) rowEl.value = wc.position.row;
+          const csEl = document.getElementById('prop-colspan');
+          if (csEl) csEl.value = wc.position.colSpan;
+        } else {
+          wc.position.colSpan = desired;
+        }
+      });
+      bind('prop-rowspan', (v) => {
+        const desired = Math.max(1, parseInt(v) || 1);
+        const dash = self.modifiedConfig.dashboards[self.activeDashIdx];
+        if (dash && window.StudioCanvas && window.StudioCanvas.snapToNearest) {
+          const snapped = window.StudioCanvas.snapToNearest(
+            dash, wc.position.col, wc.position.row,
+            wc.position.colSpan || 1, desired, wc.id
+          );
+          wc.position.rowSpan = desired;
+          wc.position.col = snapped.col;
+          wc.position.row = snapped.row;
+          const colEl = document.getElementById('prop-col');
+          if (colEl) colEl.value = wc.position.col;
+          const rowEl = document.getElementById('prop-row');
+          if (rowEl) rowEl.value = wc.position.row;
+          const rsEl = document.getElementById('prop-rowspan');
+          if (rsEl) rsEl.value = wc.position.rowSpan;
+        } else {
+          wc.position.rowSpan = desired;
+        }
+      });
       bind('prop-unit', (v) => { wc.unit = v; });
       bind('prop-min', (v) => { wc.min = v !== '' ? parseFloat(v) : undefined; });
       bind('prop-max', (v) => { wc.max = v !== '' ? parseFloat(v) : undefined; });
@@ -937,11 +1211,35 @@
         };
       }
 
-      // New query button
+      // New query button — opens QueryExplorer modal for freestanding query creation
       const newQueryBtn = document.getElementById('new-query-btn');
       if (newQueryBtn) {
         newQueryBtn.onclick = () => {
-          if (window.queryEditor) window.queryEditor.open();
+          if (this.queryExplorer) {
+            this.queryExplorer.open();
+          } else {
+            this.showToast('Query explorer not available', 'error');
+          }
+        };
+      }
+
+      // Build Query button — opens query editor pre-populated from this widget
+      const buildQueryBtn = document.getElementById('build-query-btn');
+      if (buildQueryBtn) {
+        buildQueryBtn.onclick = () => {
+          const widgetId = this.selectedWidgetId;
+          if (!widgetId) return;
+          const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
+          const wc = dash && dash.widgets.find(w => w.id === widgetId);
+          if (!wc) return;
+          this._assignTargetWidgetId = widgetId;
+          const query = {
+            id: wc.queryId || '',
+            name: wc.title || wc.queryId || 'New Query',
+            metricType: wc.queryId || ''
+          };
+          const source = wc.source || 'gcp';
+          this.openQueryEditor(query, source);
         };
       }
 
@@ -1063,7 +1361,6 @@
     ───────────────────────────────────────────── */
 
     deleteSelectedWidget() {
-      if (!confirm('Delete this widget?')) return;
       const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
       if (!dash) return;
       dash.widgets = dash.widgets.filter((w) => w.id !== this.selectedWidgetId);
@@ -1097,96 +1394,441 @@
 
     bindSidebarActions() {
       const newDashBtn = document.getElementById('new-dashboard-btn');
-      const newDashForm = document.getElementById('new-dashboard-form');
-      const cancelBtn = document.getElementById('cancel-new-dash-btn');
       const addWidgetBtn = document.getElementById('add-widget-btn');
 
-      if (newDashBtn && newDashForm) {
+      // Open wizard on + button click
+      if (newDashBtn) {
         newDashBtn.addEventListener('click', () => {
-          newDashForm.style.display = newDashForm.style.display === 'none' ? 'block' : 'none';
-        });
-      }
-
-      if (cancelBtn && newDashForm) {
-        cancelBtn.addEventListener('click', () => {
-          newDashForm.style.display = 'none';
-        });
-      }
-
-      // Icon picker
-      const iconOpts = document.querySelectorAll('.icon-opt');
-      iconOpts.forEach((opt) => {
-        opt.addEventListener('click', () => {
-          iconOpts.forEach((o) => o.classList.remove('selected'));
-          opt.classList.add('selected');
-        });
-      });
-
-      // New dashboard form submit
-      if (newDashForm) {
-        newDashForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-
-          const nameEl = document.getElementById('new-dash-name');
-          const subtitleEl = document.getElementById('new-dash-subtitle');
-          const colsEl = document.getElementById('new-dash-cols');
-          const rowsEl = document.getElementById('new-dash-rows');
-          const selectedIcon = document.querySelector('.icon-opt.selected');
-
-          const name = nameEl ? nameEl.value.trim() : '';
-          const subtitle = subtitleEl ? subtitleEl.value.trim() : '';
-          const cols = parseInt(colsEl ? colsEl.value : '4') || 4;
-          const rows = parseInt(rowsEl ? rowsEl.value : '2') || 2;
-          const icon = selectedIcon ? selectedIcon.getAttribute('data-icon') : 'bolt';
-
-          const id = name
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, '-')
-            .replace(/^-|-$/g, '');
-
-          const newDash = {
-            id,
-            name,
-            subtitle,
-            icon,
-            grid: { columns: cols, rows: rows, gap: 14 },
-            widgets: [],
-          };
-
-          try {
-            const res = await fetch('/api/dashboards', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(newDash),
-            });
-            if (!res.ok) {
-              const err = await res.json().catch(() => ({ message: res.statusText }));
-              throw new Error(err.message || res.statusText);
-            }
-
-            await this.loadConfig();
-            this.renderSidebar();
-            newDashForm.style.display = 'none';
-            newDashForm.reset();
-
-            // Restore icon-opt selection after reset
-            const firstIcon = document.querySelector('.icon-opt');
-            if (firstIcon) {
-              document.querySelectorAll('.icon-opt').forEach((o) => o.classList.remove('selected'));
-              firstIcon.classList.add('selected');
-            }
-
-            const newIdx = this.modifiedConfig.dashboards.findIndex((d) => d.id === id);
-            if (newIdx >= 0) this.selectDashboard(newIdx);
-          } catch (err) {
-            this.showToast('Error: ' + err.message, 'error');
-          }
+          this.openDashboardWizard();
         });
       }
 
       // Add widget button
       if (addWidgetBtn) {
         addWidgetBtn.addEventListener('click', () => this.openWidgetPalette());
+      }
+    }
+
+    /* ─────────────────────────────────────────────
+       Keyboard Shortcuts (Ctrl+C / Ctrl+V)
+    ───────────────────────────────────────────── */
+
+    bindKeyboard() {
+      document.addEventListener('keydown', (e) => {
+        // Do not intercept when typing in inputs
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+
+        if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+          e.preventDefault();
+          this.handleCtrlC();
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+          e.preventDefault();
+          this.handleCtrlV();
+        }
+        if ((e.key === 'Delete' || e.key === 'Backspace') && this.selectedWidgetId) {
+          e.preventDefault();
+          this.deleteSelectedWidget();
+        }
+      });
+    }
+
+    handleCtrlC() {
+      if (!this.selectedWidgetIds || this.selectedWidgetIds.size === 0) return;
+      const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
+      if (!dash) return;
+      this._widgetClipboard = [...this.selectedWidgetIds]
+        .map(id => dash.widgets.find(w => w.id === id))
+        .filter(Boolean)
+        .map(w => JSON.parse(JSON.stringify(w)));
+      this._updateClipboardIndicator();
+    }
+
+    handleCtrlV() {
+      if (!this._widgetClipboard || this._widgetClipboard.length === 0) return;
+      const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
+      if (!dash) return;
+      if (!dash.widgets) dash.widgets = [];
+
+      const pastedIds = [];
+      let placementFailed = 0;
+
+      this._widgetClipboard.forEach(w => {
+        const clone = JSON.parse(JSON.stringify(w));
+        clone.id = clone.type + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+
+        // Try original position first, then snap to nearest collision-free slot
+        const snapped = window.StudioCanvas && window.StudioCanvas.snapToNearest
+          ? window.StudioCanvas.snapToNearest(
+              dash,
+              clone.position.col,
+              clone.position.row,
+              clone.position.colSpan || 1,
+              clone.position.rowSpan || 1,
+              null
+            )
+          : { col: clone.position.col, row: clone.position.row };
+
+        // Check if there is still a collision after snapping
+        if (window.StudioCanvas && window.StudioCanvas.hasCollision &&
+            window.StudioCanvas.hasCollision(dash, snapped.col, snapped.row, clone.position.colSpan || 1, clone.position.rowSpan || 1, clone.id)) {
+          placementFailed++;
+        }
+        clone.position.col = snapped.col;
+        clone.position.row = snapped.row;
+        dash.widgets.push(clone);
+        pastedIds.push(clone.id);
+      });
+
+      // Clear clipboard (one-shot paste)
+      this._widgetClipboard = [];
+
+      // Select pasted widgets
+      this.selectedWidgetIds = new Set(pastedIds);
+      this.selectedWidgetId = pastedIds.length === 1 ? pastedIds[0] : null;
+
+      this.markDirty();
+      this.renderCanvas();
+      this._updateClipboardIndicator();
+
+      if (placementFailed > 0 && placementFailed === pastedIds.length) {
+        this.showToast('Paste failed -- dashboard may be full', 'error');
+      } else {
+        this.showToast(pastedIds.length + ' widget(s) pasted', 'success');
+      }
+
+      if (pastedIds.length >= 2) {
+        this.showMultiSelectProps();
+      } else if (pastedIds.length === 1) {
+        this.showWidgetProps(pastedIds[0]);
+      }
+    }
+
+    /* ─────────────────────────────────────────────
+       Dashboard Creation Wizard
+    ───────────────────────────────────────────── */
+
+    openDashboardWizard() {
+      const modal = document.getElementById('dashboard-wizard-modal');
+      if (!modal) return;
+
+      // Show modal
+      modal.style.display = 'flex';
+
+      // Reset to step 1
+      const step1 = document.getElementById('wizard-step-1');
+      const step2 = document.getElementById('wizard-step-2');
+      if (step1) step1.style.display = '';
+      if (step2) step2.style.display = 'none';
+
+      // Reset step indicator
+      const stepEls = modal.querySelectorAll('.wizard-step');
+      stepEls.forEach((s, idx) => {
+        s.classList.remove('active', 'completed');
+        if (idx === 0) s.classList.add('active');
+      });
+
+      // Reset form fields
+      const nameEl = document.getElementById('wiz-dash-name');
+      const subtitleEl = document.getElementById('wiz-dash-subtitle');
+      const colsEl = document.getElementById('wiz-dash-cols');
+      const rowsEl = document.getElementById('wiz-dash-rows');
+      if (nameEl) nameEl.value = '';
+      if (subtitleEl) subtitleEl.value = '';
+      if (colsEl) colsEl.value = '4';
+      if (rowsEl) rowsEl.value = '2';
+
+      // Reset icon selection — first icon selected
+      const wizIconOpts = modal.querySelectorAll('.wizard-icon-opt');
+      wizIconOpts.forEach((o, idx) => {
+        o.classList.toggle('selected', idx === 0);
+      });
+
+      // Clear widget tile selections
+      modal.querySelectorAll('.wizard-type-tile').forEach((t) => t.classList.remove('selected'));
+
+      // Reset footer nav
+      const nextBtn = document.getElementById('wizard-next-btn');
+      const backBtn = document.getElementById('wizard-back-btn');
+      if (nextBtn) nextBtn.textContent = 'Next';
+      if (backBtn) backBtn.style.display = 'none';
+
+      // Focus name input
+      if (nameEl) nameEl.focus();
+
+      // Store which step we're on
+      modal._wizardStep = 1;
+    }
+
+    closeWizard() {
+      const modal = document.getElementById('dashboard-wizard-modal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    wizardNext() {
+      const modal = document.getElementById('dashboard-wizard-modal');
+      if (!modal) return;
+      const step = modal._wizardStep || 1;
+
+      if (step === 1) {
+        // Validate name
+        const nameEl = document.getElementById('wiz-dash-name');
+        const name = nameEl ? nameEl.value.trim() : '';
+        if (!name) {
+          // Flash border
+          if (nameEl) {
+            nameEl.style.borderColor = 'var(--red)';
+            setTimeout(() => { nameEl.style.borderColor = ''; }, 600);
+          }
+          return;
+        }
+
+        // Advance to step 2
+        const step1El = document.getElementById('wizard-step-1');
+        const step2El = document.getElementById('wizard-step-2');
+        if (step1El) step1El.style.display = 'none';
+        if (step2El) step2El.style.display = '';
+
+        // Update step indicator
+        const stepEls = modal.querySelectorAll('.wizard-step');
+        stepEls.forEach((s, idx) => {
+          s.classList.remove('active', 'completed');
+          if (idx === 0) s.classList.add('completed');
+          if (idx === 1) s.classList.add('active');
+        });
+
+        // Update footer
+        const nextBtn = document.getElementById('wizard-next-btn');
+        const backBtn = document.getElementById('wizard-back-btn');
+        if (nextBtn) nextBtn.textContent = 'Create Dashboard';
+        if (backBtn) backBtn.style.display = '';
+
+        modal._wizardStep = 2;
+      } else {
+        // Step 2 — create the dashboard
+        this.wizardCreate();
+      }
+    }
+
+    wizardBack() {
+      const modal = document.getElementById('dashboard-wizard-modal');
+      if (!modal) return;
+
+      const step1El = document.getElementById('wizard-step-1');
+      const step2El = document.getElementById('wizard-step-2');
+      if (step1El) step1El.style.display = '';
+      if (step2El) step2El.style.display = 'none';
+
+      // Update step indicator
+      const stepEls = modal.querySelectorAll('.wizard-step');
+      stepEls.forEach((s, idx) => {
+        s.classList.remove('active', 'completed');
+        if (idx === 0) s.classList.add('active');
+      });
+
+      // Update footer
+      const nextBtn = document.getElementById('wizard-next-btn');
+      const backBtn = document.getElementById('wizard-back-btn');
+      if (nextBtn) nextBtn.textContent = 'Next';
+      if (backBtn) backBtn.style.display = 'none';
+
+      modal._wizardStep = 1;
+    }
+
+    async wizardCreate() {
+      const modal = document.getElementById('dashboard-wizard-modal');
+      if (!modal) return;
+
+      const nameEl = document.getElementById('wiz-dash-name');
+      const subtitleEl = document.getElementById('wiz-dash-subtitle');
+      const colsEl = document.getElementById('wiz-dash-cols');
+      const rowsEl = document.getElementById('wiz-dash-rows');
+      const selectedIconEl = modal.querySelector('.wizard-icon-opt.selected');
+
+      const name = nameEl ? nameEl.value.trim() : '';
+      const subtitle = subtitleEl ? subtitleEl.value.trim() : '';
+      const cols = parseInt(colsEl ? colsEl.value : '4') || 4;
+      const rows = parseInt(rowsEl ? rowsEl.value : '2') || 2;
+      const icon = selectedIconEl ? selectedIconEl.getAttribute('data-icon') : 'bolt';
+
+      // Gather selected widget types
+      const selectedTiles = modal.querySelectorAll('.wizard-type-tile.selected');
+      const widgets = [];
+      let col = 1;
+      let row = 1;
+      selectedTiles.forEach((tile) => {
+        const type = tile.getAttribute('data-type');
+        const id = type + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+        widgets.push({
+          id,
+          type,
+          title: '',
+          position: { col, row, colSpan: 1, rowSpan: 1 },
+        });
+        col++;
+        if (col > cols) {
+          col = 1;
+          row++;
+        }
+      });
+
+      const dashId = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
+
+      const newDash = {
+        id: dashId,
+        name,
+        subtitle,
+        icon,
+        grid: { columns: cols, rows, gap: 14 },
+        widgets,
+      };
+
+      try {
+        const res = await fetch('/api/dashboards', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newDash),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ message: res.statusText }));
+          throw new Error(err.message || res.statusText);
+        }
+        const created = await res.json();
+
+        await this.loadConfig();
+        this.renderSidebar();
+
+        const newIdx = this.modifiedConfig.dashboards.findIndex(
+          (d) => d.id === (created.dashboard ? created.dashboard.id : dashId)
+        );
+        if (newIdx >= 0) this.selectDashboard(newIdx);
+
+        this.closeWizard();
+        this.showToast('Dashboard created', 'success');
+      } catch (err) {
+        this.showToast('Failed to create dashboard: ' + err.message, 'error');
+      }
+    }
+
+    bindDashboardWizard() {
+      const modal = document.getElementById('dashboard-wizard-modal');
+      if (!modal) return;
+
+      // Close button
+      const closeBtn = document.getElementById('wizard-close');
+      if (closeBtn) closeBtn.addEventListener('click', () => this.closeWizard());
+
+      // Backdrop click
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) this.closeWizard();
+      });
+
+      // Next/create button
+      const nextBtn = document.getElementById('wizard-next-btn');
+      if (nextBtn) nextBtn.addEventListener('click', () => this.wizardNext());
+
+      // Back button
+      const backBtn = document.getElementById('wizard-back-btn');
+      if (backBtn) backBtn.addEventListener('click', () => this.wizardBack());
+
+      // Wizard icon picker
+      modal.addEventListener('click', (e) => {
+        const iconOpt = e.target.closest('.wizard-icon-opt');
+        if (iconOpt) {
+          modal.querySelectorAll('.wizard-icon-opt').forEach((o) => o.classList.remove('selected'));
+          iconOpt.classList.add('selected');
+        }
+      });
+
+      // Widget type tile selection
+      modal.addEventListener('click', (e) => {
+        const tile = e.target.closest('.wizard-type-tile');
+        if (tile) tile.classList.toggle('selected');
+      });
+
+      // Escape key — close wizard if open
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.style.display !== 'none') {
+          this.closeWizard();
+        }
+      });
+    }
+
+    /* ─────────────────────────────────────────────
+       Dashboard Duplication
+    ───────────────────────────────────────────── */
+
+    async duplicateDashboard(dashId, originalName) {
+      try {
+        const res = await fetch('/api/dashboards/' + dashId + '/duplicate', { method: 'POST' });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ message: res.statusText }));
+          throw new Error(err.message || res.statusText);
+        }
+        const newDash = await res.json();
+
+        await this.loadConfig();
+        this.renderSidebar();
+
+        const newIdx = this.modifiedConfig.dashboards.findIndex(
+          (d) => d.id === (newDash.dashboard ? newDash.dashboard.id : newDash.id)
+        );
+        if (newIdx < 0) return;
+
+        // Override server name with "Copy of [original]" per user decision
+        const copyName = 'Copy of ' + originalName;
+        this.modifiedConfig.dashboards[newIdx].name = copyName;
+        this.markDirty();
+
+        this.selectDashboard(newIdx);
+        this.showToast('Dashboard duplicated — rename it above', 'success');
+
+        // Trigger inline rename on the new nav item
+        const navItems = document.querySelectorAll('.dashboard-nav-item');
+        const newItem = navItems[newIdx];
+        if (!newItem) return;
+
+        const nameSpan = newItem.querySelector('.nav-name');
+        if (!nameSpan) return;
+
+        const input = document.createElement('input');
+        input.className = 'nav-name-edit';
+        input.value = copyName;
+        nameSpan.replaceWith(input);
+        input.focus();
+        input.select();
+
+        const commitRename = () => {
+          const val = input.value.trim() || copyName;
+          this.modifiedConfig.dashboards[newIdx].name = val;
+          this.markDirty();
+          const newSpan = document.createElement('span');
+          newSpan.className = 'nav-name';
+          newSpan.textContent = val;
+          input.replaceWith(newSpan);
+        };
+
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            commitRename();
+          }
+          if (e.key === 'Escape') {
+            const revertSpan = document.createElement('span');
+            revertSpan.className = 'nav-name';
+            revertSpan.textContent = copyName;
+            input.replaceWith(revertSpan);
+          }
+        });
+        input.addEventListener('blur', () => {
+          // Only commit if still in DOM (not already replaced by Escape)
+          if (input.parentNode) commitRename();
+        });
+      } catch (err) {
+        this.showToast('Duplication failed — try again', 'error');
       }
     }
 
@@ -1583,7 +2225,12 @@
             p.style.display = p.id === 'panel-' + name ? 'flex' : 'none';
           });
           if (name === 'queries') this.renderQueryList();
-          if (name === 'datasources') this.renderDatasourceList();
+          if (name === 'datasources') {
+            this.renderDatasourceList();
+            this._startHealthPolling();
+          } else {
+            this._stopHealthPolling();
+          }
         });
       });
     }
@@ -1683,6 +2330,7 @@
     _bindQueryEditorActions() {
       document.getElementById('qe-close').onclick = () => {
         document.getElementById('query-editor-panel').style.display = 'none';
+        this._assignTargetWidgetId = null;
         this.showDashboardProps();
       };
 
@@ -1697,7 +2345,11 @@
       };
 
       document.getElementById('qe-assign').onclick = () => {
-        this._assignQueryToWidget();
+        if (this._assignTargetWidgetId) {
+          this._assignQueryToWidgetDirect(this._assignTargetWidgetId);
+        } else {
+          this._assignQueryToWidget();
+        }
       };
 
       const previewTypeSel = document.getElementById('qe-preview-type');
@@ -1759,28 +2411,142 @@
         // Render widget preview in canvas
         this._renderQueryPreview(data.widgetData, previewType);
 
-        // Show raw value summary in results body
-        bodyEl.textContent = '';
-        const val = data.widgetData.value;
-        const summary = document.createElement('div');
-        summary.className = 'mb-status';
-        summary.textContent = val !== null && val !== undefined
-          ? 'Value: ' + (typeof val === 'number' ? val.toLocaleString() : val)
-          : 'No value returned';
-        bodyEl.appendChild(summary);
+        // Smart result format rendering
+        const resultsBody = bodyEl;
+        resultsBody.textContent = '';
+        const rawData = data.rawData || data.widgetData || data;
+        const fmt = this._selectResultFormat(rawData);
+        if (fmt === 'empty') {
+          const emptyDiv = document.createElement('div');
+          emptyDiv.className = 'mb-status';
+          emptyDiv.textContent = 'No results returned. Check your metric type and time range.';
+          resultsBody.appendChild(emptyDiv);
+        } else if (fmt === 'table') {
+          this._renderResultTable(rawData, resultsBody);
+        } else if (fmt === 'summary') {
+          this._renderResultSummary(rawData, resultsBody);
+        } else {
+          const pre = document.createElement('pre');
+          pre.className = 'qe-result-json';
+          pre.textContent = JSON.stringify(rawData, null, 2);
+          resultsBody.appendChild(pre);
+        }
       } catch (e) {
         statusEl.textContent = 'Error';
         statusEl.style.color = 'var(--red)';
-        const err = document.createElement('div');
-        err.style.color      = 'var(--red)';
-        err.style.padding    = '8px';
-        err.style.fontFamily = 'var(--font-mono)';
-        err.style.fontSize   = '11px';
-        err.textContent = e.message;
-        bodyEl.appendChild(err);
+        bodyEl.textContent = '';
+        const errDiv = document.createElement('div');
+        errDiv.className = 'mb-status';
+        errDiv.style.color = 'var(--red)';
+        errDiv.textContent = 'Query failed: ' + e.message + '. Check the metric type and try again.';
+        bodyEl.appendChild(errDiv);
       } finally {
         runBtn.removeAttribute('disabled');
       }
+    }
+
+    _selectResultFormat(data) {
+      if (data === null || data === undefined) return 'empty';
+      if (Array.isArray(data)) {
+        if (data.length === 0) return 'empty';
+        if (data[0] !== null && typeof data[0] === 'object' && !Array.isArray(data[0])) {
+          if (data[0].timestamp !== undefined) return 'summary';
+          return 'table';
+        }
+        return 'json';
+      }
+      if (typeof data === 'object' && (data.points !== undefined || data.timeSeries !== undefined)) {
+        return 'summary';
+      }
+      return 'json';
+    }
+
+    _renderResultTable(data, container) {
+      const MAX_ROWS = 100;
+      const total = data.length;
+      const rows = data.slice(0, MAX_ROWS);
+      const cols = Object.keys(rows[0]);
+
+      const table = document.createElement('table');
+      table.className = 'qe-result-table';
+
+      const thead = document.createElement('thead');
+      const headerRow = document.createElement('tr');
+      cols.forEach(col => {
+        const th = document.createElement('th');
+        th.textContent = col;
+        headerRow.appendChild(th);
+      });
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+      rows.forEach(row => {
+        const tr = document.createElement('tr');
+        cols.forEach(col => {
+          const td = document.createElement('td');
+          const v = row[col];
+          if (v === null || v === undefined) {
+            td.textContent = '';
+          } else if (typeof v === 'object') {
+            td.textContent = JSON.stringify(v);
+          } else {
+            td.textContent = v;
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      table.appendChild(tbody);
+      container.appendChild(table);
+
+      if (total > MAX_ROWS) {
+        const truncated = document.createElement('div');
+        truncated.className = 'results-truncated';
+        truncated.textContent = 'Showing first 100 rows \u2014 ' + total + ' total returned.';
+        container.appendChild(truncated);
+      }
+    }
+
+    _renderResultSummary(data, container) {
+      const points = data.points || data.timeSeries || (Array.isArray(data) ? data : []);
+      const count = points.length;
+
+      const summaryDiv = document.createElement('div');
+      summaryDiv.className = 'qe-result-summary';
+
+      function makeStat(label, value) {
+        const stat = document.createElement('div');
+        stat.className = 'summary-stat';
+        const lbl = document.createElement('div');
+        lbl.className = 'summary-label';
+        lbl.textContent = label;
+        const val = document.createElement('div');
+        val.className = 'summary-value';
+        val.textContent = value !== null && value !== undefined ? String(value) : '\u2014';
+        stat.appendChild(lbl);
+        stat.appendChild(val);
+        return stat;
+      }
+
+      summaryDiv.appendChild(makeStat('Data Points', count));
+
+      if (count > 0) {
+        const first = points[0];
+        const last  = points[count - 1];
+        const firstTs = first.timestamp || first.startTime || '';
+        const lastTs  = last.timestamp  || last.endTime   || '';
+        const timeRange = firstTs && lastTs ? firstTs + ' \u2014 ' + lastTs : (firstTs || lastTs || '\u2014');
+        summaryDiv.appendChild(makeStat('Time Range', timeRange));
+
+        const lastVal = last.value !== undefined ? last.value
+          : last.doubleValue !== undefined ? last.doubleValue
+          : last.int64Value  !== undefined ? last.int64Value
+          : null;
+        summaryDiv.appendChild(makeStat('Last Value', lastVal));
+      }
+
+      container.appendChild(summaryDiv);
     }
 
     _renderQueryPreview(widgetData, widgetType) {
@@ -1886,6 +2652,27 @@
       this.showToast('Click a widget to assign this query', 'info');
     }
 
+    _assignQueryToWidgetDirect(widgetId) {
+      const q      = this._activeQuery;
+      const source = this._activeSource;
+      if (!q || !widgetId || this.activeDashIdx < 0) return;
+
+      const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
+      const wc   = dash && dash.widgets.find(w => w.id === widgetId);
+      if (!wc) return;
+
+      wc.source  = source;
+      wc.queryId = q.id;
+      this.markDirty();
+      this.renderCanvas();
+      this.showWidgetProps(widgetId);
+      this.showToast('Query assigned', 'success');
+
+      document.getElementById('query-editor-panel').style.display = 'none';
+      document.getElementById('properties-content').style.display = '';
+      this._assignTargetWidgetId = null;
+    }
+
     /* ─────────────────────────────────────────────
        Toast Notifications
     ───────────────────────────────────────────── */
@@ -1903,6 +2690,412 @@
           if (toast.parentNode) toast.parentNode.removeChild(toast);
         }, 300);
       }, 3000);
+    }
+
+    /* ─────────────────────────────────────────────
+       Data Source List + Editor
+    ───────────────────────────────────────────── */
+
+    async renderDatasourceList() {
+      const list = document.getElementById('datasource-list');
+      if (!list) return;
+      list.textContent = '';
+      try {
+        const res  = await fetch('/api/data-sources');
+        const data = await res.json();
+        const sources = data.sources || [];
+        if (!sources.length) {
+          const empty = document.createElement('div');
+          empty.className = 'mb-status';
+          empty.textContent = 'No data sources configured';
+          list.appendChild(empty);
+          return;
+        }
+        sources.forEach(src => {
+          const row  = document.createElement('div');
+          row.className = 'ds-row';
+          const dot  = document.createElement('span');
+          dot.className = 'ds-status-dot ' + (src.isConnected ? 'green' : src.lastError ? 'red' : 'grey');
+          const name = document.createElement('span');
+          name.className   = 'ds-name';
+          name.textContent = src.name;
+          const type = document.createElement('span');
+          type.className   = 'ds-type';
+          type.textContent = src.isConnected ? 'connected' : (src.lastError ? 'error' : 'not configured');
+          row.appendChild(dot);
+          row.appendChild(name);
+          row.appendChild(type);
+          row.addEventListener('click', () => this.openDatasourceEditor(src));
+          list.appendChild(row);
+        });
+      } catch (e) {
+        this.showToast('Failed to load data sources: ' + e.message, 'error');
+      }
+    }
+
+    async openDatasourceEditor(src) {
+      const props   = document.getElementById('properties-placeholder');
+      const content = document.getElementById('properties-content');
+      const qe      = document.getElementById('query-editor-panel');
+      const dse     = document.getElementById('datasource-editor-panel');
+      [props, content, qe].forEach(el => { if (el) el.style.display = 'none'; });
+      if (dse) dse.style.display = 'flex';
+
+      document.getElementById('dse-name').textContent = src.name;
+      const statusEl = document.getElementById('dse-status');
+      statusEl.textContent = src.isConnected ? 'connected' : 'not connected';
+      statusEl.style.color = src.isConnected ? 'var(--green)' : 'var(--red)';
+
+      // Default view: query list
+      this._showDseQueryView();
+      await this._loadSourceQueries(src);
+
+      // Close button
+      document.getElementById('dse-close').onclick = () => {
+        if (dse) dse.style.display = 'none';
+        this.showDashboardProps();
+      };
+
+      // Toggle to credential form
+      const editCredsBtn = document.getElementById('dse-edit-creds');
+      if (editCredsBtn) {
+        editCredsBtn.onclick = () => {
+          this._showDseCredView();
+          this._loadCredentialForm(src);
+        };
+      }
+
+      // Back button
+      const backBtn = document.getElementById('dse-back');
+      if (backBtn) {
+        backBtn.onclick = () => {
+          this._showDseQueryView();
+        };
+      }
+    }
+
+    _showDseQueryView() {
+      const qv = document.getElementById('dse-query-view');
+      const cv = document.getElementById('dse-cred-view');
+      if (qv) qv.style.display = 'flex';
+      if (cv) cv.style.display = 'none';
+    }
+
+    _showDseCredView() {
+      const qv = document.getElementById('dse-query-view');
+      const cv = document.getElementById('dse-cred-view');
+      if (qv) qv.style.display = 'none';
+      if (cv) cv.style.display = 'flex';
+    }
+
+    async _loadSourceQueries(src) {
+      const listEl = document.getElementById('dse-query-list');
+      if (!listEl) return;
+      listEl.textContent = '';
+
+      try {
+        const res  = await fetch('/api/queries/' + encodeURIComponent(src.name));
+        const data = await res.json();
+        const queries = data.queries || [];
+
+        if (!queries.length) {
+          const empty = document.createElement('div');
+          empty.className = 'mb-status';
+          empty.textContent = src.isConnected
+            ? 'No saved queries for this source'
+            : 'Configure credentials to enable queries';
+          listEl.appendChild(empty);
+          return;
+        }
+
+        queries.forEach(q => {
+          const row    = document.createElement('div');
+          row.className = 'dse-query-row';
+
+          const nameEl = document.createElement('span');
+          nameEl.className = 'dse-query-row-name';
+          nameEl.textContent = q.name;
+
+          const runBtn = document.createElement('button');
+          runBtn.className = 'dse-query-row-run';
+          runBtn.textContent = '\u25b6 Run';
+
+          row.appendChild(nameEl);
+          row.appendChild(runBtn);
+
+          // Click row → open in query editor panel
+          row.addEventListener('click', (e) => {
+            if (e.target === runBtn) return;
+            document.getElementById('datasource-editor-panel').style.display = 'none';
+            this.openQueryEditor(q, src.name);
+          });
+
+          // Run button → open query editor and auto-run
+          runBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById('datasource-editor-panel').style.display = 'none';
+            this.openQueryEditor(q, src.name);
+            // Auto-run after a short delay so the panel is ready
+            setTimeout(() => this._runQuery(), 200);
+          });
+
+          listEl.appendChild(row);
+        });
+      } catch (e) {
+        const err = document.createElement('div');
+        err.className = 'mb-status';
+        err.textContent = 'Failed to load queries';
+        listEl.appendChild(err);
+      }
+    }
+
+    async _loadCredentialForm(src) {
+      const fieldsEl = document.getElementById('dse-fields');
+      if (!fieldsEl) return;
+      fieldsEl.textContent = '';
+
+      try {
+        const schemaRes  = await fetch('/api/data-sources/schemas');
+        const schemaData = await schemaRes.json().catch(() => ({ schemas: {} }));
+        const schema = (schemaData.schemas && schemaData.schemas[src.name]) || { fields: [] };
+        (schema.fields || []).forEach(field => {
+          const label = document.createElement('label');
+          label.className = 'qe-label';
+          label.appendChild(document.createTextNode(field.description || field.name));
+          const input = document.createElement('input');
+          input.className         = 'qe-input';
+          input.type              = field.secure ? 'password' : 'text';
+          input.dataset.field     = field.name;
+          input.dataset.key       = field.name;
+          input.dataset.envVar    = field.envVar || '';
+          input.dataset.required  = field.required ? 'true' : 'false';
+          input.placeholder    = field.secure
+            ? '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (stored)'
+            : (field.default || '');
+          label.appendChild(input);
+          if (field.envVar) {
+            const hint = document.createElement('div');
+            hint.className   = 'props-hint';
+            hint.textContent = 'env: ' + field.envVar;
+            label.appendChild(hint);
+          }
+          fieldsEl.appendChild(label);
+        });
+      } catch (e) {
+        const err = document.createElement('div');
+        err.className   = 'mb-status';
+        err.textContent = 'Schema unavailable';
+        fieldsEl.appendChild(err);
+      }
+
+      // Wire test + save buttons
+      const resultEl = document.getElementById('dse-test-result');
+
+      document.getElementById('dse-test').onclick = async () => {
+        const btn = document.getElementById('dse-test');
+        btn.setAttribute('disabled', '');
+        resultEl.textContent = 'Testing\u2026';
+        resultEl.style.color = 'var(--t3)';
+        const t0 = Date.now();
+        try {
+          const res  = await fetch('/api/data-sources/' + encodeURIComponent(src.name) + '/test', { method: 'POST' });
+          const data = await res.json();
+          const ms   = Date.now() - t0;
+          if (data.connected || data.success) {
+            resultEl.textContent = '\u2713 Connected (' + ms + 'ms)';
+            resultEl.style.color = 'var(--green)';
+          } else {
+            resultEl.textContent = '\u2717 Failed \u2014 ' + (data.error || 'Unknown');
+            resultEl.style.color = 'var(--red)';
+          }
+        } catch (e) {
+          resultEl.textContent = '\u2717 ' + e.message;
+          resultEl.style.color = 'var(--red)';
+        } finally {
+          btn.removeAttribute('disabled');
+        }
+      };
+
+      document.getElementById('dse-save').onclick = async () => {
+        const saveBtn = document.getElementById('dse-save');
+        // Remove any existing error banner
+        const existingBanner = document.getElementById('dse-fields') && document.getElementById('dse-fields').querySelector('.validation-banner');
+        if (existingBanner) existingBanner.remove();
+        // Client-side validation before network request
+        if (!this._validateCredForm()) return;
+        const inputs  = document.querySelectorAll('#dse-fields input[data-field]');
+        const body    = {};
+        inputs.forEach(inp => {
+          if (inp.value.trim() && inp.dataset.envVar) body[inp.dataset.envVar] = inp.value.trim();
+        });
+        if (!Object.keys(body).length) {
+          resultEl.textContent = 'No credentials entered';
+          resultEl.style.color = 'var(--amber)';
+          return;
+        }
+        saveBtn.disabled = true;
+        resultEl.textContent = 'Saving\u2026';
+        resultEl.style.color = 'var(--t3)';
+        try {
+          const res  = await fetch('/api/data-sources/' + encodeURIComponent(src.name) + '/credentials', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            const banner = document.createElement('div');
+            banner.className = 'validation-error validation-banner';
+            banner.textContent = 'Could not save credentials: ' + (data.error || 'Unknown error') + '. Check your API key format.';
+            document.getElementById('dse-fields').prepend(banner);
+            resultEl.textContent = '\u2717 ' + (data.error || 'Save failed');
+            resultEl.style.color = 'var(--red)';
+            return;
+          }
+          if (data.connected) {
+            resultEl.textContent = '\u2713 Saved and connected';
+            resultEl.style.color = 'var(--green)';
+          } else {
+            resultEl.textContent = '\u2713 Saved \u2014 ' + (data.message || 'not yet connected');
+            resultEl.style.color = 'var(--amber)';
+          }
+          inputs.forEach(inp => { if (inp.type === 'password') inp.value = ''; });
+          this.renderDatasourceList();
+        } catch (e) {
+          resultEl.textContent = '\u2717 ' + e.message;
+          resultEl.style.color = 'var(--red)';
+        } finally {
+          saveBtn.disabled = false;
+        }
+      };
+    }
+
+    /* ─────────────────────────────────────────────
+       Credential Validation
+    ───────────────────────────────────────────── */
+
+    _validateCredForm() {
+      const fieldsContainer = document.getElementById('dse-fields');
+      if (!fieldsContainer) return true;
+      const inputs = fieldsContainer.querySelectorAll('input[data-key]');
+      let valid = true;
+      inputs.forEach(input => {
+        // Remove previous error
+        const existingErr = input.parentElement.querySelector('.validation-error');
+        if (existingErr) existingErr.remove();
+        const val = input.value.trim();
+        const required = input.hasAttribute('required') || input.dataset.required === 'true';
+        if (required && !val) {
+          const errEl = document.createElement('div');
+          errEl.className = 'validation-error';
+          errEl.textContent = 'Required.';
+          input.parentElement.appendChild(errEl);
+          valid = false;
+        }
+      });
+      return valid;
+    }
+
+    /* ─────────────────────────────────────────────
+       Health Section (Sources Tab)
+    ───────────────────────────────────────────── */
+
+    _formatRelativeTime(ts) {
+      if (!ts) return 'never';
+      const diff = Math.floor((Date.now() - ts) / 1000);
+      if (diff < 60) return diff + 's ago';
+      if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+      if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+      return Math.floor(diff / 86400) + 'd ago';
+    }
+
+    async _renderHealthSection() {
+      const content = document.getElementById('health-section-content');
+      if (!content) return;
+      content.textContent = '';
+      try {
+        const res  = await fetch('/api/data-sources/health');
+        const data = await res.json();
+        const health = data.health || {};
+        Object.entries(health).forEach(([sourceName, src]) => {
+          const row = document.createElement('div');
+          row.className = 'health-row';
+
+          const dot = document.createElement('span');
+          dot.className = 'ds-status-dot ' + (
+            src.isConnected ? 'green' :
+            (src.isReady && !src.isConnected) ? 'amber' :
+            src.lastError ? 'red' : 'grey'
+          );
+
+          const nameEl = document.createElement('span');
+          nameEl.className   = 'ds-name';
+          nameEl.textContent = sourceName;
+
+          if (src.sessionErrorCount > 0) {
+            const badge = document.createElement('span');
+            badge.className   = 'health-error-badge';
+            badge.textContent = src.sessionErrorCount;
+            row.appendChild(dot);
+            row.appendChild(nameEl);
+            row.appendChild(badge);
+          } else {
+            row.appendChild(dot);
+            row.appendChild(nameEl);
+          }
+
+          const ts = document.createElement('span');
+          ts.className   = 'health-timestamp';
+          ts.textContent = this._formatRelativeTime(src.lastSuccessAt);
+          row.appendChild(ts);
+
+          if (src.lastError) {
+            const detail = document.createElement('div');
+            detail.className   = 'health-error-detail';
+            detail.textContent = src.lastError;
+            detail.style.display = 'none';
+            row.addEventListener('click', () => {
+              if (detail.style.display === 'none') {
+                detail.style.display = '';
+                detail.classList.add('expanded');
+              } else {
+                detail.style.display = 'none';
+                detail.classList.remove('expanded');
+              }
+            });
+            content.appendChild(row);
+            content.appendChild(detail);
+          } else {
+            content.appendChild(row);
+          }
+        });
+        if (!Object.keys(health).length) {
+          const msg = document.createElement('div');
+          msg.className   = 'mb-status';
+          msg.textContent = 'No sources found';
+          content.appendChild(msg);
+        }
+      } catch (e) {
+        const msg = document.createElement('div');
+        msg.className   = 'mb-status';
+        msg.textContent = 'Health check unavailable. Retrying in 30s.';
+        content.appendChild(msg);
+      }
+    }
+
+    _startHealthPolling() {
+      if (this._healthPollInterval) return;
+      this._renderHealthSection();
+      this._healthPollInterval = setInterval(() => this._renderHealthSection(), 30000);
+      const dot = document.getElementById('health-poll-dot');
+      if (dot) dot.style.display = '';
+    }
+
+    _stopHealthPolling() {
+      clearInterval(this._healthPollInterval);
+      this._healthPollInterval = null;
+      const dot = document.getElementById('health-poll-dot');
+      if (dot) dot.style.display = 'none';
     }
   }
 
@@ -1948,13 +3141,47 @@
     'appengine', 'monitoring', 'serviceruntime', 'custom',
   ];
 
+  // Static BigQuery table manifest for mad-data project
+  const BQ_MANIFEST = [
+    { name: 'mad-data.reporting.impressions', description: 'Ad impression events with campaign, device, and geo dimensions' },
+    { name: 'mad-data.reporting.bid_requests', description: 'Bid request log with win rates, CPM, and auction metadata' },
+    { name: 'mad-data.reporting.campaign_delivery', description: 'Campaign pacing, delivery stats, and budget utilization by day' },
+    { name: 'mad-data.reporting.win_events', description: 'Auction win events with DSP, advertiser, and creative details' },
+    { name: 'mad-data.reporting.segment_memberships', description: 'User segment membership counts and audience overlap' },
+    { name: 'mad-data.analytics.daily_summary', description: 'Aggregated daily KPIs: impressions, clicks, spend, CPM' },
+    { name: 'mad-data.analytics.client_performance', description: 'Per-client performance metrics: win rate, fill rate, eCPM' },
+  ];
+
+  // Static VulnTrack endpoint manifest
+  const VT_MANIFEST = [
+    { name: 'vulnerability-count', description: 'Total vulnerability count by severity' },
+    { name: 'asset-inventory', description: 'Asset inventory summary' },
+    { name: 'compliance-score', description: 'Overall compliance score' },
+    { name: 'scan-status', description: 'Latest scan status and results' },
+    { name: 'risk-score', description: 'Aggregated risk score across assets' },
+  ];
+
+  // Pure function: mirrors MetricBrowser._buildSourceTabs tab-building logic for testing
+  function mirrorBuildSourceTabs(sources) {
+    const BROWSABLE = ['bigquery', 'vulntrack'];
+    const tabs = [{ name: 'gcp', disabled: false }];
+    sources.forEach(src => {
+      if (BROWSABLE.includes(src.name)) {
+        tabs.push({ name: src.name, disabled: !src.isConnected });
+      }
+    });
+    return tabs;
+  }
+
   class MetricBrowser {
     constructor(studio) {
-      this.studio         = studio;
-      this.target         = null;
-      this.allDescriptors = [];
-      this.activeNs       = null;
-      this.selected       = null;
+      this.studio             = studio;
+      this.target             = null;
+      this.allDescriptors     = [];
+      this.activeNs           = null;
+      this.selected           = null;
+      this._activeSourceTab   = 'gcp';
+      this._sourcesCache      = [];
       this._bindModal();
     }
 
@@ -1975,9 +3202,10 @@
     }
 
     open(widgetConfig) {
-      this.target   = widgetConfig;
-      this.selected = null;
-      this.activeNs = null;
+      this.target             = widgetConfig;
+      this.selected           = null;
+      this.activeNs           = null;
+      this._activeSourceTab   = 'gcp';
 
       const projects = ['mad-master', 'mad-data', 'mad-audit', 'mad-looker-enterprise'];
       const sel = document.getElementById('mb-project');
@@ -1994,11 +3222,160 @@
       document.getElementById('mb-services').textContent = '';
       this._setStatus('Loading metrics\u2026');
       document.getElementById('metric-browser-modal').style.display = 'flex';
-      this._load();
+      this._buildSourceTabs().then(() => this._load());
     }
 
     close() {
       document.getElementById('metric-browser-modal').style.display = 'none';
+    }
+
+    async _buildSourceTabs() {
+      const container = document.getElementById('mb-source-tabs');
+      if (!container) return;
+      container.textContent = '';
+      this._sourcesCache = [];
+
+      // Fetch live source status
+      try {
+        const res  = await fetch('/api/data-sources');
+        const data = await res.json();
+        this._sourcesCache = data.sources || [];
+      } catch (_) {
+        // If fetch fails, render GCP-only tab strip
+      }
+
+      const BROWSABLE = ['bigquery', 'vulntrack'];
+      const SOURCE_LABELS = { gcp: 'GCP', bigquery: 'BigQuery', vulntrack: 'VulnTrack' };
+
+      // Always add GCP tab first (always enabled)
+      const gcpTab = document.createElement('div');
+      gcpTab.className = 'mb-source-tab active';
+      gcpTab.dataset.source = 'gcp';
+      gcpTab.textContent = 'GCP';
+      gcpTab.addEventListener('click', () => this._switchSourceTab('gcp'));
+      container.appendChild(gcpTab);
+
+      // Add tabs for browsable sources based on connection status
+      this._sourcesCache.forEach(src => {
+        if (!BROWSABLE.includes(src.name)) return;
+        const tab = document.createElement('div');
+        tab.className = 'mb-source-tab' + (src.isConnected ? '' : ' disabled');
+        tab.dataset.source = src.name;
+        tab.textContent = SOURCE_LABELS[src.name] || src.name;
+        if (src.isConnected) {
+          tab.addEventListener('click', () => this._switchSourceTab(src.name));
+        }
+        container.appendChild(tab);
+      });
+
+      this._activeSourceTab = 'gcp';
+    }
+
+    _switchSourceTab(sourceName) {
+      // Update active tab visual state
+      document.querySelectorAll('.mb-source-tab').forEach(el => {
+        el.classList.toggle('active', el.dataset.source === sourceName);
+      });
+      this._activeSourceTab = sourceName;
+
+      // Reset shared UI state
+      document.getElementById('mb-services').textContent = '';
+      document.getElementById('mb-list').textContent = '';
+      document.getElementById('mb-config-panel').style.display = 'none';
+      document.getElementById('mb-search').value = '';
+      this.selected = null;
+
+      const servicesPanel = document.querySelector('.mb-services-panel');
+      const projectSel    = document.getElementById('mb-project');
+      const titleEl       = document.querySelector('.mb-title');
+
+      if (sourceName === 'gcp') {
+        if (servicesPanel) servicesPanel.style.display = '';
+        if (projectSel)    projectSel.style.display = '';
+        if (titleEl)       titleEl.textContent = 'GCP Metrics';
+        this._load();
+      } else if (sourceName === 'bigquery') {
+        if (servicesPanel) servicesPanel.style.display = 'none';
+        if (projectSel)    projectSel.style.display = 'none';
+        if (titleEl)       titleEl.textContent = 'BigQuery Tables';
+        this._renderBigQueryManifest();
+      } else if (sourceName === 'vulntrack') {
+        if (servicesPanel) servicesPanel.style.display = 'none';
+        if (projectSel)    projectSel.style.display = 'none';
+        if (titleEl)       titleEl.textContent = 'VulnTrack Metrics';
+        this._renderVulnTrackManifest();
+      }
+    }
+
+    _renderBigQueryManifest() {
+      if (!BQ_MANIFEST.length) {
+        this._setStatus('No BigQuery tables available for this project.');
+        return;
+      }
+      const q = (document.getElementById('mb-search').value || '').toLowerCase();
+      const filtered = q
+        ? BQ_MANIFEST.filter(t => t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q))
+        : BQ_MANIFEST;
+      this._renderManifestRows(filtered);
+
+      // Wire search input for BigQuery filtering
+      const searchEl = document.getElementById('mb-search');
+      searchEl.onkeyup = () => {
+        if (this._activeSourceTab !== 'bigquery') return;
+        this._renderBigQueryManifest();
+      };
+    }
+
+    _renderVulnTrackManifest() {
+      const vtSrc = this._sourcesCache.find(s => s.name === 'vulntrack');
+      if (!vtSrc || !vtSrc.isConnected) {
+        this._setStatus('VulnTrack is not connected. Add credentials in the Sources tab.');
+        return;
+      }
+      const q = (document.getElementById('mb-search').value || '').toLowerCase();
+      const filtered = q
+        ? VT_MANIFEST.filter(t => t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q))
+        : VT_MANIFEST;
+      this._renderManifestRows(filtered);
+
+      // Wire search input for VulnTrack filtering
+      const searchEl = document.getElementById('mb-search');
+      searchEl.onkeyup = () => {
+        if (this._activeSourceTab !== 'vulntrack') return;
+        this._renderVulnTrackManifest();
+      };
+    }
+
+    _renderManifestRows(items) {
+      const list = document.getElementById('mb-list');
+      list.textContent = '';
+      if (!items.length) {
+        this._setStatus('No results match your search.');
+        return;
+      }
+      const frag = document.createDocumentFragment();
+      items.forEach(item => {
+        const card    = document.createElement('div');
+        const nameEl  = document.createElement('div');
+        const descEl  = document.createElement('div');
+        card.className  = 'mb-card' + (this.selected && this.selected.type === item.name ? ' selected' : '');
+        nameEl.className = 'mb-card-name';
+        descEl.className = 'mb-card-desc';
+        nameEl.textContent = item.name;
+        descEl.textContent = item.description;
+        card.appendChild(nameEl);
+        card.appendChild(descEl);
+        card.addEventListener('click', () => {
+          document.querySelectorAll('#mb-list .mb-card').forEach(el => el.classList.remove('selected'));
+          card.classList.add('selected');
+          this.selected = { type: item.name, displayName: item.name, source: this._activeSourceTab };
+          document.getElementById('mb-sel-type').textContent = item.name;
+          document.getElementById('mb-sel-name').textContent = item.description || item.name;
+          document.getElementById('mb-config-panel').style.display = 'flex';
+        });
+        frag.appendChild(card);
+      });
+      list.appendChild(frag);
     }
 
     async _load() {
@@ -2151,6 +3528,21 @@
         this.close();
         return;
       }
+
+      // Non-GCP sources: assign directly without creating a server-side query
+      if (this._activeSourceTab === 'bigquery' || this._activeSourceTab === 'vulntrack') {
+        const queryId = descriptor.type.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+        wc.source  = this._activeSourceTab;
+        wc.queryId = queryId;
+        this.studio.markDirty();
+        this.studio.renderCanvas();
+        this.studio.showWidgetProps(wc.id);
+        this.close();
+        this.studio.showToast('Metric applied: ' + (descriptor.displayName || descriptor.type), 'success');
+        return;
+      }
+
+      // GCP: create a query entry server-side
       const project    = document.getElementById('mb-project').value;
       const timeWindow = parseInt(document.getElementById('mb-time-window').value) || 60;
       const aligner    = document.getElementById('mb-aggregation').value;
@@ -2184,273 +3576,6 @@
         applyBtn.textContent = 'Apply to Widget';
         applyBtn.removeAttribute('disabled');
       }
-    }
-
-    /* ─────────────────────────────────────────────
-       Data Source List + Editor
-    ───────────────────────────────────────────── */
-
-    async renderDatasourceList() {
-      const list = document.getElementById('datasource-list');
-      if (!list) return;
-      list.textContent = '';
-      try {
-        const res  = await fetch('/api/data-sources');
-        const data = await res.json();
-        const sources = data.sources || [];
-        if (!sources.length) {
-          const empty = document.createElement('div');
-          empty.className = 'mb-status';
-          empty.textContent = 'No data sources configured';
-          list.appendChild(empty);
-          return;
-        }
-        sources.forEach(src => {
-          const row  = document.createElement('div');
-          row.className = 'ds-row';
-          const dot  = document.createElement('span');
-          dot.className = 'ds-status-dot ' + (src.isConnected ? 'green' : src.lastError ? 'red' : 'grey');
-          const name = document.createElement('span');
-          name.className   = 'ds-name';
-          name.textContent = src.name;
-          const type = document.createElement('span');
-          type.className   = 'ds-type';
-          type.textContent = src.isConnected ? 'connected' : (src.lastError ? 'error' : 'not configured');
-          row.appendChild(dot);
-          row.appendChild(name);
-          row.appendChild(type);
-          row.addEventListener('click', () => this.openDatasourceEditor(src));
-          list.appendChild(row);
-        });
-      } catch (e) {
-        this.showToast('Failed to load data sources: ' + e.message, 'error');
-      }
-    }
-
-    async openDatasourceEditor(src) {
-      const props   = document.getElementById('properties-placeholder');
-      const content = document.getElementById('properties-content');
-      const qe      = document.getElementById('query-editor-panel');
-      const dse     = document.getElementById('datasource-editor-panel');
-      [props, content, qe].forEach(el => { if (el) el.style.display = 'none'; });
-      if (dse) dse.style.display = 'flex';
-
-      document.getElementById('dse-name').textContent = src.name;
-      const statusEl = document.getElementById('dse-status');
-      statusEl.textContent = src.isConnected ? 'connected' : 'not connected';
-      statusEl.style.color = src.isConnected ? 'var(--green)' : 'var(--red)';
-
-      // Default view: query list
-      this._showDseQueryView();
-      await this._loadSourceQueries(src);
-
-      // Close button
-      document.getElementById('dse-close').onclick = () => {
-        if (dse) dse.style.display = 'none';
-        this.showDashboardProps();
-      };
-
-      // Toggle to credential form
-      const editCredsBtn = document.getElementById('dse-edit-creds');
-      if (editCredsBtn) {
-        editCredsBtn.onclick = () => {
-          this._showDseCredView();
-          this._loadCredentialForm(src);
-        };
-      }
-
-      // Back button
-      const backBtn = document.getElementById('dse-back');
-      if (backBtn) {
-        backBtn.onclick = () => {
-          this._showDseQueryView();
-        };
-      }
-    }
-
-    _showDseQueryView() {
-      const qv = document.getElementById('dse-query-view');
-      const cv = document.getElementById('dse-cred-view');
-      if (qv) qv.style.display = 'flex';
-      if (cv) cv.style.display = 'none';
-    }
-
-    _showDseCredView() {
-      const qv = document.getElementById('dse-query-view');
-      const cv = document.getElementById('dse-cred-view');
-      if (qv) qv.style.display = 'none';
-      if (cv) cv.style.display = 'flex';
-    }
-
-    async _loadSourceQueries(src) {
-      const listEl = document.getElementById('dse-query-list');
-      if (!listEl) return;
-      listEl.textContent = '';
-
-      try {
-        const res  = await fetch('/api/queries/' + encodeURIComponent(src.name));
-        const data = await res.json();
-        const queries = data.queries || [];
-
-        if (!queries.length) {
-          const empty = document.createElement('div');
-          empty.className = 'mb-status';
-          empty.textContent = src.isConnected
-            ? 'No saved queries for this source'
-            : 'Configure credentials to enable queries';
-          listEl.appendChild(empty);
-          return;
-        }
-
-        queries.forEach(q => {
-          const row    = document.createElement('div');
-          row.className = 'dse-query-row';
-
-          const nameEl = document.createElement('span');
-          nameEl.className = 'dse-query-row-name';
-          nameEl.textContent = q.name;
-
-          const runBtn = document.createElement('button');
-          runBtn.className = 'dse-query-row-run';
-          runBtn.textContent = '\u25b6 Run';
-
-          row.appendChild(nameEl);
-          row.appendChild(runBtn);
-
-          // Click row \u2192 open in query editor panel
-          row.addEventListener('click', (e) => {
-            if (e.target === runBtn) return;
-            document.getElementById('datasource-editor-panel').style.display = 'none';
-            this.openQueryEditor(q, src.name);
-          });
-
-          // Run button \u2192 open query editor and auto-run
-          runBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.getElementById('datasource-editor-panel').style.display = 'none';
-            this.openQueryEditor(q, src.name);
-            // Auto-run after a short delay so the panel is ready
-            setTimeout(() => this._runQuery(), 200);
-          });
-
-          listEl.appendChild(row);
-        });
-      } catch (e) {
-        const err = document.createElement('div');
-        err.className = 'mb-status';
-        err.textContent = 'Failed to load queries';
-        listEl.appendChild(err);
-      }
-    }
-
-    async _loadCredentialForm(src) {
-      const fieldsEl = document.getElementById('dse-fields');
-      if (!fieldsEl) return;
-      fieldsEl.textContent = '';
-
-      try {
-        const schemaRes  = await fetch('/api/data-sources/schemas');
-        const schemaData = await schemaRes.json().catch(() => ({ schemas: {} }));
-        const schema = (schemaData.schemas && schemaData.schemas[src.name]) || { fields: [] };
-        (schema.fields || []).forEach(field => {
-          const label = document.createElement('label');
-          label.className = 'qe-label';
-          label.appendChild(document.createTextNode(field.description || field.name));
-          const input = document.createElement('input');
-          input.className      = 'qe-input';
-          input.type           = field.secure ? 'password' : 'text';
-          input.dataset.field  = field.name;
-          input.dataset.envVar = field.envVar || '';
-          input.placeholder    = field.secure
-            ? '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022 (stored)'
-            : (field.default || '');
-          label.appendChild(input);
-          if (field.envVar) {
-            const hint = document.createElement('div');
-            hint.className   = 'props-hint';
-            hint.textContent = 'env: ' + field.envVar;
-            label.appendChild(hint);
-          }
-          fieldsEl.appendChild(label);
-        });
-      } catch (e) {
-        const err = document.createElement('div');
-        err.className   = 'mb-status';
-        err.textContent = 'Schema unavailable';
-        fieldsEl.appendChild(err);
-      }
-
-      // Wire test + save buttons
-      const resultEl = document.getElementById('dse-test-result');
-
-      document.getElementById('dse-test').onclick = async () => {
-        const btn = document.getElementById('dse-test');
-        btn.setAttribute('disabled', '');
-        resultEl.textContent = 'Testing\u2026';
-        resultEl.style.color = 'var(--t3)';
-        const t0 = Date.now();
-        try {
-          const res  = await fetch('/api/data-sources/' + encodeURIComponent(src.name) + '/test', { method: 'POST' });
-          const data = await res.json();
-          const ms   = Date.now() - t0;
-          if (data.connected || data.success) {
-            resultEl.textContent = '\u2713 Connected (' + ms + 'ms)';
-            resultEl.style.color = 'var(--green)';
-          } else {
-            resultEl.textContent = '\u2717 Failed \u2014 ' + (data.error || 'Unknown');
-            resultEl.style.color = 'var(--red)';
-          }
-        } catch (e) {
-          resultEl.textContent = '\u2717 ' + e.message;
-          resultEl.style.color = 'var(--red)';
-        } finally {
-          btn.removeAttribute('disabled');
-        }
-      };
-
-      document.getElementById('dse-save').onclick = async () => {
-        const saveBtn = document.getElementById('dse-save');
-        const inputs  = document.querySelectorAll('#dse-fields input[data-field]');
-        const body    = {};
-        inputs.forEach(inp => {
-          if (inp.value.trim() && inp.dataset.envVar) body[inp.dataset.envVar] = inp.value.trim();
-        });
-        if (!Object.keys(body).length) {
-          resultEl.textContent = 'No credentials entered';
-          resultEl.style.color = 'var(--amber)';
-          return;
-        }
-        saveBtn.setAttribute('disabled', '');
-        resultEl.textContent = 'Saving\u2026';
-        resultEl.style.color = 'var(--t3)';
-        try {
-          const res  = await fetch('/api/data-sources/' + encodeURIComponent(src.name) + '/credentials', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-          });
-          const data = await res.json();
-          if (!res.ok) {
-            resultEl.textContent = '\u2717 ' + (data.error || 'Save failed');
-            resultEl.style.color = 'var(--red)';
-            return;
-          }
-          if (data.connected) {
-            resultEl.textContent = '\u2713 Saved and connected';
-            resultEl.style.color = 'var(--green)';
-          } else {
-            resultEl.textContent = '\u2713 Saved \u2014 ' + (data.message || 'not yet connected');
-            resultEl.style.color = 'var(--amber)';
-          }
-          inputs.forEach(inp => { if (inp.type === 'password') inp.value = ''; });
-          this.renderDatasourceList();
-        } catch (e) {
-          resultEl.textContent = '\u2717 ' + e.message;
-          resultEl.style.color = 'var(--red)';
-        } finally {
-          saveBtn.removeAttribute('disabled');
-        }
-      };
     }
 
     _setStatus(msg) {
