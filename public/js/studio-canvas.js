@@ -88,6 +88,9 @@ window.StudioCanvas = (function () {
     page.style.height = '100%';
     page.style.padding = '12px';
     page.style.display = 'grid';
+    // Set CSS custom properties for the persistent grid background
+    page.style.setProperty('--grid-cols', dash.grid.columns);
+    page.style.setProperty('--grid-rows', dash.grid.rows);
 
     // Render each widget
     dash.widgets.forEach(function (wc) {
@@ -133,6 +136,15 @@ window.StudioCanvas = (function () {
       const content = document.createElement('div');
       content.className = 'widget-content';
       card.appendChild(content);
+
+      // No-data badge — show warning if widget has no query configured
+      if (!wc.queryId && !wc.query) {
+        const noBadge = document.createElement('div');
+        noBadge.className = 'widget-no-data-badge';
+        noBadge.textContent = '⚠ No data source';
+        noBadge.title = 'This widget has no query assigned — click to configure';
+        card.appendChild(noBadge);
+      }
 
       // Render widget using widgets.js — store instance for later data update
       var widgetInstance = null;

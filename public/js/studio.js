@@ -150,8 +150,31 @@
       if (!list) return;
       list.textContent = '';
 
+      // Search filter input (create once, preserve across re-renders)
+      let searchWrap = document.getElementById('dash-search-wrap');
+      if (!searchWrap) {
+        searchWrap = document.createElement('div');
+        searchWrap.id = 'dash-search-wrap';
+        searchWrap.className = 'dash-search-wrap';
+        const searchInput = document.createElement('input');
+        searchInput.id = 'dash-search';
+        searchInput.type = 'text';
+        searchInput.className = 'dash-search-input';
+        searchInput.placeholder = 'Filter dashboards\u2026';
+        searchInput.addEventListener('input', () => this.renderSidebar());
+        searchWrap.appendChild(searchInput);
+        list.parentElement.insertBefore(searchWrap, list);
+      }
+      const filterText = (document.getElementById('dash-search')?.value || '').toLowerCase();
+
       const dashes = (this.modifiedConfig && this.modifiedConfig.dashboards) || [];
       dashes.forEach((dash, i) => {
+        // Apply search filter
+        if (filterText) {
+          const haystack = (dash.name + ' ' + (dash.subtitle || '') + ' ' + (dash.id || '')).toLowerCase();
+          if (!haystack.includes(filterText)) return;
+        }
+
         const item = document.createElement('div');
         item.className = 'dashboard-nav-item'
           + (i === this.activeDashIdx ? ' active' : '')
@@ -172,9 +195,21 @@
         handle.textContent = '\u2807';
         handle.title       = 'Drag to reorder';
 
+        const nameWrap = document.createElement('div');
+        nameWrap.className = 'nav-name-wrap';
+
         const name = document.createElement('span');
         name.className = 'nav-name';
         name.textContent = dash.name;
+        name.title = dash.name + (dash.subtitle ? ' — ' + dash.subtitle : '');
+        nameWrap.appendChild(name);
+
+        if (dash.subtitle) {
+          const sub = document.createElement('span');
+          sub.className = 'nav-subtitle';
+          sub.textContent = dash.subtitle;
+          nameWrap.appendChild(sub);
+        }
 
         const count = document.createElement('span');
         count.className = 'nav-count';
@@ -206,7 +241,7 @@
 
         item.appendChild(handle);
         item.appendChild(thumb);
-        item.appendChild(name);
+        item.appendChild(nameWrap);
         item.appendChild(count);
         item.appendChild(dupBtn);
         item.appendChild(toggle);
@@ -255,9 +290,12 @@
       }
       const total    = dashes.length;
       const excluded = dashes.filter(d => d.excluded).length;
-      counter.textContent = excluded > 0
-        ? `${total} dashboards \u00b7 ${excluded} excluded`
-        : `${total} dashboards`;
+      const shown    = list.childElementCount;
+      const filtered = filterText && shown < total;
+      let label = `${total} dashboards`;
+      if (excluded > 0) label += ` \u00b7 ${excluded} excluded`;
+      if (filtered) label = `${shown} of ${total} shown`;
+      counter.textContent = label;
     }
 
     async _reorderDashboard(fromIdx, toIdx) {
@@ -361,6 +399,11 @@
 
     async deleteDashboard(idx) {
       const dash = this.modifiedConfig.dashboards[idx];
+      const widgetCount = (dash.widgets || []).length;
+      const detail = widgetCount > 0
+        ? `\n\nThis dashboard has ${widgetCount} widget${widgetCount > 1 ? 's' : ''} that will be permanently removed.`
+        : '';
+      if (!confirm(`Delete "${dash.name}"?${detail}`)) return;
 
       try {
         await fetch('/api/dashboards/' + dash.id, { method: 'DELETE' });
@@ -392,7 +435,31 @@
       canvas.textContent = '';
       const placeholder = document.createElement('div');
       placeholder.className = 'canvas-placeholder';
-      placeholder.textContent = 'Select a dashboard to edit';
+
+      const title = document.createElement('div');
+      title.textContent = 'Select a dashboard to edit';
+
+      const steps = document.createElement('div');
+      steps.className = 'canvas-onboard-steps';
+      [
+        'Pick a dashboard from the sidebar',
+        'Click any widget to edit its properties',
+        'Use + Add Widget to add new widgets',
+      ].forEach((text, i) => {
+        const step = document.createElement('div');
+        step.className = 'canvas-onboard-step';
+        const num = document.createElement('span');
+        num.className = 'canvas-onboard-num';
+        num.textContent = i + 1;
+        const label = document.createElement('span');
+        label.textContent = text;
+        step.appendChild(num);
+        step.appendChild(label);
+        steps.appendChild(step);
+      });
+
+      placeholder.appendChild(title);
+      placeholder.appendChild(steps);
       canvas.appendChild(placeholder);
     }
 
@@ -420,6 +487,17 @@
       if (content) content.style.display = 'flex';
       if (dashProps) dashProps.style.display = 'block';
       if (widgetProps) widgetProps.style.display = 'none';
+
+      // Breadcrumb: just "Dashboard"
+      const bc = document.getElementById('props-breadcrumb');
+      if (bc) {
+        bc.style.display = 'flex';
+        bc.textContent = '';
+        const current = document.createElement('span');
+        current.className = 'props-breadcrumb-current';
+        current.textContent = 'Dashboard';
+        bc.appendChild(current);
+      }
 
       const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
       if (!dash) return;
@@ -523,6 +601,77 @@
       ].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.oninput = () => this.applyDashboardProps();
+      });
+
+      // Render widget inventory list
+      this._renderWidgetList(dash);
+    }
+
+    _renderWidgetList(dash) {
+      const list = document.getElementById('dash-widget-list');
+      if (!list) return;
+      list.textContent = '';
+
+      const widgets = dash.widgets || [];
+      if (widgets.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'dwl-empty';
+        empty.textContent = 'No widgets yet — click + Add Widget';
+        list.appendChild(empty);
+        return;
+      }
+
+      // Widget type → icon map
+      const ICONS = {
+        'big-number': '🔢', 'stat-card': '📊', 'gauge': '⏲', 'gauge-row': '▭▭',
+        'bar-chart': '📶', 'progress-bar': '▬', 'status-grid': '⊞', 'alert-list': '🔔',
+        'service-heatmap': '🟩', 'pipeline-flow': '→', 'usa-map': '🗺', 'usa-map-gl': '🗺',
+        'security-scorecard': '🛡', 'line-chart': '📈', 'table': '▦',
+        'multi-metric-card': '⊠', 'stacked-bar-chart': '▐', 'sparkline': '≈',
+        'donut-ring': '◎', 'globe': '🌍',
+      };
+
+      widgets.forEach(wc => {
+        const item = document.createElement('div');
+        item.className = 'dwl-item';
+        if (wc.id === this.selectedWidgetId) item.classList.add('dwl-active');
+
+        const icon = document.createElement('span');
+        icon.className = 'dwl-icon';
+        icon.textContent = ICONS[wc.type] || '◻';
+
+        const name = document.createElement('span');
+        name.className = 'dwl-name';
+        name.textContent = wc.title || wc.type;
+        name.title = wc.title || wc.type;
+
+        const type = document.createElement('span');
+        type.className = 'dwl-type';
+        type.textContent = wc.type;
+
+        item.appendChild(icon);
+        item.appendChild(name);
+
+        // Show warning if no data source
+        if (!wc.queryId && !wc.query) {
+          const warn = document.createElement('span');
+          warn.className = 'dwl-no-data';
+          warn.textContent = '⚠';
+          warn.title = 'No data source assigned';
+          item.appendChild(warn);
+        }
+
+        item.appendChild(type);
+
+        item.addEventListener('click', () => {
+          // Select this widget on the canvas + show its props
+          this.selectedWidgetId = wc.id;
+          this.selectedWidgetIds = new Set([wc.id]);
+          this.renderCanvas();
+          this.showWidgetProps(wc.id);
+        });
+
+        list.appendChild(item);
       });
     }
 
@@ -757,6 +906,36 @@
       if (content) content.style.display = 'flex';
       if (dashProps) dashProps.style.display = 'none';
       if (widgetProps) widgetProps.style.display = 'block';
+
+      // Breadcrumb: "Dashboard > Widget Title"
+      const bc = document.getElementById('props-breadcrumb');
+      if (bc) {
+        bc.style.display = 'flex';
+        bc.textContent = '';
+
+        const link = document.createElement('button');
+        link.className = 'props-breadcrumb-link';
+        link.textContent = 'Dashboard';
+        link.addEventListener('click', () => {
+          this.selectedWidgetId = null;
+          this.selectedWidgetIds = new Set();
+          // Deselect on canvas
+          document.querySelectorAll('.studio-canvas .widget').forEach(w => w.classList.remove('selected'));
+          this.showDashboardProps();
+        });
+
+        const sep = document.createElement('span');
+        sep.className = 'props-breadcrumb-sep';
+        sep.textContent = '›';
+
+        const current = document.createElement('span');
+        current.className = 'props-breadcrumb-current';
+        current.textContent = wc.title || wc.type || 'Widget';
+
+        bc.appendChild(link);
+        bc.appendChild(sep);
+        bc.appendChild(current);
+      }
 
       // Populate fields
       const set = (id, val) => {
@@ -1165,6 +1344,56 @@
         deleteBtn.onclick = () => this.deleteSelectedWidget();
       }
 
+      // Widget management toolbar
+      const dupWidget = document.getElementById('manage-dup-widget');
+      if (dupWidget) {
+        dupWidget.onclick = () => {
+          if (!this.selectedWidgetId) return;
+          const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
+          if (!dash) return;
+          const src = dash.widgets.find(w => w.id === this.selectedWidgetId);
+          if (!src) return;
+          const copy = JSON.parse(JSON.stringify(src));
+          copy.id = src.type + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+          copy.title = (src.title || src.type) + ' (copy)';
+          // Offset position so it doesn't overlap
+          copy.position.col = Math.min(copy.position.col + 1, dash.grid.columns);
+          dash.widgets.push(copy);
+          this.markDirty();
+          this.renderCanvas();
+          this.showWidgetProps(copy.id);
+          this.showToast('Widget duplicated', 'success');
+        };
+      }
+
+      const moveUp = document.getElementById('manage-move-up');
+      if (moveUp) {
+        moveUp.onclick = () => {
+          const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
+          if (!dash || !this.selectedWidgetId) return;
+          const idx = dash.widgets.findIndex(w => w.id === this.selectedWidgetId);
+          if (idx <= 0) return;
+          [dash.widgets[idx - 1], dash.widgets[idx]] = [dash.widgets[idx], dash.widgets[idx - 1]];
+          this.markDirty();
+          this.renderCanvas();
+          this.showToast('Widget moved up', 'success');
+        };
+      }
+
+      const moveDown = document.getElementById('manage-move-down');
+      if (moveDown) {
+        moveDown.onclick = () => {
+          const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
+          if (!dash || !this.selectedWidgetId) return;
+          const idx = dash.widgets.findIndex(w => w.id === this.selectedWidgetId);
+          if (idx < 0 || idx >= dash.widgets.length - 1) return;
+          [dash.widgets[idx], dash.widgets[idx + 1]] = [dash.widgets[idx + 1], dash.widgets[idx]];
+          this.markDirty();
+          this.renderCanvas();
+          this.showToast('Widget moved down', 'success');
+        };
+      }
+
       // Preview live data button
       const previewBtn = document.getElementById('preview-widget-data-btn');
       const previewPanel = document.getElementById('widget-data-preview');
@@ -1430,6 +1659,24 @@
           e.preventDefault();
           this.deleteSelectedWidget();
         }
+        // Escape: deselect widget, return to dashboard props
+        if (e.key === 'Escape' && this.selectedWidgetId) {
+          e.preventDefault();
+          this.selectedWidgetId = null;
+          this.selectedWidgetIds = new Set();
+          document.querySelectorAll('.studio-canvas .widget').forEach(w => w.classList.remove('selected'));
+          this.renderCanvas();
+          this.showDashboardProps();
+        }
+      });
+
+      // Cmd/Ctrl+S: save (global, including when in inputs)
+      document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+          e.preventDefault();
+          const saveBtn = document.getElementById('save-btn');
+          if (saveBtn && !saveBtn.disabled) saveBtn.click();
+        }
       });
     }
 
@@ -1515,10 +1762,12 @@
       // Show modal
       modal.style.display = 'flex';
 
-      // Reset to step 1
+      // Reset to step 0
+      const step0 = document.getElementById('wizard-step-0');
       const step1 = document.getElementById('wizard-step-1');
       const step2 = document.getElementById('wizard-step-2');
-      if (step1) step1.style.display = '';
+      if (step0) step0.style.display = '';
+      if (step1) step1.style.display = 'none';
       if (step2) step2.style.display = 'none';
 
       // Reset step indicator
@@ -1536,16 +1785,19 @@
       if (nameEl) nameEl.value = '';
       if (subtitleEl) subtitleEl.value = '';
       if (colsEl) colsEl.value = '4';
-      if (rowsEl) rowsEl.value = '2';
+      if (rowsEl) rowsEl.value = '3';
 
-      // Reset icon selection — first icon selected
+      // Reset icon selection
       const wizIconOpts = modal.querySelectorAll('.wizard-icon-opt');
-      wizIconOpts.forEach((o, idx) => {
-        o.classList.toggle('selected', idx === 0);
-      });
+      wizIconOpts.forEach((o, idx) => o.classList.toggle('selected', idx === 0));
 
       // Clear widget tile selections
       modal.querySelectorAll('.wizard-type-tile').forEach((t) => t.classList.remove('selected'));
+
+      // Reset start mode
+      modal.querySelectorAll('.wiz-start-card').forEach((c, i) => c.classList.toggle('selected', i === 0));
+      const picker = document.getElementById('wiz-template-picker');
+      if (picker) picker.style.display = 'none';
 
       // Reset footer nav
       const nextBtn = document.getElementById('wizard-next-btn');
@@ -1553,11 +1805,99 @@
       if (nextBtn) nextBtn.textContent = 'Next';
       if (backBtn) backBtn.style.display = 'none';
 
-      // Focus name input
-      if (nameEl) nameEl.focus();
+      // Clear template selection
+      modal._wizardStep = 0;
+      modal._selectedTemplate = null;
+      modal._startMode = 'blank';
 
-      // Store which step we're on
-      modal._wizardStep = 1;
+      // Load templates in background
+      this._loadWizardTemplates();
+    }
+
+    async _loadWizardTemplates() {
+      const picker = document.getElementById('wiz-template-picker');
+      if (!picker) return;
+
+      try {
+        const res = await fetch('/api/templates');
+        const data = await res.json();
+        const templates = data.templates || data || [];
+
+        // Filter to real templates (skip test ones)
+        const real = templates.filter(t =>
+          t.name && !t.name.toLowerCase().includes('test') && !t.name.toLowerCase().includes('update')
+        );
+
+        if (real.length === 0) {
+          picker.innerHTML = '';
+          const empty = document.createElement('div');
+          empty.className = 'wiz-template-loading';
+          empty.textContent = 'No templates available';
+          picker.appendChild(empty);
+          return;
+        }
+
+        picker.textContent = '';
+
+        // Group by category
+        const byCategory = {};
+        real.forEach(t => {
+          const cat = t.category || 'Other';
+          if (!byCategory[cat]) byCategory[cat] = [];
+          byCategory[cat].push(t);
+        });
+
+        for (const [, tpls] of Object.entries(byCategory)) {
+          tpls.forEach(t => {
+            const card = document.createElement('div');
+            card.className = 'wiz-tpl-card';
+
+            const name = document.createElement('div');
+            name.className = 'wiz-tpl-name';
+            name.textContent = t.name;
+
+            const desc = document.createElement('div');
+            desc.className = 'wiz-tpl-desc';
+            desc.textContent = t.description || '';
+
+            const meta = document.createElement('div');
+            meta.className = 'wiz-tpl-meta';
+
+            if (t.category) {
+              const badge = document.createElement('span');
+              badge.className = 'wiz-tpl-badge';
+              badge.textContent = t.category;
+              meta.appendChild(badge);
+            }
+
+            const widgetCount = t.dashboard && t.dashboard.widgets ? t.dashboard.widgets.length : 0;
+            if (widgetCount > 0) {
+              const wc = document.createElement('span');
+              wc.textContent = widgetCount + ' widgets';
+              meta.appendChild(wc);
+            }
+
+            card.append(name, desc, meta);
+
+            card.addEventListener('click', () => {
+              picker.querySelectorAll('.wiz-tpl-card').forEach(c => c.classList.remove('selected'));
+              card.classList.add('selected');
+              const modal = document.getElementById('dashboard-wizard-modal');
+              if (modal) modal._selectedTemplate = t;
+            });
+
+            picker.appendChild(card);
+          });
+        }
+      } catch (_) {
+        if (picker) {
+          picker.textContent = '';
+          const err = document.createElement('div');
+          err.className = 'wiz-template-loading';
+          err.textContent = 'Failed to load templates';
+          picker.appendChild(err);
+        }
+      }
     }
 
     closeWizard() {
@@ -1565,47 +1905,101 @@
       if (modal) modal.style.display = 'none';
     }
 
+    _wizardShowStep(stepNum) {
+      const modal = document.getElementById('dashboard-wizard-modal');
+      if (!modal) return;
+
+      const step0 = document.getElementById('wizard-step-0');
+      const step1 = document.getElementById('wizard-step-1');
+      const step2 = document.getElementById('wizard-step-2');
+      if (step0) step0.style.display = stepNum === 0 ? '' : 'none';
+      if (step1) step1.style.display = stepNum === 1 ? '' : 'none';
+      if (step2) step2.style.display = stepNum === 2 ? '' : 'none';
+
+      const stepEls = modal.querySelectorAll('.wizard-step');
+      stepEls.forEach((s, idx) => {
+        s.classList.remove('active', 'completed');
+        if (idx < stepNum) s.classList.add('completed');
+        if (idx === stepNum) s.classList.add('active');
+      });
+
+      const nextBtn = document.getElementById('wizard-next-btn');
+      const backBtn = document.getElementById('wizard-back-btn');
+
+      if (stepNum === 0) {
+        if (nextBtn) nextBtn.textContent = 'Next';
+        if (backBtn) backBtn.style.display = 'none';
+      } else if (stepNum === 1) {
+        if (nextBtn) nextBtn.textContent = modal._startMode === 'template' ? 'Create Dashboard' : 'Next';
+        if (backBtn) backBtn.style.display = '';
+      } else {
+        if (nextBtn) nextBtn.textContent = 'Create Dashboard';
+        if (backBtn) backBtn.style.display = '';
+      }
+
+      modal._wizardStep = stepNum;
+
+      if (stepNum === 1) {
+        const nameEl = document.getElementById('wiz-dash-name');
+        if (nameEl) setTimeout(() => nameEl.focus(), 50);
+      }
+    }
+
     wizardNext() {
       const modal = document.getElementById('dashboard-wizard-modal');
       if (!modal) return;
-      const step = modal._wizardStep || 1;
+      const step = modal._wizardStep || 0;
 
-      if (step === 1) {
+      if (step === 0) {
+        // Step 0 -> validate selection
+        if (modal._startMode === 'template') {
+          if (!modal._selectedTemplate) {
+            this.showToast('Select a template first', 'error');
+            return;
+          }
+          // Pre-fill from template
+          const t = modal._selectedTemplate;
+          const d = t.dashboard || {};
+          const nameEl = document.getElementById('wiz-dash-name');
+          const subtitleEl = document.getElementById('wiz-dash-subtitle');
+          const colsEl = document.getElementById('wiz-dash-cols');
+          const rowsEl = document.getElementById('wiz-dash-rows');
+          if (nameEl) nameEl.value = d.name || t.name || '';
+          if (subtitleEl) subtitleEl.value = '';
+          if (colsEl) colsEl.value = d.gridColumns || d.grid?.columns || 4;
+          if (rowsEl) rowsEl.value = d.gridRows || d.grid?.rows || 3;
+
+          // Select icon
+          if (d.icon) {
+            modal.querySelectorAll('.wizard-icon-opt').forEach(o => {
+              o.classList.toggle('selected', o.getAttribute('data-icon') === d.icon);
+            });
+          }
+        }
+        this._wizardShowStep(1);
+
+      } else if (step === 1) {
         // Validate name
         const nameEl = document.getElementById('wiz-dash-name');
         const name = nameEl ? nameEl.value.trim() : '';
         if (!name) {
-          // Flash border
           if (nameEl) {
-            nameEl.style.borderColor = 'var(--red)';
+            nameEl.style.borderColor = '#ff4444';
             setTimeout(() => { nameEl.style.borderColor = ''; }, 600);
           }
           return;
         }
 
-        // Advance to step 2
-        const step1El = document.getElementById('wizard-step-1');
-        const step2El = document.getElementById('wizard-step-2');
-        if (step1El) step1El.style.display = 'none';
-        if (step2El) step2El.style.display = '';
+        if (modal._startMode === 'template') {
+          // Template mode: skip widget picker, create directly
+          this.wizardCreate();
+        } else {
+          // Blank mode: go to widget picker
+          this._wizardShowStep(2);
+        }
 
-        // Update step indicator
-        const stepEls = modal.querySelectorAll('.wizard-step');
-        stepEls.forEach((s, idx) => {
-          s.classList.remove('active', 'completed');
-          if (idx === 0) s.classList.add('completed');
-          if (idx === 1) s.classList.add('active');
-        });
-
-        // Update footer
-        const nextBtn = document.getElementById('wizard-next-btn');
-        const backBtn = document.getElementById('wizard-back-btn');
-        if (nextBtn) nextBtn.textContent = 'Create Dashboard';
-        if (backBtn) backBtn.style.display = '';
-
-        modal._wizardStep = 2;
       } else {
-        // Step 2 — create the dashboard
+        // Step 2 -> create
         this.wizardCreate();
       }
     }
@@ -1613,26 +2007,13 @@
     wizardBack() {
       const modal = document.getElementById('dashboard-wizard-modal');
       if (!modal) return;
+      const step = modal._wizardStep || 0;
 
-      const step1El = document.getElementById('wizard-step-1');
-      const step2El = document.getElementById('wizard-step-2');
-      if (step1El) step1El.style.display = '';
-      if (step2El) step2El.style.display = 'none';
-
-      // Update step indicator
-      const stepEls = modal.querySelectorAll('.wizard-step');
-      stepEls.forEach((s, idx) => {
-        s.classList.remove('active', 'completed');
-        if (idx === 0) s.classList.add('active');
-      });
-
-      // Update footer
-      const nextBtn = document.getElementById('wizard-next-btn');
-      const backBtn = document.getElementById('wizard-back-btn');
-      if (nextBtn) nextBtn.textContent = 'Next';
-      if (backBtn) backBtn.style.display = 'none';
-
-      modal._wizardStep = 1;
+      if (step === 2) {
+        this._wizardShowStep(1);
+      } else if (step === 1) {
+        this._wizardShowStep(0);
+      }
     }
 
     async wizardCreate() {
@@ -1648,29 +2029,37 @@
       const name = nameEl ? nameEl.value.trim() : '';
       const subtitle = subtitleEl ? subtitleEl.value.trim() : '';
       const cols = parseInt(colsEl ? colsEl.value : '4') || 4;
-      const rows = parseInt(rowsEl ? rowsEl.value : '2') || 2;
+      const rows = parseInt(rowsEl ? rowsEl.value : '3') || 3;
       const icon = selectedIconEl ? selectedIconEl.getAttribute('data-icon') : 'bolt';
 
-      // Gather selected widget types
-      const selectedTiles = modal.querySelectorAll('.wizard-type-tile.selected');
-      const widgets = [];
-      let col = 1;
-      let row = 1;
-      selectedTiles.forEach((tile) => {
-        const type = tile.getAttribute('data-type');
-        const id = type + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
-        widgets.push({
-          id,
-          type,
-          title: '',
-          position: { col, row, colSpan: 1, rowSpan: 1 },
+      let widgets = [];
+
+      if (modal._startMode === 'template' && modal._selectedTemplate) {
+        // Use template widgets
+        const tplDash = modal._selectedTemplate.dashboard || {};
+        const tplWidgets = tplDash.widgets || [];
+        widgets = tplWidgets.map(w => ({
+          ...w,
+          id: (w.type || 'widget') + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6),
+        }));
+      } else {
+        // Gather selected widget types from tiles
+        const selectedTiles = modal.querySelectorAll('.wizard-type-tile.selected');
+        let col = 1;
+        let row = 1;
+        selectedTiles.forEach((tile) => {
+          const type = tile.getAttribute('data-type');
+          const id = type + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+          widgets.push({
+            id,
+            type,
+            title: '',
+            position: { col, row, colSpan: 1, rowSpan: 1 },
+          });
+          col++;
+          if (col > cols) { col = 1; row++; }
         });
-        col++;
-        if (col > cols) {
-          col = 1;
-          row++;
-        }
-      });
+      }
 
       const dashId = name
         .toLowerCase()
@@ -1734,6 +2123,22 @@
       const backBtn = document.getElementById('wizard-back-btn');
       if (backBtn) backBtn.addEventListener('click', () => this.wizardBack());
 
+      // Step 0: Blank vs Template start cards
+      modal.querySelectorAll('.wiz-start-card').forEach(card => {
+        card.addEventListener('click', () => {
+          modal.querySelectorAll('.wiz-start-card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          const mode = card.getAttribute('data-start');
+          modal._startMode = mode;
+
+          const picker = document.getElementById('wiz-template-picker');
+          if (picker) picker.style.display = mode === 'template' ? '' : 'none';
+
+          // Clear template selection when switching back to blank
+          if (mode === 'blank') modal._selectedTemplate = null;
+        });
+      });
+
       // Wizard icon picker
       modal.addEventListener('click', (e) => {
         const iconOpt = e.target.closest('.wizard-icon-opt');
@@ -1749,7 +2154,7 @@
         if (tile) tile.classList.toggle('selected');
       });
 
-      // Escape key — close wizard if open
+      // Escape key
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && modal.style.display !== 'none') {
           this.closeWizard();
@@ -2006,23 +2411,26 @@
 
     openWidgetPalette() {
       const TYPES = [
-        { type: 'big-number',        icon: '\uD83D\uDD22', name: 'Big Number' },
-        { type: 'stat-card',         icon: '\uD83D\uDCCA', name: 'Stat Card' },
-        { type: 'gauge',             icon: '\u23F2',        name: 'Gauge' },
-        { type: 'gauge-row',         icon: '\u25AD\u25AD', name: 'Gauge Row' },
-        { type: 'bar-chart',         icon: '\uD83D\uDCF6', name: 'Bar Chart' },
-        { type: 'progress-bar',      icon: '\u25AC',        name: 'Progress Bar' },
-        { type: 'status-grid',       icon: '\u229E',        name: 'Status Grid' },
-        { type: 'alert-list',        icon: '\uD83D\uDD14', name: 'Alert List' },
-        { type: 'service-heatmap',   icon: '\uD83D\uDFE9', name: 'Heatmap' },
-        { type: 'pipeline-flow',     icon: '\u2192',        name: 'Pipeline' },
-        { type: 'usa-map',           icon: '\uD83D\uDDFA', name: 'USA Map' },
-        { type: 'usa-map-gl', icon: '\uD83D\uDDFA', name: 'USA Map (GL)' },
-        { type: 'security-scorecard',icon: '\uD83D\uDEE1', name: 'Security' },
-        { type: 'line-chart',        icon: '\uD83D\uDCC8', name: 'Line Chart' },
-        { type: 'table',             icon: '\u25A6',        name: 'Table' },
-        { type: 'multi-metric-card', icon: '\u22A0',        name: 'Multi Metric' },
-        { type: 'stacked-bar-chart', icon: '\u2590',        name: 'Stacked Bar' },
+        { type: 'big-number',        icon: '\uD83D\uDD22', name: 'Big Number',       desc: 'Single large metric value with trend arrow' },
+        { type: 'stat-card',         icon: '\uD83D\uDCCA', name: 'Stat Card',        desc: 'Metric with status, detail text, and trend' },
+        { type: 'gauge',             icon: '\u23F2',        name: 'Gauge',            desc: 'Circular gauge with min/max thresholds' },
+        { type: 'gauge-row',         icon: '\u25AD\u25AD', name: 'Gauge Row',         desc: 'Multiple horizontal gauges in a row' },
+        { type: 'bar-chart',         icon: '\uD83D\uDCF6', name: 'Bar Chart',        desc: 'Vertical bars comparing categories' },
+        { type: 'progress-bar',      icon: '\u25AC',        name: 'Progress Bar',    desc: 'Horizontal bar showing completion %' },
+        { type: 'status-grid',       icon: '\u229E',        name: 'Status Grid',     desc: 'Grid of service health indicators' },
+        { type: 'alert-list',        icon: '\uD83D\uDD14', name: 'Alert List',      desc: 'Scrolling list of active alerts' },
+        { type: 'service-heatmap',   icon: '\uD83D\uDFE9', name: 'Heatmap',         desc: 'Color-coded grid of service metrics' },
+        { type: 'pipeline-flow',     icon: '\u2192',        name: 'Pipeline',        desc: 'Stage-by-stage pipeline visualization' },
+        { type: 'usa-map',           icon: '\uD83D\uDDFA', name: 'USA Map',         desc: 'SVG map with state-level data overlay' },
+        { type: 'usa-map-gl',        icon: '\uD83D\uDDFA', name: 'USA Map (GL)',    desc: 'WebGL map with zip-level heatmap' },
+        { type: 'security-scorecard',icon: '\uD83D\uDEE1', name: 'Security',        desc: 'Score breakdown across security categories' },
+        { type: 'line-chart',        icon: '\uD83D\uDCC8', name: 'Line Chart',      desc: 'Time-series line chart with multiple series' },
+        { type: 'table',             icon: '\u25A6',        name: 'Table',           desc: 'Rows and columns of tabular data' },
+        { type: 'multi-metric-card', icon: '\u22A0',        name: 'Multi Metric',    desc: 'Multiple metrics in a single card' },
+        { type: 'stacked-bar-chart', icon: '\u2590',        name: 'Stacked Bar',     desc: 'Stacked bar chart for part-to-whole' },
+        { type: 'sparkline',         icon: '\u2248',        name: 'Sparkline',       desc: 'Compact inline trend line' },
+        { type: 'donut-ring',        icon: '\u25CE',        name: 'Donut Ring',      desc: 'Ring chart showing proportions' },
+        { type: 'globe',             icon: '\uD83C\uDF0D',  name: 'Globe',          desc: '3D spinning globe with data points' },
       ];
 
       const typeGrid = document.getElementById('palette-type-grid');
@@ -2046,8 +2454,13 @@
           nameEl.className = 'palette-type-name';
           nameEl.textContent = t.name;
 
+          const descEl = document.createElement('div');
+          descEl.className = 'palette-type-desc';
+          descEl.textContent = t.desc || '';
+
           card.appendChild(iconEl);
           card.appendChild(nameEl);
+          card.appendChild(descEl);
 
           card.addEventListener('click', () => {
             // Remove selected from all cards

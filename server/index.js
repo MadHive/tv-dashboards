@@ -275,6 +275,10 @@ const app = new Elysia()
   .use(staticPlugin({
     assets: publicDir,
     prefix: '/',
+    ignorePatterns: [
+      /\/js\/(app|charts|widgets|studio|studio-canvas|importer)\.js$/,
+      /\/css\/(dashboard|studio|importer)\.css$/,
+    ],
     headers: { 'Cache-Control': 'public, max-age=3600, must-revalidate' },
   }))
 
