@@ -2,7 +2,7 @@ name: Load Test
 description: Load test
 category: Test
 author: User
-createdAt: '2026-03-02T22:06:30.977Z'
+createdAt: '2026-03-23T15:53:51.958Z'
 dashboard:
   id: test-dashboard
   name: Test Dashboard

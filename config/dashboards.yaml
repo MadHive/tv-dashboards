@@ -72,19 +72,23 @@ dashboards:
         mglConfig:
           overlayPositions:
             west:
-              top: 147.691px
-              left: 286.43px
+              top: 141.336px
+              left: 61.3984px
+              width: 393.777px
+              height: 261.848px
             central:
               top: 135.711px
               left: 741.48px
               width: 445.414px
               height: 256.895px
             east:
-              top: 181.66px
-              left: 1603.11px
+              top: 157.852px
+              left: 1431.52px
             totalOverlay:
               top: 1006.46px
               left: 13.0547px
+              width: 536.93px
+              height: 255.711px
             leaderboard:
               top: 701.453px
               left: 1589.55px
@@ -149,29 +153,41 @@ dashboards:
         source: computed
         title: ''
         type: usa-map-gl
-  - grid:
-      columns: 1
-      gap: 0
-      rows: 1
-    icon: map
-    id: campaign-delivery-gl-nw
+  - id: campaign-delivery-gl-nw
     name: Campaign Delivery
     subtitle: Northwest
+    icon: map
+    grid:
+      columns: 1
+      rows: 1
+      gap: 0
     widgets:
       - id: usa-delivery-map-gl-nw
+        type: usa-map-gl
+        title: ''
+        source: computed
+        queryId: campaign-delivery-map-nw
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        mglConfig:
+          overlayPositions:
+            west:
+              top: 196.18px
+              left: 476.617px
+              width: 408.438px
+              height: 295.852px
+            totalOverlay:
+              top: 995.172px
+              left: 54.5352px
+              width: 429.02px
+              height: 269.551px
         mapConfig:
           minImpressions: 50
           region: northwest
           timeWindow: 7
-        position:
-          col: 1
-          colSpan: 1
-          row: 1
-          rowSpan: 1
-        queryId: campaign-delivery-map-nw
-        source: computed
-        title: ''
-        type: usa-map-gl
   - grid:
       columns: 1
       gap: 0
@@ -674,6 +690,26 @@ dashboards:
           rowSpan: 1
         mglConfig:
           clientLogo: /img/rf2d7i-iheartmedia-vertical-logo-red.png
+          overlayPositions:
+            clientLogo:
+              top: 14.519531px
+              left: 10.003906px
+              width: 218.304688px
+              height: 232.164063px
+            totalOverlay:
+              top: 1257.835938px
+              left: 40.265625px
+            central:
+              top: 396.589844px
+              left: 1201.8125px
+              width: 217.398438px
+              height: 148.660156px
+            west:
+              width: 211.933594px
+              height: 157.863281px
+            east:
+              top: 414.570313px
+              left: 1850.085938px
     clientBranding:
       logoText: iHEART
       logoSub: MEDIA
@@ -689,128 +725,6 @@ dashboards:
       t3: '#9e6070'
       dotColor: '#3d0010'
       logoImage: /img/rf2d7i-iheartmedia-vertical-logo-red.png
-  - id: iheart-metrics
-    name: iHeart Media
-    subtitle: Campaign Health
-    icon: chart-bar
-    grid:
-      columns: 4
-      rows: 2
-      gap: 14
-    clientBranding:
-      logoText: iHEART
-      logoSub: MEDIA
-      bg: '#0d0005'
-      bgSurface: '#150008'
-      bgCard: '#200010'
-      bgCardAlt: '#2a0015'
-      border: '#4a0015'
-      borderLit: '#8b0020'
-      accent: '#E30C3A'
-      accentDim: rgba(198,0,43,0.15)
-      t2: '#e8c0c8'
-      t3: '#9e6070'
-      dotColor: '#3d0010'
-    widgets:
-      - id: iheart-feeds-delivered
-        type: stat-card
-        title: Data Feed Deliveries
-        source: gcp
-        queryId: iheart-datafeeds-delivered
-        position:
-          col: 1
-          row: 1
-          colSpan: 1
-          rowSpan: 1
-      - id: iheart-export-failures-widget
-        type: stat-card
-        title: Export Failures
-        source: gcp
-        queryId: iheart-export-failures
-        position:
-          col: 2
-          row: 1
-          colSpan: 1
-          rowSpan: 1
-      - id: iheart-win-rate-stat
-        type: big-number
-        title: Win Rate (p50)
-        source: gcp
-        queryId: iheart-win-rate
-        position:
-          col: 3
-          row: 1
-          colSpan: 1
-          rowSpan: 1
-        unit: '%'
-      - id: iheart-pacing-stat
-        type: big-number
-        title: Pacing Ratio (p50)
-        source: gcp
-        queryId: roger-pacing-ratio
-        position:
-          col: 4
-          row: 1
-          colSpan: 1
-          rowSpan: 1
-      - id: iheart-win-rate-chart
-        type: line-chart
-        title: iHeart Win Rate (p50)
-        source: gcp
-        queryId: iheart-win-rate
-        position:
-          col: 1
-          row: 2
-          colSpan: 2
-          rowSpan: 1
-      - id: iheart-pacing-chart
-        type: line-chart
-        title: Pacing Ratio (p50)
-        source: gcp
-        queryId: roger-pacing-ratio
-        position:
-          col: 3
-          row: 2
-          colSpan: 2
-          rowSpan: 1
-  - id: fox-delivery-map
-    name: FOX
-    subtitle: Delivery
-    icon: map
-    grid:
-      columns: 1
-      rows: 1
-      gap: 0
-    clientBranding:
-      logoText: FOX
-      logoSub: MEDIA
-      bg: '#0a0f1a'
-      bgSurface: '#0f1826'
-      bgCard: '#14202f'
-      bgCardAlt: '#1a2a3f'
-      border: '#1a3a5c'
-      borderLit: '#2a5a8c'
-      accent: '#F5A524'
-      accentDim: rgba(245,165,36,0.15)
-      t2: '#c8d8e8'
-      t3: '#7090a8'
-      dotColor: '#1a2f44'
-    widgets:
-      - id: usa-delivery-map-fox
-        type: usa-map-gl
-        title: ''
-        source: computed
-        queryId: campaign-delivery-map-fox
-        position:
-          col: 1
-          row: 1
-          colSpan: 1
-          rowSpan: 1
-        mglConfig:
-          colorScheme: warm
-          showLeaderboard: true
-          zoomViz: dots
-          clientLogo: /img/fox-logo.svg
   - id: fox-metrics
     name: FOX
     subtitle: Campaign Health
@@ -1025,6 +939,39 @@ dashboards:
       columns: 1
       rows: 1
       gap: 0
+    widgets:
+      - id: usa-delivery-map-nexstar
+        type: usa-map-gl
+        title: ''
+        source: computed
+        queryId: campaign-delivery-map-nexstar
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        mglConfig:
+          colorScheme: brand
+          showLeaderboard: true
+          zoomViz: heatmap
+          clientLogo: /img/nexstar-logo.svg
+          overlayPositions:
+            clientLogo:
+              top: 1283.089844px
+              left: 2284.859375px
+            east:
+              top: 35.796875px
+              left: 1777px
+            central:
+              top: 26.40625px
+              left: 1100.777344px
+              width: 368.835938px
+              height: 174.328125px
+            west:
+              top: 10.851563px
+              left: 133.898438px
+          particleSpeed: 1
+          mapStyle: mapbox
     clientBranding:
       logoText: NEXSTAR
       logoSub: MEDIA GROUP
@@ -1039,22 +986,6 @@ dashboards:
       t2: '#b8cce0'
       t3: '#6080a0'
       dotColor: '#0a1a30'
-    widgets:
-      - id: usa-delivery-map-nexstar
-        type: usa-map-gl
-        title: ''
-        source: computed
-        queryId: campaign-delivery-map-nexstar
-        position:
-          col: 1
-          row: 1
-          colSpan: 1
-          rowSpan: 1
-        mglConfig:
-          colorScheme: cool
-          showLeaderboard: true
-          zoomViz: dots
-          clientLogo: /img/nexstar-logo.svg
   - id: nexstar-metrics
     name: Nexstar
     subtitle: Campaign Health
@@ -1139,44 +1070,6 @@ dashboards:
           row: 2
           colSpan: 2
           rowSpan: 1
-  - id: scripps-delivery-map
-    name: EW Scripps
-    subtitle: Delivery
-    icon: map
-    grid:
-      columns: 1
-      rows: 1
-      gap: 0
-    clientBranding:
-      logoText: SCRIPPS
-      logoSub: MEDIA
-      bg: '#020810'
-      bgSurface: '#040f1c'
-      bgCard: '#071528'
-      bgCardAlt: '#0a1c34'
-      border: '#0a2040'
-      borderLit: '#0f3060'
-      accent: '#E8541A'
-      accentDim: rgba(232,84,26,0.15)
-      t2: '#c8c0b8'
-      t3: '#908070'
-      dotColor: '#0a1a28'
-    widgets:
-      - id: usa-delivery-map-scripps
-        type: usa-map-gl
-        title: ''
-        source: computed
-        queryId: campaign-delivery-map-scripps
-        position:
-          col: 1
-          row: 1
-          colSpan: 1
-          rowSpan: 1
-        mglConfig:
-          colorScheme: warm
-          showLeaderboard: true
-          zoomViz: dots
-          clientLogo: /img/scripps-logo.svg
   - id: scripps-metrics
     name: EW Scripps
     subtitle: Campaign Health

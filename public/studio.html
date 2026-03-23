@@ -129,12 +129,21 @@
 
     <!-- Right Properties -->
     <aside class="studio-properties">
-      <div id="properties-placeholder" class="properties-placeholder">Click a widget to edit its properties</div>
+      <div id="properties-placeholder" class="properties-placeholder">
+        <div>Click a widget to edit its properties</div>
+        <div class="canvas-onboard-steps" style="margin-top:4px">
+          <div class="canvas-onboard-step"><span class="canvas-onboard-num">↗</span><span>Title, subtitle, type</span></div>
+          <div class="canvas-onboard-step"><span class="canvas-onboard-num">⊞</span><span>Grid position &amp; size</span></div>
+          <div class="canvas-onboard-step"><span class="canvas-onboard-num">◆</span><span>Data source &amp; query</span></div>
+        </div>
+      </div>
       <div id="properties-content" style="display:none">
+
+        <!-- Breadcrumb navigation -->
+        <div id="props-breadcrumb" class="props-breadcrumb" style="display:none"></div>
 
         <!-- Dashboard props -->
         <div id="dashboard-props" style="display:none">
-          <h3 class="props-heading">Dashboard</h3>
 
           <details class="props-section" open>
             <summary>Basic</summary>
@@ -238,6 +247,14 @@
                 </div>
               </div>
 
+            </div>
+          </details>
+
+          <!-- Widget inventory list -->
+          <details class="props-section" open>
+            <summary>Widgets</summary>
+            <div class="props-body">
+              <div id="dash-widget-list" class="dash-widget-list"></div>
             </div>
           </details>
         </div>
@@ -497,6 +514,13 @@
             </div>
           </details>
 
+          <!-- Widget management toolbar -->
+          <div id="widget-manage-bar" class="widget-manage-toolbar">
+            <button type="button" id="manage-dup-widget" class="widget-manage-btn" title="Duplicate this widget">⧉ Duplicate</button>
+            <button type="button" id="manage-move-up" class="widget-manage-btn" title="Move widget earlier in order">↑ Move Up</button>
+            <button type="button" id="manage-move-down" class="widget-manage-btn" title="Move widget later in order">↓ Move Down</button>
+          </div>
+
           <div style="padding:10px 14px 0">
             <button id="preview-widget-data-btn" class="studio-btn secondary small" style="width:100%">&#128270; Preview Live Data</button>
           </div>
@@ -671,7 +695,7 @@
 
   <!-- Dashboard Creation Wizard Modal -->
   <div id="dashboard-wizard-modal" class="studio-modal" style="display:none">
-    <div class="studio-modal-content" style="width:520px;max-width:90vw">
+    <div class="studio-modal-content" style="width:600px;max-width:90vw">
       <div class="studio-modal-header">
         <h2>NEW DASHBOARD</h2>
         <button class="modal-close" id="wizard-close">&#215;</button>
@@ -679,18 +703,43 @@
       <div class="studio-modal-body">
         <!-- Step indicator -->
         <div class="wizard-step-indicator">
-          <div class="wizard-step active" data-step="1">
+          <div class="wizard-step active" data-step="0">
             <div class="wizard-step-dot">1</div>
+            <span class="wizard-step-label">START</span>
+          </div>
+          <div class="wizard-connector"></div>
+          <div class="wizard-step" data-step="1">
+            <div class="wizard-step-dot">2</div>
             <span class="wizard-step-label">CONFIGURE</span>
           </div>
           <div class="wizard-connector"></div>
           <div class="wizard-step" data-step="2">
-            <div class="wizard-step-dot">2</div>
-            <span class="wizard-step-label">ADD WIDGETS</span>
+            <div class="wizard-step-dot">3</div>
+            <span class="wizard-step-label">WIDGETS</span>
           </div>
         </div>
+
+        <!-- Step 0: Template or Blank -->
+        <div id="wizard-step-0" class="wizard-step-content">
+          <div class="wiz-start-options">
+            <div class="wiz-start-card selected" data-start="blank">
+              <div class="wiz-start-icon">&#10010;</div>
+              <div class="wiz-start-label">Blank Dashboard</div>
+              <div class="wiz-start-desc">Start from scratch with an empty grid</div>
+            </div>
+            <div class="wiz-start-card" data-start="template">
+              <div class="wiz-start-icon">&#128196;</div>
+              <div class="wiz-start-label">From Template</div>
+              <div class="wiz-start-desc">Pre-built layout with widgets &amp; queries</div>
+            </div>
+          </div>
+          <div id="wiz-template-picker" class="wiz-template-picker" style="display:none">
+            <div class="wiz-template-loading">Loading templates&hellip;</div>
+          </div>
+        </div>
+
         <!-- Step 1: Configure -->
-        <div id="wizard-step-1" class="wizard-step-content">
+        <div id="wizard-step-1" class="wizard-step-content" style="display:none">
           <input id="wiz-dash-name" type="text" placeholder="Dashboard name" required style="width:100%;box-sizing:border-box;margin-bottom:8px">
           <input id="wiz-dash-subtitle" type="text" placeholder="Subtitle (optional)" style="width:100%;box-sizing:border-box;margin-bottom:8px">
           <div class="icon-picker" style="margin-bottom:8px">
@@ -704,7 +753,7 @@
           </div>
           <div style="display:flex;gap:8px">
             <input id="wiz-dash-cols" type="number" placeholder="Cols" value="4" min="1" max="12" style="flex:1">
-            <input id="wiz-dash-rows" type="number" placeholder="Rows" value="2" min="1" max="12" style="flex:1">
+            <input id="wiz-dash-rows" type="number" placeholder="Rows" value="3" min="1" max="12" style="flex:1">
           </div>
         </div>
         <!-- Step 2: Widget type palette -->
