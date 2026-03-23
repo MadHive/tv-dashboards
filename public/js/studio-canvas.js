@@ -203,6 +203,16 @@ window.StudioCanvas = (function () {
               wc.mglConfig.overlayPositions = e.detail.positions;
               if (app && app.markDirty) app.markDirty();
             });
+            content.addEventListener('mgl-overlay-hidden', function (e) {
+              // Persist the per-overlay visibility flag (e.g. showLeaderboard: false)
+              if (!wc.mglConfig) wc.mglConfig = {};
+              wc.mglConfig[e.detail.flag] = e.detail.value;
+              if (app && app.markDirty) app.markDirty();
+              // Refresh the mgl-config props panel if it's currently visible
+              if (app && app.showWidgetProps && app.selectedWidgetId === wc.id) {
+                app.showWidgetProps(wc.id);
+              }
+            });
             content.addEventListener('mgl-viewport-changed', function (e) {
               if (!wc.mglConfig) wc.mglConfig = {};
               wc.mglConfig.initialCenter  = e.detail.center;

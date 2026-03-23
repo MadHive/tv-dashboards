@@ -984,6 +984,12 @@
           set('prop-mgl-mapstyle', mgl.mapStyle || 'brand');
           set('prop-mgl-zoomviz',  mgl.zoomViz  || 'dots');
           set('prop-mgl-logofit',   mgl.logoFit  || 'cover');
+          // Per-overlay visibility selects (default true = visible)
+          set('prop-mgl-show-total',   String(mgl.showTotalOverlay   !== false));
+          set('prop-mgl-show-logo',    String(mgl.showClientLogo     !== false));
+          set('prop-mgl-show-west',    String(mgl.showRegionWest     !== false));
+          set('prop-mgl-show-central', String(mgl.showRegionCentral  !== false));
+          set('prop-mgl-show-east',    String(mgl.showRegionEast     !== false));
           const c = mgl.initialCenter;
           const centerLatEl = document.getElementById('prop-mgl-center-lat');
           const centerLngEl = document.getElementById('prop-mgl-center-lng');
@@ -1497,6 +1503,12 @@
       bind('prop-mgl-mapstyle', (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), mapStyle: v }; });
       bind('prop-mgl-zoomviz',  (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), zoomViz: v }; });
       bind('prop-mgl-logofit',  (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), logoFit: v }; });
+      // Per-overlay visibility toggles
+      bind('prop-mgl-show-total',   (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showTotalOverlay:  v === 'true' }; });
+      bind('prop-mgl-show-logo',    (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showClientLogo:    v === 'true' }; });
+      bind('prop-mgl-show-west',    (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showRegionWest:    v === 'true' }; });
+      bind('prop-mgl-show-central', (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showRegionCentral: v === 'true' }; });
+      bind('prop-mgl-show-east',    (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showRegionEast:    v === 'true' }; });
 
       const bindCenter = () => {
         const lat = parseFloat(document.getElementById('prop-mgl-center-lat')?.value);
