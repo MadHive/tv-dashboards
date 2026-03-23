@@ -2833,3 +2833,25 @@ body.studio-body {
   background: rgba(239,68,68,0.25);
   color: #ef4444;
 }
+
+/* ── Pipeline Stage Editor ──────────────────────────────────────────────── */
+.pipeline-stage-header {
+  /* column headers auto-inserted by JS above the list */
+  pointer-events: none;
+  margin-top: 4px;
+}
+
+.pipeline-stage-row input,
+.pipeline-stage-row select {
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.12s;
+}
+.pipeline-stage-row input:focus,
+.pipeline-stage-row select:focus {
+  outline: none;
+  border-color: var(--accent, #FDA4D4) !important;
+}
+.pipeline-stage-row:hover {
+  border-color: var(--border-lit, #4A2880);
+}

@@ -49,7 +49,14 @@ export class ComputedDataSource extends DataSource {
         return { timestamp: new Date().toISOString(), source: 'computed', data: {}, rawData: [], widgetId: widgetConfig.id, queryId: widgetConfig.queryId };
       }
 
-      const result = await fn(entry.params || {}, widgetConfig);
+      // Merge widget-level stageConfig override into params so the widget editor
+      // in Studio can change stages without touching queries.yaml.
+      const params = Object.assign({}, entry.params || {});
+      if (widgetConfig.stageConfig && Array.isArray(widgetConfig.stageConfig) && widgetConfig.stageConfig.length > 0) {
+        params.stageConfig = widgetConfig.stageConfig;
+      }
+
+      const result = await fn(params, widgetConfig);
       logger.info({ queryId: widgetConfig.queryId, ms: Date.now() - startTime }, '[computed] fetchMetrics ok');
 
       return {
