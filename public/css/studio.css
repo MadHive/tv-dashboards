@@ -2855,3 +2855,88 @@ body.studio-body {
 .pipeline-stage-row:hover {
   border-color: var(--border-lit, #4A2880);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MAP WIDGET CARD — studio-mode fixes
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * Problem: inline `card.style.overflow = 'hidden'` clips the absolutely-
+ * positioned mgl overlays (leaderboard, region panels, total overlay).
+ * Specificity: inline style wins over any stylesheet rule, so we need
+ * !important to override it specifically for map widget cards.
+ */
+.studio-canvas .widget.widget-usa-map-gl,
+.studio-canvas .widget.widget-usa-map {
+  overflow: visible !important;
+}
+
+/*
+ * The default studio-widget-bar is a full-width dark gradient that covers
+ * the top of the map canvas and looks like a broken dark banner.
+ * For map widgets, collapse it to a small floating pill in the top-left
+ * corner so it doesn't obscure the map, stays clear of Mapbox controls,
+ * and still provides drag + delete affordances.
+ */
+.widget-usa-map-gl .studio-widget-bar,
+.widget-usa-map    .studio-widget-bar {
+  /* Float as a compact pill — don't stretch across the full card width */
+  right:       auto;
+  width:       auto;
+  height:      auto;
+  padding:     3px 4px;
+  border-radius: 0 0 8px 0;
+  background:  rgba(14, 3, 32, 0.82);
+  border-right:  1px solid rgba(253,164,212,0.25);
+  border-bottom: 1px solid rgba(253,164,212,0.25);
+  /* Keep it above the Mapbox GL canvas */
+  z-index: 200;
+  gap: 2px;
+}
+
+/*
+ * Grid-resize corner handle for map widgets.
+ * Sits in the bottom-right corner OUTSIDE the card (so it's always visible
+ * even though the card now has overflow:visible) and resizes col/rowSpan
+ * — wired up in studio-canvas.js addResizeHandles().
+ */
+.mgl-card-resize-corner {
+  position:       absolute;
+  bottom:         -14px;
+  right:          -14px;
+  width:          28px;
+  height:         28px;
+  background:     rgba(253,164,212,0.92);
+  border:         2px solid rgba(255,255,255,0.5);
+  border-radius:  6px;
+  cursor:         se-resize;
+  z-index:        300;
+  display:        none;
+  align-items:    center;
+  justify-content: center;
+}
+.mgl-card-resize-corner::after {
+  content: '';
+  width:  10px;
+  height: 10px;
+  border-right:  2.5px solid rgba(60,0,30,0.8);
+  border-bottom: 2.5px solid rgba(60,0,30,0.8);
+  display: block;
+}
+/* Size badge shown during resize drag */
+.mgl-card-resize-badge {
+  position:   absolute;
+  bottom:     18px;
+  right:      18px;
+  background: rgba(14,3,32,0.85);
+  border:     1px solid rgba(253,164,212,0.4);
+  border-radius: 4px;
+  color:      rgba(253,164,212,0.9);
+  font-size:  12px;
+  font-family: var(--font-mono, monospace);
+  padding:    3px 8px;
+  pointer-events: none;
+  z-index:    300;
+  display:    none;
+}
+body.studio-body .mgl-card-resize-corner { display: flex; }

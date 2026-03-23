@@ -128,7 +128,9 @@ window.StudioCanvas = (function () {
       }
       card.style.borderRadius = '4px';
       card.style.transition = 'outline 0.1s';
-      card.style.overflow = 'hidden';
+      // Map widgets: overflow must be visible so absolutely-positioned overlays
+      // (leaderboard, region panels, total overlay, resize corner) aren't clipped.
+      card.style.overflow = (wc.type === 'usa-map-gl' || wc.type === 'usa-map') ? 'visible' : 'hidden';
 
       addResizeHandles(card, wc, dash);
 
@@ -567,9 +569,59 @@ window.StudioCanvas = (function () {
   }
 
   function addResizeHandles(card, wc, dash) {
-    // Don't add card-level resize handles for full-screen map widgets —
-    // they overlap the map overlay resize handles and trigger unwanted renderCanvas calls
-    if (wc.type === 'usa-map-gl' || wc.type === 'usa-map') return;
+    // Map widgets get a dedicated corner resize handle that sits outside the card
+    // (overflow:visible on the card means it renders correctly) and resizes
+    // both colSpan + rowSpan simultaneously from one drag target.
+    if (wc.type === 'usa-map-gl' || wc.type === 'usa-map') {
+      const corner = document.createElement('div');
+      corner.className = 'mgl-card-resize-corner';
+      card.appendChild(corner);
+
+      const badge = document.createElement('div');
+      badge.className = 'mgl-card-resize-badge';
+      card.appendChild(badge);
+
+      corner.addEventListener('mousedown', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        const page  = card.closest('.dashboard-page');
+        const rect  = page.getBoundingClientRect();
+        const colW  = rect.width  / dash.grid.columns;
+        const rowH  = rect.height / dash.grid.rows;
+        const startX    = e.clientX;
+        const startY    = e.clientY;
+        const startCols = wc.position.colSpan || 1;
+        const startRows = wc.position.rowSpan || 1;
+        const maxCols   = dash.grid.columns - wc.position.col + 1;
+        const maxRows   = dash.grid.rows    - wc.position.row + 1;
+
+        function onMove(ev) {
+          const newCols = Math.max(1, Math.min(maxCols, startCols + Math.round((ev.clientX - startX) / colW)));
+          const newRows = Math.max(1, Math.min(maxRows, startRows + Math.round((ev.clientY - startY) / rowH)));
+          wc.position.colSpan = newCols;
+          wc.position.rowSpan = newRows;
+          card.style.gridColumn = wc.position.col + ' / span ' + newCols;
+          card.style.gridRow    = wc.position.row + ' / span ' + newRows;
+          badge.style.display   = 'block';
+          badge.textContent     = newCols + '\u00D7' + newRows;
+        }
+
+        function onUp() {
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup',   onUp);
+          badge.style.display = 'none';
+          app.markDirty();
+          app.renderCanvas();
+          app.showWidgetProps(wc.id);
+        }
+
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup',   onUp);
+      });
+      return; // map widgets only get the corner handle — not the edge bars
+    }
+
+    // ── Non-map widgets: edge resize bars ────────────────────────────────────
 
     // Right handle → resize colSpan (fully inside card to avoid overflow:hidden clipping)
     const rightHandle = document.createElement('div');
