@@ -874,6 +874,8 @@
       if (mapSection) mapSection.style.display = type === 'usa-map' ? '' : 'none';
       const mglSection = document.getElementById('mgl-config-section');
       if (mglSection) mglSection.style.display = type === 'usa-map-gl' ? '' : 'none';
+      const pipelineSection = document.getElementById('pipeline-stage-section');
+      if (pipelineSection) pipelineSection.style.display = type === 'pipeline-flow' ? '' : 'none';
       const labelsSection = document.getElementById('labels-section');
       if (labelsSection) {
         const showLabelsTypes = ['bar-chart', 'line-chart', 'stacked-bar-chart', 'donut-ring', 'sankey', 'heatmap', 'treemap', 'pipeline-flow', 'multi-metric-card', 'status-grid', 'table'];
@@ -1554,6 +1556,174 @@
           if (zoomVal2) zoomVal2.textContent = zoomSlider2.value;
           wc.mglConfig = Object.assign({}, wc.mglConfig || {}, { initialZoom: parseFloat(zoomSlider2.value) });
           self.markDirty();
+        };
+      }
+
+      // Pipeline stage editor
+      if (wc.type === 'pipeline-flow') {
+        this._renderPipelineStageEditor(wc);
+      }
+    }
+
+    /* ─────────────────────────────────────────────
+       Pipeline Stage Editor
+    ───────────────────────────────────────────── */
+
+    _renderPipelineStageEditor(wc) {
+      const list    = document.getElementById('pipeline-stage-list');
+      const addBtn  = document.getElementById('pipeline-add-stage');
+      if (!list) return;
+
+      // Ensure wc.stageConfig exists — seed from DEFAULT_PIPELINE_STAGES shape if missing
+      if (!wc.stageConfig) {
+        wc.stageConfig = [
+          { id: 'ingest',    name: 'Ingest',    project: 'mad-data',   metricType: 'pubsub.googleapis.com/topic/send_message_operation_count', minutes: 5  },
+          { id: 'transform', name: 'Transform', project: 'mad-master', metricType: 'custom.googleapis.com/opencensus/mhive/pipe/rows_written',  minutes: 10 },
+          { id: 'store',     name: 'Store',     project: 'mad-master', metricType: 'custom.googleapis.com/opencensus/mhive/pipe/rows_written',  minutes: 10 },
+          { id: 'process',   name: 'Process',   project: 'mad-data',   metricType: 'bigquery.googleapis.com/query/execution_times',            minutes: 10 },
+          { id: 'deliver',   name: 'Deliver',   project: 'mad-master', metricType: 'run.googleapis.com/request_count',                        minutes: 30 },
+          { id: 'report',    name: 'Report',    project: 'mad-master', metricType: 'custom.googleapis.com/opencensus/mhive/pipe/rows_written',  minutes: 10 },
+        ];
+      }
+
+      const self = this;
+
+      const KNOWN_PROJECTS = ['mad-master', 'mad-data', 'mad-audit', 'mad-looker-enterprise'];
+
+      function renderList() {
+        list.textContent = '';
+        wc.stageConfig.forEach((stage, idx) => {
+          const row = document.createElement('div');
+          row.className = 'pipeline-stage-row';
+          row.style.cssText = [
+            'display:grid',
+            'grid-template-columns:1fr 1fr minmax(0,2fr) 48px 28px',
+            'gap:4px',
+            'align-items:center',
+            'background:var(--bg-card)',
+            'border:1px solid var(--border)',
+            'border-radius:4px',
+            'padding:6px 8px',
+          ].join(';');
+
+          // Stage name
+          const nameIn = document.createElement('input');
+          nameIn.type        = 'text';
+          nameIn.value       = stage.name || '';
+          nameIn.placeholder = 'Stage name';
+          nameIn.title       = 'Display name shown on the node';
+          nameIn.style.cssText = 'font-size:12px;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--t1);min-width:0';
+          nameIn.oninput = () => {
+            stage.name = nameIn.value;
+            // keep id in sync with a slugified version of the name (only if id hasn't been manually edited)
+            stage.id = nameIn.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || ('stage-' + idx);
+            self.markDirty();
+          };
+
+          // Project selector
+          const projSel = document.createElement('select');
+          projSel.style.cssText = 'font-size:11px;padding:3px 4px;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--t1);min-width:0';
+          projSel.title = 'GCP project to query';
+          KNOWN_PROJECTS.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p; opt.textContent = p;
+            projSel.appendChild(opt);
+          });
+          // Allow arbitrary project not in the list
+          if (!KNOWN_PROJECTS.includes(stage.project)) {
+            const opt = document.createElement('option');
+            opt.value = stage.project; opt.textContent = stage.project;
+            projSel.appendChild(opt);
+          }
+          projSel.value = stage.project || KNOWN_PROJECTS[0];
+          projSel.onchange = () => { stage.project = projSel.value; self.markDirty(); };
+
+          // Metric type (free-text)
+          const metricIn = document.createElement('input');
+          metricIn.type        = 'text';
+          metricIn.value       = stage.metricType || '';
+          metricIn.placeholder = 'e.g. run.googleapis.com/request_count';
+          metricIn.title       = 'GCP Cloud Monitoring metric type';
+          metricIn.style.cssText = 'font-size:11px;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--t1);min-width:0;font-family:var(--font-mono,monospace)';
+          metricIn.oninput = () => { stage.metricType = metricIn.value.trim(); self.markDirty(); };
+
+          // Minutes window
+          const minIn = document.createElement('input');
+          minIn.type        = 'number';
+          minIn.min         = '1';
+          minIn.max         = '1440';
+          minIn.value       = stage.minutes || 10;
+          minIn.title       = 'Look-back window in minutes';
+          minIn.style.cssText = 'font-size:11px;padding:3px 4px;background:var(--bg);border:1px solid var(--border);border-radius:3px;color:var(--t1);width:100%;text-align:right';
+          minIn.oninput = () => { stage.minutes = parseInt(minIn.value) || 10; self.markDirty(); };
+
+          // Delete button
+          const delBtn = document.createElement('button');
+          delBtn.type      = 'button';
+          delBtn.textContent = '×';
+          delBtn.title     = 'Remove this stage';
+          delBtn.style.cssText = [
+            'font-size:16px', 'line-height:1', 'padding:0 4px',
+            'background:none', 'border:none', 'color:var(--t3)',
+            'cursor:pointer', 'border-radius:3px',
+          ].join(';');
+          delBtn.onmouseenter = () => { delBtn.style.color = '#FB7185'; };
+          delBtn.onmouseleave = () => { delBtn.style.color = 'var(--t3)'; };
+          delBtn.onclick = () => {
+            wc.stageConfig.splice(idx, 1);
+            self.markDirty();
+            renderList();
+          };
+
+          row.appendChild(nameIn);
+          row.appendChild(projSel);
+          row.appendChild(metricIn);
+          row.appendChild(minIn);
+          row.appendChild(delBtn);
+          list.appendChild(row);
+        });
+
+        // Column headers (only once, above first row)
+        if (list.childElementCount > 0 && !list.previousElementSibling?.classList.contains('pipeline-stage-header')) {
+          const header = document.createElement('div');
+          header.className = 'pipeline-stage-header';
+          header.style.cssText = [
+            'display:grid',
+            'grid-template-columns:1fr 1fr minmax(0,2fr) 48px 28px',
+            'gap:4px',
+            'padding:0 8px 2px',
+            'font-size:10px',
+            'font-family:var(--font-display)',
+            'font-weight:600',
+            'letter-spacing:1px',
+            'text-transform:uppercase',
+            'color:var(--t3)',
+          ].join(';');
+          ['Name', 'Project', 'Metric Type', 'Min', ''].forEach(label => {
+            const col = document.createElement('span');
+            col.textContent = label;
+            header.appendChild(col);
+          });
+          list.parentElement.insertBefore(header, list);
+        }
+      }
+
+      renderList();
+
+      if (addBtn) {
+        // Replace any previous handler
+        const fresh = addBtn.cloneNode(true);
+        addBtn.parentNode.replaceChild(fresh, addBtn);
+        fresh.onclick = () => {
+          wc.stageConfig.push({
+            id:         'stage-' + (wc.stageConfig.length + 1),
+            name:       'New Stage',
+            project:    'mad-master',
+            metricType: '',
+            minutes:    10,
+          });
+          self.markDirty();
+          renderList();
         };
       }
     }

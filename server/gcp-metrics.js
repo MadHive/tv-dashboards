@@ -656,69 +656,106 @@ async function dataProcessing() {
 }
 
 // ──────────────────────────────────────────────
-// Data Pipeline — 6 stages
+// Data Pipeline — configurable stages
+//
+// Stages are defined in queries.yaml under data-pipeline-flow → params.stageConfig.
+// Each stage specifies:  { id, name, project, metricType, minutes, latencyMs? }
+//
+// The hardcoded DEFAULT_PIPELINE_STAGES act as a safe fallback when no stageConfig
+// is provided (e.g. older saved dashboards, direct dataPipeline() call from legacy route).
 // ──────────────────────────────────────────────
-let _dataPipelineCache = null;
-let _dataPipelineCacheTime = 0;
+
+const DEFAULT_PIPELINE_STAGES = [
+  { id: 'ingest',    name: 'Ingest',    project: 'mad-data',   metricType: 'pubsub.googleapis.com/topic/send_message_operation_count',   minutes: 5  },
+  { id: 'transform', name: 'Transform', project: 'mad-master', metricType: 'custom.googleapis.com/opencensus/mhive/pipe/rows_written',    minutes: 10 },
+  { id: 'store',     name: 'Store',     project: 'mad-master', metricType: 'custom.googleapis.com/opencensus/mhive/pipe/rows_written',    minutes: 10 },
+  { id: 'process',   name: 'Process',   project: 'mad-data',   metricType: 'bigquery.googleapis.com/query/execution_times',              minutes: 10 },
+  { id: 'deliver',   name: 'Deliver',   project: 'mad-master', metricType: 'run.googleapis.com/request_count',                          minutes: 30 },
+  { id: 'report',    name: 'Report',    project: 'mad-master', metricType: 'custom.googleapis.com/opencensus/mhive/pipe/rows_written',    minutes: 10 },
+];
+
+// Cache keyed by a stable hash of the stage config so different stage lists don't share a cache slot.
+const _pipelineCaches = new Map(); // key -> { result, time }
 const PIPELINE_CACHE_TTL = 15000;
 
-async function dataPipeline() {
-  if (_dataPipelineCache && (Date.now() - _dataPipelineCacheTime) < PIPELINE_CACHE_TTL) {
-    return _dataPipelineCache;
+function _stageConfigKey(stages) {
+  return stages.map(s => `${s.id}|${s.project}|${s.metricType}|${s.minutes || 10}`).join('::');
+}
+
+/**
+ * Fetch throughput metrics for an arbitrary list of stage definitions.
+ * @param {Array} stageConfig  Array of { id, name, project, metricType, minutes, latencyMs? }
+ * @returns Pipeline result object { pipeline: { summary, stages } }
+ */
+async function dataPipeline(stageConfig) {
+  const stages = (Array.isArray(stageConfig) && stageConfig.length > 0)
+    ? stageConfig
+    : DEFAULT_PIPELINE_STAGES;
+
+  const cacheKey = _stageConfigKey(stages);
+  const cached = _pipelineCaches.get(cacheKey);
+  if (cached && (Date.now() - cached.time) < PIPELINE_CACHE_TTL) {
+    return cached.result;
   }
-  const [pubsub, pipeRows, bqExecTimes] = await Promise.all([
-    query('mad-data', 'pubsub.googleapis.com/topic/send_message_operation_count', '', 5),
-    query('mad-master', 'custom.googleapis.com/opencensus/mhive/pipe/rows_written', '', 10),
-    query('mad-data', 'bigquery.googleapis.com/query/execution_times', '', 10),
-  ]);
 
-  const { requestCounts } = await getCloudRunData();
-
-  const ingestRate  = sumAll(pubsub);
-  const deliveryRate = sumAll(requestCounts);
-  const pipeRowRate  = sumAll(pipeRows);
-  const bqExecTime   = latest(bqExecTimes);
-
-  // Build 6 stages from available metrics
-  const stagesRaw = [
-    { id: 'ingest',    name: 'Ingest',    throughput: Math.round(ingestRate),                     latency: 10 },
-    { id: 'transform', name: 'Transform', throughput: Math.round((ingestRate || 48000) * 0.99),   latency: 24 },
-    { id: 'store',     name: 'Store',     throughput: Math.round(pipeRowRate || (ingestRate || 48000) * 0.98), latency: 8 },
-    { id: 'process',   name: 'Process',   throughput: Math.round(pipeRowRate || (ingestRate || 48000) * 0.97), latency: bqExecTime ? Math.round(bqExecTime / 1000) : 52 },
-    { id: 'deliver',   name: 'Deliver',   throughput: Math.round(deliveryRate),                   latency: 7 },
-    { id: 'report',    name: 'Report',    throughput: Math.round(pipeRowRate || (deliveryRate || 46000) * 0.97), latency: 130 },
-  ];
-
-  // Accumulate sparkline history
-  stagesRaw.forEach(s => {
-    if (!pipelineHistory[s.id]) pipelineHistory[s.id] = [];
-    pipelineHistory[s.id].push(s.throughput);
-    if (pipelineHistory[s.id].length > 20) pipelineHistory[s.id].shift();
+  // Fan-out: one GCP query per stage (deduplicate identical project+metric+minutes combos)
+  const seen = new Map(); // "project|metricType|minutes" -> Promise<ts[]>
+  const stagePromises = stages.map(s => {
+    const dedupeKey = `${s.project}|${s.metricType}|${s.minutes || 10}`;
+    if (!seen.has(dedupeKey)) {
+      seen.set(dedupeKey, query(s.project, s.metricType, '', s.minutes || 10));
+    }
+    return seen.get(dedupeKey);
   });
 
-  // Compute total latency
-  let totalLatency = 0;
-  stagesRaw.forEach(s => { totalLatency += s.latency; });
+  const stageResults = await Promise.all(stagePromises);
 
-  const _pipelineResult = {
+  const stagesRaw = stages.map((s, i) => {
+    const ts = stageResults[i] || [];
+    const throughput = Math.round(sumAll(ts));
+    // Latency: use explicit override if provided, else derive from distribution mean, else default
+    let latency = s.latencyMs != null ? s.latencyMs : 0;
+    if (!latency && ts.length) {
+      const dist = ts[0]?.points?.[0]?.value?.distributionValue;
+      latency = dist?.mean ? Math.round(dist.mean / 1000) : 0;
+    }
+    if (!latency) latency = 20; // safe default so total latency is never zero
+    return { id: s.id, name: s.name, throughput, latency };
+  });
+
+  // Accumulate per-stage sparkline history (keyed by stage id + cache key for isolation)
+  stagesRaw.forEach(s => {
+    const hKey = `${cacheKey}::${s.id}`;
+    if (!pipelineHistory[hKey]) pipelineHistory[hKey] = [];
+    pipelineHistory[hKey].push(s.throughput);
+    if (pipelineHistory[hKey].length > 20) pipelineHistory[hKey].shift();
+  });
+
+  const totalLatency = stagesRaw.reduce((sum, s) => sum + s.latency, 0);
+
+  const result = {
     pipeline: {
       summary: {
-        throughput: stagesRaw[stagesRaw.length - 1].throughput,
+        throughput:   stagesRaw[stagesRaw.length - 1].throughput,
         totalLatency: Math.round(totalLatency),
+        stageCount:   stagesRaw.length,
       },
-      stages: stagesRaw.map(s => ({
-        ...s,
-        status: 'healthy',
-        errorRate: +(Math.random() * 0.03).toFixed(3),
-        dataVolume: +(1 + Math.random() * 3).toFixed(1),
-        sparkline: [...(pipelineHistory[s.id] || [])],
-        health: Math.round(95 + Math.random() * 5),
-      })),
+      stages: stagesRaw.map(s => {
+        const hKey = `${cacheKey}::${s.id}`;
+        return {
+          ...s,
+          status:     'healthy',
+          errorRate:  +(Math.random() * 0.03).toFixed(3),
+          dataVolume: +(1 + Math.random() * 3).toFixed(1),
+          sparkline:  [...(pipelineHistory[hKey] || [])],
+          health:     Math.round(95 + Math.random() * 5),
+        };
+      }),
     },
   };
-  _dataPipelineCache = _pipelineResult;
-  _dataPipelineCacheTime = Date.now();
-  return _pipelineResult;
+
+  _pipelineCaches.set(cacheKey, { result, time: Date.now() });
+  return result;
 }
 
 // ──────────────────────────────────────────────
@@ -1535,11 +1572,23 @@ export async function coreClusterSize() {
   };
 }
 
-export async function pipelineFlow() {
-  const all = await dataPipeline();
+/**
+ * pipelineFlow — entry point for the computed data source.
+ * @param {Object} params  Query params from queries.yaml (may contain stageConfig[])
+ */
+export async function pipelineFlow(params = {}) {
+  const all = await dataPipeline(params.stageConfig);
+  const pipeline = all['pipeline'];
   return {
-    data:    all['pipeline'],
-    rawData: (all['pipeline']?.stages || []).map(s => ({ label: s.name, value: s.throughput })),
+    data:    pipeline,
+    rawData: (pipeline?.stages || []).map(s => ({
+      label:      s.name,
+      value:      s.throughput,
+      latency:    s.latency,
+      health:     s.health,
+      errorRate:  s.errorRate,
+      dataVolume: s.dataVolume,
+    })),
   };
 }
 
@@ -1569,7 +1618,7 @@ export async function getMetrics(dashboardId, widgetConfig = {}) {
     case 'campaign-delivery-northeast': return campaignDeliveryMap(widgetConfig);
     case 'campaign-delivery-southeast': return campaignDeliveryMap(widgetConfig);
     case 'data-processing':    return dataProcessing();
-    case 'data-pipeline':      return dataPipeline();
+    case 'data-pipeline':      return dataPipeline(); // no stageConfig → uses DEFAULT_PIPELINE_STAGES
     case 'bidder-cluster':     return bidderCluster();
     case 'rtb-infra':          return rtbInfra();
     case 'campaign-pacing':    return campaignPacing();

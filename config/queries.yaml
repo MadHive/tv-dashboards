@@ -125,6 +125,41 @@ computed:
     name: Data Pipeline Flow
     description: End-to-end data pipeline stages with throughput and latency metrics
     function: pipelineFlow
+    params:
+      # Each stage: id, name, project, metricType, minutes (optional: latencyMs override)
+      # Remove or add stages here — the widget renders whatever is in this list.
+      # If stageConfig is omitted entirely, the server falls back to the hardcoded 6-stage defaults.
+      stageConfig:
+        - id: ingest
+          name: Ingest
+          project: mad-data
+          metricType: pubsub.googleapis.com/topic/send_message_operation_count
+          minutes: 5
+        - id: transform
+          name: Transform
+          project: mad-master
+          metricType: custom.googleapis.com/opencensus/mhive/pipe/rows_written
+          minutes: 10
+        - id: store
+          name: Store
+          project: mad-master
+          metricType: custom.googleapis.com/opencensus/mhive/pipe/rows_written
+          minutes: 10
+        - id: process
+          name: Process
+          project: mad-data
+          metricType: bigquery.googleapis.com/query/execution_times
+          minutes: 10
+        - id: deliver
+          name: Deliver
+          project: mad-master
+          metricType: run.googleapis.com/request_count
+          minutes: 30
+        - id: report
+          name: Report
+          project: mad-master
+          metricType: custom.googleapis.com/opencensus/mhive/pipe/rows_written
+          minutes: 10
     widgetTypes:
       - pipeline-flow
   - id: bidder-error-rate

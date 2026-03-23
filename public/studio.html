@@ -514,6 +514,20 @@
             </div>
           </details>
 
+          <!-- Pipeline Stage Editor — shown only for pipeline-flow widgets -->
+          <details class="props-section" id="pipeline-stage-section" style="display:none" open>
+            <summary>Pipeline Stages</summary>
+            <div style="padding:6px 0 0">
+              <p style="font-size:11px;color:var(--t3);margin:0 0 8px;line-height:1.5">
+                Each stage maps a GCP metric to one node in the flow diagram.
+                Changes here update <code>queries.yaml</code> via the widget config —
+                save the dashboard to persist.
+              </p>
+              <div id="pipeline-stage-list" style="display:flex;flex-direction:column;gap:6px"></div>
+              <button type="button" id="pipeline-add-stage" class="studio-btn secondary small" style="margin-top:8px;width:100%">+ Add Stage</button>
+            </div>
+          </details>
+
           <!-- Widget management toolbar -->
           <div id="widget-manage-bar" class="widget-manage-toolbar">
             <button type="button" id="manage-dup-widget" class="widget-manage-btn" title="Duplicate this widget">⧉ Duplicate</button>
