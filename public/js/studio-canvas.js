@@ -63,22 +63,20 @@ window.StudioCanvas = (function () {
     app = studioApp;
     const canvas = document.getElementById('studio-canvas');
     const dash = app.modifiedConfig.dashboards[app.activeDashIdx];
-    // expose deleteWidget to canvas controls
-    if (!app.deleteWidget) {
-      app.deleteWidget = function (widgetId) {
-        const d = app.modifiedConfig.dashboards[app.activeDashIdx];
-        if (!d) return;
-        d.widgets = d.widgets.filter(function (w) { return w.id !== widgetId; });
-        if (app.selectedWidgetId === widgetId) {
-          app.selectedWidgetId = null;
-          app.selectedWidgetIds = new Set();
-        }
-        app.markDirty();
-        app.renderCanvas();
-        app.renderSidebar();
-        app.showDashboardProps();
-      };
-    }
+    // expose deleteWidget to canvas controls — always fresh so activeDashIdx is never stale
+    app.deleteWidget = function (widgetId) {
+      const d = app.modifiedConfig.dashboards[app.activeDashIdx];
+      if (!d) return;
+      d.widgets = d.widgets.filter(function (w) { return w.id !== widgetId; });
+      if (app.selectedWidgetId === widgetId) {
+        app.selectedWidgetId = null;
+        app.selectedWidgetIds = new Set();
+      }
+      app.markDirty();
+      app.renderCanvas();
+      app.renderSidebar();
+      app.showDashboardProps();
+    };
 
     // Clear canvas
     canvas.textContent = '';

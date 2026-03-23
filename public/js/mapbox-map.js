@@ -104,10 +104,16 @@ window.MapboxUSAMap = (function () {
     return SCHEME_COLORS[name] || SCHEME_COLORS.brand;
   }
 
+  // Single canonical number formatter used by all overlays.
+  // Keeps leaderboard, region panels, and total overlay visually consistent.
+  // Thresholds:  ≥1B → "1.2B"  ≥1M → "4.5M"  ≥1K → "12K"  else integer
   function fmtImp(n) {
-    return n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' :
-           n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' :
-           n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
+    if (n == null || isNaN(n)) return '—';
+    n = Math.round(n);
+    if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+    if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+    if (n >= 1e3) return Math.round(n / 1e3) + 'K';
+    return String(n);
   }
 
   var CHOROPLETH = [
@@ -887,9 +893,12 @@ window.MapboxUSAMap = (function () {
       el.style.cursor = 'grab';
 
       const RESIZE_ZONE = 48; // px from bottom-right corner treated as resize zone
+      const GRID        = 20; // px — snap overlays to this grid while dragging
       const self = this;
       let mode = null; // 'drag' | 'resize'
       let startX = 0, startY = 0, startW = 0, startH = 0;
+
+      function snapGrid(v) { return Math.round(v / GRID) * GRID; }
 
       el.addEventListener('pointerdown', function (e) {
         e.preventDefault();
@@ -899,6 +908,9 @@ window.MapboxUSAMap = (function () {
           ? 'resize' : 'drag';
 
         el.setPointerCapture(e.pointerId); // single capture on the overlay always
+
+        // Show snap grid guide during drag
+        if (self._snapGridEl) self._snapGridEl.classList.add('visible');
 
         if (mode === 'drag') {
           el.style.cursor = 'grabbing';
@@ -924,8 +936,8 @@ window.MapboxUSAMap = (function () {
         if (mode === 'drag') {
           const cr = self._wrap.getBoundingClientRect();
           const er = el.getBoundingClientRect();
-          let nx = e.clientX - startX;
-          let ny = e.clientY - startY;
+          let nx = snapGrid(e.clientX - startX);
+          let ny = snapGrid(e.clientY - startY);
           nx = Math.max(0, Math.min(nx, cr.width  - er.width));
           ny = Math.max(0, Math.min(ny, cr.height - er.height));
           el.style.left = nx + 'px';
@@ -946,6 +958,8 @@ window.MapboxUSAMap = (function () {
 
       el.addEventListener('pointerup', function (e) {
         el.releasePointerCapture(e.pointerId);
+        // Hide snap grid guide
+        if (self._snapGridEl) self._snapGridEl.classList.remove('visible');
         if (mode === 'drag') {
           el.style.cursor = 'grab';
           self._saveOverlayPosition(key, el);
@@ -1124,6 +1138,13 @@ window.MapboxUSAMap = (function () {
     }
 
     _buildOverlayDOM() {
+      // ── Snap-grid guide (studio-mode only, shown during overlay drag) ────────
+      if (document.body.classList.contains('studio-body')) {
+        this._snapGridEl = document.createElement('div');
+        this._snapGridEl.className = 'mgl-snap-grid';
+        this._wrap.appendChild(this._snapGridEl);
+      }
+
       // ── GCP data center icon markers ────────────────────────────────────────
       DATA_CENTERS.forEach(dc => {
         const el = document.createElement('img');
@@ -1261,10 +1282,7 @@ window.MapboxUSAMap = (function () {
 
       const totalImp = sorted.reduce((sum, [, s]) => sum + (s.impressions || 0), 0) || 1;
 
-      const fmt = (n) =>
-        n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' :
-        n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' :
-        n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
+      // Use the shared fmtImp() for consistent number display across all overlays
 
       // Colour ramp: rank 1 = pink, fades to violet for lower ranks
       const rankColor = (i) => {
@@ -1314,7 +1332,7 @@ window.MapboxUSAMap = (function () {
 
         const tdImp = document.createElement('td');
         tdImp.className   = 'mgl-lb-imp-cell';
-        tdImp.textContent = fmt(s.impressions);
+        tdImp.textContent = fmtImp(s.impressions);
 
         // Apply leaderboard scale to row text if box has been resized
         if (this._lbScale && this._lbScale !== 1) {
@@ -1364,7 +1382,7 @@ window.MapboxUSAMap = (function () {
       this._animateTotal(imp);
 
       if (this._lbHeaderTotal) {
-        this._lbHeaderTotal.textContent = fmt(imp) + ' total impressions';
+        this._lbHeaderTotal.textContent = fmtImp(imp) + ' total impressions';
       }
     }
 
@@ -1379,28 +1397,19 @@ window.MapboxUSAMap = (function () {
       const delta = Math.abs(end - start);
       const threshold = Math.max(end * 0.005, 1000);
       if (delta < threshold || start === 0) {
-        const fmt2 = (n) =>
-          n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' :
-          n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' :
-          n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
-        this._totalValueEl.textContent = fmt2(end);
+        this._totalValueEl.textContent = fmtImp(end);
         this._displayedTotal = end;
         return;
       }
       const duration = 800;
       const t0       = performance.now();
 
-      const fmt = (n) =>
-        n >= 1e9 ? (n / 1e9).toFixed(1) + 'B' :
-        n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' :
-        n >= 1e3 ? (n / 1e3).toFixed(0) + 'K' : String(Math.round(n));
-
       const tick = (now) => {
         const elapsed  = now - t0;
         const progress = Math.min(elapsed / duration, 1);
         const eased    = 1 - Math.pow(1 - progress, 3); // easeOutCubic
         const current  = Math.round(start + (end - start) * eased);
-        if (this._totalValueEl) this._totalValueEl.textContent = fmt(current);
+        if (this._totalValueEl) this._totalValueEl.textContent = fmtImp(current);
         if (progress < 1) {
           this._totalAnimId = requestAnimationFrame(tick);
         } else {

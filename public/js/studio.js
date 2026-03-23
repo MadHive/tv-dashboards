@@ -1760,19 +1760,19 @@
     ───────────────────────────────────────────── */
 
     deleteSelectedWidget() {
+      if (!this.selectedWidgetId) return;
       const dash = this.modifiedConfig.dashboards[this.activeDashIdx];
       if (!dash) return;
+      const widgetTitle = (dash.widgets.find(w => w.id === this.selectedWidgetId)?.title) || 'this widget';
+      if (!confirm(`Remove "${widgetTitle}" from the dashboard?`)) return;
       dash.widgets = dash.widgets.filter((w) => w.id !== this.selectedWidgetId);
       this.selectedWidgetId = null;
-
-      const content = document.getElementById('properties-content');
-      const placeholder = document.getElementById('properties-placeholder');
-      if (content) content.style.display = 'none';
-      if (placeholder) placeholder.style.display = '';
+      this.selectedWidgetIds = new Set();
 
       this.markDirty();
       this.renderCanvas();
       this.renderSidebar();
+      this.showDashboardProps();  // return to dashboard panel, not blank placeholder
     }
 
     /* ─────────────────────────────────────────────

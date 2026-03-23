@@ -372,3 +372,18 @@ body.studio-body .mgl-container    { overflow: visible; }
 body.studio-body .mgl-client-logo  { overflow: visible; }
 body.studio-body .mgl-total-overlay { overflow: visible; }
 body.studio-body .mgl-region-panel { overflow: visible; }
+
+/* ── Overlay snap-grid guide (shown during Studio drag) ──────────────────── */
+.mgl-snap-grid {
+  position:       absolute;
+  inset:          0;
+  pointer-events: none;
+  z-index:        5;
+  opacity:        0;
+  transition:     opacity 0.15s;
+  background-image:
+    linear-gradient(rgba(253,164,212,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(253,164,212,0.07) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+.mgl-snap-grid.visible { opacity: 1; }
