@@ -109,7 +109,8 @@
         if (!logoUrl) return;
         (dash.widgets || []).forEach(wc => {
           if (wc.type === 'usa-map-gl') {
-            wc.mglConfig = Object.assign({}, wc.mglConfig || {}, { clientLogo: logoUrl });
+            if (!wc.mglConfig) wc.mglConfig = {};
+            wc.mglConfig.clientLogo = logoUrl;
           }
         });
       });
@@ -1523,47 +1524,49 @@
         bindMap('prop-map-zoom',           function(v) { wc.mapConfig.zoom = v; });
       }
       bind('prop-mgl-scheme',      (v) => {
-        wc.mglConfig = { ...(wc.mglConfig || {}), colorScheme: v };
+        if (!wc.mglConfig) wc.mglConfig = {};
+        wc.mglConfig.colorScheme = v;
         // Immediately apply color scheme change to map widget if it's already rendered
         const card = document.querySelector(`.widget[data-widget-id="${wc.id}"]`);
         if (card && card._widgetInstance && typeof card._widgetInstance.applyConfigChanges === 'function') {
           card._widgetInstance.applyConfigChanges();
         }
       });
-      bind('prop-mgl-particles',   (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), particleCount: parseInt(v, 10) }; });
-      bind('prop-mgl-speed',       (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), particleSpeed: parseFloat(v) }; });
-      bind('prop-mgl-leaderboard', (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showLeaderboard: v === 'true' }; });
+      bind('prop-mgl-particles',   (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.particleCount = parseInt(v, 10); });
+      bind('prop-mgl-speed',       (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.particleSpeed = parseFloat(v); });
+      bind('prop-mgl-leaderboard', (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.showLeaderboard = v === 'true'; });
       bind('prop-mgl-mapstyle', (v) => {
-        wc.mglConfig = { ...(wc.mglConfig || {}), mapStyle: v };
+        if (!wc.mglConfig) wc.mglConfig = {};
+        wc.mglConfig.mapStyle = v;
         const card = document.querySelector(`.widget[data-widget-id="${wc.id}"]`);
         if (card && card._widgetInstance && typeof card._widgetInstance.applyConfigChanges === 'function') {
           card._widgetInstance.applyConfigChanges();
         }
       });
       bind('prop-mgl-zoomviz',  (v) => {
-        wc.mglConfig = { ...(wc.mglConfig || {}), zoomViz: v };
+        if (!wc.mglConfig) wc.mglConfig = {};
+        wc.mglConfig.zoomViz = v;
         const card = document.querySelector(`.widget[data-widget-id="${wc.id}"]`);
         if (card && card._widgetInstance && typeof card._widgetInstance.applyConfigChanges === 'function') {
           card._widgetInstance.applyConfigChanges();
         }
       });
-      bind('prop-mgl-logofit',  (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), logoFit: v }; });
+      bind('prop-mgl-logofit',  (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.logoFit = v; });
       // Per-overlay visibility toggles
-      bind('prop-mgl-show-total',   (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showTotalOverlay:  v === 'true' }; });
-      bind('prop-mgl-show-logo',    (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showClientLogo:    v === 'true' }; });
-      bind('prop-mgl-show-west',    (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showRegionWest:    v === 'true' }; });
-      bind('prop-mgl-show-central', (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showRegionCentral: v === 'true' }; });
-      bind('prop-mgl-show-east',    (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showRegionEast:    v === 'true' }; });
+      bind('prop-mgl-show-total',   (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.showTotalOverlay  = v === 'true'; });
+      bind('prop-mgl-show-logo',    (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.showClientLogo    = v === 'true'; });
+      bind('prop-mgl-show-west',    (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.showRegionWest    = v === 'true'; });
+      bind('prop-mgl-show-central', (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.showRegionCentral = v === 'true'; });
+      bind('prop-mgl-show-east',    (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.showRegionEast    = v === 'true'; });
 
       const bindCenter = () => {
         const lat = parseFloat(document.getElementById('prop-mgl-center-lat')?.value);
         const lng = parseFloat(document.getElementById('prop-mgl-center-lng')?.value);
+        if (!wc.mglConfig) wc.mglConfig = {};
         if (!isNaN(lat) && !isNaN(lng)) {
-          wc.mglConfig = { ...(wc.mglConfig || {}), initialCenter: { lat, lng } };
+          wc.mglConfig.initialCenter = { lat, lng };
         } else {
-          const mc = Object.assign({}, wc.mglConfig || {});
-          delete mc.initialCenter;
-          wc.mglConfig = mc;
+          delete wc.mglConfig.initialCenter;
         }
         self.markDirty();
       };
@@ -1576,12 +1579,14 @@
       const bearingEl = document.getElementById('prop-mgl-bearing');
       if (pitchEl) pitchEl.oninput = () => {
         const v = parseFloat(pitchEl.value);
-        wc.mglConfig = { ...(wc.mglConfig || {}), initialPitch: isNaN(v) ? null : Math.max(0, Math.min(60, v)) };
+        if (!wc.mglConfig) wc.mglConfig = {};
+        wc.mglConfig.initialPitch = isNaN(v) ? null : Math.max(0, Math.min(60, v));
         self.markDirty();
       };
       if (bearingEl) bearingEl.oninput = () => {
         const v = parseFloat(bearingEl.value);
-        wc.mglConfig = { ...(wc.mglConfig || {}), initialBearing: isNaN(v) ? null : v };
+        if (!wc.mglConfig) wc.mglConfig = {};
+        wc.mglConfig.initialBearing = isNaN(v) ? null : v;
         self.markDirty();
       };
       const resetOverlayBtn = document.getElementById('reset-overlay-positions');
@@ -1611,7 +1616,8 @@
       if (zoomSlider2) {
         zoomSlider2.oninput = () => {
           if (zoomVal2) zoomVal2.textContent = zoomSlider2.value;
-          wc.mglConfig = Object.assign({}, wc.mglConfig || {}, { initialZoom: parseFloat(zoomSlider2.value) });
+          if (!wc.mglConfig) wc.mglConfig = {};
+          wc.mglConfig.initialZoom = parseFloat(zoomSlider2.value);
           self.markDirty();
         };
       }
