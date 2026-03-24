@@ -54,7 +54,7 @@ body {
   color: var(--t1);
   font-family: var(--font-body);
   font-weight: 500;
-  font-size: 20px;
+  font-size: 28px;
   overflow: hidden;
   height: 100vh;
   width: 100vw;
@@ -100,13 +100,13 @@ body::before {
 
 .top-left { display: flex; align-items: baseline; gap: 10px; }
 .logo-text {
-  font-size: 24px;
+  font-size: 32px;
   font-weight: 700;
   letter-spacing: 6px;
   color: var(--t1);
 }
 .logo-sub {
-  font-size: 16px;
+  font-size: 22px;
   font-weight: 500;
   letter-spacing: 4px;
   color: var(--mh-pink);
@@ -116,14 +116,14 @@ body::before {
   display: flex;
   align-items: center;
   gap: 14px;
-  font-size: 24px;
+  font-size: 32px;
   font-weight: 700;
   letter-spacing: 3px;
   text-transform: uppercase;
   color: var(--t1);
 }
 #page-subtitle {
-  font-size: 16px;
+  font-size: 22px;
   font-weight: 400;
   letter-spacing: 2px;
   color: var(--t2);
@@ -134,17 +134,17 @@ body::before {
   align-items: center;
   gap: 24px;
   font-family: var(--font-mono);
-  font-size: 16px;
+  font-size: 20px;
   color: var(--t2);
 }
 #clock {
   color: var(--t1);
   letter-spacing: 2px;
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 500;
 }
 .data-source {
-  font-size: 13px;
+  font-size: 18px;
   font-weight: 500;
   letter-spacing: 1px;
   color: var(--t3);
@@ -152,11 +152,11 @@ body::before {
 }
 .separator {
   color: var(--border-lit);
-  font-size: 16px;
+  font-size: 20px;
   opacity: 0.4;
 }
 .last-refresh {
-  font-size: 13px;
+  font-size: 18px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -243,7 +243,7 @@ body::before {
 
 .widget-title {
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 24px;
   font-weight: 700;
   letter-spacing: 3px;
   text-transform: uppercase;
@@ -295,14 +295,14 @@ body::before {
 .big-number-value {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 88px;
+  font-size: 120px;
   line-height: 1;
   color: var(--t1);
   letter-spacing: 2px;
 }
 .big-number-unit {
   font-family: var(--font-body);
-  font-size: 30px;
+  font-size: 40px;
   font-weight: 600;
   color: var(--t2);
 }
@@ -340,7 +340,7 @@ body::before {
 .stat-card-value {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 62px;
+  font-size: 90px;
   line-height: 1;
   color: var(--t1);
 }
