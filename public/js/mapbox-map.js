@@ -1187,8 +1187,13 @@ window.MapboxUSAMap = (function () {
     }
 
     _applyColorScheme(schemeName) {
-      if (!this._map?.isStyleLoaded()) return;
+      console.log('[MapGL] _applyColorScheme called with:', schemeName);
+      if (!this._map?.isStyleLoaded()) {
+        console.log('[MapGL] Map style not loaded in _applyColorScheme');
+        return;
+      }
       const s = getColorScheme(schemeName);
+      console.log('[MapGL] Got color scheme:', s);
 
       this._map.setPaintProperty('arc-particles',
         'circle-color', ['case', ['==', ['get', 'pt'], 'fast'], s.particleFast, s.particleNormal]);
@@ -1603,8 +1608,15 @@ window.MapboxUSAMap = (function () {
       destroy: ()     => instance.destroy(),
       // Studio-only: apply config changes immediately without waiting for data update
       applyConfigChanges: () => {
-        if (!instance._map?.isStyleLoaded()) return;
+        console.log('[MapGL] applyConfigChanges called');
+        console.log('[MapGL] Map loaded?', !!instance._map, 'Style loaded?', instance._map?.isStyleLoaded());
+        console.log('[MapGL] instance._config.mglConfig:', instance._config.mglConfig);
+        if (!instance._map?.isStyleLoaded()) {
+          console.log('[MapGL] Map or style not loaded, skipping');
+          return;
+        }
         instance._cfg = buildMapConfig(instance._config.mglConfig);
+        console.log('[MapGL] Built config, colorScheme:', instance._cfg.colorScheme);
         instance._applyColorScheme(instance._cfg.colorScheme);
         instance._applyZoomViz(instance._cfg.zoomViz);
         if (instance._cfg.mapStyle !== instance._currentStyle) {

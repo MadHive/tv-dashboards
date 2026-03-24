@@ -1184,6 +1184,16 @@
         };
       }
 
+      // Bind without re-rendering (for map configs that can be applied dynamically)
+      function bindNoRender(id, applyFn) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.oninput = el.onchange = function () {
+          applyFn(el.value);
+          self.markDirty();
+        };
+      }
+
       bind('prop-title', (v) => { wc.title = v; });
       bind('prop-subtitle', (v) => { wc.subtitle = v; });
       bind('prop-format', (v) => { wc.format = v; });
@@ -1523,19 +1533,23 @@
         bindMap('prop-map-metric',         function(v) { wc.mapConfig.metric = v; });
         bindMap('prop-map-zoom',           function(v) { wc.mapConfig.zoom = v; });
       }
-      bind('prop-mgl-scheme',      (v) => {
+      bindNoRender('prop-mgl-scheme',      (v) => {
         if (!wc.mglConfig) wc.mglConfig = {};
         wc.mglConfig.colorScheme = v;
+        console.log('[Studio] Color scheme changed to:', v, 'mglConfig:', wc.mglConfig);
         // Immediately apply color scheme change to map widget if it's already rendered
         const card = document.querySelector(`.widget[data-widget-id="${wc.id}"]`);
         if (card && card._widgetInstance && typeof card._widgetInstance.applyConfigChanges === 'function') {
+          console.log('[Studio] Calling applyConfigChanges on widget instance');
           card._widgetInstance.applyConfigChanges();
+        } else {
+          console.log('[Studio] Widget instance not found or no applyConfigChanges method');
         }
       });
-      bind('prop-mgl-particles',   (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.particleCount = parseInt(v, 10); });
-      bind('prop-mgl-speed',       (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.particleSpeed = parseFloat(v); });
-      bind('prop-mgl-leaderboard', (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.showLeaderboard = v === 'true'; });
-      bind('prop-mgl-mapstyle', (v) => {
+      bindNoRender('prop-mgl-particles',   (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.particleCount = parseInt(v, 10); });
+      bindNoRender('prop-mgl-speed',       (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.particleSpeed = parseFloat(v); });
+      bindNoRender('prop-mgl-leaderboard', (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.showLeaderboard = v === 'true'; });
+      bindNoRender('prop-mgl-mapstyle', (v) => {
         if (!wc.mglConfig) wc.mglConfig = {};
         wc.mglConfig.mapStyle = v;
         const card = document.querySelector(`.widget[data-widget-id="${wc.id}"]`);
@@ -1543,7 +1557,7 @@
           card._widgetInstance.applyConfigChanges();
         }
       });
-      bind('prop-mgl-zoomviz',  (v) => {
+      bindNoRender('prop-mgl-zoomviz',  (v) => {
         if (!wc.mglConfig) wc.mglConfig = {};
         wc.mglConfig.zoomViz = v;
         const card = document.querySelector(`.widget[data-widget-id="${wc.id}"]`);
@@ -1551,13 +1565,13 @@
           card._widgetInstance.applyConfigChanges();
         }
       });
-      bind('prop-mgl-logofit',  (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.logoFit = v; });
+      bindNoRender('prop-mgl-logofit',  (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.logoFit = v; });
       // Per-overlay visibility toggles
-      bind('prop-mgl-show-total',   (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.showTotalOverlay  = v === 'true'; });
-      bind('prop-mgl-show-logo',    (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.showClientLogo    = v === 'true'; });
-      bind('prop-mgl-show-west',    (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.showRegionWest    = v === 'true'; });
-      bind('prop-mgl-show-central', (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.showRegionCentral = v === 'true'; });
-      bind('prop-mgl-show-east',    (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.showRegionEast    = v === 'true'; });
+      bindNoRender('prop-mgl-show-total',   (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.showTotalOverlay  = v === 'true'; });
+      bindNoRender('prop-mgl-show-logo',    (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.showClientLogo    = v === 'true'; });
+      bindNoRender('prop-mgl-show-west',    (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.showRegionWest    = v === 'true'; });
+      bindNoRender('prop-mgl-show-central', (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.showRegionCentral = v === 'true'; });
+      bindNoRender('prop-mgl-show-east',    (v) => { if (!wc.mglConfig) wc.mglConfig = {}; wc.mglConfig.showRegionEast    = v === 'true'; });
 
       const bindCenter = () => {
         const lat = parseFloat(document.getElementById('prop-mgl-center-lat')?.value);
