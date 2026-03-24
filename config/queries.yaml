@@ -24,7 +24,7 @@ computed:
     params:
       widgetId: usa-delivery-map
     widgetTypes:
-      - usa-map
+      - usa-map-gl
   - id: campaign-delivery-map-ne
     name: Campaign Delivery Map (Northeast)
     description: Northeast region delivery heatmap
@@ -33,7 +33,7 @@ computed:
       region: northeast
       widgetId: usa-delivery-map-ne
     widgetTypes:
-      - usa-map
+      - usa-map-gl
   - id: campaign-delivery-map-se
     name: Campaign Delivery Map (Southeast)
     description: Southeast region delivery heatmap
@@ -42,7 +42,7 @@ computed:
       region: southeast
       widgetId: usa-delivery-map-se
     widgetTypes:
-      - usa-map
+      - usa-map-gl
   - id: campaign-delivery-map-nw
     name: Campaign Delivery Map (Northwest)
     description: Northwest region delivery heatmap
@@ -51,7 +51,7 @@ computed:
       region: northwest
       widgetId: usa-delivery-map-nw
     widgetTypes:
-      - usa-map
+      - usa-map-gl
   - id: campaign-delivery-map-sw
     name: Campaign Delivery Map (Southwest)
     description: Southwest region delivery heatmap
@@ -60,7 +60,7 @@ computed:
       region: southwest
       widgetId: usa-delivery-map-sw
     widgetTypes:
-      - usa-map
+      - usa-map-gl
   - id: campaign-delivery-map-iheart
     name: Campaign Delivery Map (iHeart)
     description: iHeart-only delivery heatmap via meta_inst join
