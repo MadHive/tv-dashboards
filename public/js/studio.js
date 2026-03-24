@@ -883,6 +883,11 @@
       }
       const textLabelSection = document.getElementById('text-label-section');
       if (textLabelSection) textLabelSection.style.display = type === 'text-label' ? '' : 'none';
+      const sizeScaleSection = document.getElementById('size-scale-section');
+      if (sizeScaleSection) {
+        const showSizeScaleTypes = ['big-number', 'stat-card', 'text-label', 'multi-metric-card', 'progress-bar'];
+        sizeScaleSection.style.display = showSizeScaleTypes.includes(type) ? '' : 'none';
+      }
     }
 
     showWidgetProps(widgetId) {
@@ -964,6 +969,9 @@
       set('prop-x-label', wc.xLabel || '');
       set('prop-y-label', wc.yLabel || '');
       set('prop-legend', wc.legendLabels || '');
+      // Size & Scale settings
+      set('prop-widget-fontsize', wc.fontSize || '');
+      set('prop-widget-scale', wc.scale || '');
       if (wc.type === 'text-label') {
         set('prop-text-content',    wc.text       || '');
         set('prop-text-fontsize',   wc.fontSize   || '24px');
@@ -1322,6 +1330,10 @@
       bind('prop-text-fontsize', (v) => { wc.fontSize = v; });
       bind('prop-text-fontweight', (v) => { wc.fontWeight = v; });
       bind('prop-text-color', (v) => { wc.color = v; });
+
+      // Size & Scale properties (for big-number, stat-card, etc.)
+      bind('prop-widget-fontsize', (v) => { wc.fontSize = v || undefined; });
+      bind('prop-widget-scale', (v) => { wc.scale = v ? parseFloat(v) : undefined; });
 
       // Show/hide Browse GCP Metrics button based on source
       const browseBtn = document.getElementById('browse-metrics-btn');

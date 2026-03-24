@@ -100,6 +100,15 @@ window.Widgets = (function () {
       wrap.appendChild(sparkCanvas);
     }
 
+    // Apply fontSize and scale if configured
+    if (config.fontSize) {
+      valEl.style.fontSize = config.fontSize;
+    }
+    if (config.scale) {
+      wrap.style.transform = `scale(${config.scale})`;
+      wrap.style.transformOrigin = 'center center';
+    }
+
     container.appendChild(wrap);
 
     return {
@@ -123,6 +132,13 @@ window.Widgets = (function () {
         } else {
           periodEl.textContent = '';
         }
+        // Update fontSize and scale if changed dynamically
+        if (data.fontSize) {
+          valEl.style.fontSize = data.fontSize;
+        }
+        if (data.scale) {
+          wrap.style.transform = `scale(${data.scale})`;
+        }
       },
     };
   }
@@ -139,6 +155,13 @@ window.Widgets = (function () {
     const detEl   = el('div', 'stat-card-detail');
     row.append(valEl, sufEl, trendEl);
     wrap.append(row, detEl);
+
+    // Apply scale if configured
+    if (config.scale) {
+      wrap.style.transform = `scale(${config.scale})`;
+      wrap.style.transformOrigin = 'center center';
+    }
+
     container.appendChild(wrap);
 
     return {
@@ -146,18 +169,24 @@ window.Widgets = (function () {
         if (!data) return;
         if (typeof data.value === 'string') {
           valEl.textContent = data.value;
-          // Scale font based on string length — short strings (49/49) get big text,
-          // longer strings (12.4 TB) still get readable size
-          const len = data.value.length;
-          if (len <= 5) valEl.style.fontSize = '62px';
-          else if (len <= 8) valEl.style.fontSize = '52px';
-          else valEl.style.fontSize = '42px';
+          // Scale font based on string length or use config fontSize
+          if (config.fontSize) {
+            valEl.style.fontSize = config.fontSize;
+          } else {
+            const len = data.value.length;
+            if (len <= 5) valEl.style.fontSize = '62px';
+            else if (len <= 8) valEl.style.fontSize = '52px';
+            else valEl.style.fontSize = '42px';
+          }
           if (data.status) {
             const clr = data.status === 'healthy' ? '#00E676' : '#FFB300';
             valEl.style.color = clr;
           }
         } else {
           valEl.textContent = fmtNum(data.value);
+          if (config.fontSize) {
+            valEl.style.fontSize = config.fontSize;
+          }
           if (config.thresholds) {
             valEl.style.color = C.thresholdColor(data.value, config.thresholds, config.invert);
           }
@@ -174,6 +203,13 @@ window.Widgets = (function () {
           detEl.textContent = data.timePeriod;
         } else {
           detEl.textContent = '';
+        }
+        // Update fontSize and scale if changed dynamically
+        if (data.fontSize) {
+          valEl.style.fontSize = data.fontSize;
+        }
+        if (data.scale) {
+          wrap.style.transform = `scale(${data.scale})`;
         }
       },
     };
