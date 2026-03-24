@@ -192,9 +192,18 @@ window.MapboxUSAMap = (function () {
           style:              initialStyle,
           bounds:             USA_BOUNDS,
           fitBoundsOptions:   { padding: 20 },
-          interactive:        document.body.classList.contains('studio-body'),
+          interactive:        true,
           attributionControl: false,
+          pitch:              0,
+          bearing:            0,
         });
+
+        // Add navigation controls (zoom, rotation, pitch)
+        this._map.addControl(new mapboxgl.NavigationControl({
+          showCompass: true,
+          showZoom: true,
+          visualizePitch: true
+        }), 'top-right');
 
         this._map.on('load', async () => {
           await this._addSources();

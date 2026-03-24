@@ -37,6 +37,48 @@ window.Widgets = (function () {
   }
 
   // ===========================================================================
+  // TEXT LABEL
+  // ===========================================================================
+  function textLabel(container, config) {
+    const wrap = el('div', 'text-label-wrap');
+    wrap.style.cssText = `
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      width: 100%;
+      height: 100%;
+      padding: 20px;
+    `;
+
+    const textEl = el('div', 'text-label-content');
+    textEl.style.cssText = `
+      font-size: ${config.fontSize || '24px'};
+      font-weight: ${config.fontWeight || 'bold'};
+      color: ${config.color || 'var(--t1)'};
+      line-height: 1.4;
+    `;
+    textEl.textContent = config.text || 'Text Label';
+
+    wrap.appendChild(textEl);
+    container.appendChild(wrap);
+
+    return {
+      update(data) {
+        if (data && data.text !== undefined) {
+          textEl.textContent = data.text;
+        }
+        if (data && data.color) {
+          textEl.style.color = data.color;
+        }
+        if (data && data.fontSize) {
+          textEl.style.fontSize = data.fontSize;
+        }
+      }
+    };
+  }
+
+  // ===========================================================================
   // BIG NUMBER
   // ===========================================================================
   function bigNumber(container, config) {
@@ -751,6 +793,7 @@ window.Widgets = (function () {
   // ===========================================================================
   function create(type, container, config) {
     switch (type) {
+      case 'text-label':     return textLabel(container, config);
       case 'big-number':     return bigNumber(container, config);
       case 'stat-card':      return statCard(container, config);
       case 'gauge':          return gaugeWidget(container, config);
