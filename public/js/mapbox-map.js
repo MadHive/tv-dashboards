@@ -156,6 +156,9 @@ window.MapboxUSAMap = (function () {
       this._lastBounds     = null;
       // Persisted overlay positions (from mglConfig.overlayPositions)
       this._overlayPositions = Object.assign({}, (this._cfg && this._cfg.overlayPositions) || {});
+      // Custom annotations (markers, text labels) added in Studio
+      this._annotations = (this._cfg && this._cfg.annotations) || [];
+      this._annotationMarkers = [];
 
       this._wrap = document.createElement('div');
       this._wrap.className = 'mgl-container';
@@ -204,6 +207,15 @@ window.MapboxUSAMap = (function () {
           showZoom: true,
           visualizePitch: true
         }), 'top-right');
+
+        // Enable all interaction handlers explicitly
+        this._map.dragPan.enable();
+        this._map.scrollZoom.enable();
+        this._map.boxZoom.enable();
+        this._map.doubleClickZoom.enable();
+        this._map.keyboard.enable();
+        this._map.dragRotate.enable();
+        this._map.touchZoomRotate.enable();
 
         this._map.on('load', async () => {
           await this._addSources();
