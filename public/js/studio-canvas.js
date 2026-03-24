@@ -679,6 +679,9 @@ window.StudioCanvas = (function () {
       const startSpan = wc.position.colSpan || 1;
       const maxSpan = dash.grid.columns - wc.position.col + 1;
 
+      // Add resizing class for visual feedback
+      card.classList.add('is-resizing');
+
       function onMove(e) {
         const delta = e.clientX - startX;
         const spanDelta = Math.round(delta / colWidth);
@@ -691,6 +694,7 @@ window.StudioCanvas = (function () {
       function onUp() {
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
+        card.classList.remove('is-resizing');
         badge.style.display = 'none';
         app.markDirty();
         app.renderCanvas();
@@ -712,6 +716,9 @@ window.StudioCanvas = (function () {
       const startSpan = wc.position.rowSpan || 1;
       const maxSpan = dash.grid.rows - wc.position.row + 1;
 
+      // Add resizing class for visual feedback
+      card.classList.add('is-resizing');
+
       function onMove(e) {
         const delta = e.clientY - startY;
         const spanDelta = Math.round(delta / rowHeight);
@@ -724,6 +731,7 @@ window.StudioCanvas = (function () {
       function onUp() {
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
+        card.classList.remove('is-resizing');
         badge.style.display = 'none';
         app.markDirty();
         app.renderCanvas();

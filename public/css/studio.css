@@ -482,6 +482,13 @@ body.studio-body {
   box-shadow: 0 0 0 2px rgba(253,164,212,0.15), 0 0 20px rgba(253,164,212,0.1);
 }
 
+.studio-canvas .widget.is-resizing {
+  outline: 3px dashed var(--mh-pink);
+  outline-offset: -2px;
+  box-shadow: 0 0 0 3px rgba(253,164,212,0.3), 0 0 30px rgba(253,164,212,0.2);
+  transition: none;
+}
+
 .widget-no-data-badge {
   position: absolute;
   bottom: 4px;
@@ -1603,17 +1610,18 @@ body.studio-body {
 /* ── Resize span badge ── */
 .resize-badge {
   position: absolute;
-  bottom: 6px;
-  right: 6px;
+  bottom: 8px;
+  right: 8px;
   background: var(--mh-pink);
   color: var(--mh-deep);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
-  padding: 2px 5px;
-  border-radius: 3px;
+  padding: 4px 8px;
+  border-radius: 4px;
   pointer-events: none;
   z-index: 30;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   display: none;
 }
 
