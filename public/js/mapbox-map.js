@@ -280,9 +280,55 @@ window.MapboxUSAMap = (function () {
           }
         });
 
-        // Note: viewport changes are NOT auto-captured from map events in studio mode.
-        // Reason: fitBounds fires moveend on init which would overwrite user-set values.
-        // Instead, use the Lat/Lng/Pitch/Bearing inputs in the Map GL Config panel.
+        // In Studio mode, capture viewport changes and sync to config + UI
+        if (document.body.classList.contains('studio-body')) {
+          let captureTimeout = null;
+          const captureViewport = () => {
+            clearTimeout(captureTimeout);
+            // Debounce to avoid excessive updates during continuous movement
+            captureTimeout = setTimeout(() => {
+              const center = this._map.getCenter();
+              const zoom = this._map.getZoom();
+              const pitch = this._map.getPitch();
+              const bearing = this._map.getBearing();
+
+              // Update widget config
+              if (!this._config.mglConfig) this._config.mglConfig = {};
+              this._config.mglConfig.initialCenter = { lat: center.lat, lng: center.lng };
+              this._config.mglConfig.initialZoom = zoom;
+              this._config.mglConfig.initialPitch = pitch;
+              this._config.mglConfig.initialBearing = bearing;
+
+              // Update Studio UI inputs
+              const latEl = document.getElementById('prop-mgl-center-lat');
+              const lngEl = document.getElementById('prop-mgl-center-lng');
+              const zoomEl = document.getElementById('prop-mgl-zoom');
+              const zoomValEl = document.getElementById('prop-mgl-zoom-val');
+              const pitchEl = document.getElementById('prop-mgl-pitch');
+              const bearingEl = document.getElementById('prop-mgl-bearing');
+
+              if (latEl) latEl.value = center.lat.toFixed(2);
+              if (lngEl) lngEl.value = center.lng.toFixed(2);
+              if (zoomEl) {
+                zoomEl.value = zoom.toFixed(1);
+                if (zoomValEl) zoomValEl.textContent = zoom.toFixed(1);
+              }
+              if (pitchEl) pitchEl.value = pitch.toFixed(0);
+              if (bearingEl) bearingEl.value = bearing.toFixed(0);
+
+              // Mark dashboard as dirty in Studio
+              if (window.Studio) window.Studio.markDirty();
+            }, 500);
+          };
+
+          this._map.on('moveend', captureViewport);
+          this._map.on('zoomend', captureViewport);
+          this._map.on('pitchend', captureViewport);
+          this._map.on('rotateend', captureViewport);
+        }
+
+        // Viewport changes are now auto-captured in Studio mode (see event listeners above).
+        // Values are debounced to avoid excessive updates during continuous movement.
 
         // Auto-recover from GPU/WebGL context loss (e.g. after long uptime)
         this._map.on('webglcontextlost', () => {
@@ -1555,6 +1601,16 @@ window.MapboxUSAMap = (function () {
     return {
       update:  (data) => instance.update(data),
       destroy: ()     => instance.destroy(),
+      // Studio-only: apply config changes immediately without waiting for data update
+      applyConfigChanges: () => {
+        if (!instance._map?.isStyleLoaded()) return;
+        instance._cfg = buildMapConfig(instance._config.mglConfig);
+        instance._applyColorScheme(instance._cfg.colorScheme);
+        instance._applyZoomViz(instance._cfg.zoomViz);
+        if (instance._cfg.mapStyle !== instance._currentStyle) {
+          instance._applyMapStyle(instance._cfg.mapStyle);
+        }
+      },
     };
   }
 
