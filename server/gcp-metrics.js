@@ -1530,14 +1530,29 @@ export async function campaignDeliveryMapClientWidget(params = {}, widgetConfig 
 
   hotspots.sort((a, b) => b.impressions - a.impressions);
 
-  // hotspots_z5 and regions omitted — client dashboards use dots mode only
+  // Calculate regional breakdowns by data center (same as generic map widget)
+  const regionDefs = {
+    west:    ['WA','OR','CA','NV','ID','MT','WY','UT','CO','AZ','NM'],
+    central: ['ND','SD','NE','KS','OK','TX','MN','IA','MO','AR','LA','WI','IL','MI','IN','OH','MS','AL','TN','KY'],
+    east:    ['ME','VT','NH','MA','CT','RI','NY','NJ','PA','DE','MD','DC','VA','WV','NC','SC','GA','FL'],
+  };
+
+  const regions = {};
+  Object.entries(regionDefs).forEach(([key, sts]) => {
+    regions[key] = {
+      impressions: sts.reduce((s, st) => s + (stateActivity[st]?.impressions || 0), 0),
+      bids: sts.reduce((s, st) => s + (stateActivity[st]?.bids || 0), 0),
+      campaigns: sts.reduce((s, st) => s + (stateActivity[st]?.campaigns || 0), 0),
+    };
+  });
+
   const totals = {
     impressions: hotspots.reduce((s, h) => s + h.impressions, 0),
     bids:        hotspots.reduce((s, h) => s + (h.clicks * 50), 0), // clicks-based proxy
     services:    1,
   };
 
-  const data = { states: stateActivity, hotspots, totals, regions: {} };
+  const data = { states: stateActivity, hotspots, totals, regions };
 
   const topHotspots = hotspots.slice(0, 20).map(h => ({
     label: (h.zip3 || '?') + ' (' + (h.state || '?') + ')',
