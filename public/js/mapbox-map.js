@@ -190,6 +190,8 @@ window.MapboxUSAMap = (function () {
       this._visObs         = null;
       this._corridorPaths  = [];
       this._lastBounds     = null;
+      this._styleLoaded    = false;
+      this._pendingConfigApply = false;
       // Persisted overlay positions (from mglConfig.overlayPositions)
       this._overlayPositions = Object.assign({}, (this._cfg && this._cfg.overlayPositions) || {});
       // Custom annotations (markers, text labels) added in Studio
@@ -256,6 +258,9 @@ window.MapboxUSAMap = (function () {
         this._map.on('load', async () => {
           await this._addSources();
           this._addLayers();
+          this._styleLoaded = true;
+          console.log('[MapGL] Style loaded, _styleLoaded =', this._styleLoaded);
+
           // Attach GCP icon markers (elements created in _buildOverlayDOM)
           this._dcMarkers.forEach(item => {
             if (!item.marker) {
@@ -277,6 +282,18 @@ window.MapboxUSAMap = (function () {
           }
           if (this._cfg.initialBearing !== null && this._cfg.initialBearing !== undefined) {
             this._map.setBearing(this._cfg.initialBearing);
+          }
+
+          // Apply any pending config changes that came in before style was loaded
+          if (this._pendingConfigApply) {
+            console.log('[MapGL] Applying pending config changes after style load');
+            this._pendingConfigApply = false;
+            this._cfg = buildMapConfig(this._config.mglConfig);
+            this._applyColorScheme(this._cfg.colorScheme);
+            this._applyZoomViz(this._cfg.zoomViz);
+            if (this._cfg.mapStyle !== this._currentStyle) {
+              this._applyMapStyle(this._cfg.mapStyle);
+            }
           }
         });
 
@@ -1188,8 +1205,8 @@ window.MapboxUSAMap = (function () {
 
     _applyColorScheme(schemeName) {
       console.log('[MapGL] _applyColorScheme called with:', schemeName);
-      if (!this._map?.isStyleLoaded()) {
-        console.log('[MapGL] Map style not loaded in _applyColorScheme');
+      if (!this._map || !this._styleLoaded) {
+        console.log('[MapGL] Map or style not loaded in _applyColorScheme');
         return;
       }
       const s = getColorScheme(schemeName);
@@ -1220,7 +1237,7 @@ window.MapboxUSAMap = (function () {
     }
 
     _applyZoomViz(mode) {
-      if (!this._map?.isStyleLoaded()) return;
+      if (!this._map || !this._styleLoaded) return;
       const isHeatmap = mode === 'heatmap';
       const vis = (show) => show ? 'visible' : 'none';
 
@@ -1609,10 +1626,11 @@ window.MapboxUSAMap = (function () {
       // Studio-only: apply config changes immediately without waiting for data update
       applyConfigChanges: () => {
         console.log('[MapGL] applyConfigChanges called');
-        console.log('[MapGL] Map loaded?', !!instance._map, 'Style loaded?', instance._map?.isStyleLoaded());
+        console.log('[MapGL] Map loaded?', !!instance._map, 'Style loaded?', instance._styleLoaded);
         console.log('[MapGL] instance._config.mglConfig:', instance._config.mglConfig);
-        if (!instance._map?.isStyleLoaded()) {
-          console.log('[MapGL] Map or style not loaded, skipping');
+        if (!instance._map || !instance._styleLoaded) {
+          console.log('[MapGL] Style not loaded yet, marking pending');
+          instance._pendingConfigApply = true;
           return;
         }
         instance._cfg = buildMapConfig(instance._config.mglConfig);
