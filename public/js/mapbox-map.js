@@ -502,16 +502,22 @@ window.MapboxUSAMap = (function () {
           this._map.setLayoutProperty(id, 'visibility', 'none');
       });
 
-      // State abbreviation labels — on top of fill so they're always readable
+      // State labels with impression totals — matches old canvas map display
       this._map.addLayer({
         id: 'state-labels', type: 'symbol', source: 'us-states',
+        filter: ['>', ['get', 'impressions'], 0],
         layout: {
-          'text-field':         ['get', 'id'],
+          'text-field': ['format',
+            ['get', 'id'],      { 'font-scale': 1.0 },
+            '\n',               {},
+            ['get', 'imp_fmt'], { 'font-scale': 0.75, 'text-color': '#FDA4D4' },
+          ],
           'text-size':          ['interpolate', ['linear'], ['zoom'], 3, 13, 5, 19],
           'text-font':          ['Open Sans Bold', 'Arial Unicode MS Bold'],
           'text-letter-spacing': 0.08,
           'text-allow-overlap': false,
           'text-optional':      true,
+          'text-line-height':   1.2,
         },
         paint: {
           'text-color':      ['interpolate', ['linear'], ['get', 'intensity'], 0, 'rgba(255,255,255,0.45)', 1, 'rgba(255,255,255,0.9)'],
@@ -542,7 +548,13 @@ window.MapboxUSAMap = (function () {
           const intensity = maxImp > 0 ? Math.pow(raw / maxImp, 0.4) : 0;
           return {
             ...f,
-            properties: { ...f.properties, id: sid, intensity, impressions: raw },
+            properties: {
+              ...f.properties,
+              id: sid,
+              intensity,
+              impressions: raw,
+              imp_fmt: raw > 0 ? fmtImp(raw) : '',
+            },
           };
         });
         this._map.getSource('us-states')?.setData({ type: 'FeatureCollection', features: stateFeatures });
