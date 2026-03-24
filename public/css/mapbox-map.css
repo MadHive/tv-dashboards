@@ -36,7 +36,7 @@
 }
 
 .mgl-lb-title {
-  font-size:      17px;
+  font-size:      24px;
   font-weight:    700;
   color:          rgba(253,164,212,0.7);
   text-transform: uppercase;
@@ -84,19 +84,19 @@
 }
 
 .mgl-lb-rank {
-  font-size:   10px;
+  font-size:   18px;
   font-weight: 700;
   color:       rgba(253,164,212,0.5);
-  width:       18px;
+  width:       32px;
   flex-shrink: 0;
   text-align:  right;
 }
 
 .mgl-lb-state {
-  font-size:   11px;
+  font-size:   20px;
   font-weight: 700;
   color:       #F3F2EB;
-  width:       22px;
+  width:       40px;
   flex-shrink: 0;
 }
 
@@ -116,9 +116,9 @@
 }
 
 .mgl-lb-val {
-  font-size:   9px;
+  font-size:   16px;
   color:       rgba(184,168,208,0.7);
-  width:       36px;
+  width:       60px;
   text-align:  right;
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
@@ -126,7 +126,7 @@
 
 /* Totals banner at bottom */
 .mgl-lb-totals {
-  font-size:  10px;
+  font-size:  18px;
   color:      rgba(184,168,208,0.6);
   text-align: center;
   padding-top: 4px;
@@ -146,7 +146,7 @@
 }
 
 .mgl-total-label {
-  font-size:      12px;
+  font-size:      20px;
   font-weight:    700;
   color:          rgba(253,164,212,0.7);
   text-transform: uppercase;
@@ -154,7 +154,7 @@
 }
 
 .mgl-total-value {
-  font-size:   72px;
+  font-size:   100px;
   font-weight: 800;
   color:       #FFFFFF;
   line-height: 1;
@@ -163,13 +163,13 @@
 }
 
 .mgl-total-sub {
-  font-size: 13px;
+  font-size: 20px;
   color:     rgba(184,168,208,0.6);
 }
 
 /* Leaderboard header total (above title) */
 .mgl-lb-header-total {
-  font-size:      17px;
+  font-size:      24px;
   font-weight:    700;
   color:          rgba(253,164,212,0.85);
   text-align:     center;
@@ -282,19 +282,19 @@
   border-radius: 10px 10px 0 0;
 }
 .mgl-region-name {
-  font-size: 16px; font-weight: 700;
+  font-size: 22px; font-weight: 700;
   color: rgba(184,168,208,0.75);
   text-transform: uppercase; letter-spacing: 0.12em;
   margin-bottom: 6px;
 }
 .mgl-region-impressions {
-  font-size: 40px; font-weight: 800;
+  font-size: 56px; font-weight: 800;
   color: #FDA4D4; line-height: 1.1;
   font-variant-numeric: tabular-nums;
   text-shadow: 0 0 20px rgba(253,164,212,0.55);
 }
 .mgl-region-meta {
-  font-size: 13px; margin-top: 8px;
+  font-size: 18px; margin-top: 8px;
   display: flex; gap: 12px;
 }
 .mgl-region-bids { color: rgba(184,168,208,0.65); }
