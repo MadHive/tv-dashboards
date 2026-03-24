@@ -694,17 +694,20 @@ dashboards:
       rows: 1
       gap: 0
     widgets:
-      - id: usa-map-1773946407896
+      - id: usa-delivery-map-iheart
         type: usa-map-gl
-        title: usa-map
-        source: gcp
-        queryId: iheart-datafeeds-delivered
+        title: ''
+        source: computed
+        queryId: campaign-delivery-map-iheart
         position:
           col: 1
           row: 1
           colSpan: 1
           rowSpan: 1
         mglConfig:
+          colorScheme: iheart
+          showLeaderboard: true
+          zoomViz: dots
           clientLogo: /img/rf2d7i-iheartmedia-vertical-logo-red.png
           overlayPositions:
             clientLogo:
@@ -729,17 +732,17 @@ dashboards:
     clientBranding:
       logoText: iHEART
       logoSub: MEDIA
-      bg: '#0d0005'
-      bgSurface: '#150008'
-      bgCard: '#200010'
-      bgCardAlt: '#2a0015'
-      border: '#4a0015'
-      borderLit: '#8b0020'
-      accent: '#e30c3a'
-      accentDim: rgba(198,0,43,0.15)
-      t2: '#e8c0c8'
-      t3: '#9e6070'
-      dotColor: '#3d0010'
+      bg: '#120005'
+      bgSurface: '#1f000a'
+      bgCard: '#330011'
+      bgCardAlt: '#4d0019'
+      border: '#660022'
+      borderLit: '#a60038'
+      accent: '#E30C3A'
+      accentDim: rgba(227,12,58,0.2)
+      t2: '#ffb3c6'
+      t3: '#cc5577'
+      dotColor: '#1f000a'
       logoImage: /img/rf2d7i-iheartmedia-vertical-logo-red.png
   - id: fox-delivery-map
     name: FOX
@@ -883,17 +886,18 @@ dashboards:
     clientBranding:
       logoText: HEARST
       logoSub: MEDIA
-      bg: '#010a1a'
-      bgSurface: '#051224'
-      bgCard: '#081830'
-      bgCardAlt: '#0c2040'
-      border: '#0a2a5c'
-      borderLit: '#1040a0'
-      accent: '#C8A84B'
-      accentDim: rgba(200,168,75,0.15)
-      t2: '#c0ccdc'
-      t3: '#6080a0'
-      dotColor: '#091830'
+      bg: '#0a0814'
+      bgSurface: '#14102a'
+      bgCard: '#1e1840'
+      bgCardAlt: '#2a2458'
+      border: '#3d3670'
+      borderLit: '#5a5090'
+      accent: '#D4AF37'
+      accentDim: rgba(212,175,55,0.2)
+      t2: '#e8e0d8'
+      t3: '#b0a090'
+      dotColor: '#14102a'
+      logoImage: /img/hearst-logo.svg
     widgets:
       - id: usa-delivery-map-hearst
         type: usa-map-gl
@@ -921,17 +925,18 @@ dashboards:
     clientBranding:
       logoText: HEARST
       logoSub: MEDIA
-      bg: '#010a1a'
-      bgSurface: '#051224'
-      bgCard: '#081830'
-      bgCardAlt: '#0c2040'
-      border: '#0a2a5c'
-      borderLit: '#1040a0'
-      accent: '#C8A84B'
-      accentDim: rgba(200,168,75,0.15)
-      t2: '#c0ccdc'
-      t3: '#6080a0'
-      dotColor: '#091830'
+      bg: '#0a0814'
+      bgSurface: '#14102a'
+      bgCard: '#1e1840'
+      bgCardAlt: '#2a2458'
+      border: '#3d3670'
+      borderLit: '#5a5090'
+      accent: '#D4AF37'
+      accentDim: rgba(212,175,55,0.2)
+      t2: '#e8e0d8'
+      t3: '#b0a090'
+      dotColor: '#14102a'
+      logoImage: /img/hearst-logo.svg
     widgets:
       - id: hearst-feeds-delivered
         type: stat-card
@@ -1038,17 +1043,18 @@ dashboards:
     clientBranding:
       logoText: NEXSTAR
       logoSub: MEDIA GROUP
-      bg: '#050a14'
-      bgSurface: '#081222'
-      bgCard: '#0c1a30'
-      bgCardAlt: '#102040'
-      border: '#0a2a60'
-      borderLit: '#1050b0'
-      accent: '#1E88E5'
-      accentDim: rgba(30,136,229,0.15)
-      t2: '#b8cce0'
-      t3: '#6080a0'
-      dotColor: '#0a1a30'
+      bg: '#001018'
+      bgSurface: '#00182d'
+      bgCard: '#002447'
+      bgCardAlt: '#003366'
+      border: '#004488'
+      borderLit: '#0066cc'
+      accent: '#00A8FF'
+      accentDim: rgba(0,168,255,0.2)
+      t2: '#e0f0ff'
+      t3: '#80b8e0'
+      dotColor: '#00182d'
+      logoImage: /img/nexstar-logo.svg
   - id: nexstar-metrics
     name: Nexstar
     subtitle: Campaign Health
@@ -1060,17 +1066,18 @@ dashboards:
     clientBranding:
       logoText: NEXSTAR
       logoSub: MEDIA GROUP
-      bg: '#050a14'
-      bgSurface: '#081222'
-      bgCard: '#0c1a30'
-      bgCardAlt: '#102040'
-      border: '#0a2a60'
-      borderLit: '#1050b0'
-      accent: '#1E88E5'
-      accentDim: rgba(30,136,229,0.15)
-      t2: '#b8cce0'
-      t3: '#6080a0'
-      dotColor: '#0a1a30'
+      bg: '#001018'
+      bgSurface: '#00182d'
+      bgCard: '#002447'
+      bgCardAlt: '#003366'
+      border: '#004488'
+      borderLit: '#0066cc'
+      accent: '#00A8FF'
+      accentDim: rgba(0,168,255,0.2)
+      t2: '#e0f0ff'
+      t3: '#80b8e0'
+      dotColor: '#00182d'
+      logoImage: /img/nexstar-logo.svg
     widgets:
       - id: nexstar-feeds-delivered
         type: stat-card
@@ -1133,6 +1140,52 @@ dashboards:
           row: 2
           colSpan: 2
           rowSpan: 1
+  - id: scripps-delivery-map
+    name: EW Scripps
+    subtitle: Delivery
+    icon: map
+    grid:
+      columns: 1
+      rows: 1
+      gap: 0
+    widgets:
+      - id: usa-delivery-map-scripps
+        type: usa-map-gl
+        title: ''
+        source: computed
+        queryId: campaign-delivery-map-scripps
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        mglConfig:
+          colorScheme: warm
+          showLeaderboard: true
+          zoomViz: dots
+          clientLogo: /img/scripps-logo.svg
+          overlayPositions:
+            clientLogo:
+              top: 1318px
+              left: 500px
+            west:
+              top: 120px
+              left: 340px
+    clientBranding:
+      logoText: SCRIPPS
+      logoSub: MEDIA
+      bg: '#140a00'
+      bgSurface: '#241500'
+      bgCard: '#3d2400'
+      bgCardAlt: '#573300'
+      border: '#7a4800'
+      borderLit: '#a66000'
+      accent: '#FF6B35'
+      accentDim: rgba(255,107,53,0.2)
+      t2: '#ffe8d8'
+      t3: '#d8a888'
+      dotColor: '#241500'
+      logoImage: /img/scripps-logo.svg
   - id: scripps-metrics
     name: EW Scripps
     subtitle: Campaign Health
@@ -1144,17 +1197,18 @@ dashboards:
     clientBranding:
       logoText: SCRIPPS
       logoSub: MEDIA
-      bg: '#020810'
-      bgSurface: '#040f1c'
-      bgCard: '#071528'
-      bgCardAlt: '#0a1c34'
-      border: '#0a2040'
-      borderLit: '#0f3060'
-      accent: '#E8541A'
-      accentDim: rgba(232,84,26,0.15)
-      t2: '#c8c0b8'
-      t3: '#908070'
-      dotColor: '#0a1a28'
+      bg: '#140a00'
+      bgSurface: '#241500'
+      bgCard: '#3d2400'
+      bgCardAlt: '#573300'
+      border: '#7a4800'
+      borderLit: '#a66000'
+      accent: '#FF6B35'
+      accentDim: rgba(255,107,53,0.2)
+      t2: '#ffe8d8'
+      t3: '#d8a888'
+      dotColor: '#241500'
+      logoImage: /img/scripps-logo.svg
     widgets:
       - id: scripps-feeds-delivered
         type: stat-card
@@ -1217,6 +1271,52 @@ dashboards:
           row: 2
           colSpan: 2
           rowSpan: 1
+  - id: cox-delivery-map
+    name: Cox Media Group
+    subtitle: Delivery
+    icon: map
+    grid:
+      columns: 1
+      rows: 1
+      gap: 0
+    widgets:
+      - id: usa-delivery-map-cox
+        type: usa-map-gl
+        title: ''
+        source: computed
+        queryId: campaign-delivery-map-cox
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        mglConfig:
+          colorScheme: cool
+          showLeaderboard: true
+          zoomViz: dots
+          clientLogo: /img/cox-logo.svg
+          overlayPositions:
+            clientLogo:
+              top: 1318px
+              left: 500px
+            west:
+              top: 120px
+              left: 340px
+    clientBranding:
+      logoText: COX
+      logoSub: MEDIA GROUP
+      bg: '#001820'
+      bgSurface: '#002838'
+      bgCard: '#003d58'
+      bgCardAlt: '#00567d'
+      border: '#0073a8'
+      borderLit: '#0095d9'
+      accent: '#00D9FF'
+      accentDim: rgba(0,217,255,0.2)
+      t2: '#d0f0ff'
+      t3: '#78c0e0'
+      dotColor: '#002838'
+      logoImage: /img/cox-logo.svg
   - id: cox-metrics
     name: Cox Media Group
     subtitle: Campaign Health
@@ -1228,17 +1328,18 @@ dashboards:
     clientBranding:
       logoText: COX
       logoSub: MEDIA GROUP
-      bg: '#030810'
-      bgSurface: '#051018'
-      bgCard: '#081520'
-      bgCardAlt: '#0c1c2c'
-      border: '#0a2040'
-      borderLit: '#105090'
-      accent: '#0091D5'
-      accentDim: rgba(0,145,213,0.15)
-      t2: '#b8ccdc'
-      t3: '#607890'
-      dotColor: '#081830'
+      bg: '#001820'
+      bgSurface: '#002838'
+      bgCard: '#003d58'
+      bgCardAlt: '#00567d'
+      border: '#0073a8'
+      borderLit: '#0095d9'
+      accent: '#00D9FF'
+      accentDim: rgba(0,217,255,0.2)
+      t2: '#d0f0ff'
+      t3: '#78c0e0'
+      dotColor: '#002838'
+      logoImage: /img/cox-logo.svg
     widgets:
       - id: cox-feeds-delivered
         type: stat-card
