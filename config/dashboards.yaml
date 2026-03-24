@@ -70,6 +70,7 @@ dashboards:
           colSpan: 1
           rowSpan: 1
         mglConfig:
+          mapStyle: mapbox
           overlayPositions:
             west:
               top: 0px
@@ -109,6 +110,7 @@ dashboards:
           colSpan: 1
           rowSpan: 1
         mglConfig:
+          mapStyle: mapbox
           overlayPositions:
             east:
               top: 247.379px
@@ -156,6 +158,9 @@ dashboards:
             totalOverlay:
               top: 1124.5px
               left: 12px
+          colorScheme: cool
+          mapStyle: mapbox
+          zoomViz: heatmap
         mapConfig:
           minImpressions: 50
           region: southeast
@@ -180,6 +185,7 @@ dashboards:
           colSpan: 1
           rowSpan: 1
         mglConfig:
+          mapStyle: mapbox
           overlayPositions:
             west:
               top: 262px
@@ -705,6 +711,7 @@ dashboards:
           colSpan: 1
           rowSpan: 1
         mglConfig:
+          mapStyle: mapbox
           colorScheme: iheart
           showLeaderboard: true
           zoomViz: dots
@@ -764,6 +771,7 @@ dashboards:
           colSpan: 1
           rowSpan: 1
         mglConfig:
+          mapStyle: mapbox
           colorScheme: warm
           showLeaderboard: true
           zoomViz: dots
@@ -910,6 +918,7 @@ dashboards:
           colSpan: 1
           rowSpan: 1
         mglConfig:
+          mapStyle: mapbox
           colorScheme: warm
           showLeaderboard: true
           zoomViz: dots
@@ -1160,6 +1169,7 @@ dashboards:
           colSpan: 1
           rowSpan: 1
         mglConfig:
+          mapStyle: mapbox
           colorScheme: warm
           showLeaderboard: true
           zoomViz: dots
@@ -1291,6 +1301,7 @@ dashboards:
           colSpan: 1
           rowSpan: 1
         mglConfig:
+          mapStyle: mapbox
           colorScheme: cool
           showLeaderboard: true
           zoomViz: dots
