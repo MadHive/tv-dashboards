@@ -741,6 +741,52 @@ dashboards:
       t3: '#9e6070'
       dotColor: '#3d0010'
       logoImage: /img/rf2d7i-iheartmedia-vertical-logo-red.png
+  - id: fox-delivery-map
+    name: FOX
+    subtitle: Delivery
+    icon: map
+    grid:
+      columns: 1
+      rows: 1
+      gap: 0
+    widgets:
+      - id: usa-delivery-map-fox
+        type: usa-map-gl
+        title: ''
+        source: computed
+        queryId: campaign-delivery-map-fox
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        mglConfig:
+          colorScheme: warm
+          showLeaderboard: true
+          zoomViz: dots
+          clientLogo: /img/fox-logo.svg
+          overlayPositions:
+            clientLogo:
+              top: 1318px
+              left: 500px
+            west:
+              top: 120px
+              left: 340px
+    clientBranding:
+      logoText: FOX
+      logoSub: MEDIA
+      bg: '#000814'
+      bgSurface: '#001d3d'
+      bgCard: '#003566'
+      bgCardAlt: '#004080'
+      border: '#0051a3'
+      borderLit: '#0066cc'
+      accent: '#F5A524'
+      accentDim: rgba(245,165,36,0.2)
+      t2: '#e8eef5'
+      t3: '#8fa8c2'
+      dotColor: '#001428'
+      logoImage: /img/fox-logo.svg
   - id: fox-metrics
     name: FOX
     subtitle: Campaign Health
@@ -752,17 +798,18 @@ dashboards:
     clientBranding:
       logoText: FOX
       logoSub: MEDIA
-      bg: '#0a0f1a'
-      bgSurface: '#0f1826'
-      bgCard: '#14202f'
-      bgCardAlt: '#1a2a3f'
-      border: '#1a3a5c'
-      borderLit: '#2a5a8c'
+      bg: '#000814'
+      bgSurface: '#001d3d'
+      bgCard: '#003566'
+      bgCardAlt: '#004080'
+      border: '#0051a3'
+      borderLit: '#0066cc'
       accent: '#F5A524'
-      accentDim: rgba(245,165,36,0.15)
-      t2: '#c8d8e8'
-      t3: '#7090a8'
-      dotColor: '#1a2f44'
+      accentDim: rgba(245,165,36,0.2)
+      t2: '#e8eef5'
+      t3: '#8fa8c2'
+      dotColor: '#001428'
+      logoImage: /img/fox-logo.svg
     widgets:
       - id: fox-feeds-delivered
         type: stat-card
