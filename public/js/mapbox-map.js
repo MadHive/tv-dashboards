@@ -64,9 +64,45 @@ window.MapboxUSAMap = (function () {
   // ── Config defaults + color schemes ──────────────────────────────────────
 
   var SCHEME_COLORS = {
-    brand:  { particleNormal: '#67E8F9', particleFast: '#FDA4D4', stateGlowHigh: '#FDA4D4', choropleth: null },
-    cool:   { particleNormal: '#60A5FA', particleFast: '#FFFFFF', stateGlowHigh: '#e0f2fe', choropleth: null },
-    warm:   { particleNormal: '#fbbf24', particleFast: '#FF6B35', stateGlowHigh: '#fef08a', choropleth: null },
+    brand:  {
+      particleNormal: '#67E8F9', particleFast: '#FDA4D4', stateGlowHigh: '#FDA4D4',
+      choropleth: [
+        'interpolate', ['linear'], ['get', 'intensity'],
+        0,    '#0d021e',
+        0.10, '#1e0840',
+        0.28, '#4c1d95',
+        0.50, '#7c3aed',
+        0.70, '#a855f7',
+        0.88, '#e879f9',
+        1.0,  '#FDA4D4',
+      ],
+    },
+    cool:   {
+      particleNormal: '#60A5FA', particleFast: '#FFFFFF', stateGlowHigh: '#e0f2fe',
+      choropleth: [
+        'interpolate', ['linear'], ['get', 'intensity'],
+        0,    '#0a0e1a',
+        0.10, '#0f1729',
+        0.28, '#1e3a8a',
+        0.50, '#2563eb',
+        0.70, '#60a5fa',
+        0.88, '#93c5fd',
+        1.0,  '#e0f2fe',
+      ],
+    },
+    warm:   {
+      particleNormal: '#fbbf24', particleFast: '#FF6B35', stateGlowHigh: '#fef08a',
+      choropleth: [
+        'interpolate', ['linear'], ['get', 'intensity'],
+        0,    '#1a0f05',
+        0.10, '#2d1a0a',
+        0.28, '#92400e',
+        0.50, '#d97706',
+        0.70, '#fbbf24',
+        0.88, '#fcd34d',
+        1.0,  '#fef08a',
+      ],
+    },
     iheart: {
       particleNormal: '#FF6B8A', particleFast: '#FFAABB', stateGlowHigh: '#FFAABB',
       choropleth: [
