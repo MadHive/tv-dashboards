@@ -930,6 +930,9 @@ window.MapboxUSAMap = (function () {
       function snapGrid(v) { return Math.round(v / GRID) * GRID; }
 
       el.addEventListener('pointerdown', function (e) {
+        // Don't interfere with studio control bar (drag handle, delete button)
+        if (e.target.closest('.studio-widget-bar')) return;
+
         e.preventDefault();
         // Stop the click from bubbling to the map widget card and selecting the whole widget
         e.stopPropagation();
