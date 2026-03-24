@@ -281,6 +281,7 @@
               <label>
                 Type
                 <select id="prop-type">
+                  <option value="text-label">Text Label</option>
                   <option value="big-number">Big Number</option>
                   <option value="stat-card">Stat Card</option>
                   <option value="gauge">Gauge</option>
@@ -383,6 +384,33 @@
                   <input id="prop-crit" type="number">
                 </label>
               </div>
+            </div>
+          </details>
+
+          <details class="props-section" id="text-label-section" style="display:none">
+            <summary>Text Content</summary>
+            <div>
+              <label>
+                Text
+                <textarea id="prop-text-content" rows="3" placeholder="Enter your text here"></textarea>
+              </label>
+              <label>
+                Font Size
+                <input id="prop-text-fontsize" type="text" placeholder="24px">
+              </label>
+              <label>
+                Font Weight
+                <select id="prop-text-fontweight">
+                  <option value="normal">Normal</option>
+                  <option value="bold">Bold</option>
+                  <option value="600">Semi-Bold</option>
+                  <option value="300">Light</option>
+                </select>
+              </label>
+              <label>
+                Color
+                <input id="prop-text-color" type="text" placeholder="e.g. #FDA4D4 or var(--t1)">
+              </label>
             </div>
           </details>
 

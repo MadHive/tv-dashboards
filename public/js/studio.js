@@ -881,6 +881,8 @@
         const showLabelsTypes = ['bar-chart', 'line-chart', 'stacked-bar-chart', 'donut-ring', 'sankey', 'heatmap', 'treemap', 'pipeline-flow', 'multi-metric-card', 'status-grid', 'table'];
         labelsSection.style.display = showLabelsTypes.includes(type) ? '' : 'none';
       }
+      const textLabelSection = document.getElementById('text-label-section');
+      if (textLabelSection) textLabelSection.style.display = type === 'text-label' ? '' : 'none';
     }
 
     showWidgetProps(widgetId) {
@@ -962,6 +964,12 @@
       set('prop-x-label', wc.xLabel || '');
       set('prop-y-label', wc.yLabel || '');
       set('prop-legend', wc.legendLabels || '');
+      if (wc.type === 'text-label') {
+        set('prop-text-content',    wc.text       || '');
+        set('prop-text-fontsize',   wc.fontSize   || '24px');
+        set('prop-text-fontweight', wc.fontWeight || 'bold');
+        set('prop-text-color',      wc.color      || 'var(--t1)');
+      }
       if (wc.type === 'usa-map') {
         const mc = wc.mapConfig || {};
         set('prop-map-timewindow',     mc.timeWindow     !== undefined ? mc.timeWindow     : 7);
@@ -1105,7 +1113,7 @@
       const typeSelect = document.createElement('select');
       typeSelect.style.cssText = 'width:100%;background:var(--bg-card);border:1px solid var(--border);border-radius:3px;color:var(--t1);font-size:12px;padding:4px 6px';
       [
-        'big-number','stat-card','gauge','gauge-row','bar-chart','line-chart','stacked-bar-chart',
+        'text-label','big-number','stat-card','gauge','gauge-row','bar-chart','line-chart','stacked-bar-chart',
         'progress-bar','status-grid','alert-list','service-heatmap','pipeline-flow',
         'usa-map','usa-map-gl','security-scorecard','donut-ring','sankey','heatmap',
         'treemap','table','multi-metric-card','sparkline-grid','text-block',
@@ -1308,6 +1316,12 @@
         wc.thresholds = wc.thresholds || {};
         wc.thresholds.critical = v !== '' ? parseFloat(v) : undefined;
       });
+
+      // Text label properties
+      bind('prop-text-content', (v) => { wc.text = v; });
+      bind('prop-text-fontsize', (v) => { wc.fontSize = v; });
+      bind('prop-text-fontweight', (v) => { wc.fontWeight = v; });
+      bind('prop-text-color', (v) => { wc.color = v; });
 
       // Show/hide Browse GCP Metrics button based on source
       const browseBtn = document.getElementById('browse-metrics-btn');
@@ -2593,6 +2607,7 @@
 
     openWidgetPalette() {
       const TYPES = [
+        { type: 'text-label',        icon: '\uD83C\uDFF7', name: 'Text Label',       desc: 'Custom text with configurable font and color' },
         { type: 'big-number',        icon: '\uD83D\uDD22', name: 'Big Number',       desc: 'Single large metric value with trend arrow' },
         { type: 'stat-card',         icon: '\uD83D\uDCCA', name: 'Stat Card',        desc: 'Metric with status, detail text, and trend' },
         { type: 'gauge',             icon: '\u23F2',        name: 'Gauge',            desc: 'Circular gauge with min/max thresholds' },
