@@ -1510,12 +1510,31 @@
         bindMap('prop-map-metric',         function(v) { wc.mapConfig.metric = v; });
         bindMap('prop-map-zoom',           function(v) { wc.mapConfig.zoom = v; });
       }
-      bind('prop-mgl-scheme',      (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), colorScheme: v }; });
+      bind('prop-mgl-scheme',      (v) => {
+        wc.mglConfig = { ...(wc.mglConfig || {}), colorScheme: v };
+        // Immediately apply color scheme change to map widget if it's already rendered
+        const card = document.querySelector(`.widget[data-widget-id="${wc.id}"]`);
+        if (card && card._widgetInstance && typeof card._widgetInstance.applyConfigChanges === 'function') {
+          card._widgetInstance.applyConfigChanges();
+        }
+      });
       bind('prop-mgl-particles',   (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), particleCount: parseInt(v, 10) }; });
       bind('prop-mgl-speed',       (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), particleSpeed: parseFloat(v) }; });
       bind('prop-mgl-leaderboard', (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showLeaderboard: v === 'true' }; });
-      bind('prop-mgl-mapstyle', (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), mapStyle: v }; });
-      bind('prop-mgl-zoomviz',  (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), zoomViz: v }; });
+      bind('prop-mgl-mapstyle', (v) => {
+        wc.mglConfig = { ...(wc.mglConfig || {}), mapStyle: v };
+        const card = document.querySelector(`.widget[data-widget-id="${wc.id}"]`);
+        if (card && card._widgetInstance && typeof card._widgetInstance.applyConfigChanges === 'function') {
+          card._widgetInstance.applyConfigChanges();
+        }
+      });
+      bind('prop-mgl-zoomviz',  (v) => {
+        wc.mglConfig = { ...(wc.mglConfig || {}), zoomViz: v };
+        const card = document.querySelector(`.widget[data-widget-id="${wc.id}"]`);
+        if (card && card._widgetInstance && typeof card._widgetInstance.applyConfigChanges === 'function') {
+          card._widgetInstance.applyConfigChanges();
+        }
+      });
       bind('prop-mgl-logofit',  (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), logoFit: v }; });
       // Per-overlay visibility toggles
       bind('prop-mgl-show-total',   (v) => { wc.mglConfig = { ...(wc.mglConfig || {}), showTotalOverlay:  v === 'true' }; });

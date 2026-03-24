@@ -237,6 +237,7 @@ window.StudioCanvas = (function () {
         }
       }
       widgetInstances[wc.id] = widgetInstance;
+      card._widgetInstance = widgetInstance;
 
       // Click: select widget (supports shift+click multi-select)
       card.addEventListener('click', function (e) {

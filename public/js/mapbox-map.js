@@ -1601,6 +1601,16 @@ window.MapboxUSAMap = (function () {
     return {
       update:  (data) => instance.update(data),
       destroy: ()     => instance.destroy(),
+      // Studio-only: apply config changes immediately without waiting for data update
+      applyConfigChanges: () => {
+        if (!instance._map?.isStyleLoaded()) return;
+        instance._cfg = buildMapConfig(instance._config.mglConfig);
+        instance._applyColorScheme(instance._cfg.colorScheme);
+        instance._applyZoomViz(instance._cfg.zoomViz);
+        if (instance._cfg.mapStyle !== instance._currentStyle) {
+          instance._applyMapStyle(instance._cfg.mapStyle);
+        }
+      },
     };
   }
 
