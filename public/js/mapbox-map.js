@@ -1107,15 +1107,27 @@ window.MapboxUSAMap = (function () {
       // Convert percentage-based positions back to pixels for current resolution
       if (pos.top && pos.top.endsWith('%')) {
         const cr = this._wrap.getBoundingClientRect();
-        el.style.top = (parseFloat(pos.top) / 100 * cr.height) + 'px';
-      } else {
+        const topPercent = parseFloat(pos.top);
+        if (!isNaN(topPercent)) {
+          el.style.top = (topPercent / 100 * cr.height) + 'px';
+        } else {
+          console.warn(`[MapGL] Invalid top percentage for ${key}:`, pos.top);
+          delete this._overlayPositions[key].top; // Clean up bad data
+        }
+      } else if (pos.top) {
         el.style.top = pos.top;
       }
 
       if (pos.left && pos.left.endsWith('%')) {
         const cr = this._wrap.getBoundingClientRect();
-        el.style.left = (parseFloat(pos.left) / 100 * cr.width) + 'px';
-      } else {
+        const leftPercent = parseFloat(pos.left);
+        if (!isNaN(leftPercent)) {
+          el.style.left = (leftPercent / 100 * cr.width) + 'px';
+        } else {
+          console.warn(`[MapGL] Invalid left percentage for ${key}:`, pos.left);
+          delete this._overlayPositions[key].left; // Clean up bad data
+        }
+      } else if (pos.left) {
         el.style.left = pos.left;
       }
 
@@ -1125,9 +1137,15 @@ window.MapboxUSAMap = (function () {
       // Convert percentage-based sizes back to pixels for current resolution
       if (pos.width && pos.width.endsWith('%')) {
         const cr = this._wrap.getBoundingClientRect();
-        const widthPx = (parseFloat(pos.width) / 100 * cr.width) + 'px';
-        el.style.width = widthPx;
-        this._applyOverlayScale(el, key, widthPx);
+        const widthPercent = parseFloat(pos.width);
+        if (!isNaN(widthPercent) && widthPercent > 0) {
+          const widthPx = (widthPercent / 100 * cr.width) + 'px';
+          el.style.width = widthPx;
+          this._applyOverlayScale(el, key, widthPx);
+        } else {
+          console.warn(`[MapGL] Invalid width percentage for ${key}:`, pos.width);
+          delete this._overlayPositions[key].width;
+        }
       } else if (pos.width) {
         el.style.width = pos.width;
         this._applyOverlayScale(el, key, pos.width);
@@ -1137,7 +1155,13 @@ window.MapboxUSAMap = (function () {
 
       if (pos.height && pos.height.endsWith('%')) {
         const cr = this._wrap.getBoundingClientRect();
-        el.style.height = (parseFloat(pos.height) / 100 * cr.height) + 'px';
+        const heightPercent = parseFloat(pos.height);
+        if (!isNaN(heightPercent) && heightPercent > 0) {
+          el.style.height = (heightPercent / 100 * cr.height) + 'px';
+        } else {
+          console.warn(`[MapGL] Invalid height percentage for ${key}:`, pos.height);
+          delete this._overlayPositions[key].height;
+        }
       } else if (pos.height) {
         el.style.height = pos.height;
       }
@@ -1150,6 +1174,12 @@ window.MapboxUSAMap = (function () {
       const cr = this._wrap.getBoundingClientRect();
       const topPx = parseFloat(el.style.top);
       const leftPx = parseFloat(el.style.left);
+
+      // Only save if we have valid numeric positions
+      if (isNaN(topPx) || isNaN(leftPx)) {
+        console.warn(`[MapGL] Cannot save position for ${key} - invalid position values`, el.style.top, el.style.left);
+        return;
+      }
 
       this._overlayPositions[key] = {
         top: ((topPx / cr.height) * 100).toFixed(2) + '%',
@@ -1167,14 +1197,22 @@ window.MapboxUSAMap = (function () {
 
       if (el.style.width) {
         const widthPx = parseFloat(el.style.width);
-        pos.width = ((widthPx / cr.width) * 100).toFixed(2) + '%';
+        if (!isNaN(widthPx) && widthPx > 0) {
+          pos.width = ((widthPx / cr.width) * 100).toFixed(2) + '%';
+        } else {
+          delete pos.width;
+        }
       } else {
         delete pos.width;
       }
 
       if (el.style.height) {
         const heightPx = parseFloat(el.style.height);
-        pos.height = ((heightPx / cr.height) * 100).toFixed(2) + '%';
+        if (!isNaN(heightPx) && heightPx > 0) {
+          pos.height = ((heightPx / cr.height) * 100).toFixed(2) + '%';
+        } else {
+          delete pos.height;
+        }
       } else {
         delete pos.height;
       }
