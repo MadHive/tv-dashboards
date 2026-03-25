@@ -496,8 +496,10 @@ window.Widgets = (function () {
   }
 
   // ===========================================================================
-  // USA MAP
+  // DEPRECATED: Old Canvas 2D USA MAP
+  // Replaced by Mapbox GL implementation - use type: usa-map-gl
   // ===========================================================================
+  /*
   function usaMapWidget(container, config) {
     const canvas = el('canvas', 'usa-map-canvas');
     container.appendChild(canvas);
@@ -509,6 +511,7 @@ window.Widgets = (function () {
       },
     };
   }
+  */
 
   // ===========================================================================
   // SECURITY SCORECARD — full-page VulnTrack overview
@@ -840,10 +843,12 @@ window.Widgets = (function () {
       case 'alert-list':     return alertList(container, config);
       case 'service-heatmap': return serviceHeatmap(container, config);
       case 'pipeline-flow':  return pipelineFlow(container, config);
-      case 'usa-map':        return usaMapWidget(container, config);
+      // case 'usa-map':        return usaMapWidget(container, config); // DEPRECATED
       case 'usa-map-gl':
         if (window.MapboxUSAMap) return window.MapboxUSAMap.mapboxUsaMap(container, config);
-        return usaMapWidget(container, config); // fallback to Canvas 2D if GL not loaded
+        console.error('[widgets] Mapbox GL map not loaded - cannot render usa-map-gl widget');
+        container.textContent = 'Map unavailable (Mapbox GL not loaded)';
+        return { update() {} };
       case 'security-scorecard': return securityScorecard(container, config);
       case 'sparkline':      return sparkline(container, config);
       case 'multi-metric-card': return multiMetricCard(container, config);

@@ -1,28 +1,44 @@
 // ===========================================================================
-// Canvas-based chart renderers — MadHive brand colors
+// Canvas-based chart renderers — Theme-aware colors
 // Sparklines, gauges, bar charts, pipeline flow, USA map
-// V2: Visual overhaul with info-dense map & rich pipeline
+// V3: Dynamic theming support for client branding
 // ===========================================================================
 
 window.Charts = (function () {
   'use strict';
 
-  // ── MadHive brand palette for canvas ──
-  const BRAND = {
-    pink:     '#FDA4D4',
-    hotPink:  '#FF9BD3',
-    deep:     '#200847',
-    violet:   '#3D1A5C',
-    surface:  '#1A0B38',
-    border:   '#2E1860',
-    text1:    '#F3F2EB',
-    text2:    '#B8A8D0',
-    text3:    '#6B5690',
-    green:    '#4ADE80',
-    amber:    '#FBBF24',
-    red:      '#FB7185',
-    cyan:     '#67E8F9',
-  };
+  // ── Current theme (updated by setTheme) ──
+  let currentTheme = 'brand';
+
+  // ── Dynamic BRAND palette — reads from active theme ──
+  function getBRAND() {
+    if (window.Themes && window.Themes.getCanvasTheme) {
+      return window.Themes.getCanvasTheme(currentTheme);
+    }
+    // Fallback to default brand colors if Themes not loaded
+    return {
+      pink:     '#FDA4D4',
+      hotPink:  '#FF9BD3',
+      deep:     '#200847',
+      violet:   '#3D1A5C',
+      surface:  '#1A0B38',
+      border:   '#2E1860',
+      text1:    '#F3F2EB',
+      text2:    '#B8A8D0',
+      text3:    '#6B5690',
+      green:    '#4ADE80',
+      amber:    '#FBBF24',
+      red:      '#FB7185',
+      cyan:     '#67E8F9',
+    };
+  }
+
+  // For backward compatibility, provide BRAND as getter
+  const BRAND = new Proxy({}, {
+    get(target, prop) {
+      return getBRAND()[prop];
+    }
+  });
 
   // ── DPI-aware canvas setup ──
   function setup(canvas) {
@@ -176,328 +192,44 @@ window.Charts = (function () {
   }
 
   // ===========================================================================
-  // PIPELINE FLOW V2 — 6 stages, sparklines, sub-metrics, health rings,
-  // throughput-proportional lines, summary header, cumulative flow
+  // PIPELINE FLOW V3 — Modular composable pipeline with animation
+  // Uses PipelineComponents library for reusable, configurable rendering
   // ===========================================================================
-  let pipelineParticles = [];
   let pipelineAnimId = null;
-  let pipelineCumulativeHistory = []; // [{tick, stages: [throughput...]}]
 
-  function pipeline(canvas, stages, summary) {
+  function pipeline(canvas, stages, summary, config = {}) {
     if (!stages || stages.length === 0) return;
-    const { ctx, w, h } = setup(canvas);
+
+    // Initialize pipeline builder on first use
+    if (!canvas._pipelineBuilder) {
+      canvas._pipelineBuilder = new window.PipelineComponents.PipelineBuilder({
+        theme: BRAND,
+        layout: config.layout || 'horizontal',
+        showSummary: config.showSummary !== false,
+        showCumulative: config.showCumulative !== false,
+      });
+    }
 
     canvas._pipeStages = stages;
     canvas._pipeSummary = summary;
-    canvas._pipeW = w;
-    canvas._pipeH = h;
 
-    // Track cumulative history
-    if (!canvas._cumulativeHistory) canvas._cumulativeHistory = [];
-    canvas._cumulativeHistory.push(stages.map(s => s.throughput));
-    if (canvas._cumulativeHistory.length > 30) canvas._cumulativeHistory.shift();
-
-    if (pipelineParticles.length === 0 && stages.length > 1) {
-      for (let i = 0; i < stages.length - 1; i++) {
-        for (let p = 0; p < 6; p++) {
-          pipelineParticles.push({
-            seg: i,
-            t: Math.random(),
-            speed: 0.002 + Math.random() * 0.004,
-          });
-        }
-      }
-    }
-
+    // Start animation loop if not already running
     if (!pipelineAnimId) {
       function animate() {
-        drawPipeline(canvas);
+        if (canvas._pipeStages && canvas._pipelineBuilder) {
+          canvas._pipelineBuilder.render(canvas, canvas._pipeStages, canvas._pipeSummary);
+        }
         pipelineAnimId = requestAnimationFrame(animate);
       }
       animate();
+    } else {
+      // Re-render immediately on data update
+      canvas._pipelineBuilder.render(canvas, stages, summary);
     }
   }
 
-  function drawMiniSparkInNode(ctx, data, x, y, w, h, color) {
-    if (!data || data.length < 2) return;
-    var mn = Math.min.apply(null, data);
-    var mx = Math.max.apply(null, data);
-    var range = mx - mn || 1;
-
-    ctx.beginPath();
-    data.forEach(function (v, i) {
-      var px = x + (i / (data.length - 1)) * w;
-      var py = y + h - ((v - mn) / range) * h;
-      if (i === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
-    });
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1.5;
-    ctx.lineJoin = 'round';
-    ctx.stroke();
-
-    // fill under
-    ctx.lineTo(x + w, y + h);
-    ctx.lineTo(x, y + h);
-    ctx.closePath();
-    ctx.fillStyle = hexToRgba(color, 0.1);
-    ctx.fill();
-  }
-
-  function drawHealthRing(ctx, cx, cy, radius, health, color) {
-    // Background ring
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.strokeStyle = hexToRgba(BRAND.border, 0.6);
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    // Health arc
-    var angle = (health / 100) * Math.PI * 2;
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, -Math.PI / 2, -Math.PI / 2 + angle);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 3;
-    ctx.lineCap = 'round';
-    ctx.stroke();
-  }
-
-  function drawPipeline(canvas) {
-    var stages = canvas._pipeStages;
-    var summary = canvas._pipeSummary;
-    if (!stages) return;
-    var dpr = window.devicePixelRatio || 1;
-    var w = canvas._pipeW;
-    var h = canvas._pipeH;
-    var ctx = canvas.getContext('2d');
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, w, h);
-
-    var n = stages.length;
-    var headerH = 90;
-    var flowH = 100; // cumulative flow area
-    var availH = h - headerH - flowH - 10;
-    var nodeW = Math.min(300, (w - 40) / n * 0.72);
-    var nodeH = Math.min(400, availH * 0.92);
-    var cy = headerH + availH * 0.50;
-    var spacing = (w - 20) / n;
-    var startX = 10 + spacing / 2;
-
-    // Find max throughput for proportional lines
-    var maxThroughput = 0;
-    stages.forEach(function (s) { if (s.throughput > maxThroughput) maxThroughput = s.throughput; });
-    if (maxThroughput === 0) maxThroughput = 1;
-
-    var positions = stages.map(function (_, i) {
-      return { x: startX + i * spacing, y: cy };
-    });
-
-    // ── Summary header ──
-    if (summary) {
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.font = "600 20px 'Space Grotesk', sans-serif";
-      ctx.fillStyle = BRAND.text3;
-      ctx.fillText('END-TO-END DATA FLOW', w * 0.5, 6);
-
-      ctx.font = "700 44px 'Space Grotesk', sans-serif";
-      ctx.fillStyle = BRAND.text1;
-      var throughputStr = formatNum(summary.throughput) + ' events/s';
-      var latencyStr = summary.totalLatency + 'ms total latency';
-      ctx.fillText(throughputStr + '   \u00B7   ' + latencyStr, w * 0.5, 34);
-    }
-
-    // ── Throughput-proportional connections ──
-    for (var i = 0; i < n - 1; i++) {
-      var ax = positions[i].x + nodeW / 2;
-      var bx = positions[i + 1].x - nodeW / 2;
-      var throughputRatio = stages[i].throughput / maxThroughput;
-      var lineWidth = 2 + throughputRatio * 6;
-
-      // Connection line with glow
-      ctx.save();
-      ctx.shadowColor = BRAND.pink;
-      ctx.shadowBlur = 4;
-      ctx.beginPath();
-      ctx.moveTo(ax, cy);
-      ctx.lineTo(bx, cy);
-      ctx.strokeStyle = hexToRgba(BRAND.border, 0.4 + throughputRatio * 0.4);
-      ctx.lineWidth = lineWidth;
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // ── Particles with data volume indicators (one label per segment to prevent overlap) ──
-    var labelledSegs = {};
-    pipelineParticles.forEach(function (p) {
-      p.t += p.speed;
-      if (p.t > 1) p.t -= 1;
-
-      var idx = p.seg;
-      if (idx >= n - 1) return;
-      var ax = positions[idx].x + nodeW / 2;
-      var bx = positions[idx + 1].x - nodeW / 2;
-      var px = ax + (bx - ax) * p.t;
-      var stageColor = stages[idx].status === 'healthy' ? BRAND.pink : BRAND.amber;
-
-      ctx.beginPath();
-      ctx.arc(px, cy, 4, 0, Math.PI * 2);
-      ctx.fillStyle = stageColor;
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(px, cy, 10, 0, Math.PI * 2);
-      ctx.fillStyle = hexToRgba(stageColor, 0.15);
-      ctx.fill();
-
-      // Floating data volume label — max one per segment to prevent overlap
-      if (!labelledSegs[idx] && p.t > 0.35 && p.t < 0.65) {
-        var vol = stages[idx].dataVolume;
-        if (vol) {
-          labelledSegs[idx] = true;
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'bottom';
-          ctx.font = "500 13px 'IBM Plex Mono', monospace";
-          ctx.fillStyle = hexToRgba(BRAND.text2, 0.7);
-          ctx.fillText(vol + ' GB', px, cy - 16);
-        }
-      }
-    });
-
-    // ── Nodes ──
-    stages.forEach(function (stage, i) {
-      var x = positions[i].x - nodeW / 2;
-      var y = cy - nodeH / 2;
-      var healthColor = stage.health >= 95 ? BRAND.green : (stage.health >= 80 ? BRAND.amber : BRAND.red);
-
-      // Node bg
-      ctx.fillStyle = BRAND.surface;
-      ctx.strokeStyle = stage.status === 'healthy' ? BRAND.border : BRAND.amber;
-      ctx.lineWidth = 1.5;
-      roundRect(ctx, x, y, nodeW, nodeH, 8);
-      ctx.fill();
-      ctx.stroke();
-
-      // Top accent
-      var accentGrad = ctx.createLinearGradient(x, y, x + nodeW, y);
-      accentGrad.addColorStop(0, BRAND.pink);
-      accentGrad.addColorStop(1, BRAND.hotPink);
-      ctx.fillStyle = stage.status === 'healthy' ? accentGrad : BRAND.amber;
-      roundRectTop(ctx, x, y, nodeW, 4, 8);
-      ctx.fill();
-
-      // Stage name
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.font = "700 24px 'Space Grotesk', sans-serif";
-      ctx.fillStyle = BRAND.text1;
-      ctx.fillText(stage.name, positions[i].x, y + 14);
-
-      // Health ring (replaces simple dot)
-      var ringCx = positions[i].x - nodeW * 0.30;
-      var ringCy = y + 56;
-      drawHealthRing(ctx, ringCx, ringCy, 13, stage.health || 98, healthColor);
-
-      // Health text
-      ctx.textAlign = 'left';
-      ctx.font = "700 18px 'DM Sans', sans-serif";
-      ctx.fillStyle = healthColor;
-      ctx.fillText((stage.health || 98) + '%', ringCx + 18, ringCy - 9);
-
-      // Throughput — BIG
-      ctx.textAlign = 'center';
-      ctx.font = "700 48px 'Space Grotesk', sans-serif";
-      ctx.fillStyle = BRAND.text1;
-      ctx.fillText(formatNum(stage.throughput), positions[i].x, y + 80);
-
-      ctx.font = "500 16px 'DM Sans', sans-serif";
-      ctx.fillStyle = BRAND.text3;
-      ctx.fillText('events/s', positions[i].x, y + 130);
-
-      // Sub-metrics: latency + data volume
-      ctx.font = "600 18px 'IBM Plex Mono', monospace";
-      ctx.textAlign = 'left';
-      ctx.fillStyle = BRAND.cyan;
-      ctx.fillText(stage.latency + 'ms', x + 14, y + nodeH - 72);
-
-      ctx.textAlign = 'right';
-      ctx.fillStyle = BRAND.text2;
-      if (stage.dataVolume) {
-        ctx.fillText(stage.dataVolume + ' GB', x + nodeW - 14, y + nodeH - 72);
-      }
-
-      // Error rate
-      if (stage.errorRate !== undefined) {
-        ctx.textAlign = 'center';
-        ctx.font = "500 16px 'IBM Plex Mono', monospace";
-        ctx.fillStyle = stage.errorRate > 0.02 ? BRAND.amber : BRAND.text3;
-        ctx.fillText('err ' + (stage.errorRate * 100).toFixed(1) + '%', positions[i].x, y + nodeH - 48);
-      }
-
-      // Mini sparkline
-      if (stage.sparkline && stage.sparkline.length > 2) {
-        var sparkX = x + 12;
-        var sparkY = y + nodeH - 34;
-        var sparkW = nodeW - 24;
-        var sparkH = 28;
-        drawMiniSparkInNode(ctx, stage.sparkline, sparkX, sparkY, sparkW, sparkH, hexToRgba(BRAND.pink, 0.6));
-      }
-    });
-
-    // ── Cumulative flow visualization (bottom) ──
-    var cumHist = canvas._cumulativeHistory;
-    if (cumHist && cumHist.length > 2) {
-      var flowY = h - flowH;
-      var flowW = w - 60;
-      var flowX = 30;
-
-      // Semi-transparent background
-      ctx.fillStyle = hexToRgba(BRAND.surface, 0.5);
-      roundRect(ctx, flowX, flowY, flowW, flowH - 4, 6);
-      ctx.fill();
-
-      // Stacked area chart
-      var stageColors = [BRAND.pink, BRAND.hotPink, BRAND.cyan, BRAND.green, BRAND.amber, '#B388FF'];
-      var maxCum = 0;
-      cumHist.forEach(function (snap) {
-        var sum = snap.reduce(function (a, b) { return a + b; }, 0);
-        if (sum > maxCum) maxCum = sum;
-      });
-      if (maxCum === 0) maxCum = 1;
-
-      var barW = (flowW - 20) / cumHist.length;
-
-      // Draw stacked from bottom
-      for (var si = n - 1; si >= 0; si--) {
-        ctx.beginPath();
-        cumHist.forEach(function (snap, ti) {
-          var cumVal = 0;
-          for (var k = 0; k <= si; k++) cumVal += (snap[k] || 0);
-          var barX = flowX + 10 + ti * barW;
-          var barH = (cumVal / maxCum) * (flowH - 16);
-          var barY = flowY + flowH - 6 - barH;
-          if (ti === 0) ctx.moveTo(barX, barY);
-          else ctx.lineTo(barX, barY);
-        });
-        // Close path along bottom
-        ctx.lineTo(flowX + 10 + (cumHist.length - 1) * barW, flowY + flowH - 6);
-        ctx.lineTo(flowX + 10, flowY + flowH - 6);
-        ctx.closePath();
-        ctx.fillStyle = hexToRgba(stageColors[si % stageColors.length], 0.15);
-        ctx.fill();
-        ctx.strokeStyle = hexToRgba(stageColors[si % stageColors.length], 0.4);
-        ctx.lineWidth = 1;
-        ctx.stroke();
-      }
-
-      // Label
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-      ctx.font = "600 13px 'Space Grotesk', sans-serif";
-      ctx.fillStyle = BRAND.text3;
-      ctx.fillText('CUMULATIVE THROUGHPUT', flowX + 14, flowY + 6);
-    }
-  }
+  // Legacy drawPipeline, drawMiniSparkInNode, and drawHealthRing functions removed
+  // Now using modular PipelineComponents library for better reusability
 
   // ── shape helpers ──
   function roundRect(ctx, x, y, w, h, r) {
@@ -582,6 +314,12 @@ window.Charts = (function () {
     img.src = '/img/gcp-icon.png';
   })();
 
+  // ===========================================================================
+  // DEPRECATED: Old Canvas 2D USA Map
+  // Replaced by Mapbox GL implementation in mapbox-map.js
+  // Kept for reference only - use type: usa-map-gl in dashboards.yaml
+  // ===========================================================================
+  /*
   function usaMap(canvas, data) {
     if (!data || !data.states) return;
     var US = window.US_STATES;
@@ -1723,6 +1461,10 @@ window.Charts = (function () {
       ctx.fillText(rlabel + ' MARKETS', 16, 16);
     }
   }
+  */
+  // ===========================================================================
+  // END DEPRECATED Canvas 2D Map
+  // ===========================================================================
 
   // ===========================================================================
   // SECURITY SCORECARD — Full-page VulnTrack visualization
@@ -2911,11 +2653,20 @@ window.Charts = (function () {
     canvas._donutAnimId = requestAnimationFrame(animate);
   }
 
+  // ── Theme management ──
+  function setTheme(themeName) {
+    currentTheme = themeName || 'brand';
+  }
+
+  function getTheme() {
+    return currentTheme;
+  }
+
   return {
     sparkline,
     gauge,
     pipeline,
-    usaMap,
+    // usaMap, // DEPRECATED: Use MapboxUSAMap.mapboxUsaMap() instead (usa-map-gl widget type)
     securityScorecard,
     thresholdColor,
     formatNum,
@@ -2926,6 +2677,8 @@ window.Charts = (function () {
     stackedBar,
     sankey,
     treemap,
-    donut
+    donut,
+    setTheme,
+    getTheme,
   };
 })();
