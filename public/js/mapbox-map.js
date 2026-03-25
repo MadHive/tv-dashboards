@@ -385,16 +385,29 @@ window.MapboxUSAMap = (function () {
           : this._blankStyle(this._cfg.colorScheme);
         this._currentStyle = this._cfg.mapStyle;
 
-        this._map = new mapboxgl.Map({
+        // Use configured viewport if available, otherwise fit to USA bounds
+        const mapOptions = {
           container:          this._mapDiv,
           style:              initialStyle,
-          bounds:             USA_BOUNDS,
-          fitBoundsOptions:   { padding: 20 },
           interactive:        true,
           attributionControl: false,
-          pitch:              0,
-          bearing:            0,
-        });
+        };
+
+        if (this._cfg.initialCenter && this._cfg.initialZoom) {
+          // Use saved center and zoom directly
+          mapOptions.center = [this._cfg.initialCenter.lng, this._cfg.initialCenter.lat];
+          mapOptions.zoom = this._cfg.initialZoom;
+          mapOptions.pitch = this._cfg.initialPitch || 0;
+          mapOptions.bearing = this._cfg.initialBearing || 0;
+        } else {
+          // Fall back to USA bounds
+          mapOptions.bounds = USA_BOUNDS;
+          mapOptions.fitBoundsOptions = { padding: 20 };
+          mapOptions.pitch = 0;
+          mapOptions.bearing = 0;
+        }
+
+        this._map = new mapboxgl.Map(mapOptions);
 
         // Add navigation controls (zoom, rotation, pitch)
         this._map.addControl(new mapboxgl.NavigationControl({
