@@ -66,6 +66,7 @@ window.MapboxUSAMap = (function () {
   var SCHEME_COLORS = {
     brand:  {
       particleNormal: '#67E8F9', particleFast: '#FDA4D4', stateGlowHigh: '#FDA4D4',
+      backgroundColor: '#0E0320',
       choropleth: [
         'interpolate', ['linear'], ['get', 'intensity'],
         0,    '#0d021e',
@@ -76,9 +77,12 @@ window.MapboxUSAMap = (function () {
         0.88, '#e879f9',
         1.0,  '#FDA4D4',
       ],
+      heatmap: ['interpolate', ['linear'], ['heatmap-density'],
+        0, 'transparent', 0.2, '#3D1A5C', 0.4, '#7c3aed', 0.7, '#FDA4D4', 1.0, '#FFFFFF'],
     },
     cool:   {
       particleNormal: '#60A5FA', particleFast: '#FFFFFF', stateGlowHigh: '#e0f2fe',
+      backgroundColor: '#0a0e1a',
       choropleth: [
         'interpolate', ['linear'], ['get', 'intensity'],
         0,    '#0a0e1a',
@@ -89,9 +93,12 @@ window.MapboxUSAMap = (function () {
         0.88, '#93c5fd',
         1.0,  '#e0f2fe',
       ],
+      heatmap: ['interpolate', ['linear'], ['heatmap-density'],
+        0, 'transparent', 0.2, '#1e3a8a', 0.4, '#2563eb', 0.7, '#60a5fa', 1.0, '#e0f2fe'],
     },
     warm:   {
       particleNormal: '#fbbf24', particleFast: '#FF6B35', stateGlowHigh: '#fef08a',
+      backgroundColor: '#1a0f05',
       choropleth: [
         'interpolate', ['linear'], ['get', 'intensity'],
         0,    '#1a0f05',
@@ -102,9 +109,12 @@ window.MapboxUSAMap = (function () {
         0.88, '#fcd34d',
         1.0,  '#fef08a',
       ],
+      heatmap: ['interpolate', ['linear'], ['heatmap-density'],
+        0, 'transparent', 0.2, '#92400e', 0.4, '#d97706', 0.7, '#fbbf24', 1.0, '#fef08a'],
     },
     iheart: {
       particleNormal: '#FF6B8A', particleFast: '#FFAABB', stateGlowHigh: '#FFAABB',
+      backgroundColor: '#0d0005',
       choropleth: [
         'interpolate', ['linear'], ['get', 'intensity'],
         0,    '#0d0005',
@@ -115,6 +125,152 @@ window.MapboxUSAMap = (function () {
         0.88, '#FF4D6B',
         1.0,  '#FF8FA3',
       ],
+      heatmap: ['interpolate', ['linear'], ['heatmap-density'],
+        0, 'transparent', 0.2, '#6b001a', 0.4, '#C6002B', 0.7, '#FF4D6B', 1.0, '#FFAABB'],
+    },
+    fox: {
+      particleNormal: '#F5A524', particleFast: '#FFD580', stateGlowHigh: '#FFD580',
+      backgroundColor: '#000814',
+      choropleth: [
+        'interpolate', ['linear'], ['get', 'intensity'],
+        0,    '#000814',
+        0.10, '#001d3d',
+        0.28, '#003566',
+        0.50, '#0051a3',
+        0.70, '#0066cc',
+        0.88, '#FFB84D',
+        1.0,  '#F5A524',
+      ],
+      heatmap: ['interpolate', ['linear'], ['heatmap-density'],
+        0, 'transparent', 0.2, '#003566', 0.4, '#0066cc', 0.7, '#FFB84D', 1.0, '#FFD580'],
+    },
+    hearst: {
+      particleNormal: '#D4AF37', particleFast: '#F5D565', stateGlowHigh: '#F5D565',
+      backgroundColor: '#0a0814',
+      choropleth: [
+        'interpolate', ['linear'], ['get', 'intensity'],
+        0,    '#0a0814',
+        0.10, '#14102a',
+        0.28, '#2a2458',
+        0.50, '#5a5090',
+        0.70, '#8a70c0',
+        0.88, '#E8C850',
+        1.0,  '#D4AF37',
+      ],
+      heatmap: ['interpolate', ['linear'], ['heatmap-density'],
+        0, 'transparent', 0.2, '#2a2458', 0.4, '#8a70c0', 0.7, '#E8C850', 1.0, '#F5D565'],
+    },
+    nexstar: {
+      particleNormal: '#00A8FF', particleFast: '#66D9FF', stateGlowHigh: '#66D9FF',
+      backgroundColor: '#001018',
+      choropleth: [
+        'interpolate', ['linear'], ['get', 'intensity'],
+        0,    '#001018',
+        0.10, '#00182d',
+        0.28, '#003d58',
+        0.50, '#0073a8',
+        0.70, '#0095d9',
+        0.88, '#33C4FF',
+        1.0,  '#00D9FF',
+      ],
+      heatmap: ['interpolate', ['linear'], ['heatmap-density'],
+        0, 'transparent', 0.2, '#003d58', 0.4, '#0095d9', 0.7, '#33C4FF', 1.0, '#66D9FF'],
+    },
+    scripps: {
+      particleNormal: '#FF6B35', particleFast: '#FFA070', stateGlowHigh: '#FFA070',
+      backgroundColor: '#140a00',
+      choropleth: [
+        'interpolate', ['linear'], ['get', 'intensity'],
+        0,    '#140a00',
+        0.10, '#2d1a0a',
+        0.28, '#573300',
+        0.50, '#a66000',
+        0.70, '#d97706',
+        0.88, '#FF8855',
+        1.0,  '#FF6B35',
+      ],
+      heatmap: ['interpolate', ['linear'], ['heatmap-density'],
+        0, 'transparent', 0.2, '#573300', 0.4, '#d97706', 0.7, '#FF8855', 1.0, '#FFA070'],
+    },
+    cox: {
+      particleNormal: '#00D9FF', particleFast: '#66F0FF', stateGlowHigh: '#66F0FF',
+      backgroundColor: '#001820',
+      choropleth: [
+        'interpolate', ['linear'], ['get', 'intensity'],
+        0,    '#001820',
+        0.10, '#002838',
+        0.28, '#00567d',
+        0.50, '#0095d9',
+        0.70, '#00B8FF',
+        0.88, '#66E8FF',
+        1.0,  '#00D9FF',
+      ],
+      heatmap: ['interpolate', ['linear'], ['heatmap-density'],
+        0, 'transparent', 0.2, '#00567d', 0.4, '#00B8FF', 0.7, '#66E8FF', 1.0, '#66F0FF'],
+    },
+    purple: {
+      particleNormal: '#A78BFA', particleFast: '#DDD6FE', stateGlowHigh: '#DDD6FE',
+      backgroundColor: '#1e0840',
+      choropleth: [
+        'interpolate', ['linear'], ['get', 'intensity'],
+        0,    '#1e0840',
+        0.10, '#3b0764',
+        0.28, '#6b21a8',
+        0.50, '#9333ea',
+        0.70, '#a855f7',
+        0.88, '#C4B5FD',
+        1.0,  '#E9D5FF',
+      ],
+      heatmap: ['interpolate', ['linear'], ['heatmap-density'],
+        0, 'transparent', 0.2, '#6b21a8', 0.4, '#9333ea', 0.7, '#C4B5FD', 1.0, '#E9D5FF'],
+    },
+    green: {
+      particleNormal: '#4ADE80', particleFast: '#86EFAC', stateGlowHigh: '#86EFAC',
+      backgroundColor: '#052e16',
+      choropleth: [
+        'interpolate', ['linear'], ['get', 'intensity'],
+        0,    '#052e16',
+        0.10, '#14532d',
+        0.28, '#166534',
+        0.50, '#16a34a',
+        0.70, '#22c55e',
+        0.88, '#86EFAC',
+        1.0,  '#BBF7D0',
+      ],
+      heatmap: ['interpolate', ['linear'], ['heatmap-density'],
+        0, 'transparent', 0.2, '#166534', 0.4, '#22c55e', 0.7, '#86EFAC', 1.0, '#BBF7D0'],
+    },
+    cyan: {
+      particleNormal: '#22D3EE', particleFast: '#67E8F9', stateGlowHigh: '#67E8F9',
+      backgroundColor: '#083344',
+      choropleth: [
+        'interpolate', ['linear'], ['get', 'intensity'],
+        0,    '#083344',
+        0.10, '#0e4c5c',
+        0.28, '#155e75',
+        0.50, '#0891b2',
+        0.70, '#06b6d4',
+        0.88, '#67E8F9',
+        1.0,  '#A5F3FC',
+      ],
+      heatmap: ['interpolate', ['linear'], ['heatmap-density'],
+        0, 'transparent', 0.2, '#155e75', 0.4, '#06b6d4', 0.7, '#67E8F9', 1.0, '#A5F3FC'],
+    },
+    magenta: {
+      particleNormal: '#F472B6', particleFast: '#FBCFE8', stateGlowHigh: '#FBCFE8',
+      backgroundColor: '#500724',
+      choropleth: [
+        'interpolate', ['linear'], ['get', 'intensity'],
+        0,    '#500724',
+        0.10, '#831843',
+        0.28, '#be185d',
+        0.50, '#db2777',
+        0.70, '#ec4899',
+        0.88, '#F9A8D4',
+        1.0,  '#FBCFE8',
+      ],
+      heatmap: ['interpolate', ['linear'], ['heatmap-density'],
+        0, 'transparent', 0.2, '#be185d', 0.4, '#ec4899', 0.7, '#F9A8D4', 1.0, '#FBCFE8'],
     },
   };
 
@@ -225,7 +381,7 @@ window.MapboxUSAMap = (function () {
         // Start with the configured style directly to avoid a setStyle() call on first data update
         const initialStyle = (this._cfg.mapStyle === 'mapbox')
           ? 'mapbox://styles/mapbox/dark-v11'
-          : this._blankStyle();
+          : this._blankStyle(this._cfg.colorScheme);
         this._currentStyle = this._cfg.mapStyle;
 
         this._map = new mapboxgl.Map({
@@ -357,12 +513,13 @@ window.MapboxUSAMap = (function () {
       }
     }
 
-    _blankStyle() {
+    _blankStyle(schemeName) {
+      const scheme = getColorScheme(schemeName || this._cfg.colorScheme || 'brand');
       return {
         version: 8,
         glyphs:  'mapbox://fonts/mapbox/{fontstack}/{range}.pbf',
         sources: {},
-        layers:  [{ id: 'background', type: 'background', paint: { 'background-color': '#0E0320' } }],
+        layers:  [{ id: 'background', type: 'background', paint: { 'background-color': scheme.backgroundColor || '#0E0320' } }],
       };
     }
 
@@ -1234,6 +1391,73 @@ window.MapboxUSAMap = (function () {
       if (this._map.getLayer('states-fill')) {
         this._map.setPaintProperty('states-fill', 'fill-color', s.choropleth || CHOROPLETH);
       }
+
+      if (this._map.getLayer('delivery-heatmap')) {
+        this._map.setPaintProperty('delivery-heatmap', 'heatmap-color', s.heatmap || [
+          'interpolate', ['linear'], ['heatmap-density'],
+          0, 'transparent', 0.2, '#3D1A5C', 0.4, '#7c3aed', 0.7, '#FDA4D4', 1.0, '#FFFFFF']);
+      }
+
+      // Update background color for brand-style maps
+      if (this._map.getLayer('background')) {
+        this._map.setPaintProperty('background', 'background-color', s.backgroundColor || '#0E0320');
+      }
+
+      // Apply theme colors to overlays
+      this._applyOverlayColors(schemeName);
+    }
+
+    _applyOverlayColors(schemeName) {
+      // Get theme colors if Themes system is available
+      let theme = null;
+      if (window.Themes && window.Themes.getTheme) {
+        theme = window.Themes.getTheme(schemeName);
+      }
+
+      if (!theme) return; // No theme available, use CSS defaults
+
+      const hexToRgba = (hex, alpha) => {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      };
+
+      // Apply theme colors to region panels
+      Object.values(this._regionPanels || {}).forEach(({ panel }) => {
+        if (panel) {
+          panel.style.setProperty('--overlay-bg', hexToRgba(theme.bgCard, 0.90));
+          panel.style.setProperty('--overlay-border', hexToRgba(theme.accent, 0.5));
+          panel.style.setProperty('--overlay-text', theme.text1);
+          panel.style.setProperty('--overlay-text-dim', hexToRgba(theme.text2, 0.75));
+          panel.style.setProperty('--overlay-accent', theme.accent);
+        }
+      });
+
+      // Apply to leaderboard
+      if (this._lbEl) {
+        this._lbEl.style.setProperty('--overlay-bg', hexToRgba(theme.bgCard, 0.85));
+        this._lbEl.style.setProperty('--overlay-border', hexToRgba(theme.accent, 0.2));
+        this._lbEl.style.setProperty('--overlay-text', theme.text1);
+        this._lbEl.style.setProperty('--overlay-text-dim', hexToRgba(theme.text2, 0.6));
+        this._lbEl.style.setProperty('--overlay-accent', hexToRgba(theme.accent, 0.7));
+      }
+
+      // Apply to total overlay
+      const totalOverlay = this._wrap?.querySelector('.mgl-total-overlay');
+      if (totalOverlay) {
+        totalOverlay.style.setProperty('--overlay-bg', theme.bgCard);
+        totalOverlay.style.setProperty('--overlay-border', theme.accent);
+        totalOverlay.style.setProperty('--overlay-text', theme.text1);
+        totalOverlay.style.setProperty('--overlay-text-dim', hexToRgba(theme.text2, 0.6));
+        totalOverlay.style.setProperty('--overlay-accent', hexToRgba(theme.accent, 0.7));
+      }
+
+      // Apply to client logo overlay
+      const clientLogo = this._wrap?.querySelector('.mgl-client-logo');
+      if (clientLogo) {
+        clientLogo.style.setProperty('--overlay-border', theme.accent);
+      }
     }
 
     _applyZoomViz(mode) {
@@ -1275,7 +1499,7 @@ window.MapboxUSAMap = (function () {
 
       const newStyle = styleName === 'mapbox'
         ? 'mapbox://styles/mapbox/dark-v11'
-        : this._blankStyle();
+        : this._blankStyle(this._cfg.colorScheme);
 
       this._map.setStyle(newStyle);
 
@@ -1644,5 +1868,5 @@ window.MapboxUSAMap = (function () {
     };
   }
 
-  return { MapboxUSAMap, mapboxUsaMap };
+  return { mapboxUsaMap };
 })();
