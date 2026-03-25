@@ -20,6 +20,7 @@
       this.config      = null;
       this.currentPage = 0;
       this.pages       = [];
+      this.activeDashboards = [];  // Filtered list of non-excluded dashboards
       this.widgets     = {};   // widgetId → { update(data) }
       this.rotationTimer  = null;
       this.refreshTimer   = null;
@@ -39,6 +40,8 @@
       }
 
       this.rotationMs = (this.config.global.rotation_interval || 30) * 1000;
+      this.activeDashboards = this.config.dashboards.filter(d => !d.excluded);
+
       if (this.config.global.title) {
         document.querySelector('.logo-text').textContent =
           this.config.global.title.split(' ')[0] || 'MADHIVE';
@@ -83,7 +86,7 @@
     // ---- render all dashboard pages ----
     renderPages() {
       const container = document.getElementById('dashboard-container');
-      this.config.dashboards.filter(d => !d.excluded).forEach((dash) => {
+      this.activeDashboards.forEach((dash) => {
         const page = document.createElement('div');
         page.className = 'dashboard-page';
         page.style.gridTemplateColumns = `repeat(${dash.grid.columns}, 1fr)`;
@@ -126,7 +129,7 @@
     // ---- navigation dots ----
     renderNavDots() {
       const dotsContainer = document.getElementById('nav-dots');
-      this.config.dashboards.filter(d => !d.excluded).forEach((dash, i) => {
+      this.activeDashboards.forEach((dash, i) => {
         const dot = document.createElement('button');
         dot.className = 'nav-dot';
         dot.title = dash.name;
@@ -148,7 +151,7 @@
         d.classList.toggle('active', i === index));
 
       // update title + project subtitle
-      const dash = this.config.dashboards[index];
+      const dash = this.activeDashboards[index];
       document.getElementById('page-icon').textContent = ICONS[dash.icon] || '';
       document.getElementById('page-title').textContent = dash.name;
       document.getElementById('page-subtitle').textContent = dash.subtitle ? '/ ' + dash.subtitle : '';
@@ -338,9 +341,9 @@
             }
 
             this.config = newConfig;
+            this.activeDashboards = newConfig.dashboards.filter(d => !d.excluded);
             // Re-apply branding for whatever page is currently showing
-            const activeDashes = newConfig.dashboards.filter(d => !d.excluded);
-            const dash = activeDashes[this.currentPage];
+            const dash = this.activeDashboards[this.currentPage];
             if (dash) this._applyClientBranding(dash.clientBranding || null);
           }
         } catch (_) { /* non-fatal */ }
@@ -348,7 +351,7 @@
     }
 
     async refreshData() {
-      const dash = this.config.dashboards[this.currentPage];
+      const dash = this.activeDashboards[this.currentPage];
       try {
         const res = await fetch(`/api/metrics/${dash.id}`);
         const data = await res.json();
