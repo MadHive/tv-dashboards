@@ -446,6 +446,36 @@ body.studio-body .mgl-region-panel { overflow: visible; }
 }
 
 /* ── Per-overlay hide button (studio mode only) ──────────────────────────── */
+/* Match Size button (syncs sizes of similar overlays) */
+.mgl-overlay-match-btn {
+  display:        none;       /* hidden in TV/live view */
+  position:       absolute;
+  top:            4px;
+  right:          28px;       /* left of hide button */
+  width:          20px;
+  height:         20px;
+  padding:        0;
+  background:     rgba(14,3,32,0.82);
+  border:         1px solid rgba(168,85,247,0.35);
+  border-radius:  4px;
+  color:          rgba(168,85,247,0.75);
+  font-size:      14px;
+  line-height:    1;
+  cursor:         pointer;
+  z-index:        50;
+  align-items:    center;
+  justify-content: center;
+  transition:     background 0.12s, color 0.12s;
+}
+body.studio-body .mgl-overlay-match-btn {
+  display: flex;    /* shown only in Studio */
+}
+.mgl-overlay-match-btn:hover {
+  background: rgba(168,85,247,0.35);
+  color:      #a855f7;
+  border-color: rgba(168,85,247,0.5);
+}
+
 .mgl-overlay-hide-btn {
   display:        none;       /* hidden in TV/live view */
   position:       absolute;
