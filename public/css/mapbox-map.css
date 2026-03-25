@@ -143,6 +143,7 @@
   flex-direction: column;
   gap:       2px;
   pointer-events: none;
+  box-sizing: border-box;
 }
 
 .mgl-total-label {
