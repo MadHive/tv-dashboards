@@ -1187,6 +1187,61 @@ window.MapboxUSAMap = (function () {
       };
     }
 
+    _updateAlignmentGuides(currentKey, x, y, width, height) {
+      if (!this._alignmentGuides) return;
+
+      const SNAP_THRESHOLD = 10; // px - show guide if within this distance
+      let alignedHorizontally = false;
+      let alignedVertically = false;
+      let alignY = null;
+      let alignX = null;
+
+      // Check alignment with other regional panels
+      const regions = ['west', 'central', 'east'];
+      regions.forEach(key => {
+        if (key === currentKey) return; // Skip self
+        const panel = this._regionPanels?.[key]?.panel;
+        if (!panel || !panel.style.left || !panel.style.top) return;
+
+        const otherX = parseFloat(panel.style.left);
+        const otherY = parseFloat(panel.style.top);
+
+        // Check vertical alignment (same top position)
+        if (!isNaN(otherY) && Math.abs(y - otherY) < SNAP_THRESHOLD) {
+          alignedHorizontally = true;
+          alignY = y;
+        }
+
+        // Check horizontal alignment (same left position)
+        if (!isNaN(otherX) && Math.abs(x - otherX) < SNAP_THRESHOLD) {
+          alignedVertically = true;
+          alignX = x;
+        }
+      });
+
+      // Show/hide horizontal guide
+      if (alignedHorizontally && alignY !== null) {
+        this._alignmentGuides.horizontal.style.top = alignY + 'px';
+        this._alignmentGuides.horizontal.classList.add('visible');
+      } else {
+        this._alignmentGuides.horizontal.classList.remove('visible');
+      }
+
+      // Show/hide vertical guide
+      if (alignedVertically && alignX !== null) {
+        this._alignmentGuides.vertical.style.left = alignX + 'px';
+        this._alignmentGuides.vertical.classList.add('visible');
+      } else {
+        this._alignmentGuides.vertical.classList.remove('visible');
+      }
+    }
+
+    _hideAlignmentGuides() {
+      if (!this._alignmentGuides) return;
+      this._alignmentGuides.horizontal.classList.remove('visible');
+      this._alignmentGuides.vertical.classList.remove('visible');
+    }
+
     _saveOverlaySize(key, el) {
       if (!this._overlayPositions) this._overlayPositions = {};
       if (!this._overlayPositions[key]) this._overlayPositions[key] = {};
@@ -1385,6 +1440,9 @@ window.MapboxUSAMap = (function () {
           ny = Math.max(0, Math.min(ny, cr.height - er.height));
           el.style.left = nx + 'px';
           el.style.top  = ny + 'px';
+
+          // Show alignment guides when aligned with other overlays
+          self._updateAlignmentGuides(key, nx, ny, er.width, er.height);
         } else {
           const cr = self._wrap.getBoundingClientRect();
           const er = el.getBoundingClientRect();
@@ -1401,8 +1459,9 @@ window.MapboxUSAMap = (function () {
 
       el.addEventListener('pointerup', function (e) {
         el.releasePointerCapture(e.pointerId);
-        // Hide snap grid guide
+        // Hide snap grid guide and alignment guides
         if (self._snapGridEl) self._snapGridEl.classList.remove('visible');
+        self._hideAlignmentGuides();
         if (mode === 'drag') {
           el.style.cursor = 'grab';
           self._saveOverlayPosition(key, el);
@@ -1658,6 +1717,16 @@ window.MapboxUSAMap = (function () {
         this._snapGridEl = document.createElement('div');
         this._snapGridEl.className = 'mgl-snap-grid';
         this._wrap.appendChild(this._snapGridEl);
+
+        // ── Alignment guide lines ────────────────────────────────────────────
+        this._alignmentGuides = {
+          horizontal: document.createElement('div'),
+          vertical: document.createElement('div')
+        };
+        this._alignmentGuides.horizontal.className = 'mgl-alignment-guide horizontal';
+        this._alignmentGuides.vertical.className = 'mgl-alignment-guide vertical';
+        this._wrap.appendChild(this._alignmentGuides.horizontal);
+        this._wrap.appendChild(this._alignmentGuides.vertical);
       }
 
       // ── GCP data center icon markers ────────────────────────────────────────

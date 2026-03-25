@@ -1619,6 +1619,37 @@
           self.renderCanvas();
         };
       }
+      // Uniform sizing for regional panels
+      const uniformSizingBtn = document.getElementById('apply-uniform-sizing-btn');
+      if (uniformSizingBtn) {
+        uniformSizingBtn.onclick = () => {
+          const widthInput = document.getElementById('prop-mgl-uniform-width');
+          const heightInput = document.getElementById('prop-mgl-uniform-height');
+          const width = parseInt(widthInput?.value);
+          const height = parseInt(heightInput?.value);
+
+          if (isNaN(width) || isNaN(height) || width < 100 || height < 80) {
+            alert('Please enter valid width (≥100px) and height (≥80px) values.');
+            return;
+          }
+
+          if (!wc.mglConfig) wc.mglConfig = {};
+          if (!wc.mglConfig.overlayPositions) wc.mglConfig.overlayPositions = {};
+
+          // Apply uniform dimensions to west, central, and east panels
+          ['west', 'central', 'east'].forEach(region => {
+            if (!wc.mglConfig.overlayPositions[region]) {
+              wc.mglConfig.overlayPositions[region] = {};
+            }
+            wc.mglConfig.overlayPositions[region].width = width + 'px';
+            wc.mglConfig.overlayPositions[region].height = height + 'px';
+          });
+
+          self.markDirty();
+          self.renderCanvas();
+          console.log('[Studio] Applied uniform sizing:', width, 'x', height, 'to regional panels');
+        };
+      }
       // Region buttons
       const regionGroup = document.getElementById('prop-region-group');
       if (regionGroup) {
