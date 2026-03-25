@@ -905,7 +905,9 @@ window.MapboxUSAMap = (function () {
 
       // Only re-fit bounds when they change — avoids constant 800ms re-animation on every refresh
       const boundsKey = JSON.stringify(bounds);
-      if (boundsKey !== this._lastBounds) {
+      // If initialZoom is configured, respect it and don't auto-fit bounds
+      const hasConfiguredView = this._cfg.initialZoom !== null && this._cfg.initialZoom !== undefined;
+      if (!hasConfiguredView && boundsKey !== this._lastBounds) {
         this._lastBounds = boundsKey;
         this._map.once('moveend', () => this._positionRegionPanels());
         // Offset padding: leaderboard (340px) on right, total overlay (~110px) on left bottom
