@@ -1569,8 +1569,16 @@ window.MapboxUSAMap = (function () {
             0.45, '#7c3aed', 0.75, '#b87aff', 1.0, s.stateGlowHigh]);
       }
 
-      if (this._map.getLayer('hotspot-labels'))
-        this._map.setPaintProperty('hotspot-labels', 'text-color', s.particleNormal + 'aa');
+      if (this._map.getLayer('hotspot-labels')) {
+        // Convert hex to rgba (Mapbox doesn't accept 8-digit hex for text-color)
+        const hexToRgba = (hex, alpha) => {
+          const r = parseInt(hex.slice(1, 3), 16);
+          const g = parseInt(hex.slice(3, 5), 16);
+          const b = parseInt(hex.slice(5, 7), 16);
+          return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        };
+        this._map.setPaintProperty('hotspot-labels', 'text-color', hexToRgba(s.particleNormal, 0.67));
+      }
 
       if (this._map.getLayer('states-fill')) {
         this._map.setPaintProperty('states-fill', 'fill-color', s.choropleth || CHOROPLETH);
