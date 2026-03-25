@@ -265,6 +265,7 @@ const app = new Elysia()
   .get('/js/app.js',          () => new Response(Bun.file(join(publicDir, 'js/app.js')),          { headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' } }))
   .get('/js/charts.js',       () => new Response(Bun.file(join(publicDir, 'js/charts.js')),       { headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' } }))
   .get('/js/widgets.js',      () => new Response(Bun.file(join(publicDir, 'js/widgets.js')),      { headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' } }))
+  .get('/js/mapbox-map.js',   () => new Response(Bun.file(join(publicDir, 'js/mapbox-map.js')),   { headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' } }))
   .get('/css/dashboard.css',  () => new Response(Bun.file(join(publicDir, 'css/dashboard.css')),  { headers: { 'content-type': 'text/css; charset=utf-8',        'Cache-Control': 'no-cache' } }))
   .get('/js/studio.js',       () => new Response(Bun.file(join(publicDir, 'js/studio.js')),       { headers: { 'content-type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-cache' } }))
   .get('/css/studio.css',     () => new Response(Bun.file(join(publicDir, 'css/studio.css')),     { headers: { 'content-type': 'text/css; charset=utf-8',        'Cache-Control': 'no-cache' } }))
@@ -276,7 +277,7 @@ const app = new Elysia()
     assets: publicDir,
     prefix: '/',
     ignorePatterns: [
-      /\/js\/(app|charts|widgets|studio|studio-canvas|importer)\.js$/,
+      /\/js\/(app|charts|widgets|mapbox-map|studio|studio-canvas|importer)\.js$/,
       /\/css\/(dashboard|studio|importer)\.css$/,
     ],
     headers: { 'Cache-Control': 'public, max-age=3600, must-revalidate' },
