@@ -1151,6 +1151,8 @@ window.MapboxUSAMap = (function () {
         this._applyOverlayScale(el, key, pos.width);
       } else if (key === 'leaderboard' && !el.style.width) {
         el.style.width = '340px';
+      } else if (key === 'totalOverlay' && !el.style.width) {
+        el.style.width = '350px';
       }
 
       if (pos.height && pos.height.endsWith('%')) {
@@ -1308,7 +1310,7 @@ window.MapboxUSAMap = (function () {
 
     // Natural widths for each overlay type (used to compute scale factor)
     _overlayNaturalWidths() {
-      return { leaderboard: 340, totalOverlay: 220, west: 160, central: 160, east: 160, clientLogo: 120 };
+      return { leaderboard: 340, totalOverlay: 350, west: 160, central: 160, east: 160, clientLogo: 120 };
     }
 
     _applyOverlayScale(el, key, widthPx) {
@@ -1323,9 +1325,9 @@ window.MapboxUSAMap = (function () {
         const v = el.querySelector('.mgl-total-value');
         const l = el.querySelector('.mgl-total-label');
         const s = el.querySelector('.mgl-total-sub');
-        if (v) v.style.fontSize = Math.round(72 * scale) + 'px';
-        if (l) l.style.fontSize = Math.round(12 * scale) + 'px';
-        if (s) s.style.fontSize = Math.round(13 * scale) + 'px';
+        if (v) v.style.fontSize = Math.round(100 * scale) + 'px';
+        if (l) l.style.fontSize = Math.round(20 * scale) + 'px';
+        if (s) s.style.fontSize = Math.round(20 * scale) + 'px';
         // Scale gap between elements
         el.style.gap = Math.round(2 * scale) + 'px';
       } else if (key === 'leaderboard') {

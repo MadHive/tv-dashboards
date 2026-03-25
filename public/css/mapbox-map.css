@@ -144,6 +144,9 @@
   gap:       2px;
   pointer-events: none;
   box-sizing: border-box;
+  overflow: hidden;
+  min-width: 80px;
+  min-height: 40px;
 }
 
 .mgl-total-label {
@@ -152,6 +155,10 @@
   color:          rgba(253,164,212,0.7);
   text-transform: uppercase;
   letter-spacing: 0.12em;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mgl-total-value {
@@ -161,11 +168,19 @@
   line-height: 1;
   text-shadow: 0 0 40px rgba(253,164,212,0.8), 0 0 80px rgba(168,85,247,0.6), 0 0 120px rgba(124,58,237,0.4);
   font-variant-numeric: tabular-nums;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .mgl-total-sub {
   font-size: 20px;
   color:     rgba(184,168,208,0.6);
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Leaderboard header total (above title) */
