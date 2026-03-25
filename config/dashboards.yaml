@@ -1,6 +1,7 @@
 dashboards:
   - id: platform-overview
     name: Platform Overview
+    theme: brand
     subtitle: Real-Time Activity
     icon: bolt
     grid:
@@ -52,6 +53,7 @@ dashboards:
           rowSpan: 1
   - id: campaign-delivery-gl
     name: Campaign Delivery
+    theme: brand
     subtitle: Nationwide
     icon: map
     grid:
@@ -70,28 +72,38 @@ dashboards:
           colSpan: 1
           rowSpan: 1
         mglConfig:
-          mapStyle: mapbox
+          mapStyle: brand
           overlayPositions:
             west:
               top: 0px
-              left: 87.5px
+              left: 40px
             central:
               top: 0px
-              left: 1006px
+              left: 740px
             east:
-              top: 0px
-              left: 2069px
+              top: 20px
+              left: 1440px
             totalOverlay:
-              top: 1101px
-              left: 33px
+              top: 980px
+              left: 20px
+              width: 313.715px
+              height: 250.66px
             leaderboard:
-              top: 701.453px
-              left: 1589.55px
-          particleSpeed: 0.5
+              top: 164.555px
+              left: 1782.9px
+              width: 377.102px
+              height: 1083.52px
+          particleSpeed: 1
           zoomViz: heatmap
-          initialZoom: 5.5
+          initialZoom: 4.397112606359265
+          initialCenter:
+            lat: 39.49510345247114
+            lng: -94.95522796171855
+          initialPitch: 0
+          initialBearing: 0
   - id: campaign-delivery-gl-ne
     name: Campaign Delivery
+    theme: brand
     subtitle: Northeast
     icon: map
     grid:
@@ -110,24 +122,36 @@ dashboards:
           colSpan: 1
           rowSpan: 1
         mglConfig:
-          mapStyle: mapbox
+          mapStyle: brand
           overlayPositions:
             east:
-              top: 247.379px
-              left: 742.449px
-              width: 399.777px
-              height: 252px
+              top: 20px
+              left: 1380px
             totalOverlay:
-              top: 1031.01px
-              left: 12.6133px
-              width: 524.508px
-              height: 201.926px
+              top: 1100px
+              left: 20px
+            central:
+              top: 20px
+              left: 800px
+            west:
+              top: 20px
+              left: 100px
+          initialCenter:
+            lat: 41.80630063532794
+            lng: -72.67101985938496
+          initialZoom: 5.183037587078563
+          initialPitch: 43.99999999999997
+          initialBearing: -68.79999999999978
+          showRegionWest: false
+          showClientLogo: false
+          showRegionCentral: false
         mapConfig:
           minImpressions: 50
           region: northeast
           timeWindow: 7
   - id: campaign-delivery-gl-se
     name: Campaign Delivery
+    theme: brand
     subtitle: Southeast
     icon: map
     grid:
@@ -153,20 +177,33 @@ dashboards:
               width: 289.5px
               height: 258px
             east:
-              top: 284.5px
-              left: 1480.5px
+              top: 0px
+              left: 1240px
             totalOverlay:
               top: 1124.5px
               left: 12px
-          colorScheme: cool
-          mapStyle: mapbox
+            leaderboard:
+              top: 280px
+              left: 1760px
+          colorScheme: brand
+          mapStyle: brand
           zoomViz: heatmap
+          initialCenter:
+            lat: 33.66030815929443
+            lng: -81.04971274189849
+          initialZoom: 4.9462186812474185
+          initialPitch: 35.00000000000003
+          initialBearing: -26.399999999999977
+          particleSpeed: 1
+          showClientLogo: false
+          showRegionCentral: false
         mapConfig:
           minImpressions: 50
           region: southeast
           timeWindow: 7
   - id: campaign-delivery-gl-nw
     name: Campaign Delivery
+    theme: brand
     subtitle: Northwest
     icon: map
     grid:
@@ -185,25 +222,36 @@ dashboards:
           colSpan: 1
           rowSpan: 1
         mglConfig:
-          mapStyle: mapbox
+          mapStyle: brand
           overlayPositions:
             west:
-              top: 262px
-              left: 419px
+              top: 40px
+              left: 260px
             totalOverlay:
               top: 995.172px
               left: 54.5352px
               width: 429.02px
               height: 269.551px
             central:
-              top: 253.5px
-              left: 1515px
+              top: 40px
+              left: 1440px
+          initialCenter:
+            lat: 42.341208739664694
+            lng: -116.67159583595048
+          initialZoom: 4.972762031093227
+          initialPitch: 38.49999999999995
+          initialBearing: 23.199999999999704
+          zoomViz: heatmap
+          showRegionCentral: false
+          showRegionEast: false
+          particleSpeed: 1
         mapConfig:
           minImpressions: 50
           region: northwest
           timeWindow: 7
   - id: bidder-cluster
     name: Bidder Cluster
+    theme: brand
     subtitle: Real-Time Bidding
     icon: bolt
     grid:
@@ -320,6 +368,7 @@ dashboards:
             minutes: 10
   - id: rtb-infra
     name: RTB Infrastructure
+    theme: brand
     subtitle: Cluster Health
     icon: grid
     grid:
@@ -444,126 +493,115 @@ dashboards:
           row: 3
           colSpan: 1
           rowSpan: 1
-  - grid:
-      columns: 3
-      gap: 14
-      rows: 3
-    icon: data
-    id: campaign-pacing
+  - id: campaign-pacing
     name: Campaign & Pacing
+    theme: brand
     subtitle: Roger Decision Engine
+    icon: data
+    grid:
+      columns: 3
+      rows: 3
+      gap: 14
     widgets:
       - id: active-campaigns
+        type: big-number
+        title: Active Campaigns
+        source: gcp
+        queryId: roger-campaigns
         position:
           col: 1
-          colSpan: 1
           row: 1
+          colSpan: 1
           rowSpan: 1
-        project: mad-master
-        queryId: roger-campaigns
-        source: gcp
-        sparkline: true
-        title: Active Campaigns
-        type: big-number
       - id: global-win-rate
-        max: 100
-        min: 0
-        position:
-          col: 2
-          colSpan: 1
-          row: 1
-          rowSpan: 1
-        project: mad-master
-        queryId: roger-global-win-rate
-        source: gcp
+        type: gauge
         title: Global Win Rate
-        type: gauge
-        unit: '%'
-      - id: campaign-metas
+        source: gcp
+        queryId: roger-global-win-rate
         position:
-          col: 3
-          colSpan: 1
+          col: 2
           row: 1
+          colSpan: 1
           rowSpan: 1
-        project: mad-master
-        queryId: roger-campaign-metas
-        source: gcp
+        unit: '%'
+        min: 0
+        max: 100
+      - id: campaign-metas
+        type: stat-card
         title: Campaign Metadata
-        type: stat-card
+        source: gcp
+        queryId: roger-campaign-metas
+        position:
+          col: 3
+          row: 1
+          colSpan: 1
+          rowSpan: 1
       - id: pacing-p50
-        max: 500
-        min: 0
-        position:
-          col: 1
-          colSpan: 1
-          row: 2
-          rowSpan: 1
-        project: mad-master
-        queryId: roger-pacing-ratio
-        source: gcp
+        type: sparkline
         title: Pacing Ratio P50
-        type: gauge
-        unit: ''
-      - id: roger-messages
-        position:
-          col: 2
-          colSpan: 1
-          row: 2
-          rowSpan: 1
-        project: mad-master
-        queryId: roger-send-count
         source: gcp
-        sparkline: true
-        title: Roger Messages
-        type: big-number
-      - id: ebrake-p50
-        position:
-          col: 3
-          colSpan: 1
-          row: 2
-          rowSpan: 1
-        project: mad-master
-        queryId: roger-ebrake
-        source: gcp
-        title: Emergency Brake
-        type: stat-card
-      - id: roger-send-latency
-        max: 200
-        min: 0
+        queryId: roger-pacing-ratio
         position:
           col: 1
+          row: 2
           colSpan: 1
-          row: 3
           rowSpan: 1
-        project: mad-master
-        queryId: roger-send-latency
+        unit: ''
+        min: 0
+        max: 500
+      - id: roger-messages
+        type: big-number
+        title: Roger Messages
         source: gcp
-        title: Send Latency P95
-        type: gauge
-        unit: ms
-      - id: impression-rater
+        queryId: roger-send-count
         position:
           col: 2
+          row: 2
           colSpan: 1
-          row: 3
           rowSpan: 1
-        project: mad-master
-        queryId: impressionrater-row-updates
+      - id: ebrake-p50
+        type: stat-card
+        title: Emergency Brake
         source: gcp
-        sparkline: true
-        title: Impressions Rated
-        type: big-number
-      - id: active-campaigns-count
+        queryId: roger-ebrake
         position:
           col: 3
+          row: 2
           colSpan: 1
-          row: 3
           rowSpan: 1
-        project: mad-master
-        queryId: roger-campaigns
+      - id: roger-send-latency
+        type: gauge
+        title: Send Latency P95
         source: gcp
-        title: Active Campaigns
+        queryId: roger-send-latency
+        position:
+          col: 1
+          row: 3
+          colSpan: 1
+          rowSpan: 1
+        unit: ms
+        min: 0
+        max: 200
+      - id: impression-rater
+        type: big-number
+        title: Impressions Rated
+        source: gcp
+        queryId: impressionrater-row-updates
+        position:
+          col: 2
+          row: 3
+          colSpan: 1
+          rowSpan: 1
+      - id: active-campaigns-count
         type: stat-card
+        title: Active Campaigns
+        source: gcp
+        queryId: roger-campaigns
+        position:
+          col: 3
+          row: 3
+          colSpan: 1
+          rowSpan: 1
   - grid:
       columns: 4
       gap: 14
@@ -693,6 +731,7 @@ dashboards:
         type: bar-chart
   - id: iheart-delivery-map
     name: iHeart Media
+    theme: iheart
     subtitle: Delivery
     icon: map
     grid:
@@ -711,48 +750,58 @@ dashboards:
           colSpan: 1
           rowSpan: 1
         mglConfig:
-          mapStyle: mapbox
+          mapStyle: brand
           colorScheme: iheart
-          showLeaderboard: true
-          zoomViz: dots
+          showLeaderboard: false
+          zoomViz: heatmap
           clientLogo: /img/rf2d7i-iheartmedia-vertical-logo-red.png
           overlayPositions:
             clientLogo:
-              top: 14.519531px
-              left: 10.003906px
-              width: 218.304688px
-              height: 232.164063px
+              top: 60px
+              left: 920px
             totalOverlay:
-              top: 1257.835938px
-              left: 40.265625px
+              top: 1020px
+              left: 60px
             central:
-              top: 396.589844px
-              left: 1201.8125px
-              width: 217.398438px
-              height: 148.660156px
+              top: 60px
+              left: 300px
             west:
-              width: 211.933594px
-              height: 157.863281px
+              top: 60px
+              left: 40px
             east:
-              top: 414.570313px
-              left: 1850.085938px
+              top: 40px
+              left: 1600px
+            leaderboard:
+              top: 1268px
+              left: 2059px
+          initialCenter:
+            lat: 37.74667050658077
+            lng: -95.5
+          initialZoom: 4.649342991467421
+          initialPitch: 0
+          initialBearing: 0
+          showRegionWest: false
+          showRegionCentral: false
+          logoFit: contain
+          particleSpeed: 1
     clientBranding:
       logoText: iHEART
       logoSub: MEDIA
+      logoImage: /img/rf2d7i-iheartmedia-vertical-logo-red.png
       bg: '#120005'
       bgSurface: '#1f000a'
       bgCard: '#330011'
       bgCardAlt: '#4d0019'
       border: '#660022'
       borderLit: '#a60038'
-      accent: '#E30C3A'
-      accentDim: rgba(227,12,58,0.2)
-      t2: '#ffb3c6'
+      accent: '#e30c3a'
+      accentDim: rgba(227, 12, 58, 0.2)
+      t2: '#ff8fa3'
       t3: '#cc5577'
       dotColor: '#1f000a'
-      logoImage: /img/rf2d7i-iheartmedia-vertical-logo-red.png
   - id: fox-delivery-map
     name: FOX
+    theme: fox
     subtitle: Delivery
     icon: map
     grid:
@@ -771,56 +820,61 @@ dashboards:
           colSpan: 1
           rowSpan: 1
         mglConfig:
-          mapStyle: mapbox
-          colorScheme: warm
+          mapStyle: brand
+          colorScheme: fox
           showLeaderboard: true
-          zoomViz: dots
+          zoomViz: heatmap
           clientLogo: /img/fox-logo.svg
           overlayPositions:
             clientLogo:
-              top: 1318px
-              left: 500px
+              top: 0px
+              left: 520px
+              width: 749.105px
+              height: 154.133px
             west:
               top: 120px
-              left: 340px
+              left: 120px
+            central:
+              top: 100px
+              left: 860px
+            east:
+              top: 100px
+              left: 1480px
+            leaderboard:
+              top: 180px
+              left: 1789.61px
+          initialCenter:
+            lat: 43.00155038269742
+            lng: -91.28676274956602
+          initialZoom: 4.132982225210493
+          initialPitch: 2.061466341016818
+          initialBearing: 0
+          showClientLogo: false
+          particleSpeed: 1
     clientBranding:
       logoText: FOX
       logoSub: MEDIA
+      logoImage: /img/fox-logo.svg
       bg: '#000814'
       bgSurface: '#001d3d'
       bgCard: '#003566'
       bgCardAlt: '#004080'
       border: '#0051a3'
       borderLit: '#0066cc'
-      accent: '#F5A524'
-      accentDim: rgba(245,165,36,0.2)
-      t2: '#e8eef5'
-      t3: '#8fa8c2'
+      accent: '#f5a524'
+      accentDim: rgba(245, 165, 36, 0.2)
+      t2: '#8fa8c2'
+      t3: '#0066cc'
       dotColor: '#001428'
-      logoImage: /img/fox-logo.svg
   - id: fox-metrics
     name: FOX
+    theme: fox
     subtitle: Campaign Health
     icon: chart-bar
     grid:
       columns: 4
       rows: 2
       gap: 14
-    clientBranding:
-      logoText: FOX
-      logoSub: MEDIA
-      bg: '#000814'
-      bgSurface: '#001d3d'
-      bgCard: '#003566'
-      bgCardAlt: '#004080'
-      border: '#0051a3'
-      borderLit: '#0066cc'
-      accent: '#F5A524'
-      accentDim: rgba(245,165,36,0.2)
-      t2: '#e8eef5'
-      t3: '#8fa8c2'
-      dotColor: '#001428'
-      logoImage: /img/fox-logo.svg
     widgets:
       - id: fox-feeds-delivered
         type: stat-card
@@ -883,69 +937,30 @@ dashboards:
           row: 2
           colSpan: 2
           rowSpan: 1
-  - id: hearst-delivery-map
-    name: Hearst
-    subtitle: Delivery
-    icon: map
-    grid:
-      columns: 1
-      rows: 1
-      gap: 0
     clientBranding:
-      logoText: HEARST
+      logoText: FOX
       logoSub: MEDIA
-      bg: '#0a0814'
-      bgSurface: '#14102a'
-      bgCard: '#1e1840'
-      bgCardAlt: '#2a2458'
-      border: '#3d3670'
-      borderLit: '#5a5090'
-      accent: '#D4AF37'
-      accentDim: rgba(212,175,55,0.2)
-      t2: '#e8e0d8'
-      t3: '#b0a090'
-      dotColor: '#14102a'
-      logoImage: /img/hearst-logo.svg
-    widgets:
-      - id: usa-delivery-map-hearst
-        type: usa-map-gl
-        title: ''
-        source: computed
-        queryId: campaign-delivery-map-hearst
-        position:
-          col: 1
-          row: 1
-          colSpan: 1
-          rowSpan: 1
-        mglConfig:
-          mapStyle: mapbox
-          colorScheme: warm
-          showLeaderboard: true
-          zoomViz: dots
-          clientLogo: /img/hearst-logo.svg
+      logoImage: /img/fox-logo.svg
+      bg: '#000814'
+      bgSurface: '#001d3d'
+      bgCard: '#003566'
+      bgCardAlt: '#004080'
+      border: '#0051a3'
+      borderLit: '#0066cc'
+      accent: '#f5a524'
+      accentDim: rgba(245, 165, 36, 0.2)
+      t2: '#8fa8c2'
+      t3: '#0066cc'
+      dotColor: '#001428'
   - id: hearst-metrics
     name: Hearst
+    theme: hearst
     subtitle: Campaign Health
     icon: chart-bar
     grid:
       columns: 4
       rows: 2
       gap: 14
-    clientBranding:
-      logoText: HEARST
-      logoSub: MEDIA
-      bg: '#0a0814'
-      bgSurface: '#14102a'
-      bgCard: '#1e1840'
-      bgCardAlt: '#2a2458'
-      border: '#3d3670'
-      borderLit: '#5a5090'
-      accent: '#D4AF37'
-      accentDim: rgba(212,175,55,0.2)
-      t2: '#e8e0d8'
-      t3: '#b0a090'
-      dotColor: '#14102a'
-      logoImage: /img/hearst-logo.svg
     widgets:
       - id: hearst-feeds-delivered
         type: stat-card
@@ -1008,8 +1023,24 @@ dashboards:
           row: 2
           colSpan: 2
           rowSpan: 1
+    clientBranding:
+      logoText: HEARST
+      logoSub: MEDIA
+      logoImage: /img/hearst-logo.svg
+      bg: '#0a0814'
+      bgSurface: '#14102a'
+      bgCard: '#1e1840'
+      bgCardAlt: '#2a2458'
+      border: '#3d3670'
+      borderLit: '#5a5090'
+      accent: '#d4af37'
+      accentDim: rgba(212, 175, 55, 0.2)
+      t2: '#b0a090'
+      t3: '#8a70c0'
+      dotColor: '#14102a'
   - id: nexstar-delivery-map
     name: Nexstar
+    theme: nexstar
     subtitle: Delivery
     icon: map
     grid:
@@ -1028,7 +1059,7 @@ dashboards:
           colSpan: 1
           rowSpan: 1
         mglConfig:
-          colorScheme: brand
+          colorScheme: nexstar
           showLeaderboard: true
           zoomViz: heatmap
           clientLogo: /img/nexstar-logo.svg
@@ -1037,56 +1068,48 @@ dashboards:
               top: 1283.089844px
               left: 2284.859375px
             east:
-              top: 35.796875px
-              left: 1777px
+              top: 20px
+              left: 1540px
             central:
-              top: 26.40625px
-              left: 1100.777344px
-              width: 368.835938px
-              height: 174.328125px
+              top: 0px
+              left: 880px
+              width: 300.906px
+              height: 176.281px
             west:
               top: 10.851563px
               left: 133.898438px
           particleSpeed: 1
           mapStyle: mapbox
+          initialCenter:
+            lat: 39.98705492859011
+            lng: -94.64397266750757
+          initialZoom: 4.445980223110701
+          initialPitch: 14.000000000000004
+          initialBearing: 0
     clientBranding:
       logoText: NEXSTAR
       logoSub: MEDIA GROUP
+      logoImage: /img/nexstar-logo.svg
       bg: '#001018'
       bgSurface: '#00182d'
       bgCard: '#002447'
       bgCardAlt: '#003366'
       border: '#004488'
       borderLit: '#0066cc'
-      accent: '#00A8FF'
-      accentDim: rgba(0,168,255,0.2)
-      t2: '#e0f0ff'
-      t3: '#80b8e0'
+      accent: '#00a8ff'
+      accentDim: rgba(0, 168, 255, 0.2)
+      t2: '#80b8e0'
+      t3: '#0066cc'
       dotColor: '#00182d'
-      logoImage: /img/nexstar-logo.svg
   - id: nexstar-metrics
     name: Nexstar
+    theme: nexstar
     subtitle: Campaign Health
     icon: chart-bar
     grid:
       columns: 4
       rows: 2
       gap: 14
-    clientBranding:
-      logoText: NEXSTAR
-      logoSub: MEDIA GROUP
-      bg: '#001018'
-      bgSurface: '#00182d'
-      bgCard: '#002447'
-      bgCardAlt: '#003366'
-      border: '#004488'
-      borderLit: '#0066cc'
-      accent: '#00A8FF'
-      accentDim: rgba(0,168,255,0.2)
-      t2: '#e0f0ff'
-      t3: '#80b8e0'
-      dotColor: '#00182d'
-      logoImage: /img/nexstar-logo.svg
     widgets:
       - id: nexstar-feeds-delivered
         type: stat-card
@@ -1149,8 +1172,24 @@ dashboards:
           row: 2
           colSpan: 2
           rowSpan: 1
+    clientBranding:
+      logoText: NEXSTAR
+      logoSub: MEDIA GROUP
+      logoImage: /img/nexstar-logo.svg
+      bg: '#001018'
+      bgSurface: '#00182d'
+      bgCard: '#002447'
+      bgCardAlt: '#003366'
+      border: '#004488'
+      borderLit: '#0066cc'
+      accent: '#00a8ff'
+      accentDim: rgba(0, 168, 255, 0.2)
+      t2: '#80b8e0'
+      t3: '#0066cc'
+      dotColor: '#00182d'
   - id: scripps-delivery-map
     name: EW Scripps
+    theme: scripps
     subtitle: Delivery
     icon: map
     grid:
@@ -1169,10 +1208,10 @@ dashboards:
           colSpan: 1
           rowSpan: 1
         mglConfig:
-          mapStyle: mapbox
-          colorScheme: warm
+          mapStyle: brand
+          colorScheme: scripps
           showLeaderboard: true
-          zoomViz: dots
+          zoomViz: heatmap
           clientLogo: /img/scripps-logo.svg
           overlayPositions:
             clientLogo:
@@ -1181,44 +1220,36 @@ dashboards:
             west:
               top: 120px
               left: 340px
+          initialCenter:
+            lat: 38.528255228300964
+            lng: -95.5
+          initialZoom: 4.503073453903199
+          initialPitch: 0
+          initialBearing: 0
+          particleSpeed: 1.8
     clientBranding:
       logoText: SCRIPPS
-      logoSub: MEDIA
+      logoImage: /img/scripps-logo.svg
       bg: '#140a00'
       bgSurface: '#241500'
       bgCard: '#3d2400'
       bgCardAlt: '#573300'
       border: '#7a4800'
       borderLit: '#a66000'
-      accent: '#FF6B35'
-      accentDim: rgba(255,107,53,0.2)
-      t2: '#ffe8d8'
-      t3: '#d8a888'
+      accent: '#ff6b35'
+      accentDim: rgba(255, 107, 53, 0.2)
+      t2: '#d8a888'
+      t3: '#a66000'
       dotColor: '#241500'
-      logoImage: /img/scripps-logo.svg
   - id: scripps-metrics
     name: EW Scripps
+    theme: scripps
     subtitle: Campaign Health
     icon: chart-bar
     grid:
       columns: 4
       rows: 2
       gap: 14
-    clientBranding:
-      logoText: SCRIPPS
-      logoSub: MEDIA
-      bg: '#140a00'
-      bgSurface: '#241500'
-      bgCard: '#3d2400'
-      bgCardAlt: '#573300'
-      border: '#7a4800'
-      borderLit: '#a66000'
-      accent: '#FF6B35'
-      accentDim: rgba(255,107,53,0.2)
-      t2: '#ffe8d8'
-      t3: '#d8a888'
-      dotColor: '#241500'
-      logoImage: /img/scripps-logo.svg
     widgets:
       - id: scripps-feeds-delivered
         type: stat-card
@@ -1281,8 +1312,24 @@ dashboards:
           row: 2
           colSpan: 2
           rowSpan: 1
+    clientBranding:
+      logoText: SCRIPPS
+      logoSub: MEDIA
+      logoImage: /img/scripps-logo.svg
+      bg: '#140a00'
+      bgSurface: '#241500'
+      bgCard: '#3d2400'
+      bgCardAlt: '#573300'
+      border: '#7a4800'
+      borderLit: '#a66000'
+      accent: '#ff6b35'
+      accentDim: rgba(255, 107, 53, 0.2)
+      t2: '#d8a888'
+      t3: '#a66000'
+      dotColor: '#241500'
   - id: cox-delivery-map
     name: Cox Media Group
+    theme: cox
     subtitle: Delivery
     icon: map
     grid:
@@ -1301,56 +1348,58 @@ dashboards:
           colSpan: 1
           rowSpan: 1
         mglConfig:
-          mapStyle: mapbox
+          mapStyle: brand
           colorScheme: cool
           showLeaderboard: true
-          zoomViz: dots
+          zoomViz: heatmap
           clientLogo: /img/cox-logo.svg
           overlayPositions:
             clientLogo:
               top: 1318px
               left: 500px
             west:
-              top: 120px
-              left: 340px
+              top: 0px
+              left: 160px
+            leaderboard:
+              top: 0px
+              left: 1820px
+            east:
+              top: 20px
+              left: 1420px
+            central:
+              top: 0px
+              left: 880px
+          initialCenter:
+            lat: 38.036660547340375
+            lng: -93.23905068883043
+          initialZoom: 4.380417470021416
+          initialPitch: 0
+          initialBearing: 0
     clientBranding:
       logoText: COX
       logoSub: MEDIA GROUP
+      logoImage: /img/cox-logo.svg
       bg: '#001820'
       bgSurface: '#002838'
       bgCard: '#003d58'
       bgCardAlt: '#00567d'
       border: '#0073a8'
       borderLit: '#0095d9'
-      accent: '#00D9FF'
-      accentDim: rgba(0,217,255,0.2)
-      t2: '#d0f0ff'
-      t3: '#78c0e0'
+      accent: '#00d9ff'
+      accentDim: rgba(0, 217, 255, 0.2)
+      t2: '#78c0e0'
+      t3: '#0095d9'
       dotColor: '#002838'
-      logoImage: /img/cox-logo.svg
+    excluded: false
   - id: cox-metrics
     name: Cox Media Group
+    theme: cox
     subtitle: Campaign Health
     icon: chart-bar
     grid:
       columns: 4
       rows: 2
       gap: 14
-    clientBranding:
-      logoText: COX
-      logoSub: MEDIA GROUP
-      bg: '#001820'
-      bgSurface: '#002838'
-      bgCard: '#003d58'
-      bgCardAlt: '#00567d'
-      border: '#0073a8'
-      borderLit: '#0095d9'
-      accent: '#00D9FF'
-      accentDim: rgba(0,217,255,0.2)
-      t2: '#d0f0ff'
-      t3: '#78c0e0'
-      dotColor: '#002838'
-      logoImage: /img/cox-logo.svg
     widgets:
       - id: cox-feeds-delivered
         type: stat-card
@@ -1413,6 +1462,107 @@ dashboards:
           row: 2
           colSpan: 2
           rowSpan: 1
+    clientBranding:
+      logoText: COX
+      logoSub: MEDIA GROUP
+      logoImage: /img/cox-logo.svg
+      bg: '#001820'
+      bgSurface: '#002838'
+      bgCard: '#003d58'
+      bgCardAlt: '#00567d'
+      border: '#0073a8'
+      borderLit: '#0095d9'
+      accent: '#00d9ff'
+      accentDim: rgba(0, 217, 255, 0.2)
+      t2: '#78c0e0'
+      t3: '#0095d9'
+      dotColor: '#002838'
+  - id: fox-metrics-copy
+    name: FOX (Copy)
+    theme: fox
+    subtitle: Campaign Health
+    icon: chart-bar
+    grid:
+      columns: 4
+      rows: 2
+      gap: 14
+    widgets:
+      - id: fox-feeds-delivered
+        type: stat-card
+        title: Data Feed Deliveries
+        source: gcp
+        queryId: iheart-datafeeds-delivered
+        position:
+          col: 1
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: fox-export-failures
+        type: stat-card
+        title: Export Failures
+        source: gcp
+        queryId: iheart-export-failures
+        position:
+          col: 2
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: fox-win-rate-stat
+        type: big-number
+        title: Win Rate (p50)
+        source: gcp
+        queryId: fox-win-rate
+        position:
+          col: 3
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+        unit: '%'
+      - id: fox-pacing-stat
+        type: big-number
+        title: Pacing Ratio (p50)
+        source: gcp
+        queryId: roger-pacing-ratio
+        position:
+          col: 4
+          row: 1
+          colSpan: 1
+          rowSpan: 1
+      - id: fox-win-rate-chart
+        type: line-chart
+        title: FOX Win Rate (p50)
+        source: gcp
+        queryId: fox-win-rate
+        position:
+          col: 1
+          row: 2
+          colSpan: 2
+          rowSpan: 1
+      - id: fox-pacing-chart
+        type: line-chart
+        title: Pacing Ratio (p50)
+        source: gcp
+        queryId: roger-pacing-ratio
+        position:
+          col: 3
+          row: 2
+          colSpan: 2
+          rowSpan: 1
+    clientBranding:
+      logoText: FOX
+      logoSub: MEDIA
+      logoImage: /img/fox-logo.svg
+      bg: '#000814'
+      bgSurface: '#001d3d'
+      bgCard: '#003566'
+      bgCardAlt: '#004080'
+      border: '#0051a3'
+      borderLit: '#0066cc'
+      accent: '#f5a524'
+      accentDim: rgba(245, 165, 36, 0.2)
+      t2: '#8fa8c2'
+      t3: '#0066cc'
+      dotColor: '#001428'
 global:
   refresh_interval: 8
   rotation_interval: 30
