@@ -1854,6 +1854,10 @@ window.MapboxUSAMap = (function () {
       // Respect showTotalOverlay flag
       if (this._cfg.showTotalOverlay === false) overlay.style.display = 'none';
 
+      // Inner wrapper to clip content while allowing resize handle to extend outside
+      const inner = document.createElement('div');
+      inner.className = 'mgl-total-overlay-inner';
+
       const lbl = document.createElement('div');
       lbl.className   = 'mgl-total-label';
       lbl.textContent = '\u2B23 LIVE DELIVERY';
@@ -1866,9 +1870,10 @@ window.MapboxUSAMap = (function () {
       sub.className   = 'mgl-total-sub';
       sub.textContent = 'impressions right now';
 
-      overlay.appendChild(lbl);
-      overlay.appendChild(this._totalValueEl);
-      overlay.appendChild(sub);
+      inner.appendChild(lbl);
+      inner.appendChild(this._totalValueEl);
+      inner.appendChild(sub);
+      overlay.appendChild(inner);
       this._addOverlayHideBtn(overlay, 'showTotalOverlay');
       this._wrap.appendChild(overlay);
       this._applyOverlayPosition(overlay, 'totalOverlay');
