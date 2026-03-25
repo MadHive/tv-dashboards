@@ -150,6 +150,20 @@
             <div class="props-body">
               <label>Name <input id="prop-dash-name" type="text"></label>
               <label>Subtitle <input id="prop-dash-subtitle" type="text"></label>
+              <label>Theme
+                <select id="prop-dash-theme">
+                  <option value="">Default (MadHive Brand)</option>
+                  <option value="brand">MadHive Brand</option>
+                  <option value="fox">FOX</option>
+                  <option value="iheart">iHeart Media</option>
+                  <option value="hearst">Hearst</option>
+                  <option value="nexstar">Nexstar</option>
+                  <option value="scripps">E.W. Scripps</option>
+                  <option value="cox">Cox Media Group</option>
+                  <option value="cool">Cool Blue</option>
+                  <option value="warm">Warm Orange</option>
+                </select>
+              </label>
               <div class="props-grid-2">
                 <label>Columns <input id="prop-dash-cols" type="number" min="1" max="12"></label>
                 <label>Rows    <input id="prop-dash-rows" type="number" min="1" max="12"></label>
@@ -957,7 +971,7 @@
   <script src="/js/query-editor.js?v=1"></script>
   <script src="/js/query-explorer.js?v=2"></script>
   <script src="/js/studio-canvas.js?v=5"></script>
-  <script src="/js/studio.js?v=25"></script>
+  <script src="/js/studio.js?v=26"></script>
 
 <!-- Query Explorer Modal -->
 <div id="qx-modal" class="studio-modal" style="display:none">
