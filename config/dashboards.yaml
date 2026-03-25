@@ -73,6 +73,9 @@ dashboards:
           rowSpan: 1
         mglConfig:
           mapStyle: brand
+          showRegionWest: true
+          showRegionCentral: true
+          showRegionEast: true
           overlayPositions:
             west:
               top: 0px
@@ -1103,7 +1106,6 @@ dashboards:
       dotColor: '#00182d'
   - id: nexstar-metrics
     name: Nexstar
-    theme: nexstar
     subtitle: Campaign Health
     icon: chart-bar
     grid:
@@ -1189,7 +1191,6 @@ dashboards:
       dotColor: '#00182d'
   - id: scripps-delivery-map
     name: EW Scripps
-    theme: scripps
     subtitle: Delivery
     icon: map
     grid:
@@ -1218,12 +1219,18 @@ dashboards:
               top: 1318px
               left: 500px
             west:
-              top: 120px
-              left: 340px
+              top: 2.62%
+              left: 26.89%
+            central:
+              top: 2.62%
+              left: 0.00%
+            east:
+              top: 2.62%
+              left: 52.10%
           initialCenter:
-            lat: 38.528255228300964
-            lng: -95.5
-          initialZoom: 4.503073453903199
+            lat: 37.09025740467851
+            lng: -82.7832080200501
+          initialZoom: 3.24945498319018
           initialPitch: 0
           initialBearing: 0
           particleSpeed: 1.8
@@ -1243,7 +1250,6 @@ dashboards:
       dotColor: '#241500'
   - id: scripps-metrics
     name: EW Scripps
-    theme: scripps
     subtitle: Campaign Health
     icon: chart-bar
     grid:
@@ -1329,7 +1335,6 @@ dashboards:
       dotColor: '#241500'
   - id: cox-delivery-map
     name: Cox Media Group
-    theme: cox
     subtitle: Delivery
     icon: map
     grid:
@@ -1351,6 +1356,9 @@ dashboards:
           mapStyle: brand
           colorScheme: cool
           showLeaderboard: true
+          showRegionEast: true
+          showRegionWest: true
+          showRegionCentral: true
           zoomViz: heatmap
           clientLogo: /img/cox-logo.svg
           overlayPositions:
@@ -1370,9 +1378,9 @@ dashboards:
               top: 0px
               left: 880px
           initialCenter:
-            lat: 38.036660547340375
-            lng: -93.23905068883043
-          initialZoom: 4.380417470021416
+            lat: 37.09025740467851
+            lng: -82.7832080200501
+          initialZoom: 3.249454983190179
           initialPitch: 0
           initialBearing: 0
     clientBranding:
