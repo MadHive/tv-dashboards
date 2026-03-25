@@ -350,6 +350,7 @@ window.MapboxUSAMap = (function () {
       this._pendingConfigApply = false;
       // Persisted overlay positions (from mglConfig.overlayPositions)
       this._overlayPositions = Object.assign({}, (this._cfg && this._cfg.overlayPositions) || {});
+      console.log('[MapGL] Loaded overlay positions from config:', this._overlayPositions);
       // Custom annotations (markers, text labels) added in Studio
       this._annotations = (this._cfg && this._cfg.annotations) || [];
       this._annotationMarkers = [];
@@ -828,8 +829,8 @@ window.MapboxUSAMap = (function () {
             properties: {
               ...f.properties,
               id: sid,
-              intensity,
-              impressions: raw,
+              intensity: intensity || 0,  // Ensure never null/NaN
+              impressions: raw || 0,      // Ensure never null/NaN
               imp_fmt: raw > 0 ? fmtImp(raw) : '',
             },
           };
@@ -844,7 +845,7 @@ window.MapboxUSAMap = (function () {
           return {
           type: 'Feature',
           properties: {
-            ir:      (h.impressions || 0) / maxHot,
+            ir:      ((h.impressions || 0) / maxHot) || 0,  // Ensure never null/NaN
             city:    cityName,
             imp_fmt: cityName ? fmtImp(h.impressions || 0) : '',
             rank:    i,
@@ -862,7 +863,7 @@ window.MapboxUSAMap = (function () {
           .filter(h => h.lat && h.lon)
           .map(h => ({
             type: 'Feature',
-            properties: { ir: (h.impressions || 0) / maxZ5 },
+            properties: { ir: ((h.impressions || 0) / maxZ5) || 0 },  // Ensure never null/NaN
             geometry: { type: 'Point', coordinates: [h.lon, h.lat] },
           }));
       }
@@ -941,15 +942,15 @@ window.MapboxUSAMap = (function () {
           ]);
         }
         pts[pts.length - 1] = [hs.lon, hs.lat]; // guarantee arc terminates exactly at hotspot
-        const ir = Math.sqrt((hs.impressions || 0) / maxHot);
+        const ir = Math.sqrt((hs.impressions || 0) / maxHot) || 0;  // Ensure never null/NaN
         // Store for particle alignment — particles pick from this same set
         this._corridorPaths.push({ dc, tgt: hs, ir });
         features.push({
           type: 'Feature',
           properties: {
-            lw: +(0.5 + ir * 1.5).toFixed(3),   // exact canvas: 0.5 + impRatio*1.5 (0.5→2px)
-            lo: +(0.04 + ir * 0.12).toFixed(3),  // exact canvas: 0.04 + impRatio*0.12
-            ir: +ir.toFixed(3),
+            lw: +(0.5 + ir * 1.5).toFixed(3) || 0.5,   // exact canvas: 0.5 + impRatio*1.5 (0.5→2px)
+            lo: +(0.04 + ir * 0.12).toFixed(3) || 0.04,  // exact canvas: 0.04 + impRatio*0.12
+            ir: +ir.toFixed(3) || 0,
             dc: dc.id,
           },
           geometry: { type: 'LineString', coordinates: pts },
@@ -1039,9 +1040,12 @@ window.MapboxUSAMap = (function () {
               features.push({
                 type: 'Feature',
                 properties: {
-                  pt, sz: ss, dc: p.dc.id,
-                  ir: +(ir * (1 - seg / trailSegs)).toFixed(3),
-                  fa, ga,
+                  pt,
+                  sz: ss || 0,
+                  dc: p.dc.id,
+                  ir: +(ir * (1 - seg / trailSegs)).toFixed(3) || 0,
+                  fa: fa || 0,
+                  ga: ga || 0,
                 },
                 geometry: { type: 'Point', coordinates: [lon, lat] },
               });
@@ -1073,7 +1077,10 @@ window.MapboxUSAMap = (function () {
         const key   = dcKeyMap[dc.id];
         const entry = this._regionPanels[key];
         if (!entry?.panel) return;
-        if (this._overlayPositions && this._overlayPositions[key]) return;
+        if (this._overlayPositions && this._overlayPositions[key]) {
+          console.log(`[MapGL] Skipping auto-position for ${key} - has saved position:`, this._overlayPositions[key]);
+          return;
+        }
 
         const px = this._map.project([dc.lon, dc.lat]);
 
@@ -1097,38 +1104,49 @@ window.MapboxUSAMap = (function () {
         entry.panel.style.right  = 'auto';
         entry.panel.style.bottom = 'auto';
         entry.panel.style.transform = '';
+        console.log(`[MapGL] Auto-positioned ${key} at ${x}px, ${y}px`);
       });
     }
 
     _applyOverlayPosition(el, key) {
       const pos = this._overlayPositions && this._overlayPositions[key];
-      if (!pos) return;
+      if (!pos) {
+        console.log(`[MapGL] No saved position for ${key}`);
+        return;
+      }
+
+      const cr = this._wrap.getBoundingClientRect();
+      console.log(`[MapGL] Applying position for ${key}:`, pos, `Container:`, cr.width, 'x', cr.height);
 
       // Convert percentage-based positions back to pixels for current resolution
       if (pos.top && pos.top.endsWith('%')) {
-        const cr = this._wrap.getBoundingClientRect();
         const topPercent = parseFloat(pos.top);
         if (!isNaN(topPercent)) {
-          el.style.top = (topPercent / 100 * cr.height) + 'px';
+          const topPx = (topPercent / 100 * cr.height);
+          el.style.top = topPx + 'px';
+          console.log(`[MapGL] Set ${key} top: ${topPercent}% → ${topPx}px`);
         } else {
           console.warn(`[MapGL] Invalid top percentage for ${key}:`, pos.top);
           delete this._overlayPositions[key].top; // Clean up bad data
         }
       } else if (pos.top) {
         el.style.top = pos.top;
+        console.log(`[MapGL] Set ${key} top: ${pos.top} (pixel value)`);
       }
 
       if (pos.left && pos.left.endsWith('%')) {
-        const cr = this._wrap.getBoundingClientRect();
         const leftPercent = parseFloat(pos.left);
         if (!isNaN(leftPercent)) {
-          el.style.left = (leftPercent / 100 * cr.width) + 'px';
+          const leftPx = (leftPercent / 100 * cr.width);
+          el.style.left = leftPx + 'px';
+          console.log(`[MapGL] Set ${key} left: ${leftPercent}% → ${leftPx}px`);
         } else {
           console.warn(`[MapGL] Invalid left percentage for ${key}:`, pos.left);
           delete this._overlayPositions[key].left; // Clean up bad data
         }
       } else if (pos.left) {
         el.style.left = pos.left;
+        console.log(`[MapGL] Set ${key} left: ${pos.left} (pixel value)`);
       }
 
       el.style.right  = 'auto';
@@ -1174,6 +1192,13 @@ window.MapboxUSAMap = (function () {
 
       // Save positions as percentages for resolution independence
       const cr = this._wrap.getBoundingClientRect();
+
+      // Validate container has dimensions
+      if (!cr.width || !cr.height) {
+        console.warn(`[MapGL] Cannot save position for ${key} - container has no dimensions`, cr);
+        return;
+      }
+
       const topPx = parseFloat(el.style.top);
       const leftPx = parseFloat(el.style.left);
 
@@ -1187,6 +1212,8 @@ window.MapboxUSAMap = (function () {
         top: ((topPx / cr.height) * 100).toFixed(2) + '%',
         left: ((leftPx / cr.width) * 100).toFixed(2) + '%',
       };
+
+      console.log(`[MapGL] Saved position for ${key}:`, this._overlayPositions[key], `(from ${topPx}px, ${leftPx}px in ${cr.width}x${cr.height} container)`);
     }
 
     _updateAlignmentGuides(currentKey, x, y, width, height) {
@@ -1555,11 +1582,15 @@ window.MapboxUSAMap = (function () {
             .slice(0, 20)
             .map((h, i) => {
               const phase = (t * 0.8 + i * 0.31) % 1;
-              const ir    = (h.impressions || 0) / maxHot;
+              const ir    = ((h.impressions || 0) / maxHot) || 0;  // Ensure never null/NaN
               const baseR = 3 + ir * 14;
               return {
                 type: 'Feature',
-                properties: { pr: baseR + phase * 22, po: (1 - phase) * 0.38 * ir, ir },
+                properties: {
+                  pr: (baseR + phase * 22) || 0,
+                  po: ((1 - phase) * 0.38 * ir) || 0,
+                  ir: ir || 0
+                },
                 geometry: { type: 'Point', coordinates: [h.lon, h.lat] },
               };
             });
@@ -1571,7 +1602,10 @@ window.MapboxUSAMap = (function () {
           const phase = (t * 0.55 + i * 0.33) % 1;
           return {
             type: 'Feature',
-            properties: { pr: 8 + phase * 28, po: (1 - phase) * 0.65 },
+            properties: {
+              pr: (8 + phase * 28) || 0,
+              po: ((1 - phase) * 0.65) || 0
+            },
             geometry: { type: 'Point', coordinates: [dc.lon, dc.lat] },
           };
         });
@@ -1712,7 +1746,12 @@ window.MapboxUSAMap = (function () {
           const cityName = ZIP3_CITY[h.zip3] || h.city || '';
           return {
           type: 'Feature',
-          properties: { ir: (h.impressions || 0) / maxHot, city: cityName, imp_fmt: cityName ? fmtImp(h.impressions || 0) : '', rank: i },
+          properties: {
+            ir: ((h.impressions || 0) / maxHot) || 0,  // Ensure never null/NaN
+            city: cityName,
+            imp_fmt: cityName ? fmtImp(h.impressions || 0) : '',
+            rank: i
+          },
           geometry: { type: 'Point', coordinates: [h.lon, h.lat] },
           }; });
         this._map.getSource('hotspots')?.setData({ type: 'FeatureCollection', features: z3Features });
@@ -1824,7 +1863,12 @@ window.MapboxUSAMap = (function () {
         this._addMatchSizeBtn(panel, key);
         this._addOverlayHideBtn(panel, cfgFlag);
         this._wrap.appendChild(panel);
-        this._applyOverlayPosition(panel, key);
+        // Defer positioning until container has dimensions
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            this._applyOverlayPosition(panel, key);
+          });
+        });
         this._makeDraggable(panel, key);
         this._addResizeHandles(panel, key);
 
@@ -1861,7 +1905,12 @@ window.MapboxUSAMap = (function () {
       this._lbEl = lb;
       this._addOverlayHideBtn(lb, 'showLeaderboard');
       this._wrap.appendChild(lb);
-      this._applyOverlayPosition(lb, 'leaderboard');
+      // Defer positioning until container has dimensions
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          this._applyOverlayPosition(lb, 'leaderboard');
+        });
+      });
       this._makeDraggable(lb, 'leaderboard');
       this._addResizeHandles(lb, 'leaderboard');
 
@@ -1887,7 +1936,12 @@ window.MapboxUSAMap = (function () {
         logoWrap.appendChild(logoImg);
         this._addOverlayHideBtn(logoWrap, 'showClientLogo');
         this._wrap.appendChild(logoWrap);
-        this._applyOverlayPosition(logoWrap, 'clientLogo');
+        // Defer positioning until container has dimensions
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            this._applyOverlayPosition(logoWrap, 'clientLogo');
+          });
+        });
         this._makeDraggable(logoWrap, 'clientLogo');
         this._addResizeHandles(logoWrap, 'clientLogo');
       }
@@ -1921,7 +1975,12 @@ window.MapboxUSAMap = (function () {
       overlay.appendChild(inner);
       this._addOverlayHideBtn(overlay, 'showTotalOverlay');
       this._wrap.appendChild(overlay);
-      this._applyOverlayPosition(overlay, 'totalOverlay');
+      // Defer positioning until container has dimensions
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          this._applyOverlayPosition(overlay, 'totalOverlay');
+        });
+      });
       this._makeDraggable(overlay, 'totalOverlay');
       this._addResizeHandles(overlay, 'totalOverlay');
     }
