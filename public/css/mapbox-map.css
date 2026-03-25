@@ -272,12 +272,13 @@
   min-width:     140px;
   pointer-events: none;
   backdrop-filter: blur(8px);
+  --top-bar-height: 4px;
 }
 .mgl-region-panel::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 4px;
+  height: var(--top-bar-height, 4px);
   background: linear-gradient(90deg, #FDA4D4, #b87aff);
   border-radius: 10px 10px 0 0;
 }

@@ -1233,12 +1233,27 @@ window.MapboxUSAMap = (function () {
         if (v) v.style.fontSize = Math.round(72 * scale) + 'px';
         if (l) l.style.fontSize = Math.round(12 * scale) + 'px';
         if (s) s.style.fontSize = Math.round(13 * scale) + 'px';
+        // Scale gap between elements
+        el.style.gap = Math.round(2 * scale) + 'px';
       } else if (key === 'leaderboard') {
         this._lbScale = Math.max(0.4, Math.min(2.5, scale));
         const t = el.querySelector('.mgl-lb-title');
         const h = el.querySelector('.mgl-lb-header-total');
-        if (t) t.style.fontSize = Math.round(17 * this._lbScale) + 'px';
-        if (h) h.style.fontSize = Math.round(17 * this._lbScale) + 'px';
+        if (t) {
+          t.style.fontSize = Math.round(17 * this._lbScale) + 'px';
+          t.style.padding = `0 ${Math.round(8 * this._lbScale)}px ${Math.round(8 * this._lbScale)}px`;
+        }
+        if (h) {
+          h.style.fontSize = Math.round(17 * this._lbScale) + 'px';
+          h.style.padding = `0 ${Math.round(8 * this._lbScale)}px ${Math.round(8 * this._lbScale)}px`;
+        }
+        // Scale gap between elements
+        el.style.gap = Math.round(8 * this._lbScale) + 'px';
+        // Scale totals banner if it exists
+        if (this._lbTotals) {
+          this._lbTotals.style.fontSize = Math.round(18 * this._lbScale) + 'px';
+          this._lbTotals.style.paddingTop = Math.round(4 * this._lbScale) + 'px';
+        }
         // Re-render rows at new scale if data is available
         if (this._data && this._data.states) {
           this._renderLeaderboard(this._data.states, 1, this._data.totals || {});
@@ -1248,8 +1263,27 @@ window.MapboxUSAMap = (function () {
         const name = el.querySelector('.mgl-region-name');
         const meta = el.querySelector('.mgl-region-meta');
         if (imp)  imp.style.fontSize  = Math.round(40 * scale) + 'px';
-        if (name) name.style.fontSize = Math.round(16 * scale) + 'px';
-        if (meta) meta.style.fontSize = Math.round(13 * scale) + 'px';
+        if (name) {
+          name.style.fontSize = Math.round(16 * scale) + 'px';
+          name.style.marginBottom = Math.round(6 * scale) + 'px';
+        }
+        if (meta) {
+          meta.style.fontSize = Math.round(13 * scale) + 'px';
+          meta.style.marginTop = Math.round(8 * scale) + 'px';
+          meta.style.gap = Math.round(12 * scale) + 'px';
+        }
+
+        // Scale padding, border, border-radius for region panels
+        el.style.padding = `${Math.round(14 * scale)}px ${Math.round(18 * scale)}px`;
+        el.style.borderWidth = Math.max(1, Math.round(1 * scale)) + 'px';
+        el.style.borderRadius = Math.round(10 * scale) + 'px';
+
+        // Scale the gradient bar at top
+        el.style.setProperty('--top-bar-height', Math.round(4 * scale) + 'px');
+      } else if (key === 'clientLogo') {
+        // Scale padding and border-radius for logo container
+        el.style.padding = `${Math.round(4 * scale)}px ${Math.round(6 * scale)}px`;
+        el.style.borderRadius = Math.round(6 * scale) + 'px';
       }
     }
 
@@ -1764,6 +1798,11 @@ window.MapboxUSAMap = (function () {
       ['#', 'ST', 'IMPRESSIONS', '%'].forEach(label => {
         const th = document.createElement('th');
         th.textContent = label;
+        // Apply leaderboard scale to header text if box has been resized
+        if (this._lbScale && this._lbScale !== 1) {
+          th.style.fontSize = Math.round(13 * this._lbScale) + 'px';
+          th.style.padding = `${Math.round(5 * this._lbScale)}px ${Math.round(8 * this._lbScale)}px`;
+        }
         hrow.appendChild(th);
       });
       thead.appendChild(hrow);
@@ -1793,12 +1832,18 @@ window.MapboxUSAMap = (function () {
         tdImp.className   = 'mgl-lb-imp-cell';
         tdImp.textContent = fmtImp(s.impressions);
 
-        // Apply leaderboard scale to row text if box has been resized
+        // Apply leaderboard scale to row text and spacing if box has been resized
         if (this._lbScale && this._lbScale !== 1) {
           const fs = Math.round(18 * this._lbScale) + 'px';
+          const pad = `${Math.round(7 * this._lbScale)}px ${Math.round(8 * this._lbScale)}px`;
           tdRank.style.fontSize  = fs;
+          tdRank.style.padding   = pad;
           tdState.style.fontSize = fs;
+          tdState.style.padding  = pad;
           tdImp.style.fontSize   = fs;
+          tdImp.style.padding    = pad;
+          // Scale border thickness
+          tr.style.borderLeftWidth = Math.max(2, Math.round(3 * this._lbScale)) + 'px';
         }
 
         // Percentage cell with inline mini-bar
@@ -1816,6 +1861,15 @@ window.MapboxUSAMap = (function () {
         pctSpan.style.color = color;
         tdPct.appendChild(barWrap);
         tdPct.appendChild(pctSpan);
+
+        // Apply scale to percentage cell
+        if (this._lbScale && this._lbScale !== 1) {
+          tdPct.style.fontSize = Math.round(15 * this._lbScale) + 'px';
+          tdPct.style.padding = `${Math.round(7 * this._lbScale)}px ${Math.round(8 * this._lbScale)}px`;
+          barWrap.style.height = Math.round(4 * this._lbScale) + 'px';
+          barWrap.style.borderRadius = Math.round(2 * this._lbScale) + 'px';
+          barWrap.style.marginBottom = Math.round(3 * this._lbScale) + 'px';
+        }
 
         tr.appendChild(tdRank);
         tr.appendChild(tdState);
