@@ -1454,6 +1454,8 @@ window.MapboxUSAMap = (function () {
           nh = Math.min(nh, cr.height - (er.top  - cr.top));
           el.style.width  = nw + 'px';
           el.style.height = nh + 'px';
+          // Apply text scaling during resize so text doesn't spill out
+          self._applyOverlayScale(el, key, nw + 'px');
         }
       });
 
