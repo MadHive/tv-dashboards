@@ -16,6 +16,7 @@
         "@google-cloud/monitoring": "^5.3.1",
         "@libsql/client": "^0.17.0",
         "axios": "^1.13.6",
+        "claude-code": "^1.0.0",
         "cobe": "^2.0.1",
         "drizzle-orm": "^0.45.1",
         "drizzle-typebox": "^0.1.1",
@@ -445,6 +446,8 @@
     "chalk-template": ["chalk-template@0.4.0", "", { "dependencies": { "chalk": "^4.1.2" } }, "sha512-/ghrgmhfY8RaSdeo43hNXxpoHAtxdbskUHjPpfqUWGttFgycUhYPGx3YZBCnUCvOa7Doivn1IZec3DEGFoMgLg=="],
 
     "chardet": ["chardet@2.1.1", "", {}, "sha512-PsezH1rqdV9VvyNhxxOW32/d75r01NY7TQCmOqomRo15ZSOKbpTFVsfjghxo6JloQUCGnH4k1LGu0R4yCLlWQQ=="],
+
+    "claude-code": ["claude-code@1.0.0", "", { "bin": { "claude-code": "index.js" } }, "sha512-x5z3ZlQBRcd3fX5MtiC19kzVxonaY6/Ligbjedp21TlQ/m7FuiQHNsegiZVmOoY6a5BmqdMYTUI3dRj3RtnlGQ=="],
 
     "cli-cursor": ["cli-cursor@3.1.0", "", { "dependencies": { "restore-cursor": "^3.1.0" } }, "sha512-I/zHAwsKf9FqGoXM4WWRACob9+SNukZTd94DWF57E4toouRulbCxcUh6RKUEOQlYTHJnzkPMySvPNaaSLNfLZw=="],
 
