@@ -500,6 +500,16 @@
                   <option value="brand">Brand (Purple/Pink)</option>
                   <option value="cool">Cool (Blue/Cyan)</option>
                   <option value="warm">Warm (Orange/Gold)</option>
+                  <option value="iheart">iHeart (Red)</option>
+                  <option value="fox">FOX (Blue/Gold)</option>
+                  <option value="hearst">Hearst (Purple/Gold)</option>
+                  <option value="nexstar">Nexstar (Cyan)</option>
+                  <option value="scripps">Scripps (Orange)</option>
+                  <option value="cox">Cox (Cyan/Blue)</option>
+                  <option value="purple">Purple</option>
+                  <option value="green">Green</option>
+                  <option value="cyan">Cyan</option>
+                  <option value="magenta">Magenta</option>
                 </select>
               </label>
               <label>Particles
@@ -555,6 +565,16 @@
                   </select>
                 </label>
               </div>
+              <div style="font-size:10px;color:#8B75B0;text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 4px">Uniform Panel Sizing</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:6px">
+                <label style="font-size:11px">Width (px)
+                  <input id="prop-mgl-uniform-width" type="number" min="100" max="500" step="10" placeholder="160">
+                </label>
+                <label style="font-size:11px">Height (px)
+                  <input id="prop-mgl-uniform-height" type="number" min="80" max="300" step="10" placeholder="115">
+                </label>
+              </div>
+              <button type="button" id="apply-uniform-sizing-btn" class="studio-btn secondary small" style="width:100%;margin-bottom:8px">↔ Apply to West/Central/East</button>
               <label>Base Style
                 <select id="prop-mgl-mapstyle">
                   <option value="brand" selected>Brand Dark</option>
@@ -967,6 +987,7 @@
   <script src="/js/widgets.js?v=11"></script>
   <script src="/js/cobe.min.js"></script>
   <script src="/js/mapbox-gl.min.js"></script>
+  <script src="/js/themes.js?v=2"></script>
   <script src="/js/mapbox-map.js?v=103"></script>
   <script src="/js/query-editor.js?v=1"></script>
   <script src="/js/query-explorer.js?v=2"></script>

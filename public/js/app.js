@@ -213,7 +213,7 @@
               logoImg = document.createElement('img');
               logoImg.className = 'brand-logo-img';
               logoImg.alt = '';
-              logoImg.style.cssText = 'height:28px;width:auto;opacity:0.9;margin-right:8px;';
+              logoImg.style.cssText = 'height:48px;width:auto;opacity:0.95;margin-right:12px;object-fit:contain;';
               logoImg.onerror = () => logoImg.remove();
               logoWrap.prepend(logoImg);
             }

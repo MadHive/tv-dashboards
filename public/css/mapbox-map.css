@@ -383,11 +383,33 @@ body.studio-body .mgl-region-panel { overflow: visible; }
   opacity:        0;
   transition:     opacity 0.15s;
   background-image:
-    linear-gradient(rgba(253,164,212,0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(253,164,212,0.07) 1px, transparent 1px);
+    linear-gradient(rgba(253,164,212,0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(253,164,212,0.15) 1px, transparent 1px);
   background-size: 20px 20px;
 }
 .mgl-snap-grid.visible { opacity: 1; }
+
+/* ── Alignment guide lines (shown during Studio drag) ──────────────────── */
+.mgl-alignment-guide {
+  position: absolute;
+  pointer-events: none;
+  z-index: 10;
+  background: rgba(74,222,128,0.5);
+  box-shadow: 0 0 8px rgba(74,222,128,0.8);
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+.mgl-alignment-guide.visible { opacity: 1; }
+.mgl-alignment-guide.horizontal {
+  left: 0;
+  right: 0;
+  height: 2px;
+}
+.mgl-alignment-guide.vertical {
+  top: 0;
+  bottom: 0;
+  width: 2px;
+}
 
 /* ── Per-overlay hide button (studio mode only) ──────────────────────────── */
 .mgl-overlay-hide-btn {
