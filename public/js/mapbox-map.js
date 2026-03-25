@@ -1284,6 +1284,41 @@ window.MapboxUSAMap = (function () {
       el.appendChild(handle);
     }
 
+    // Inject a "Match Size" button on region panels in studio mode
+    // Clicking it syncs all region panel sizes to match this one
+    _addMatchSizeBtn(el, key) {
+      if (!document.body.classList.contains('studio-body')) return;
+      if (key !== 'west' && key !== 'central' && key !== 'east') return;
+      const self = this;
+      const btn = document.createElement('button');
+      btn.className   = 'mgl-overlay-match-btn';
+      btn.type        = 'button';
+      btn.textContent = '⊞'; // ⊞ (uniform size icon)
+      btn.title       = 'Match all region panel sizes to this one';
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        e.preventDefault();
+        const w = el.style.width;
+        const h = el.style.height;
+        // Apply to all region panels
+        ['west', 'central', 'east'].forEach(regionKey => {
+          const panel = self._regionPanels[regionKey]?.panel;
+          if (panel && regionKey !== key) {
+            panel.style.width = w;
+            panel.style.height = h;
+            self._applyOverlayScale(panel, regionKey, w);
+            self._saveOverlaySize(regionKey, panel);
+          }
+        });
+        // Fire event to persist
+        self._wrap.dispatchEvent(new CustomEvent('mgl-overlay-moved', {
+          bubbles: true,
+          detail: { positions: Object.assign({}, self._overlayPositions) },
+        }));
+      });
+      el.appendChild(btn);
+    }
+
     // Inject a small ✕ hide button on each overlay in studio mode.
     // Clicking it hides that overlay and fires an mgl-overlay-hidden event
     // so studio-canvas.js can persist the flag to wc.mglConfig.
@@ -1786,6 +1821,7 @@ window.MapboxUSAMap = (function () {
         panel.appendChild(nameEl);
         panel.appendChild(impEl);
         panel.appendChild(metaEl);
+        this._addMatchSizeBtn(panel, key);
         this._addOverlayHideBtn(panel, cfgFlag);
         this._wrap.appendChild(panel);
         this._applyOverlayPosition(panel, key);
