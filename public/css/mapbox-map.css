@@ -111,7 +111,7 @@
 .mgl-lb-bar {
   height:        100%;
   border-radius: 2px;
-  background:    linear-gradient(90deg, #7c3aed, #FDA4D4);
+  background:    linear-gradient(90deg, var(--border-lit), var(--accent));
   transition:    width 0.8s ease;
 }
 
@@ -279,7 +279,7 @@
   position: absolute;
   top: 0; left: 0; right: 0;
   height: var(--top-bar-height, 4px);
-  background: linear-gradient(90deg, #FDA4D4, #b87aff);
+  background: linear-gradient(90deg, var(--accent), var(--border-lit));
   border-radius: 10px 10px 0 0;
 }
 .mgl-region-name {
@@ -290,9 +290,9 @@
 }
 .mgl-region-impressions {
   font-size: 56px; font-weight: 800;
-  color: #FDA4D4; line-height: 1.1;
+  color: var(--accent); line-height: 1.1;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 0 20px rgba(253,164,212,0.55);
+  text-shadow: 0 0 20px var(--accent-dim);
 }
 .mgl-region-meta {
   font-size: 18px; margin-top: 8px;
