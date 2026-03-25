@@ -1218,6 +1218,7 @@ window.MapboxUSAMap = (function () {
 
     _saveOverlayPosition(key, el) {
       if (!this._overlayPositions) this._overlayPositions = {};
+      if (!this._overlayPositions[key]) this._overlayPositions[key] = {};
 
       // Save positions as percentages for resolution independence
       const cr = this._wrap.getBoundingClientRect();
@@ -1237,10 +1238,9 @@ window.MapboxUSAMap = (function () {
         return;
       }
 
-      this._overlayPositions[key] = {
-        top: ((topPx / cr.height) * 100).toFixed(2) + '%',
-        left: ((leftPx / cr.width) * 100).toFixed(2) + '%',
-      };
+      // Merge position into existing object to preserve width/height
+      this._overlayPositions[key].top = ((topPx / cr.height) * 100).toFixed(2) + '%';
+      this._overlayPositions[key].left = ((leftPx / cr.width) * 100).toFixed(2) + '%';
 
       console.log(`[MapGL] Saved position for ${key}:`, this._overlayPositions[key], `(from ${topPx}px, ${leftPx}px in ${cr.width}x${cr.height} container)`);
     }
