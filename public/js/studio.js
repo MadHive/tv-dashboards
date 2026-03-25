@@ -224,11 +224,29 @@
         const toggle = document.createElement('button');
         toggle.className = 'rot-toggle' + (dash.excluded ? ' rot-off' : '');
         toggle.title = dash.excluded ? 'Excluded from rotation' : 'In rotation';
-        toggle.addEventListener('click', (e) => {
+        toggle.addEventListener('click', async (e) => {
           e.stopPropagation();
           dash.excluded = !dash.excluded;
-          this.markDirty();
           this.renderSidebar();
+          // Save immediately like reordering does
+          try {
+            const res = await fetch('/api/dashboards/' + dash.id, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(dash),
+            });
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({ message: res.statusText }));
+              throw new Error(err.message || res.statusText);
+            }
+            this.config = JSON.parse(JSON.stringify(this.modifiedConfig));
+            this.showToast(dash.excluded ? 'Excluded from rotation' : 'Added to rotation', 'success');
+          } catch (e) {
+            // Rollback on error
+            dash.excluded = !dash.excluded;
+            this.renderSidebar();
+            this.showToast('Failed to update: ' + e.message, 'error');
+          }
         });
 
         const dupBtn = document.createElement('button');
@@ -542,11 +560,30 @@
       const rotBtn = document.getElementById('prop-dash-rotation');
       if (rotBtn) {
         rotBtn.className = 'rot-toggle' + (dash.excluded ? ' rot-off' : '');
-        rotBtn.onclick = () => {
+        rotBtn.onclick = async () => {
           dash.excluded = !dash.excluded;
           rotBtn.className = 'rot-toggle' + (dash.excluded ? ' rot-off' : '');
-          this.markDirty();
           this.renderSidebar();
+          // Save immediately like sidebar toggle does
+          try {
+            const res = await fetch('/api/dashboards/' + dash.id, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(dash),
+            });
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({ message: res.statusText }));
+              throw new Error(err.message || res.statusText);
+            }
+            this.config = JSON.parse(JSON.stringify(this.modifiedConfig));
+            this.showToast(dash.excluded ? 'Excluded from rotation' : 'Added to rotation', 'success');
+          } catch (e) {
+            // Rollback on error
+            dash.excluded = !dash.excluded;
+            rotBtn.className = 'rot-toggle' + (dash.excluded ? ' rot-off' : '');
+            this.renderSidebar();
+            this.showToast('Failed to update: ' + e.message, 'error');
+          }
         };
       }
 
