@@ -409,21 +409,35 @@ window.MapboxUSAMap = (function () {
 
         this._map = new mapboxgl.Map(mapOptions);
 
-        // Add navigation controls (zoom, rotation, pitch)
-        this._map.addControl(new mapboxgl.NavigationControl({
-          showCompass: true,
-          showZoom: true,
-          visualizePitch: true
-        }), 'top-right');
+        // Enable map interactions only in studio mode
+        const isStudio = document.body.classList.contains('studio-body');
 
-        // Enable all interaction handlers explicitly
-        this._map.dragPan.enable();
-        this._map.scrollZoom.enable();
-        this._map.boxZoom.enable();
-        this._map.doubleClickZoom.enable();
-        this._map.keyboard.enable();
-        this._map.dragRotate.enable();
-        this._map.touchZoomRotate.enable();
+        if (isStudio) {
+          // Add navigation controls (zoom, rotation, pitch)
+          this._map.addControl(new mapboxgl.NavigationControl({
+            showCompass: true,
+            showZoom: true,
+            visualizePitch: true
+          }), 'top-right');
+
+          // Enable all interaction handlers explicitly
+          this._map.dragPan.enable();
+          this._map.scrollZoom.enable();
+          this._map.boxZoom.enable();
+          this._map.doubleClickZoom.enable();
+          this._map.keyboard.enable();
+          this._map.dragRotate.enable();
+          this._map.touchZoomRotate.enable();
+        } else {
+          // On live TV view, disable all map interactions
+          this._map.dragPan.disable();
+          this._map.scrollZoom.disable();
+          this._map.boxZoom.disable();
+          this._map.doubleClickZoom.disable();
+          this._map.keyboard.disable();
+          this._map.dragRotate.disable();
+          this._map.touchZoomRotate.disable();
+        }
 
         this._map.on('load', async () => {
           await this._addSources();
@@ -1550,7 +1564,8 @@ window.MapboxUSAMap = (function () {
         } else {
           el.style.cursor = 'grab';
           self._applyOverlayScale(el, key, el.style.width); // scale text only on release
-          self._saveOverlaySize(key, el);
+          self._saveOverlayPosition(key, el); // Save position in case element moved
+          self._saveOverlaySize(key, el);      // Save new width and height
         }
         mode = null;
         self._wrap.dispatchEvent(new CustomEvent('mgl-overlay-moved', {
