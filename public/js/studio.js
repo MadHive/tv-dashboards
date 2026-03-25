@@ -505,12 +505,14 @@
 
       const nameEl = document.getElementById('prop-dash-name');
       const subtitleEl = document.getElementById('prop-dash-subtitle');
+      const themeEl = document.getElementById('prop-dash-theme');
       const colsEl = document.getElementById('prop-dash-cols');
       const rowsEl = document.getElementById('prop-dash-rows');
       const gapEl = document.getElementById('prop-dash-gap');
 
       if (nameEl) nameEl.value = dash.name;
       if (subtitleEl) subtitleEl.value = dash.subtitle || '';
+      if (themeEl) themeEl.value = dash.theme || '';
       if (colsEl) colsEl.value = dash.grid.columns;
       if (rowsEl) rowsEl.value = dash.grid.rows;
       if (gapEl) gapEl.value = dash.grid.gap !== undefined ? dash.grid.gap : 14;
@@ -518,6 +520,7 @@
       // Bind oninput
       if (nameEl) nameEl.oninput = () => this.applyDashboardProps();
       if (subtitleEl) subtitleEl.oninput = () => this.applyDashboardProps();
+      if (themeEl) themeEl.onchange = () => this.applyDashboardProps();
       if (colsEl) colsEl.oninput = () => this.applyDashboardProps();
       if (rowsEl) rowsEl.oninput = () => this.applyDashboardProps();
       if (gapEl) gapEl.oninput = () => this.applyDashboardProps();
@@ -682,12 +685,17 @@
 
       const nameEl = document.getElementById('prop-dash-name');
       const subtitleEl = document.getElementById('prop-dash-subtitle');
+      const themeEl = document.getElementById('prop-dash-theme');
       const colsEl = document.getElementById('prop-dash-cols');
       const rowsEl = document.getElementById('prop-dash-rows');
       const gapEl = document.getElementById('prop-dash-gap');
 
       if (nameEl) dash.name = nameEl.value;
       if (subtitleEl) dash.subtitle = subtitleEl.value;
+      if (themeEl) {
+        const selectedTheme = themeEl.value;
+        dash.theme = selectedTheme || undefined; // Don't save empty string
+      }
       if (colsEl) dash.grid.columns = parseInt(colsEl.value) || dash.grid.columns;
       if (rowsEl) dash.grid.rows = parseInt(rowsEl.value) || dash.grid.rows;
       if (gapEl) dash.grid.gap = parseInt(gapEl.value) || 0;
