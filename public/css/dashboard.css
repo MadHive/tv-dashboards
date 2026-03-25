@@ -84,7 +84,7 @@ body::before {
   align-items: center;
   justify-content: space-between;
   padding: 0 40px;
-  background: rgba(14,3,32,0.92);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
   backdrop-filter: blur(16px);
   z-index: 100;
   font-family: var(--font-display);
@@ -250,7 +250,7 @@ body::before {
   color: var(--t2);
   margin-bottom: 14px;
   flex-shrink: 0;
-  text-shadow: 0 0 20px rgba(253,164,212,0.15);
+  text-shadow: 0 0 20px color-mix(in srgb, var(--accent) 15%, transparent);
 }
 
 .widget-subtitle {
@@ -502,7 +502,7 @@ body::before {
   border-radius: 10px;
   background: linear-gradient(90deg, var(--mh-pink), var(--mh-hot-pink));
   transition: width 1s cubic-bezier(0.4,0,0.2,1);
-  box-shadow: 0 0 18px rgba(253,164,212,0.35);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 .progress-label {
   font-family: var(--font-mono);
@@ -680,13 +680,13 @@ body::before {
   transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
 }
 .heatmap-tile.healthy {
-  border-color: rgba(74,222,128,0.25);
-  background: rgba(74,222,128,0.04);
+  border-color: color-mix(in srgb, var(--green) 25%, transparent);
+  background: color-mix(in srgb, var(--green) 4%, transparent);
 }
 .heatmap-tile.degraded {
-  border-color: rgba(251,191,36,0.5);
-  background: rgba(251,191,36,0.08);
-  box-shadow: 0 0 12px rgba(251,191,36,0.1);
+  border-color: color-mix(in srgb, var(--amber) 50%, transparent);
+  background: color-mix(in srgb, var(--amber) 8%, transparent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--amber) 10%, transparent);
 }
 .heatmap-tile.down {
   border-color: rgba(251,113,133,0.5);
@@ -789,7 +789,7 @@ body::before {
   justify-content: center;
   gap: 10px;
   z-index: 100;
-  background: rgba(14,3,32,0.80);
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
 }
 #nav-dots-row {
   display: flex;
@@ -821,9 +821,9 @@ body::before {
   color: var(--mh-pink);
 }
 .pause-btn.paused {
-  border-color: #00d4ff;
-  color: #00d4ff;
-  box-shadow: 0 0 8px rgba(0,212,255,0.4);
+  border-color: var(--cyan);
+  color: var(--cyan);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--cyan) 40%, transparent);
 }
 .nav-dot {
   width: 12px;
@@ -865,11 +865,11 @@ body::before {
    =========================================================================== */
 @keyframes pulse-green {
   0%, 100% { box-shadow: 0 0 6px var(--green); }
-  50%      { box-shadow: 0 0 18px var(--green), 0 0 30px rgba(74,222,128,0.25); }
+  50%      { box-shadow: 0 0 18px var(--green), 0 0 30px color-mix(in srgb, var(--green) 25%, transparent); }
 }
 @keyframes pulse-amber {
   0%, 100% { box-shadow: 0 0 6px var(--amber); }
-  50%      { box-shadow: 0 0 18px var(--amber), 0 0 30px rgba(251,191,36,0.25); }
+  50%      { box-shadow: 0 0 18px var(--amber), 0 0 30px color-mix(in srgb, var(--amber) 25%, transparent); }
 }
 @keyframes slideIn {
   from { opacity: 0; transform: translateX(-14px); }

@@ -153,8 +153,21 @@
       document.getElementById('page-title').textContent = dash.name;
       document.getElementById('page-subtitle').textContent = dash.subtitle ? '/ ' + dash.subtitle : '';
 
-      // apply or restore client branding (colours + logo)
-      this._applyClientBranding(dash.clientBranding || null);
+      // apply theme if specified, otherwise fall back to clientBranding
+      if (dash.theme && window.Themes) {
+        window.Themes.applyTheme(dash.theme);
+        if (window.Charts && window.Charts.setTheme) {
+          window.Charts.setTheme(dash.theme);
+        }
+        // clientBranding is auto-populated from theme or can be manually specified
+        this._applyClientBranding(dash.clientBranding || window.Themes.getTheme(dash.theme));
+      } else {
+        // Legacy: apply or restore client branding (colours + logo)
+        this._applyClientBranding(dash.clientBranding || null);
+        // Reset to default theme
+        if (window.Themes) window.Themes.applyTheme('brand');
+        if (window.Charts && window.Charts.setTheme) window.Charts.setTheme('brand');
+      }
 
       // restart rotation progress bar
       this.resetRotationBar();
@@ -178,9 +191,17 @@
         set(brand.borderLit, '--border-lit');
         set(brand.accent,    '--accent');
         set(brand.accentDim, '--accent-dim');
-        set(brand.t2,        '--t2');
-        set(brand.t3,        '--t3');
         set(brand.dotColor,  '--dot-color');
+
+        // Text colors
+        set(brand.text1 || brand.canvas?.text1, '--t1');
+        set(brand.text2 || brand.t2, '--t2');
+        set(brand.text3 || brand.t3, '--t3');
+
+        // Also set MadHive-specific variables for full UI chrome theming
+        // These map accent colors to the --mh-* variables used in top/bottom bars
+        set(brand.accent,    '--mh-pink');
+        set(brand.canvas?.hotPink || brand.accent, '--mh-hot-pink');
         if (logoText) logoText.textContent = brand.logoText || logoText.textContent;
         if (logoSub)  logoSub.textContent  = brand.logoSub  || logoSub.textContent;
         // Logo image in top-bar
@@ -205,7 +226,8 @@
       } else {
         ['--bg','--bg-surface','--bg-card','--bg-card-alt',
          '--border','--border-lit','--accent','--accent-dim',
-         '--t2','--t3','--dot-color'].forEach(v => r.style.removeProperty(v));
+         '--t1','--t2','--t3','--dot-color',
+         '--mh-pink','--mh-hot-pink'].forEach(v => r.style.removeProperty(v));
         const logoWrap = document.querySelector('.top-left');
         if (logoWrap) {
           const logoImg = logoWrap.querySelector('.brand-logo-img');
