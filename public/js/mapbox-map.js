@@ -1103,33 +1103,81 @@ window.MapboxUSAMap = (function () {
     _applyOverlayPosition(el, key) {
       const pos = this._overlayPositions && this._overlayPositions[key];
       if (!pos) return;
-      el.style.top    = pos.top;
-      el.style.left   = pos.left;
+
+      // Convert percentage-based positions back to pixels for current resolution
+      if (pos.top && pos.top.endsWith('%')) {
+        const cr = this._wrap.getBoundingClientRect();
+        el.style.top = (parseFloat(pos.top) / 100 * cr.height) + 'px';
+      } else {
+        el.style.top = pos.top;
+      }
+
+      if (pos.left && pos.left.endsWith('%')) {
+        const cr = this._wrap.getBoundingClientRect();
+        el.style.left = (parseFloat(pos.left) / 100 * cr.width) + 'px';
+      } else {
+        el.style.left = pos.left;
+      }
+
       el.style.right  = 'auto';
       el.style.bottom = 'auto';
-      if (key === 'leaderboard' && !el.style.width) {
+
+      // Convert percentage-based sizes back to pixels for current resolution
+      if (pos.width && pos.width.endsWith('%')) {
+        const cr = this._wrap.getBoundingClientRect();
+        const widthPx = (parseFloat(pos.width) / 100 * cr.width) + 'px';
+        el.style.width = widthPx;
+        this._applyOverlayScale(el, key, widthPx);
+      } else if (pos.width) {
+        el.style.width = pos.width;
+        this._applyOverlayScale(el, key, pos.width);
+      } else if (key === 'leaderboard' && !el.style.width) {
         el.style.width = '340px';
       }
-      if (pos.width)  {
-        el.style.width  = pos.width;
-        this._applyOverlayScale(el, key, pos.width);
+
+      if (pos.height && pos.height.endsWith('%')) {
+        const cr = this._wrap.getBoundingClientRect();
+        el.style.height = (parseFloat(pos.height) / 100 * cr.height) + 'px';
+      } else if (pos.height) {
+        el.style.height = pos.height;
       }
-      if (pos.height) el.style.height = pos.height;
     }
 
     _saveOverlayPosition(key, el) {
       if (!this._overlayPositions) this._overlayPositions = {};
-      this._overlayPositions[key] = { top: el.style.top, left: el.style.left };
+
+      // Save positions as percentages for resolution independence
+      const cr = this._wrap.getBoundingClientRect();
+      const topPx = parseFloat(el.style.top);
+      const leftPx = parseFloat(el.style.left);
+
+      this._overlayPositions[key] = {
+        top: ((topPx / cr.height) * 100).toFixed(2) + '%',
+        left: ((leftPx / cr.width) * 100).toFixed(2) + '%',
+      };
     }
 
     _saveOverlaySize(key, el) {
       if (!this._overlayPositions) this._overlayPositions = {};
       if (!this._overlayPositions[key]) this._overlayPositions[key] = {};
       const pos = this._overlayPositions[key];
-      if (el.style.width)  pos.width  = el.style.width;
-      else                 delete pos.width;
-      if (el.style.height) pos.height = el.style.height;
-      else                 delete pos.height;
+
+      // Save sizes as percentages for resolution independence
+      const cr = this._wrap.getBoundingClientRect();
+
+      if (el.style.width) {
+        const widthPx = parseFloat(el.style.width);
+        pos.width = ((widthPx / cr.width) * 100).toFixed(2) + '%';
+      } else {
+        delete pos.width;
+      }
+
+      if (el.style.height) {
+        const heightPx = parseFloat(el.style.height);
+        pos.height = ((heightPx / cr.height) * 100).toFixed(2) + '%';
+      } else {
+        delete pos.height;
+      }
     }
 
     _addResizeHandles(el, key) {
