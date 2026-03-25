@@ -1322,14 +1322,15 @@ window.MapboxUSAMap = (function () {
       const scale = Math.max(0.3, Math.min(3.0, nw / nat));
 
       if (key === 'totalOverlay') {
+        const inner = el.querySelector('.mgl-total-overlay-inner');
         const v = el.querySelector('.mgl-total-value');
         const l = el.querySelector('.mgl-total-label');
         const s = el.querySelector('.mgl-total-sub');
         if (v) v.style.fontSize = Math.round(100 * scale) + 'px';
         if (l) l.style.fontSize = Math.round(20 * scale) + 'px';
         if (s) s.style.fontSize = Math.round(20 * scale) + 'px';
-        // Scale gap between elements
-        el.style.gap = Math.round(2 * scale) + 'px';
+        // Scale gap between elements (on inner flex container)
+        if (inner) inner.style.gap = Math.round(2 * scale) + 'px';
       } else if (key === 'leaderboard') {
         this._lbScale = Math.max(0.4, Math.min(2.5, scale));
         const t = el.querySelector('.mgl-lb-title');
